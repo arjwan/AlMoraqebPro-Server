@@ -21,12 +21,15 @@
             font-family: 'Cairo', sans-serif;
             background-color: var(--bg-light);
             margin: 0;
-            padding: 40px 20px;
+            padding: 20px;
             color: var(--text-main);
+        }
+        /* تصميم شاشة تسجيل الدخول */
+        #loginSection {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            min-height: 90vh;
         }
         .login-card {
             width: 100%;
@@ -90,26 +93,61 @@
             font-size: 14px;
             display: none;
         }
+
+        /* تصميم لوحة التحكم (مخفية حتى يتم الدخول) */
+        #dashboardSection {
+            display: none;
+            max-width: 1250px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--bg-light);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <h2>تسجيل دخول المدير</h2>
-        <form id="loginForm" onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label>اسم المستخدم</label>
-                <input type="text" id="username" required placeholder="أدخل اسم المستخدم">
-            </div>
-            
-            <div class="form-group">
-                <label>كلمة المرور</label>
-                <input type="password" id="password" required placeholder="أدخل كلمة المرور">
-            </div>
-            
-            <button type="submit">دخول</button>
-            <div id="errorMsg" class="error-msg">خطأ في اسم المستخدم أو كلمة المرور</div>
-        </form>
+    <!-- قسم تسجيل الدخول -->
+    <div id="loginSection">
+        <div class="login-card">
+            <h2>تسجيل دخول المدير</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>اسم المستخدم</label>
+                    <input type="text" id="username" required placeholder="أدخل اسم المستخدم">
+                </div>
+                
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="password" required placeholder="أدخل كلمة المرور">
+                </div>
+                
+                <button type="submit">دخول</button>
+                <div id="errorMsg" class="error-msg">خطأ في اسم المستخدم أو كلمة المرور</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- قسم لوحة التحكم الرئيسية -->
+    <div id="dashboardSection">
+        <div class="dashboard-header">
+            <h1>لوحة التحكم الذكية - نظام المراقب برو</h1>
+            <button onclick="handleLogout()" style="width: auto; padding: 10px 20px; background-color: var(--danger);">تسجيل الخروج</button>
+        </div>
+        <div>
+            <h3>مرحباً بك يا مدير النظام 🚀</h3>
+            <p>هنا ستظهر بيانات وإدارة الموظفين والتحكم الكامل بالتطبيق.</p>
+        </div>
     </div>
 
     <script>
@@ -119,13 +157,23 @@
             const pass = document.getElementById('password').value;
             const errorDiv = document.getElementById('errorMsg');
             
-            // بيانات الدخول الافتراضية المؤقتة
+            // التحقق من بيانات الدخول
             if (user === "admin" && pass === "123456") {
-                alert("تم تسجيل الدخول بنجاح!");
-                // سيتم توجيهك للوحة التحكم الرئيسية لاحقاً
+                // إخفاء شاشة تسجيل الدخول
+                document.getElementById('loginSection').style.display = 'none';
+                // إظهار لوحة التحكم
+                document.getElementById('dashboardSection').style.display = 'block';
             } else {
                 errorDiv.style.display = 'block';
             }
+        }
+
+        function handleLogout() {
+            // العودة لشاشة تسجيل الدخول
+            document.getElementById('dashboardSection').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'flex';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
         }
     </script>
 </body>
