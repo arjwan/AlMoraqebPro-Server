@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سجل البصمات - نظام المراقب برو</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #312e81;
+            --accent: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-light: #f1f5f9;
+            --card-bg: #ffffff;
+            --border: #cbd5e1;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 30px 15px;
+            color: var(--text-main);
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        /* شريط التنقل الموحد */
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: #e2e8f0;
+            padding: 12px;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            text-decoration: none;
+            padding: 10px 18px;
+            background: #fff;
+            border-radius: 8px;
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--bg-light);
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-weight: 900;
+            margin: 0;
+            font-size: 26px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            border-bottom: 1.5px solid var(--bg-light);
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .badge-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .status-checkin { background: #d1fae5; color: #065f46; }
+        .status-checkout { background: #fee2e2; color: #991b1b; }
+
+        .btn-clear {
+            background-color: #fee2e2;
+            color: var(--danger);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            transition: background 0.2s;
+        }
+        .btn-clear:hover { background-color: var(--danger); color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- شريط التنقل الموحد -->
+    <div class="nav-tabs">
+        <a href="dashboard.html" class="nav-link">🏠 الرئيسية</a>
+        <a href="add-employee.html" class="nav-link">➕ إضافة موظف</a>
+        <a href="update-employee.html" class="nav-link">🔄 تحديث بيانات</a>
+        <a href="fingerprints.html" class="nav-link active">📍 سجل البصمات</a>
+        <a href="payroll.html" class="nav-link">🧮 حاسبة الرواتب</a>
+        <a href="payroll-report.html" class="nav-link">📊 كشف الرواتب</a>
+        <a href="settings.html" class="nav-link">⚙️ الإعدادات</a>
+    </div>
+
+    <div class="header-flex">
+        <h2>سجل البصمات وتتبع حضور الموظفين</h2>
+        <button class="btn-clear" onclick="clearFingerprints()">🗑️ تفريغ سجل البصمات</button>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th># معرف السجل</th>
+                    <th>اسم الموظف</th>
+                    <th>نوع الحركة</th>
+                    <th>التاريخ والوقت</th>
+                    <th>الإحداثيات الجغرافية (خط الطول / العرض)</th>
+                </tr>
+            </thead>
+            <tbody id="fingerprintsTableBody">
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #64748b; font-weight: 600; padding: 30px;">جاري تحميل سجلات البصمات...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    if (localStorage.getItem('isLoggedIn') !== 'true') {
+        window.location.href = 'login.html';
+    }
+
+    const apiUrl = '/api/fingerprints';
+
+    async function fetchFingerprints() {
+        try {
+            const res = await fetch(apiUrl);
+            const data = await res.json();
+            const tbody = document.getElementById('fingerprintsTableBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #64748b; font-weight: 600; padding: 30px;">لا توجد سجلات بصمات مسجلة حالياً.</td></tr>';
+                return;
+            }
+
+            data.forEach(fp => {
+                let statusBadge = fp.type === 'check-in' 
+                    ? '<span class="badge-status status-checkin">📥 تسجيل دخول</span>' 
+                    : '<span class="badge-status status-checkout">📤 تسجيل خروج</span>';
+                
+                let timeStr = fp.timestamp ? new Date(fp.timestamp).toLocaleString('ar-IQ') : '-';
+                let coords = (fp.latitude && fp.longitude) ? `${fp.latitude}, ${fp.longitude}` : 'غير متوفر';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>#${fp.id}</td>
+                        <td style="font-weight: 700;">${fp.employee_name || 'موظف غير معروف'}</td>
+                        <td>${statusBadge}</td>
+                        <td>${timeStr}</td>
+                        <td style="direction: ltr; text-align: right;">${coords}</td>
+                    </tr>
+                `;
+            });
+        } catch (err) {
+            console.error('Error loading fingerprints:', err);
+        }
+    }
+
+    async function clearFingerprints() {
+        if (!confirm('⚠️ هل أنت متأكد من رغبتك في تفريغ كافة سجلات البصمات؟')) return;
+        try {
+            const res = await fetch(apiUrl, { method: 'DELETE' });
+            if (res.ok) {
+                alert('✅ تم تفريغ سجل البصمات بنجاح');
+                fetchFingerprints();
+            } else {
+                alert('❌ حدث خطأ أثناء الحذف');
+            }
+        } catch (err) {
+            console.error('Error clearing fingerprints:', err);
+        }
+    }
+
+    fetchFingerprints();
+</script>
+
+</body>
+</html>

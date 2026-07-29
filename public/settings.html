@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات النظام والشفتات - نظام المراقب برو</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #312e81;
+            --accent: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-light: #f1f5f9;
+            --card-bg: #ffffff;
+            --border: #cbd5e1;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 30px 15px;
+            color: var(--text-main);
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        /* شريط التنقل الموحد */
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: #e2e8f0;
+            padding: 12px;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            text-decoration: none;
+            padding: 10px 18px;
+            background: #fff;
+            border-radius: 8px;
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--bg-light);
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-weight: 900;
+            margin: 0;
+            font-size: 26px;
+        }
+
+        /* تخطيط الشبكة للإعدادات */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 25px;
+        }
+
+        .settings-card {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 16px;
+            border: 1.5px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 18px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--bg-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+
+        label {
+            margin-bottom: 6px;
+            font-weight: 700;
+            font-size: 13px;
+            color: #334155;
+        }
+
+        input, select {
+            padding: 11px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8fafc;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+        }
+
+        .row-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn-save {
+            padding: 12px;
+            background-color: var(--success);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+            font-family: 'Cairo', sans-serif;
+            margin-top: 10px;
+        }
+        .btn-save:hover { background-color: #059669; }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            background: #f8fafc;
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .checkbox-label input {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- شريط التنقل الموحد -->
+    <div class="nav-tabs">
+        <a href="dashboard.html" class="nav-link">🏠 الرئيسية</a>
+        <a href="add-employee.html" class="nav-link">➕ إضافة موظف</a>
+        <a href="update-employee.html" class="nav-link">🔄 تحديث بيانات</a>
+        <a href="fingerprints.html" class="nav-link">📍 سجل البصمات</a>
+        <a href="payroll.html" class="nav-link">🧮 حاسبة الرواتب</a>
+        <a href="payroll-report.html" class="nav-link">📊 كشف الرواتب</a>
+        <a href="settings.html" class="nav-link active">⚙️ الإعدادات والشفتات</a>
+    </div>
+
+    <div class="header-flex">
+        <h2>إعدادات النظام، الشفتات وأوقات البصمة</h2>
+    </div>
+
+    <div class="settings-grid">
+        
+        <!-- 1. إعدادات بيانات الحساب الإداري -->
+        <div class="settings-card">
+            <div class="section-title">🔑 بيانات الدخول الإدارية</div>
+            <form onsubmit="saveAdminSettings(event)">
+                <div class="form-group">
+                    <label>اسم المستخدم:</label>
+                    <input type="text" id="adminUser" required>
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور الجديدة:</label>
+                    <input type="password" id="adminPass" placeholder="أدخل كلمة المرور الجديدة" required>
+                </div>
+                <button type="submit" class="btn-save">💾 حفظ بيانات الدخول</button>
+            </form>
+        </div>
+
+        <!-- 2. إعدادات الشفتات وأوقات العمل -->
+        <div class="settings-card">
+            <div class="section-title">⏰ إعدادات الشفتات وأوقات الدوام</div>
+            <form onsubmit="saveShiftSettings(event)">
+                <div class="form-group">
+                    <label>اختر الشفت للتعديل:</label>
+                    <select id="shiftName" onchange="loadShiftData()">
+                        <option value="shift1">الشفت الصباحي (الأساسي)</option>
+                        <option value="shift2">الشفت المسائي</option>
+                        <option value="shift3">الشفت الليلي</option>
+                    </select>
+                </div>
+                <div class="row-inputs">
+                    <div class="form-group">
+                        <label>بداية الدوام:</label>
+                        <input type="time" id="workStart" required value="08:00">
+                    </div>
+                    <div class="form-group">
+                        <label>نهاية الدوام:</label>
+                        <input type="time" id="workEnd" required value="16:00">
+                    </div>
+                </div>
+                <button type="submit" class="btn-save">💾 حفظ أوقات الشفت</button>
+            </form>
+        </div>
+
+        <!-- 3. إعدادات قبول البصمة (من وإلى) -->
+        <div class="settings-card">
+            <div class="section-title">📍 فترات قبول بصمة الحضور والانصراف</div>
+            <form onsubmit="saveFingerprintRules(event)">
+                <div class="form-group">
+                    <label>بصمة الحضور (متاحة من - إلى):</label>
+                    <div class="row-inputs">
+                        <input type="time" id="checkInFrom" required value="07:00">
+                        <input type="time" id="checkInTo" required value="09:30">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>بصمة الانصراف (متاحة من - إلى):</label>
+                    <div class="row-inputs">
+                        <input type="time" id="checkOutFrom" required value="15:30">
+                        <input type="time" id="checkOutTo" required value="18:00">
+                    </div>
+                </div>
+                <button type="submit" class="btn-save">💾 حفظ قواعد فترات البصمة</button>
+            </form>
+        </div>
+
+        <!-- 4. أيام العطل الأسبوعية -->
+        <div class="settings-card">
+            <div class="section-title">📅 أيام العطل الرسمية والأسبوعية</div>
+            <form onsubmit="saveHolidays(event)">
+                <label>حدد أيام العطل الأسبوعية:</label>
+                <div class="checkbox-group" style="margin-top: 10px;">
+                    <label class="checkbox-label"><input type="checkbox" name="holiday" value="الجمعة" checked> الجمعة</label>
+                    <label class="checkbox-label"><input type="checkbox" name="holiday" value="السبت" checked> السبت</label>
+                    <label class="checkbox-label"><input type="checkbox" name="holiday" value="الأحد"> الأحد</label>
+                    <label class="checkbox-label"><input type="checkbox" name="holiday" value="الإثنين"> الإثنين</label>
+                    <label class="checkbox-label"><input type="checkbox" name="holiday" value="الثلاثاء"> الثلاثاء</label>
+                    <label class="checkbox-label"><input type="checkbox" name="holiday" value="الأربعاء"> الأربعاء</label>
+                    <label class="checkbox-label"><input type="checkbox" name="holiday" value="الخميس"> الخميس</label>
+                </div>
+                <button type="submit" class="btn-save">💾 حفظ أيام العطل</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    if (localStorage.getItem('isLoggedIn') !== 'true') {
+        window.location.href = 'login.html';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        // تعبئة البيانات المخزنة مسبقاً إن وجدت
+        const storedUser = localStorage.getItem('adminUser');
+        if (storedUser) document.getElementById('adminUser').value = storedUser;
+
+        loadShiftData();
+        loadFingerprintRules();
+    });
+
+    function saveAdminSettings(e) {
+        e.preventDefault();
+        localStorage.setItem('adminUser', document.getElementById('adminUser').value.trim());
+        localStorage.setItem('adminPass', document.getElementById('adminPass').value.trim());
+        alert('✅ تم تحديث بيانات الإدارة بنجاح!');
+        document.getElementById('adminPass').value = '';
+    }
+
+    function loadShiftData() {
+        const shiftKey = document.getElementById('shiftName').value;
+        const data = JSON.parse(localStorage.getItem(shiftKey)) || { start: '08:00', end: '16:00' };
+        document.getElementById('workStart').value = data.start;
+        document.getElementById('workEnd').value = data.end;
+    }
+
+    function saveShiftSettings(e) {
+        e.preventDefault();
+        const shiftKey = document.getElementById('shiftName').value;
+        const data = {
+            start: document.getElementById('workStart').value,
+            end: document.getElementById('workEnd').value
+        };
+        localStorage.setItem(shiftKey, JSON.stringify(data));
+        alert('✅ تم حفظ مواعيد الشفت بنجاح!');
+    }
+
+    function saveFingerprintRules(e) {
+        e.preventDefault();
+        const rules = {
+            inFrom: document.getElementById('checkInFrom').value,
+            inTo: document.getElementById('checkInTo').value,
+            outFrom: document.getElementById('checkOutFrom').value,
+            outTo: document.getElementById('checkOutTo').value
+        };
+        localStorage.setItem('fingerprintRules', JSON.stringify(rules));
+        alert('✅ تم حفظ قواعد فترات بصمة الحضور والانصراف بنجاح!');
+    }
+
+    function loadFingerprintRules() {
+        const rules = JSON.parse(localStorage.getItem('fingerprintRules'));
+        if (rules) {
+            document.getElementById('checkInFrom').value = rules.inFrom;
+            document.getElementById('checkInTo').value = rules.inTo;
+            document.getElementById('checkOutFrom').value = rules.outFrom;
+            document.getElementById('checkOutTo').value = rules.outTo;
+        }
+    }
+
+    function saveHolidays(e) {
+        e.preventDefault();
+        const selectedHolidays = Array.from(document.querySelectorAll('input[name="holiday"]:checked')).map(el => el.value);
+        localStorage.setItem('weeklyHolidays', JSON.stringify(selectedHolidays));
+        alert('✅ تم حفظ أيام العطل الأسبوعية بنجاح!');
+    }
+</script>
+
+</body>
+</html>

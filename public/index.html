@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم الذكية - نظام المراقب برو</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #312e81;
+            --accent: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-light: #f1f5f9;
+            --card-bg: #ffffff;
+            --border: #cbd5e1;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-main);
+        }
+
+        .container {
+            max-width: 1250px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--bg-light);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-weight: 900;
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .btn-logout {
+            background-color: #fee2e2;
+            color: var(--danger);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+
+        .tab-btn {
+            padding: 14px 32px;
+            background-color: #e2e8f0;
+            color: #475569;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background-color: var(--accent);
+            color: white;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+        }
+
+        .form-section {
+            display: none;
+            background: #ffffff;
+            padding: 35px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 35px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--bg-light);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: span 4;
+        }
+
+        .form-group.span-2 {
+            grid-column: span 2;
+        }
+
+        label {
+            margin-bottom: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        input, select {
+            padding: 13px 15px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8fafc;
+            transition: all 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+        }
+
+        .btn-submit {
+            grid-column: span 4;
+            padding: 15px;
+            background-color: var(--success);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 15px;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .btn-submit:hover {
+            background-color: #059669;
+        }
+
+        .btn-update {
+            background-color: var(--accent);
+        }
+        .btn-update:hover {
+            background-color: #4f46e5;
+        }
+
+        .control-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #e2e8f0;
+            padding: 18px 25px;
+            border-radius: 14px;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .search-box {
+            flex: 1;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 18px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: white;
+        }
+
+        .employees-container {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .employee-card {
+            background: #ffffff;
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            transition: all 0.2s;
+        }
+
+        .employee-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.08);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1.5px solid var(--bg-light);
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .card-badge {
+            background: #e0e7ff;
+            color: var(--secondary);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            font-size: 14px;
+        }
+
+        .info-item span {
+            color: #64748b;
+            font-size: 12px;
+            display: block;
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+
+        .info-item strong {
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 15px;
+            border-top: 1.5px solid var(--bg-light);
+            padding-top: 12px;
+        }
+
+        .btn-delete {
+            background-color: #fee2e2;
+            color: var(--danger);
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            transition: background 0.2s;
+        }
+
+        .btn-delete:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-delete-all {
+            background-color: #fee2e2;
+            color: var(--danger);
+            border: none;
+            padding: 12px 22px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            transition: background 0.2s;
+        }
+
+        .btn-delete-all:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-flex">
+        <h2>لوحة تحكم المدير - نظام المراقب برو</h2>
+        <button class="btn-logout" onclick="logout()">تسجيل الخروج 🚪</button>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" id="tabAdd" onclick="switchTab('add')">➕ إضافة موظف جديد</button>
+        <button class="tab-btn" id="tabUpdate" onclick="switchTab('update')">🔄 تحديث بيانات موظف</button>
+    </div>
+
+    <!-- نموذج الإضافة -->
+    <form id="addForm" class="form-section active">
+        <div class="section-title">البيانات الأساسية للموظف</div>
+        <div class="form-grid">
+            <div class="form-group span-2">
+                <label>اسم الموظف الكامل:</label>
+                <input type="text" id="add_name" required placeholder="الاسم الثلاثي واللقب">
+            </div>
+            <div class="form-group span-2">
+                <label>المسمى الوظيفي:</label>
+                <input type="text" id="add_job_title" required placeholder="مثال: مبرمج نظام">
+            </div>
+            <div class="form-group">
+                <label>الراتب الشهري:</label>
+                <input type="number" id="add_salary" step="0.01" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>ساعات العمل / الشفت:</label>
+                <input type="text" id="add_shift_hours" required placeholder="8 ساعات صباحي">
+            </div>
+            <div class="form-group">
+                <label>رقم الهاتف:</label>
+                <input type="text" id="add_phone" required placeholder="07xxxxxxxx">
+            </div>
+            <div class="form-group">
+                <label>تاريخ بدء العمل:</label>
+                <input type="date" id="add_start_date" required>
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 30px;">تفاصيل العنوان السكني</div>
+        <div class="form-grid">
+            <div class="form-group span-2">
+                <label>المحافظة:</label>
+                <input type="text" id="add_prov" required placeholder="بغداد">
+            </div>
+            <div class="form-group span-2">
+                <label>المدينة / القضاء:</label>
+                <input type="text" id="add_city" required placeholder="الكرخ">
+            </div>
+            <div class="form-group span-2">
+                <label>الحي:</label>
+                <input type="text" id="add_district" required placeholder="المنصور">
+            </div>
+            <div class="form-group">
+                <label>المحلة:</label>
+                <input type="text" id="add_mahalla" required placeholder="609">
+            </div>
+            <div class="form-group">
+                <label>الزقاق:</label>
+                <input type="text" id="add_alley" required placeholder="12">
+            </div>
+            <div class="form-group span-2">
+                <label>الدار / الشقة:</label>
+                <input type="text" id="add_house" required placeholder="5">
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 30px;">الوثائق الثبوتية</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>نوع الهوية:</label>
+                <select id="add_id_type" required>
+                    <option value="بطاقة الوطنية الموحدة">بطاقة الوطنية الموحدة</option>
+                    <option value="هوية الأحوال المدنية">هوية الأحوال المدنية</option>
+                    <option value="جواز السفر">جواز السفر</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>رقم الهوية:</label>
+                <input type="text" id="add_id_number" required placeholder="رقم الوثيقة">
+            </div>
+            <div class="form-group span-2">
+                <label>رقم بطاقة السكن:</label>
+                <input type="text" id="add_housing_card" required placeholder="رقم بطاقة السكن">
+            </div>
+            <button type="submit" class="btn-submit">حفظ وإضافة الموظف للنظام</button>
+        </div>
+    </form>
+
+    <!-- نموذج التحديث -->
+    <form id="updateForm" class="form-section">
+        <div class="form-group full-width" style="margin-bottom: 20px;">
+            <label style="font-size: 16px; color: var(--primary);">اختر الموظف المستهدف للتعديل:</label>
+            <select id="selectEmployee" onchange="fillUpdateForm()" required style="background: #e2e8f0; font-weight: bold;">
+                <option value="">-- اضغط هنا لاختيار الموظف من القائمة --</option>
+            </select>
+        </div>
+
+        <div class="section-title">تحديث البيانات الأساسية</div>
+        <div class="form-grid">
+            <div class="form-group span-2">
+                <label>اسم الموظف الكامل:</label>
+                <input type="text" id="up_name" required>
+            </div>
+            <div class="form-group span-2">
+                <label>المسمى الوظيفي:</label>
+                <input type="text" id="up_job_title" required>
+            </div>
+            <div class="form-group">
+                <label>الراتب الشهري:</label>
+                <input type="number" id="up_salary" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>ساعات العمل / الشفت:</label>
+                <input type="text" id="up_shift_hours" required>
+            </div>
+            <div class="form-group">
+                <label>رقم الهاتف:</label>
+                <input type="text" id="up_phone" required>
+            </div>
+            <div class="form-group">
+                <label>تاريخ بدء العمل:</label>
+                <input type="date" id="up_start_date" required>
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 30px;">تحديث العنوان السكني</div>
+        <div class="form-grid">
+            <div class="form-group span-2">
+                <label>المحافظة:</label>
+                <input type="text" id="up_prov" required>
+            </div>
+            <div class="form-group span-2">
+                <label>المدينة / القضاء:</label>
+                <input type="text" id="up_city" required>
+            </div>
+            <div class="form-group span-2">
+                <label>الحي:</label>
+                <input type="text" id="up_district" required>
+            </div>
+            <div class="form-group">
+                <label>المحلة:</label>
+                <input type="text" id="up_mahalla" required>
+            </div>
+            <div class="form-group">
+                <label>الزقاق:</label>
+                <input type="text" id="up_alley" required>
+            </div>
+            <div class="form-group span-2">
+                <label>الدار / الشقة:</label>
+                <input type="text" id="up_house" required>
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 30px;">تحديث الوثائق الثبوتية</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>نوع الهوية:</label>
+                <select id="up_id_type" required>
+                    <option value="بطاقة الوطنية الموحدة">بطاقة الوطنية الموحدة</option>
+                    <option value="هوية الأحوال المدنية">هوية الأحوال المدنية</option>
+                    <option value="جواز السفر">جواز السفر</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>رقم الهوية:</label>
+                <input type="text" id="up_id_number" required>
+            </div>
+            <div class="form-group span-2">
+                <label>رقم بطاقة السكن:</label>
+                <input type="text" id="up_housing_card" required>
+            </div>
+            <button type="submit" class="btn-submit btn-update">تحديث وحفظ التعديلات بنجاح</button>
+        </div>
+    </form>
+
+    <!-- شريط البحث والتحكم -->
+    <div class="control-bar">
+        <div class="search-box">
+            <input type="text" id="searchInput" onkeyup="filterEmployees()" placeholder="🔍 ابحث عن موظف بالاسم، الوظيفة، أو رقم الهاتف...">
+        </div>
+        <button class="btn-delete-all" onclick="deleteAllEmployees()">🗑️ حذف كافة الموظفين</button>
+    </div>
+
+    <!-- حاوية البطاقات -->
+    <div id="employeesContainer" class="employees-container"></div>
+</div>
+
+<script>
+    if (localStorage.getItem('isLoggedIn') !== 'true') {
+        window.location.href = 'login.html';
+    }
+
+    function logout() {
+        localStorage.removeItem('isLoggedIn');
+        window.location.href = 'login.html';
+    }
+
+    const apiUrl = '/api/employees';
+    let employeesData = [];
+
+    function switchTab(tab) {
+        document.getElementById('addForm').classList.toggle('active', tab === 'add');
+        document.getElementById('updateForm').classList.toggle('active', tab === 'update');
+        document.getElementById('tabAdd').classList.toggle('active', tab === 'add');
+        document.getElementById('tabUpdate').classList.toggle('active', tab === 'update');
+    }
+
+    async function fetchEmployees() {
+        try {
+            const res = await fetch(apiUrl);
+            employeesData = await res.json();
+            renderEmployees(employeesData);
+            updateSelectOptions(employeesData);
+        } catch (err) {
+            console.error('Error loading employees:', err);
+        }
+    }
+
+    function renderEmployees(data) {
+        const container = document.getElementById('employeesContainer');
+        container.innerHTML = '';
+
+        if (data.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 25px; font-weight: 600;">لا توجد سجلات مسجلة في النظام.</p>';
+            return;
+        }
+
+        data.forEach(emp => {
+            let dateStr = emp.start_date ? new Date(emp.start_date).toISOString().split('T')[0] : '-';
+            
+            container.innerHTML += `
+                <div class="employee-card">
+                    <div class="card-header">
+                        <span class="card-title">#${emp.id} -${emp.name || ''}</span>
+                        <span class="card-badge">${emp.job_title || 'بدون مسمى'}</span>
+                    </div>
+                    <div class="card-grid">
+                        <div class="info-item"><span>الراتب الشهري</span><strong>${emp.salary || 0} د.ع</strong></div>
+                        <div class="info-item"><span>ساعات العمل</span><strong>${emp.shift_hours || '-'}</strong></div>
+                        <div class="info-item"><span>رقم الهاتف</span><strong>${emp.phone || '-'}</strong></div>
+                        <div class="info-item"><span>تاريخ البدء</span><strong>${dateStr}</strong></div>
+                        <div class="info-item" style="grid-column: span 2;"><span>العنوان السكني</span><strong>${emp.province \vert{}\vert{} ''}،${emp.city || ''}، ح:${emp.district \vert{}\vert{} ''}، م:${emp.mahalla || ''}، ز:${emp.alley \vert{}\vert{} ''}، د:${emp.house_no || ''}</strong></div>
+                        <div class="info-item"><span>الوثيقة الرسمية</span><strong>${emp.id_type \vert{}\vert{} '-'}: (${emp.id_number || '-'})</strong></div>
+                        <div class="info-item"><span>رقم بطاقة السكن</span><strong>${emp.housing_card || '-'}</strong></div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-delete" onclick="deleteEmployee(${emp.id})">🗑️ حذف الموظف</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function updateSelectOptions(data) {
+        const select = document.getElementById('selectEmployee');
+        select.innerHTML = '<option value="">-- اضغط هنا لاختيار الموظف من القائمة --</option>';
+        data.forEach(emp => {
+            select.innerHTML += `<option value="${emp.id}">الموظف: ${emp.name} (${emp.job_title}) - رقم #${emp.id}</option>`;
+        });
+    }
+
+    function filterEmployees() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = employeesData.filter(emp => 
+            (emp.name && emp.name.toLowerCase().includes(query)) ||
+            (emp.job_title && emp.job_title.toLowerCase().includes(query)) ||
+            (emp.phone && emp.phone.includes(query))
+        );
+        renderEmployees(filtered);
+    }
+
+    async function deleteEmployee(id) {
+        if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الموظف؟')) return;
+        try {
+            const res = await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                alert('✅ تم حذف الموظف بنجاح');
+                fetchEmployees();
+            } else {
+                alert('❌ حدث خطأ أثناء الحذف');
+            }
+        } catch (err) {
+            console.error('Error deleting employee:', err);
+        }
+    }
+
+    async function deleteAllEmployees() {
+        if (!confirm('⚠️ تحذير: هل أنت متأكد تماماً من حذف كافة الموظفين من النظام؟')) return;
+        try {
+            const res = await fetch(`${apiUrl}/all`, { method: 'DELETE' });
+            if (res.ok) {
+                alert('✅ تم حذف كافة الموظفين بنجاح');
+                fetchEmployees();
+            } else {
+                alert('❌ حدث خطأ أثناء حذف السجلات');
+            }
+        } catch (err) {
+            console.error('Error deleting all employees:', err);
+        }
+    }
+
+    function fillUpdateForm() {
+        const id = document.getElementById('selectEmployee').value;
+        if (!id) return;
+        const emp = employeesData.find(e => e.id == id);
+        if (!emp) return;
+
+        document.getElementById('up_name').value = emp.name || '';
+        document.getElementById('up_job_title').value = emp.job_title || '';
+        document.getElementById('up_salary').value = emp.salary || '';
+        document.getElementById('up_shift_hours').value = emp.shift_hours || '';
+        document.getElementById('up_phone').value = emp.phone || '';
+        document.getElementById('up_start_date').value = emp.start_date ? new Date(emp.start_date).toISOString().split('T')[0] : '';
+
+        document.getElementById('up_prov').value = emp.province || '';
+        document.getElementById('up_city').value = emp.city || '';
+        document.getElementById('up_district').value = emp.district || '';
+        document.getElementById('up_mahalla').value = emp.mahalla || '';
+        document.getElementById('up_alley').value = emp.alley || '';
+        document.getElementById('up_house').value = emp.house_no || '';
+        
+        document.getElementById('up_id_type').value = emp.id_type || 'بطاقة الوطنية الموحدة';
+        document.getElementById('up_id_number').value = emp.id_number || '';
+        document.getElementById('up_housing_card').value = emp.housing_card || '';
+    }
+
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newEmp = {
+            name: document.getElementById('add_name').value.trim(),
+            job_title: document.getElementById('add_job_title').value,
+            salary: parseFloat(document.getElementById('add_salary').value) || 0,
+            shift_hours: document.getElementById('add_shift_hours').value,
+            phone: document.getElementById('add_phone').value,
+            start_date: document.getElementById('add_start_date').value,
+            province: document.getElementById('add_prov').value,
+            city: document.getElementById('add_city').value,
+            district: document.getElementById('add_district').value,
+            mahalla: document.getElementById('add_mahalla').value,
+            alley: document.getElementById('add_alley').value,
+            house_no: document.getElementById('add_house').value,
+            id_type: document.getElementById('add_id_type').value,
+            id_number: document.getElementById('add_id_number').value,
+            housing_card: document.getElementById('add_housing_card').value
+        };
+
+        const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newEmp)
+        });
+
+        if (res.ok) {
+            alert('✅ تم إضافة الموظف بنجاح!');
+            document.getElementById('addForm').reset();
+            fetchEmployees();
+        } else {
+            alert('❌ حدث خطأ أثناء الإضافة');
+        }
+    });
+
+    document.getElementById('updateForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('selectEmployee').value;
+        if (!id) return;
+
+        const updatedEmp = {
+            name: document.getElementById('up_name').value.trim(),
+            job_title: document.getElementById('up_job_title').value,
+            salary: parseFloat(document.getElementById('up_salary').value) || 0,
+            shift_hours: document.getElementById('up_shift_hours').value,
+            phone: document.getElementById('up_phone').value,
+            start_date: document.getElementById('up_start_date').value,
+            province: document.getElementById('up_prov').value,
+            city: document.getElementById('up_city').value,
+            district: document.getElementById('up_district').value,
+            mahalla: document.getElementById('up_mahalla').value,
+            alley: document.getElementById('up_alley').value,
+            house_no: document.getElementById('up_house').value,
+            id_type: document.getElementById('up_id_type').value,
+            id_number: document.getElementById('up_id_number').value,
+            housing_card: document.getElementById('up_housing_card').value
+        };
+
+        const res = await fetch(`${apiUrl}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedEmp)
+        });
+
+        if (res.ok) {
+            alert('✅ تم تحديث بيانات الموظف بنجاح!');
+            fetchEmployees();
+        } else {
+            alert('❌ حدث خطأ أثناء التحديث');
+        }
+    });
+
+    fetchEmployees();
+</script>
+
+</body>
+</html>
+
