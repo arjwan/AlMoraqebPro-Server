@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة الموظفين - نظام المراقب برو</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #312e81;
+            --accent: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-light: #f1f5f9;
+            --card-bg: #ffffff;
+            --border: #cbd5e1;
+            --text-main: #1c293b;
+        }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .register-card {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--primary);
+            font-weight: 900;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: 'Cairo', sans-serif;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: var(--accent); }
+        .device-info {
+            background: #f8fafc;
+            border: 1.5px dashed var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            font-family: 'Cairo', sans-serif;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover { background-color: var(--secondary); }
+        .msg {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .success-msg { color: var(--success); }
+        .error-msg { color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <div class="register-card">
+        <h2>تسجيل حساب موظف جديد</h2>
+        <div class="device-info">
+            🔒 سيتم ربط هذا الحساب بجهازك الحالي وبصمتك، ولن يعمل على أي جهاز آخر إلا بموافقة وتفعيل المدير مباشرة.
+        </div>
+
+        <form id="employeeRegisterForm" onsubmit="handleEmployeeRegister(event)">
+            <div class="form-group">
+                <label>الاسم الكامل</label>
+                <input type="text" id="empName" autocomplete="off" required placeholder="أدخل اسمك الثلاثي">
+            </div>
+
+            <div class="form-group">
+                <label>رقم الهاتف</label>
+                <input type="tel" id="empPhone" autocomplete="off" required placeholder="07xxxxxxxxx">
+            </div>
+
+            <div class="form-group">
+                <label>المسمى الوظيفي</label>
+                <input type="text" id="empJob" autocomplete="off" required placeholder="مثال: مراقب ميداني / محاسب">
+            </div>
+            
+            <div class="form-group">
+                <label>كلمة المرور الخاصة بالحساب</label>
+                <input type="password" id="empPass" autocomplete="new-password" required placeholder="أدخل كلمة مرور قوية">
+            </div>
+
+            <button type="submit" id="submitBtn">إنشاء وحفظ الحساب</button>
+            <div id="formMsg" class="msg"></div>
+        </form>
+    </div>
+
+    <script>
+        // توليد أو جلب معرف فريد للجهاز (Device ID) الخاص بالموظف لمنع فتحه على أجهزة أخرى
+        let deviceId = localStorage.getItem('employee_device_unique_id');
+        if (!deviceId) {
+            deviceId = 'device_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('employee_device_unique_id', deviceId);
+        }
+
+        async function handleEmployeeRegister(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('empName').value;
+            const phone = document.getElementById('empPhone').value;
+            const job_title = document.getElementById('empJob').value;
+            const password = document.getElementById('empPass').value;
+            const msgDiv = document.getElementById('formMsg');
+            const submitBtn = document.getElementById('submitBtn');
+
+            // محاكاة التقاط بصمة فريدة للجهاز
+            const fingerprint_id = "fp_" + Math.random().toString(36).substring(2, 10);
+
+            const employeeData = {
+                name,
+                phone,
+                job_title,
+                password,
+                device_id: deviceId,
+                fingerprint_id,
+                status: 'pending' // الحساب معلق لحين مراجعته واعتماده من لوحة المدير
+            };
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = "جاري إرسال الطلب...";
+
+                const response = await fetch('/api/employees/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(employeeData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    msgDiv.className = "msg success-msg";
+                    msgDiv.textContent = "✅ تم إنشاء الحساب بنجاح وهو الآن بانتظار تفعيل وموافقة المدير.";
+                    document.getElementById('employeeRegisterForm').reset();
+                } else {
+                    msgDiv.className = "msg error-msg";
+                    msgDiv.textContent = "❌ " + (result.message || "حدث خطأ أثناء التسجيل");
+                }
+            } catch (err) {
+                msgDiv.className = "msg error-msg";
+                msgDiv.textContent = "❌ تعذر الاتصال بالسيرفر. تأكد من اتصال الإنترنت.";
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "إنشاء وحفظ الحساب";
+            }
+        }
+    </script>
+</body>
+</html>
