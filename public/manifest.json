@@ -1,15 +1,60 @@
-{
-  "name": "نظام المراقب برو - الموظفين",
-  "short_name": "المراقب برو",
-  "start_url": "/register-employee.html",
-  "display": "standalone",
-  "background_color": "#f1f5f9",
-  "theme_color": "#0f172a",
-  "icons": [
-    {
-      "src": "icon.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    }
-  ]
-}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - تسجيل الدخول</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1b4b, #312e81, #120826);
+            color: #fff;
+            margin: 0; min-height: 100vh; display: flex; justify-content: center; align-items: center;
+        }
+        .box {
+            width: 90vw; max-width: 420px; background: #fff; color: var(--text-main);
+            padding: 35px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .form-group { margin-bottom: 20px; text-align: right; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; box-sizing: border-box; outline: none; }
+        .main-btn { background: var(--primary); color: #fff; width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .main-btn:hover { opacity: 0.9; }
+        .back-link { text-align: center; margin-top: 15px; color: var(--primary); text-decoration: none; display: block; font-size: 14px; font-weight: bold; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2 style="color: var(--primary); text-align: center; margin-top: 0;">تسجيل الدخول 🔑</h2>
+        <p style="text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">أدخل بيانات حسابك للوصول للوحة التحكم.</p>
+        
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>اسم المستخدم / البريد:</label>
+                <input type="text" required placeholder="أدخل اسم المستخدم...">
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور:</label>
+                <input type="password" required placeholder="أدخل كلمة المرور...">
+            </div>
+            <button type="submit" class="main-btn">دخول للنظام 🚀</button>
+        </form>
+        <a href="index.html" class="back-link">← العودة للرئيسية</a>
+    </div>
+
+    <script>
+        function handleLogin(e) {
+            e.preventDefault();
+            alert('تم تسجيل الدخول بنجاح! جاري تحويلك إلى لوحة التحكم الإدارية...');
+            window.location.href = 'admin.html'; // الانتقال لصفحة الإدارة
+        }
+    </script>
+</body>
+</html>

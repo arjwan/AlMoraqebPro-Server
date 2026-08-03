@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - سجل الحركات والعمليات والمزامنة</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #1e1b4b 0%, #31103f 50%, #0f0c1b 100%); color: #1e293b; min-height: 100vh; padding: 25px; }
+        .container { max-width: 1400px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 25px; }
+        h2 { color: #4f46e5; font-size: 22px; font-weight: 800; }
+        .back-btn { background: #eef2ff; color: #4f46e5; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; border: 1px solid #c7d2fe; transition: 0.2s; }
+        .back-btn:hover { background: #4f46e5; color: #fff; }
+        .sync-status-bar { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #166534; font-weight: bold; }
+        .table-container { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+        th, td { padding: 12px 15px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        th { background: #eef2ff; color: #4f46e5; font-weight: 800; }
+        .badge-synced { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .badge-pending { background: #fef9c3; color: #854d0e; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>📋 سجل الحركات والنشاطات (قاعدة البيانات المركزية)</h2>
+            <a href="admin.html" class="back-btn">← العودة للوحة التحكم</a>
+        </div>
+
+        <div class="sync-status-bar" id="connectionStatusBar">
+            <span id="connectionText">🌐 حالة الاتصال: جارِ التحقق...</span>
+            <button onclick="triggerSyncAndRefresh()" style="background: #166534; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold;">مزامنة وتحديث البيانات</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ت</th>
+                        <th>نوع الحركة</th>
+                        <th>تفاصيل النشاط</th>
+                        <th>معرف الموظف</th>
+                        <th>التوقيت</th>
+                        <th>حالة المزامنة</th>
+                    </tr>
+                </thead>
+                <tbody id="logsTableBody">
+                    <tr><td colspan="6" style="padding: 20px; color: #64748b;">جاري جلب السجلات من السيرفر...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const dbName = 'AlMoraqebPro_LocalDB';
+        const storeName = 'activity_logs';
+        let db = null;
+
+        function initDB() {
+            const request = indexedDB.open(dbName, 1);
+            request.onerror = (e) => console.error("خطأ في فتح قاعدة البيانات المحلية", e);
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                triggerSyncAndRefresh();
+            };
+            request.onupgradeneeded = (e) => {
+                let database = e.target.result;
+                if (!database.objectStoreNames.contains(storeName)) {
+                    database.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+                }
+            };
+        }
+
+        async function fetchLogsFromServer() {
+            try {
+                const response = await fetch('/api/system/activity-logs');
+                const data = await response.json();
+                if (data.success) {
+                    renderTable(data.logs);
+                }
+            } catch (err) {
+                console.warn("تعذر الجلب من السيرفر، جاري عرض السجلات المحلية...", err);
+                fetchLogsLocally();
+            }
+        }
+
+        function fetchLogsLocally() {
+            if (!db) return;
+            const transaction = db.transaction([storeName], "readonly");
+            const store = transaction.objectStore(storeName);
+            const request = store.getAll();
+            request.onsuccess = () => {
+                renderTable(request.result, true);
+            };
+        }
+
+        function renderTable(logs, isLocal = false) {
+            const tbody = document.getElementById('logsTableBody');
+            tbody.innerHTML = '';
+
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px; color: #64748b;">لا توجد حركات مسجلة حتى الآن.</td></tr>`;
+                return;
+            }
+
+            logs.forEach((log, index) => {
+                let statusBadge = isLocal 
+                    ? '<span class="badge-pending">محفوظ محلياً (بانتظار الاتصال)</span>' 
+                    : '<span class="badge-synced">متزامن على السيرفر</span>';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${index + 1}</b></td>
+                        <td style="font-weight: 700; color: #4f46e5;">${log.actionType}</td>
+                        <td>${log.details}</td>
+                        <td><b>${log.employeeId || 'النظام'}</b></td>
+                        <td dir="ltr">${(log.timestamp || '').replace('T', ' ').substring(0, 19)}</td>
+                        <td>${statusBadge}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function triggerSyncAndRefresh() {
+            if (!navigator.onLine || !db) {
+                fetchLogsLocally();
+                alert('⚠️ الجهاز غير متصل بالإنترنت. يتم عرض السجلات المحلية.');
+                return;
+            }
+
+            const transaction = db.transaction([storeName], "readwrite");
+            const store = transaction.objectStore(storeName);
+            const request = store.getAll();
+
+            request.onsuccess = async () => {
+                const logs = request.result;
+                for (let log of logs) {
+                    if (!log.synced) {
+                        try {
+                            await fetch('/api/system/activity-logs', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(log)
+                            });
+                            store.delete(log.id);
+                        } catch (e) {
+                            console.error("فشل مزامنة السجل:", log.id);
+                        }
+                    }
+                }
+                await fetchLogsFromServer();
+            };
+        }
+
+        window.addEventListener('online', () => {
+            document.getElementById('connectionText').innerHTML = "🟢 متصل بالإنترنت - يتم المزامنة وتحديث السيرفر الآن";
+            triggerSyncAndRefresh();
+        });
+
+        window.addEventListener('offline', () => {
+            document.getElementById('connectionText').innerHTML = "🔴 غير متصل بالإنترنت - يتم العرض من التخزين المحلي";
+            fetchLogsLocally();
+        });
+
+        window.onload = () => {
+            if (navigator.onLine) {
+                document.getElementById('connectionText').innerHTML = "🟢 متصل بالإنترنت - يتم جلب السجلات من السيرفر";
+            } else {
+                document.getElementById('connectionText').innerHTML = "🔴 غير متصل بالإنترنت - يتم العرض محلياً";
+            }
+            initDB();
+        };
+    </script>
+</body>
+</html>

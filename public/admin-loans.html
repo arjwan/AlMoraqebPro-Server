@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - إدارة السلف والقروض المتقدمة</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
+            color: #1e293b;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0284c7;
+        }
+
+        .back-btn {
+            background: #f1f5f9;
+            color: #0284c7;
+            padding: 12px 24px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 15px;
+            border: 1px solid #cbd5e1;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #0284c7;
+            color: #fff;
+        }
+
+        /* لوحة الملخص المالي الإجمالي */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 18px;
+            text-align: center;
+        }
+
+        .summary-card h4 {
+            font-size: 15px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .summary-card .value {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        /* نموذج إضافة سلفة جديدة */
+        .loan-form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 35px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        input, select {
+            background: #fff;
+            border: 2px solid #cbd5e1;
+            padding: 12px 15px;
+            border-radius: 12px;
+            color: #1e293b;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus, select:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 8px rgba(2, 132, 199, 0.3);
+        }
+
+        .btn-submit {
+            grid-column: span 4;
+            background: #0d9488;
+            color: #fff;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 800;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: #0f766e;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0369a1;
+            margin-bottom: 15px;
+            margin-top: 30px;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 25px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #f8fafc;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            text-align: center;
+            font-size: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 800;
+        }
+
+        .badge-status {
+            background: #dcfce7;
+            color: #15803d;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .badge-request {
+            background: #fef3c7;
+            color: #b45309;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .btn-approve { background: #16a34a; color: #fff; margin-left: 5px; }
+        .btn-approve:hover { background: #15803d; }
+        .btn-reject { background: #dc2626; color: #fff; }
+        .btn-reject:hover { background: #b91c1c; }
+        .btn-delete { background: #64748b; color: #fff; }
+        .btn-delete:hover { background: #475569; }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <div class="top-nav">
+            <h2>💳 إدارة السلف والقروض والطلبات المالية</h2>
+            <a href="admin.html" class="back-btn">← العودة إلى لوحة التحكم</a>
+        </div>
+
+        <!-- لوحة ملخص السلف الإجمالي -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <h4>إجمالي السلف الممنوحة</h4>
+                <div class="value" id="totalLoansVal" style="color: #0284c7;">0 د.ع</div>
+            </div>
+            <div class="summary-card">
+                <h4>إجمالي المبلغ المسدد</h4>
+                <div class="value" id="totalPaidVal" style="color: #16a34a;">0 د.ع</div>
+            </div>
+            <div class="summary-card">
+                <h4>المبلغ المتبقي بذمة الموظفين</h4>
+                <div class="value" id="totalRemainingVal" style="color: #dc2626;">0 د.ع</div>
+            </div>
+        </div>
+
+        <!-- نموذج منح سلفة جديدة مباشرة -->
+        <form id="loanForm" class="loan-form-grid">
+            <div class="form-group">
+                <label>اسم الموظف:</label>
+                <input type="text" id="loanEmpName" required placeholder="أدخل اسم الموظف...">
+            </div>
+            <div class="form-group">
+                <label>العنوان الوظيفي:</label>
+                <input type="text" id="loanJobTitle" required placeholder="العنوان الوظيفي...">
+            </div>
+            <div class="form-group">
+                <label>موقع العمل (الفرع):</label>
+                <input type="text" id="loanWorkplace" required placeholder="موقع العمل...">
+            </div>
+            <div class="form-group">
+                <label>مبلغ السلفة الإجمالي (د.ع):</label>
+                <input type="number" id="loanTotalAmount" required placeholder="مثال: 300000">
+            </div>
+            <div class="form-group">
+                <label>المبلغ المسدد (د.ع):</label>
+                <input type="number" id="loanPaidAmount" value="0" required>
+            </div>
+            <div class="form-group">
+                <label>قسط الاستقطاع الشهري (د.ع):</label>
+                <input type="number" id="loanMonthlyDeduct" required placeholder="مثال: 50000">
+            </div>
+            <div class="form-group">
+                <label>عدد مرات الحصول على سلفة:</label>
+                <input type="number" id="loanCount" value="1" required>
+            </div>
+            <div class="form-group">
+                <label>تاريخ السلفة:</label>
+                <input type="date" id="loanDate" required>
+            </div>
+            <button type="submit" class="btn-submit">➕ تسجيل وإضافة السلفة للنظام المالي</button>
+        </form>
+
+        <!-- قسم طلبات السلف الجديدة المقدمة -->
+        <div class="section-title">📥 طلبات السلف الجديدة الواردة من الموظفين:</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ت</th>
+                        <th>اسم الطالب</th>
+                        <th>العنوان الوظيفي</th>
+                        <th>موقع العمل</th>
+                        <th>المبلغ المطلوب</th>
+                        <th>عدد مرات الحصول على سلفة سابقة</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="requestsTableBody">
+                    <!-- الحقن الديناميكي للطلبات -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- قسم السلف النشطة والمسجلة -->
+        <div class="section-title">📋 سجل السلف النشطة والقروض الحالية:</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ت</th>
+                        <th>اسم الموظف</th>
+                        <th>العنوان الوظيفي</th>
+                        <th>موقع العمل</th>
+                        <th>مبلغ السلفة الإجمالي</th>
+                        <th>المبلغ المسدد</th>
+                        <th>المبلغ المتبقي</th>
+                        <th>الاستقطاع الشهري</th>
+                        <th>عدد السلف</th>
+                        <th>الحالة</th>
+                        <th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="loansTableBody">
+                    <!-- الحقن الديناميكي للسلف النشطة -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let initialLoans = [
+            { name: "أحمد محمد علي", jobTitle: "مطور أنظمة", workplace: "المقر الرئيسي", total: 300000, paid: 100000, deduct: 50000, count: 2, date: "2026-06-01", status: "نشطة ومستمرة" },
+            { name: "محمد عبد علي", jobTitle: "مختص شبكات", workplace: "فرع البصرة", total: 200000, paid: 50000, deduct: 30000, count: 1, date: "2026-07-01", status: "نشطة ومستمرة" }
+        ];
+
+        let initialRequests = [
+            { name: "علي الزيدي", jobTitle: "مشرف أمن", workplace: "المخزن الرئيسي", amount: 250000, count: 3 }
+        ];
+
+        function loadData() {
+            let loans = JSON.parse(localStorage.getItem('companyLoans')) || initialLoans;
+            let requests = JSON.parse(localStorage.getItem('companyLoanRequests')) || initialRequests;
+
+            const loansTable = document.getElementById('loansTableBody');
+            const requestsTable = document.getElementById('requestsTableBody');
+            
+            loansTable.innerHTML = '';
+            requestsTable.innerHTML = '';
+
+            let sumTotal = 0;
+            let sumPaid = 0;
+            let sumRemaining = 0;
+
+            // عرض السلف النشطة وحساب المجاميع
+            loans.forEach((loan, index) => {
+                let remaining = loan.total - loan.paid;
+                sumTotal += Number(loan.total);
+                sumPaid += Number(loan.paid);
+                sumRemaining += Number(remaining);
+
+                loansTable.innerHTML += `
+                    <tr>
+                        <td><b>${index + 1}</b></td>
+                        <td style="font-weight: 700; color: #0f172a;">${loan.name}</td>
+                        <td>${loan.jobTitle}</td>
+                        <td>${loan.workplace}</td>
+                        <td style="color: #0284c7; font-weight: bold;">${Number(loan.total).toLocaleString()} د.ع</td>
+                        <td style="color: #16a34a; font-weight: bold;">${Number(loan.paid).toLocaleString()} د.ع</td>
+                        <td style="color: #dc2626; font-weight: bold;">${Number(remaining).toLocaleString()} د.ع</td>
+                        <td>${Number(loan.deduct).toLocaleString()} د.ع</td>
+                        <td><span style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 6px; font-weight: bold;">${loan.count} مرات</span></td>
+                        <td><span class="badge-status">${loan.status}</span></td>
+                        <td><button class="btn-action btn-delete" onclick="deleteLoan(${index})">حذف / تسديد</button></td>
+                    </tr>
+                `;
+            });
+
+            // تحديث البطاقات الإجمالية في الأعلى
+            document.getElementById('totalLoansVal').innerText = sumTotal.toLocaleString() + ' د.ع';
+            document.getElementById('totalPaidVal').innerText = sumPaid.toLocaleString() + ' د.ع';
+            document.getElementById('totalRemainingVal').innerText = sumRemaining.toLocaleString() + ' د.ع';
+
+            // عرض الطلبات الجديدة
+            if (requests.length === 0) {
+                requestsTable.innerHTML = `<tr><td colspan="7" style="padding: 20px; color: #64748b;">لا توجد طلبات سلف جديدة معلقة</td></tr>`;
+            } else {
+                requests.forEach((req, index) => {
+                    requestsTable.innerHTML += `
+                        <tr>
+                            <td><b>${index + 1}</b></td>
+                            <td style="font-weight: 700; color: #0f172a;">${req.name}</td>
+                            <td>${req.jobTitle}</td>
+                            <td>${req.workplace}</td>
+                            <td style="color: #0284c7; font-weight: bold;">${Number(req.amount).toLocaleString()} د.ع</td>
+                            <td><span class="badge-request">${req.count} مرات</span></td>
+                            <td>
+                                <button class="btn-action btn-approve" onclick="approveRequest(${index})">✔ موافقة وصرف</button>
+                                <button class="btn-action btn-reject" onclick="rejectRequest(${index})">✖ رفض</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        document.getElementById('loanForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let name = document.getElementById('loanEmpName').value;
+            let jobTitle = document.getElementById('loanJobTitle').value;
+            let workplace = document.getElementById('loanWorkplace').value;
+            let total = parseFloat(document.getElementById('loanTotalAmount').value);
+            let paid = parseFloat(document.getElementById('loanPaidAmount').value);
+            let deduct = parseFloat(document.getElementById('loanMonthlyDeduct').value);
+            let count = parseInt(document.getElementById('loanCount').value);
+            let date = document.getElementById('loanDate').value;
+
+            let loans = JSON.parse(localStorage.getItem('companyLoans')) || initialLoans;
+            loans.push({ name, jobTitle, workplace, total, paid, deduct, count, date, status: "نشطة ومستمرة" });
+
+            localStorage.setItem('companyLoans', JSON.stringify(loans));
+            alert('تم تسجيل السلفة بنجاح وتحديث مجاميع النظام!');
+            document.getElementById('loanForm').reset();
+            loadData();
+        });
+
+        function approveRequest(index) {
+            let requests = JSON.parse(localStorage.getItem('companyLoanRequests')) || initialRequests;
+            let loans = JSON.parse(localStorage.getItem('companyLoans')) || initialLoans;
+            
+            let req = requests[index];
+            loans.push({
+                name: req.name,
+                jobTitle: req.jobTitle,
+                workplace: req.workplace,
+                total: req.amount,
+                paid: 0,
+                deduct: Math.round(req.amount / 6), // قسط افتراضي على 6 أشهر
+                count: req.count + 1,
+                date: new Date().toISOString().split('T')[0],
+                status: "نشطة ومستمرة"
+            });
+
+            requests.splice(index, 1);
+            localStorage.setItem('companyLoans', JSON.stringify(loans));
+            localStorage.setItem('companyLoanRequests', JSON.stringify(requests));
+            alert('تمت الموافقة على الطلب ونقله إلى سجل السلف النشطة بنجاح.');
+            loadData();
+        }
+
+        function rejectRequest(index) {
+            if (confirm('هل أنت متأكد من رفض طلب السلفة؟')) {
+                let requests = JSON.parse(localStorage.getItem('companyLoanRequests')) || initialRequests;
+                requests.splice(index, 1);
+                localStorage.setItem('companyLoanRequests', JSON.stringify(requests));
+                loadData();
+            }
+        }
+
+        function deleteLoan(index) {
+            if (confirm('هل أنت متأكد من حذف هذه السلفة من السجل؟')) {
+                let loans = JSON.parse(localStorage.getItem('companyLoans')) || initialLoans;
+                loans.splice(index, 1);
+                localStorage.setItem('companyLoans', JSON.stringify(loans));
+                loadData();
+            }
+        }
+
+        window.onload = () => {
+            if (!localStorage.getItem('companyLoans')) {
+                localStorage.setItem('companyLoans', JSON.stringify(initialLoans));
+            }
+            if (!localStorage.getItem('companyLoanRequests')) {
+                localStorage.setItem('companyLoanRequests', JSON.stringify(initialRequests));
+            }
+            loadData();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - إنشاء حساب جديد والتفعيل</title>
+    <style>
+        :root {
+            --success: #16a34a;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1b4b, #312e81, #120826);
+            color: #fff;
+            margin: 0; min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            padding: 20px 0;
+        }
+        .box {
+            width: 90vw; max-width: 450px; background: #fff; color: var(--text-main);
+            padding: 35px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .form-group { margin-bottom: 15px; text-align: right; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; }
+        .form-group input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none; }
+        .form-group input:focus { border-color: var(--success); }
+        .main-btn { background: var(--success); color: #fff; width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .main-btn:hover { opacity: 0.9; }
+        .back-link { text-align: center; margin-top: 15px; color: var(--success); text-decoration: none; display: block; font-size: 14px; font-weight: bold; }
+        .back-link:hover { text-decoration: underline; }
+        .key-info { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2 style="color: var(--success); text-align: center; margin-top: 0;">إنشاء حساب جديد 👤</h2>
+        <p style="text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">أدخل بيانات شركتك ومفتاح التفعيل المعتمد.</p>
+        
+        <form onsubmit="handleRegister(event)">
+            <!-- 1. اسم الشركة -->
+            <div class="form-group">
+                <label>اسم الشركة:</label>
+                <input type="text" id="regCompany" required placeholder="أدخل اسم الشركة...">
+            </div>
+
+            <!-- 2. اسم المستخدم -->
+            <div class="form-group">
+                <label>اسم المستخدم:</label>
+                <input type="text" id="regUser" required placeholder="أدخل اسم المستخدم...">
+            </div>
+
+            <!-- 3. كلمة المرور -->
+            <div class="form-group">
+                <label>كلمة المرور:</label>
+                <input type="password" id="regPass" required placeholder="أدخل كلمة المرور...">
+            </div>
+
+            <!-- 4. تأكيد كلمة المرور -->
+            <div class="form-group">
+                <label>تأكيد كلمة المرور:</label>
+                <input type="password" id="regConfirmPass" required placeholder="أعد إدخال كلمة المرور...">
+            </div>
+
+            <!-- 5. البريد الإلكتروني -->
+            <div class="form-group">
+                <label>البريد الإلكتروني:</label>
+                <input type="email" id="regEmail" required placeholder="name@company.com">
+            </div>
+
+            <!-- 6. مفتاح التفعيل -->
+            <div class="form-group">
+                <label>مفتاح التفعيل:</label>
+                <input type="text" id="regKey" required placeholder="أدخل مفتاح التفعيل (تجريبي أو معتمد)...">
+                <div class="key-info">
+                    🔹 <b>للتجربة الثابتة:</b> PRO-2026<br>
+                    🔹 <b>مفاتيح معتمدة مدعومة:</b> مفتاح دائمي (`LIFETIME-...`) أو سنوي (`ANNUAL-...`)
+                </div>
+            </div>
+
+            <button type="submit" class="main-btn">تسجيل وحفظ الحساب ✅</button>
+        </form>
+        <a href="index.html" class="back-link">← العودة للرئيسية</a>
+    </div>
+
+    <script>
+        function handleRegister(e) {
+            e.preventDefault();
+            
+            let company = document.getElementById('regCompany').value.trim();
+            let user = document.getElementById('regUser').value.trim();
+            let pass = document.getElementById('regPass').value.trim();
+            let confirmPass = document.getElementById('regConfirmPass').value.trim();
+            let email = document.getElementById('regEmail').value.trim();
+            let activationKey = document.getElementById('regKey').value.trim();
+
+            // التحقق من تطابق كلمة المرور
+            if (pass !== confirmPass) {
+                alert('⚠️ خطأ: كلمة المرور وتأكيد كلمة المرور غير متطابقين!');
+                return;
+            }
+
+            let licenseType = '';
+            
+            // التحقق من نوع مفتاح التفعيل
+            if (activationKey === 'PRO-2026') {
+                licenseType = 'تجريبي (ثابت)';
+            } else if (activationKey.startsWith('LIFETIME-') || activationKey === 'ADMIN-LIFETIME-PRO') {
+                licenseType = 'دائمي (معتمد)';
+            } else if (activationKey.startsWith('ANNUAL-') || activationKey === 'ADMIN-ANNUAL-PRO') {
+                licenseType = 'سنوي (معتمد)';
+            } else {
+                alert('⚠️ مفتاح التفعيل غير صحيح أو منتهي الصلاحية!\n\nمفتاح التجربة المتاح: PRO-2026');
+                return;
+            }
+
+            // حفظ البيانات والصلاحيات في التخزين المحلي للمتصفح
+            localStorage.setItem('savedCompany', company);
+            localStorage.setItem('savedUser', user);
+            localStorage.setItem('savedPass', pass);
+            localStorage.setItem('savedEmail', email);
+            localStorage.setItem('licenseType', licenseType);
+
+            alert('تم إنشاء وتفعيل الحساب بنجاح (' + licenseType + ')! سيتم تحويلك لصفحة تسجيل الدخول.');
+            
+            // التوجيه التلقائي لصفحة تسجيل الدخول
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

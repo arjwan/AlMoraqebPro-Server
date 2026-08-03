@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - مراقبة سجلات الحضور والتقارير المتقدمة</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
+            color: #1e293b;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1750px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0284c7;
+        }
+
+        .back-btn {
+            background: #f1f5f9;
+            color: #0284c7;
+            padding: 12px 24px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 15px;
+            border: 1px solid #cbd5e1;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #0284c7;
+            color: #fff;
+        }
+
+        /* شريط البحث والفلترة السريع */
+        .filter-toolbar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 18px;
+            border: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .filter-group input, .filter-group select {
+            padding: 10px 14px;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #fff;
+            outline: none;
+        }
+
+        .filter-group input:focus, .filter-group select:focus {
+            border-color: #0284c7;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #f8fafc;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            text-align: center;
+            font-size: 13px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 800;
+        }
+
+        .badge-match {
+            background: #dcfce7;
+            color: #16a34a;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .badge-status {
+            background: #ccfbf1;
+            color: #0f766e;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .badge-shift {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .overtime-badge {
+            background: #fef3c7;
+            color: #b45309;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .days-complete {
+            color: #16a34a;
+            font-weight: 800;
+            background: #f0fdf4;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .days-missing {
+            color: #dc2626;
+            font-weight: 800;
+            background: #fef2f2;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <div class="top-nav">
+            <h2>📸 2. مراقبة سجلات الحضور بالصورة الحية، الشفتات وتقارير الدوام المتقدمة</h2>
+            <a href="admin.html" class="back-btn">← العودة إلى لوحة التحكم الرئيسية</a>
+        </div>
+
+        <!-- شريط الفلترة والبحث -->
+        <div class="filter-toolbar">
+            <div class="filter-group">
+                <label>بحث بالموظف أو الشفت أو الموقع:</label>
+                <input type="text" id="searchInput" placeholder="🔍 اكتب اسم الموظف أو الفرع..." onkeyup="loadAttendanceRecords()">
+            </div>
+            <div class="filter-group">
+                <label>تصفية حسب التاريخ:</label>
+                <input type="date" id="dateFilter" onchange="loadAttendanceRecords()">
+            </div>
+            <div class="filter-group" style="flex: 0; justify-content: flex-end;">
+                <label>&nbsp;</label>
+                <button onclick="resetFilters()" style="padding: 10px 20px; background: #64748b; color: #fff; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;">إعادة تعيين</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ت</th>
+                        <th>اسم الموظف</th>
+                        <th>موقع العمل</th>
+                        <th>الشفت المُضاف إليه</th>
+                        <th>حالة البصمة</th>
+                        <th>التاريخ</th>
+                        <th>وقت الحضور</th>
+                        <th>وقت الانصراف</th>
+                        <th>الوقت الإضافي</th>
+                        <th>أيام العمل الكاملة</th>
+                        <th>الأيام الناقصة</th>
+                        <th>حالة الانصراف</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceTableBody">
+                    <!-- يتم حقن البيانات ديناميكياً هنا -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // بيانات تجريبية افتراضية للمراقبة في حال لم تتوفر بيانات حية مخزنة مسبقاً
+        const sampleAttendance = [
+            {
+                name: "أحمد محمد علي",
+                workplace: "المقر الرئيسي",
+                shiftName: "الشفت الصباحي الأساسي",
+                faceStatus: "مطابق 100%",
+                date: "2026-08-02",
+                attTime: "08:00 ص",
+                depTime: "04:15 م",
+                overtime: "ساعة و 15 دقيقة",
+                completeDays: 22,
+                missingDays: 1,
+                depStatus: "منصرف نظامي"
+            },
+            {
+                name: "محمد عبد علي",
+                workplace: "فرع البصرة",
+                shiftName: "الشفت المسائي",
+                faceStatus: "مطابق 98%",
+                date: "2026-08-02",
+                attTime: "03:00 م",
+                depTime: "11:00 م",
+                overtime: "لا يوجد",
+                completeDays: 20,
+                missingDays: 3,
+                depStatus: "منصرف نظامي"
+            },
+            {
+                name: "علي الزيدي",
+                workplace: "المخزن الرئيسي",
+                shiftName: "شفت استثنائي/خاص",
+                faceStatus: "مطابق 99%",
+                date: "2026-08-02",
+                attTime: "06:30 ص",
+                depTime: "01:00 م",
+                overtime: "45 دقيقة",
+                completeDays: 23,
+                missingDays: 0,
+                depStatus: "منصرف مبكر"
+            }
+        ];
+
+        function loadAttendanceRecords() {
+            const tableBody = document.getElementById('attendanceTableBody');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const dateVal = document.getElementById('dateFilter').value;
+
+            // جلب البيانات من LocalStorage أو استخدام العينات الافتراضية
+            let records = JSON.parse(localStorage.getItem('companyAttendanceLogs')) || sampleAttendance;
+
+            tableBody.innerHTML = '';
+
+            const filtered = records.filter(item => {
+                const matchText = (item.name || '').toLowerCase().includes(searchVal) ||
+                                  (item.workplace || '').toLowerCase().includes(searchVal) ||
+                                  (item.shiftName || '').toLowerCase().includes(searchVal);
+                const matchDate = dateVal ? item.date === dateVal : true;
+                return matchText && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="12" style="padding: 30px; color: #64748b; font-size: 15px;">لا توجد سجلات حضور مطابقة للبحث</td></tr>`;
+                return;
+            }
+
+            filtered.forEach((rec, index) => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td><b>${index + 1}</b></td>
+                        <td style="font-weight: 700; color: #0f172a;">${rec.name}</td>
+                        <td>${rec.workplace}</td>
+                        <td><span class="badge-shift">${rec.shiftName || 'شفت قياسي عام'}</span></td>
+                        <td><span class="badge-match">${rec.faceStatus}</span></td>
+                        <td dir="ltr" style="font-weight: bold;">${rec.date}</td>
+                        <td dir="ltr" style="color: #0284c7; font-weight: bold;">${rec.attTime}</td>
+                        <td dir="ltr" style="color: #0369a1; font-weight: bold;">${rec.depTime || '-- : --'}</td>
+                        <td><span class="overtime-badge">${rec.overtime || 'لا يوجد'}</span></td>
+                        <td><span class="days-complete">${rec.completeDays || 0} يوم</span></td>
+                        <td><span class="days-missing">${rec.missingDays || 0} يوم</span></td>
+                        <td><span class="badge-status">${rec.depStatus}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('dateFilter').value = '';
+            loadAttendanceRecords();
+        }
+
+        window.onload = () => {
+            // حفظ عينات تجريبية أولية إذا لم تكن موجودة لتعمل الصفحة بشكل مذهل وفوري
+            if (!localStorage.getItem('companyAttendanceLogs')) {
+                localStorage.setItem('companyAttendanceLogs', JSON.stringify(sampleAttendance));
+            }
+            loadAttendanceRecords();
+        };
+    </script>
+</body>
+</html>

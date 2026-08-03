@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - إدارة الفروع والمخازن ومقر الشركة</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
+            color: #1e293b;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 30px;
+            font-weight: 800;
+            color: #0284c7;
+        }
+
+        .back-btn {
+            background: #f1f5f9;
+            color: #0284c7;
+            padding: 12px 24px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+            border: 1px solid #cbd5e1;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #0284c7;
+            color: #fff;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0369a1;
+            margin-bottom: 15px;
+            margin-top: 25px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 4;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        input, select {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            padding: 12px 15px;
+            border-radius: 12px;
+            color: #1e293b;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus, select:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 8px rgba(2, 132, 199, 0.2);
+        }
+
+        .btn-submit {
+            grid-column: span 4;
+            background: #0d9488;
+            color: #fff;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 800;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: #0f766e;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #f8fafc;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: center;
+            font-size: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 800;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .badge-hq { background: #fee2e2; color: #991b1b; }
+        .badge-branch { background: #e0f2fe; color: #0369a1; }
+        .badge-warehouse { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <div class="top-nav">
+            <h2>🏢 إدارة مقر الشركة، الفروع، والمخازن</h2>
+            <a href="admin.html" class="back-btn">← العودة لوحة التحكم</a>
+        </div>
+
+        <form id="branchForm" class="form-grid">
+            <div class="form-group">
+                <label>نوع الموقع:</label>
+                <select id="siteType" required onchange="toggleSiteNameLabel()">
+                    <option value="مقر الشركة الرئيسي">1. مقر الشركة الرئيسي</option>
+                    <option value="فرع">2. فرع (مثل فرع البصرة)</option>
+                    <option value="مخزن">مخزن</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label id="nameLabel">اسم الشركة / الموقع:</label>
+                <input type="text" id="siteName" required placeholder="أدخل اسم الشركة أو الفرع...">
+            </div>
+
+            <div class="form-group">
+                <label>خط العرض (Latitude):</label>
+                <input type="text" id="siteLat" placeholder="33.3152">
+            </div>
+
+            <div class="form-group">
+                <label>خط الطول (Longitude):</label>
+                <input type="text" id="siteLng" placeholder="44.3661">
+            </div>
+
+            <div class="section-title full-width">📍 العنوان التفصيلي:</div>
+
+            <div class="form-group">
+                <label>المحافظة:</label>
+                <input type="text" id="siteProvince" required placeholder="المحافظة...">
+            </div>
+
+            <div class="form-group">
+                <label>المدينة:</label>
+                <input type="text" id="siteCity" required placeholder="المدينة...">
+            </div>
+
+            <div class="form-group">
+                <label>الحي أو الشارع:</label>
+                <input type="text" id="siteDistrict" placeholder="الحي أو الشارع...">
+            </div>
+
+            <div class="form-group">
+                <label>المحلة:</label>
+                <input type="text" id="siteMahalla" placeholder="رقم المحلة...">
+            </div>
+
+            <div class="form-group">
+                <label>الزقاق:</label>
+                <input type="text" id="siteAlley" placeholder="رقم الزقاق...">
+            </div>
+
+            <div class="form-group">
+                <label>رقم الدار أو البناية:</label>
+                <input type="text" id="siteBuilding" placeholder="رقم الدار / البناية...">
+            </div>
+
+            <button type="submit" class="btn-submit">➕ إضافة وتثبيت الموقع في النظام</button>
+        </form>
+
+        <div class="section-title">📋 قائمة مقر الشركة، الفروع، والمخازن المسجلة:</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>نوع الموقع</th>
+                        <th>اسم الشركة / الفرع</th>
+                        <th>الإحداثيات (Lat / Lng)</th>
+                        <th>العنوان التفصيلي (محافظة / مدينة / حي أو شارع / محلة / زقاق / دار)</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="branchesTableBody">
+                    <!-- يتم جلب البيانات هنا -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function toggleSiteNameLabel() {
+            const type = document.getElementById('siteType').value;
+            const label = document.getElementById('nameLabel');
+            if (type === 'مقر الشركة الرئيسي') {
+                label.innerText = 'اسم الشركة (المقر الرئيسي):';
+            } else {
+                label.innerText = 'اسم الفرع / المخزن (مثل فرع البصرة):';
+            }
+        }
+
+        function loadBranches() {
+            const tableBody = document.getElementById('branchesTableBody');
+            const branches = JSON.parse(localStorage.getItem('companyBranches')) || [];
+            tableBody.innerHTML = '';
+
+            if (branches.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" style="color: #64748b; padding: 30px; font-size: 16px;">لا توجد مواقع مسجلة حالياً</td></tr>`;
+                return;
+            }
+
+            branches.forEach((b, index) => {
+                let badgeClass = 'badge-branch';
+                if (b.type === 'مقر الشركة الرئيسي') badgeClass = 'badge-hq';
+                if (b.type === 'مخزن') badgeClass = 'badge-warehouse';
+
+                const fullAddress = `${b.province} / ${b.city} / ${b.district || '-'} / محلة ${b.mahalla || '-'} / زقاق ${b.alley || '-'} / دار ${b.building || '-'}`;
+                const coords = b.lat && b.lng ? `${b.lat}, ${b.lng}` : 'غير محدد';
+
+                tableBody.innerHTML += `
+                    <tr>
+                        <td><span class="badge ${badgeClass}">${b.type}</span></td>
+                        <td><b>${b.name}</b></td>
+                        <td style="direction: ltr; font-family: monospace;">${coords}</td>
+                        <td>${fullAddress}</td>
+                        <td><button class="btn-delete" onclick="deleteBranch(${index})">حذف</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('branchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newBranch = {
+                type: document.getElementById('siteType').value,
+                name: document.getElementById('siteName').value,
+                lat: document.getElementById('siteLat').value,
+                lng: document.getElementById('siteLng').value,
+                province: document.getElementById('siteProvince').value,
+                city: document.getElementById('siteCity').value,
+                district: document.getElementById('siteDistrict').value,
+                mahalla: document.getElementById('siteMahalla').value,
+                alley: document.getElementById('siteAlley').value,
+                building: document.getElementById('siteBuilding').value
+            };
+
+            let branches = JSON.parse(localStorage.getItem('companyBranches')) || [];
+            branches.push(newBranch);
+            localStorage.setItem('companyBranches', JSON.stringify(branches));
+            
+            alert('تمت إضافة الموقع بنجاح!');
+            document.getElementById('branchForm').reset();
+            toggleSiteNameLabel();
+            loadBranches();
+        });
+
+        function deleteBranch(index) {
+            if (confirm('هل أنت متأكد من حذف هذا الموقع؟')) {
+                let branches = JSON.parse(localStorage.getItem('companyBranches')) || [];
+                branches.splice(index, 1);
+                localStorage.setItem('companyBranches', JSON.stringify(branches));
+                loadBranches();
+            }
+        }
+
+        window.onload = loadBranches;
+    </script>
+</body>
+</html>

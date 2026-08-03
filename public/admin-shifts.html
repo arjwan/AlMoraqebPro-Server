@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - إدارة الشفتات وأوقات الدوام المتقدمة</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
+            color: #1e293b;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1550px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0284c7;
+        }
+
+        .back-btn {
+            background: #f1f5f9;
+            color: #0284c7;
+            padding: 12px 24px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+            border: 1px solid #cbd5e1;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #0284c7;
+            color: #fff;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0369a1;
+            margin-bottom: 12px;
+            margin-top: 20px;
+            grid-column: span 4;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 4;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        input, select {
+            background: #fff;
+            border: 2px solid #cbd5e1;
+            padding: 12px 15px;
+            border-radius: 12px;
+            color: #1e293b;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus, select:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 8px rgba(2, 132, 199, 0.3);
+        }
+
+        .time-box {
+            display: flex;
+            gap: 5px;
+        }
+
+        .time-box input {
+            flex: 2;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .time-box select {
+            flex: 1;
+            font-weight: bold;
+            background: #f1f5f9;
+        }
+
+        .employees-dropdown-container {
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            background: #fff;
+            padding: 10px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .employee-search-box {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .employee-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .actions-panel {
+            grid-column: span 4;
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .btn-submit {
+            flex: 2;
+            background: #0d9488;
+            color: #fff;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 800;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: #0f766e;
+        }
+
+        .btn-cancel-edit {
+            flex: 1;
+            background: #64748b;
+            color: #fff;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 800;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            display: none;
+        }
+
+        .search-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+
+        .search-toolbar input {
+            max-width: 350px;
+            padding: 10px 15px;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #f8fafc;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 14px;
+            text-align: center;
+            font-size: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 800;
+        }
+
+        .btn-edit {
+            background: #0284c7;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .btn-edit:hover {
+            background: #0369a1;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+
+        .badge-special {
+            background: #f59e0b;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <div class="top-nav">
+            <h2>⏰ إدارة الشفتات، الأوقات الاستثنائية، وبحث الموظفين</h2>
+            <a href="admin.html" class="back-btn">← العودة لوحة التحكم</a>
+        </div>
+
+        <form id="shiftForm" class="form-grid">
+            <input type="hidden" id="editIndex" value="-1">
+
+            <div class="form-group">
+                <label>اسم الشركة:</label>
+                <input type="text" id="companyName" required placeholder="اسم الشركة...">
+            </div>
+
+            <div class="form-group">
+                <label>اسم الشفت:</label>
+                <input type="text" id="shiftName" required placeholder="مثال: الشفت الصباحي الأساسي">
+            </div>
+
+            <div class="form-group">
+                <label>مكان عمل الشفت (الفرع):</label>
+                <select id="shiftWorkplace" required>
+                    <option value="">-- اختر الفرع أو المقر الرئيسي --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>نوع الشفت:</label>
+                <select id="shiftType" required>
+                    <option value="عادي">شفت قياسي (أوقات موحدة)</option>
+                    <option value="استثنائي/خاص">شفت استثنائي (أوقات خارج الدوام الرسمي)</option>
+                </select>
+            </div>
+
+            <div class="form-group full-width">
+                <label>اختر الموظفين (يدعم القوائم الضخمة ومئات الأسماء):</label>
+                <div class="employees-dropdown-container">
+                    <input type="text" id="empSearchFilter" class="employee-search-box" placeholder="🔍 ابحث عن موظف لتحديده بسرعة..." onkeyup="filterEmployeeList()">
+                    <div id="employeesCheckboxList">
+                        <!-- يتم حقن أسماء الموظفين هنا ديناميكياً -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">📥 توقيتات الحضور وسماحية التأخير:</div>
+
+            <div class="form-group">
+                <label>وقت الحضور (من):</label>
+                <div class="time-box">
+                    <input type="text" id="attFrom" required placeholder="08:00">
+                    <select id="attFromP">
+                        <option value="ص">ص</option>
+                        <option value="م">م</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>وقت الحضور (إلى):</label>
+                <div class="time-box">
+                    <input type="text" id="attTo" required placeholder="09:00">
+                    <select id="attToP">
+                        <option value="ص">ص</option>
+                        <option value="م">م</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+                <label>فترة السماح للحضور (بالدقائق):</label>
+                <input type="number" id="attGrace" value="15" required>
+            </div>
+
+            <div class="section-title">📤 توقيتات الانصراف والوقت الإضافي:</div>
+
+            <div class="form-group">
+                <label>وقت الانصراف (من):</label>
+                <div class="time-box">
+                    <input type="text" id="depFrom" required placeholder="03:00">
+                    <select id="depFromP">
+                        <option value="م">م</option>
+                        <option value="ص">ص</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>وقت الانصراف (إلى):</label>
+                <div class="time-box">
+                    <input type="text" id="depTo" required placeholder="04:00">
+                    <select id="depToP">
+                        <option value="م" selected>م</option>
+                        <option value="ص">ص</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>فترة السماح للانصراف (بالدقائق):</label>
+                <input type="number" id="depGrace" value="10" required>
+            </div>
+
+            <div class="form-group">
+                <label>حساب الوقت الإضافي:</label>
+                <input type="text" value="بعد مرور 60 دقيقة من وقت الخروج" disabled style="background:#e2e8f0; color:#475569; font-weight:bold;">
+            </div>
+
+            <div class="actions-panel">
+                <button type="submit" class="btn-submit" id="submitBtn">➕ حفظ وإضافة الشفت للنظام</button>
+                <button type="button" class="btn-cancel-edit" id="cancelEditBtn" onclick="cancelEditMode()">إلغاء التعديل</button>
+            </div>
+        </form>
+
+        <div class="search-toolbar">
+            <div class="section-title" style="margin:0; border:none;">📋 قائمة الشفتات المسجلة:</div>
+            <input type="text" id="globalSearchInput" placeholder="🔍 بحث عن موظف أو شفت أو فرع..." onkeyup="loadShifts()">
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>نوع الشفت</th>
+                        <th>اسم الشركة</th>
+                        <th>اسم الشفت</th>
+                        <th>مكان العمل</th>
+                        <th>الحضور (من - إلى)</th>
+                        <th>سماح الحضور</th>
+                        <th>الانصراف (من - إلى)</th>
+                        <th>سماح الانصراف</th>
+                        <th>الموظفون المشمولون</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="shiftsTableBody">
+                    <!-- البيانات هنا -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const mockAllEmployees = [
+            "محمد عبد علي", "علي الزيدي", "أحمد كاظم", "حسين علي", "فاطمة حسن",
+            "زينب عبد الله", "كرار محمد", "مصطفى حسن", "سجاد كريم", "نور الهدى",
+            "يوسف أحمد", "عمار علي", "محمود عبد الرزاق", "زين العابدين", "باقر محمد"
+        ];
+
+        function loadWorkplaces() {
+            const select = document.getElementById('shiftWorkplace');
+            const branches = JSON.parse(localStorage.getItem('companyBranches')) || [];
+            
+            select.innerHTML = '<option value="">-- اختر الفرع أو المقر الرئيسي --</option>';
+            branches.forEach(b => {
+                select.innerHTML += `<option value="${b.name} (${b.type})">${b.name} - ${b.type}</option>`;
+            });
+
+            select.innerHTML += `
+                <option value="المقر الرئيسي (الرئيسي)">المقر الرئيسي</option>
+                <option value="فرع البصرة (فرع)">فرع البصرة</option>
+                <option value="المخزن الرئيسي (مخزن)">المخزن الرئيسي</option>
+            `;
+        }
+
+        function loadEmployeesCheckboxes(selectedList = []) {
+            const container = document.getElementById('employeesCheckboxList');
+            container.innerHTML = '';
+
+            let employees = JSON.parse(localStorage.getItem('companyEmployees')) || mockAllEmployees;
+
+            employees.forEach(emp => {
+                const isChecked = selectedList.includes(emp) ? 'checked' : '';
+                container.innerHTML += `
+                    <label class="employee-checkbox-item">
+                        <input type="checkbox" name="empCheckbox" value="${emp}" ${isChecked}>
+                        <span>${emp}</span>
+                    </label>
+                `;
+            });
+        }
+
+        function filterEmployeeList() {
+            const query = document.getElementById('empSearchFilter').value.toLowerCase();
+            const items = document.querySelectorAll('.employee-checkbox-item');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+        }
+
+        function loadShifts() {
+            const tableBody = document.getElementById('shiftsTableBody');
+            const shifts = JSON.parse(localStorage.getItem('companyShifts')) || [];
+            const searchFilter = document.getElementById('globalSearchInput').value.toLowerCase();
+            
+            tableBody.innerHTML = '';
+
+            const filteredShifts = shifts.filter(s => {
+                const matchName = (s.shiftName || '').toLowerCase().includes(searchFilter);
+                const matchCompany = (s.companyName || '').toLowerCase().includes(searchFilter);
+                const matchWorkplace = (s.workplace || '').toLowerCase().includes(searchFilter);
+                const matchEmp = Array.isArray(s.employees) && s.employees.some(e => e.toLowerCase().includes(searchFilter));
+                return matchName || matchCompany || matchWorkplace || matchEmp;
+            });
+
+            if (filteredShifts.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="10" style="color: #64748b; padding: 30px; font-size: 15px;">لا توجد شفتات مطابقة للبحث حالياً</td></tr>`;
+                return;
+            }
+
+            filteredShifts.forEach((s) => {
+                const realIndex = shifts.findIndex(item => item === s);
+                const typeBadge = s.shiftType === 'استثنائي/خاص' 
+                    ? `<span class="badge-special">استثنائي/خاص</span>` 
+                    : `<span style="color:#0284c7; font-weight:bold;">قياسي</span>`;
+
+                const empListStr = Array.isArray(s.employees) ? s.employees.join(', ') : (s.employees || 'الكل');
+
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${typeBadge}</td>
+                        <td><b>${s.companyName}</b></td>
+                        <td><span style="color:#0284c7; font-weight:bold;">${s.shiftName}</span></td>
+                        <td>${s.workplace}</td>
+                        <td dir="ltr">${s.attFrom} ${s.attFromP} ~ ${s.attTo} ${s.attToP}</td>
+                        <td>${s.attGrace} دقيقة</td>
+                        <td dir="ltr">${s.depFrom} ${s.depFromP} ~ ${s.depTo} ${s.depToP}</td>
+                        <td>${s.depGrace} دقيقة</td>
+                        <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis;" title="${empListStr}">${empListStr}</td>
+                        <td>
+                            <button type="button" class="btn-edit" onclick="editShift(${realIndex})">تعديل</button>
+                            <button type="button" class="btn-delete" onclick="deleteShift(${realIndex})">حذف</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('shiftForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const editIndex = parseInt(document.getElementById('editIndex').value);
+            const workplaceVal = document.getElementById('shiftWorkplace').value;
+            
+            if (!workplaceVal) {
+                alert('يرجى اختيار مكان عمل الشفت!');
+                return;
+            }
+
+            const selectedEmps = [];
+            document.querySelectorAll('input[name="empCheckbox"]:checked').forEach(cb => {
+                selectedEmps.push(cb.value);
+            });
+
+            const shiftData = {
+                companyName: document.getElementById('companyName').value,
+                shiftName: document.getElementById('shiftName').value,
+                workplace: workplaceVal,
+                shiftType: document.getElementById('shiftType').value,
+                employees: selectedEmps,
+                attFrom: document.getElementById('attFrom').value,
+                attFromP: document.getElementById('attFromP').value,
+                attTo: document.getElementById('attTo').value,
+                attToP: document.getElementById('attToP').value,
+                attGrace: document.getElementById('attGrace').value,
+                depFrom: document.getElementById('depFrom').value,
+                depFromP: document.getElementById('depFromP').value,
+                depTo: document.getElementById('depTo').value,
+                depToP: document.getElementById('depToP').value,
+                depGrace: document.getElementById('depGrace').value
+            };
+
+            let shifts = JSON.parse(localStorage.getItem('companyShifts')) || [];
+
+            if (editIndex === -1) {
+                shifts.push(shiftData);
+                alert('تمت إضافة وحفظ الشفت بنجاح!');
+            } else {
+                shifts[editIndex] = shiftData;
+                alert('تم تحديث الشفت بنجاح!');
+                cancelEditMode();
+            }
+
+            localStorage.setItem('companyShifts', JSON.stringify(shifts));
+            document.getElementById('shiftForm').reset();
+            loadEmployeesCheckboxes();
+            loadShifts();
+        });
+
+        function editShift(index) {
+            let shifts = JSON.parse(localStorage.getItem('companyShifts')) || [];
+            const s = shifts[index];
+            if (!s) return;
+
+            document.getElementById('editIndex').value = index;
+            document.getElementById('companyName').value = s.companyName;
+            document.getElementById('shiftName').value = s.shiftName;
+            document.getElementById('shiftWorkplace').value = s.workplace;
+            document.getElementById('shiftType').value = s.shiftType || 'عادي';
+            
+            document.getElementById('attFrom').value = s.attFrom;
+            document.getElementById('attFromP').value = s.attFromP;
+            document.getElementById('attTo').value = s.attTo;
+            document.getElementById('attToP').value = s.attToP;
+            document.getElementById('attGrace').value = s.attGrace;
+
+            document.getElementById('depFrom').value = s.depFrom;
+            document.getElementById('depFromP').value = s.depFromP;
+            document.getElementById('depTo').value = s.depTo;
+            document.getElementById('depToP').value = s.depToP;
+            document.getElementById('depGrace').value = s.depGrace;
+
+            loadEmployeesCheckboxes(s.employees || []);
+
+            document.getElementById('submitBtn').textContent = '💾 حفظ التعديلات على الشفت';
+            document.getElementById('cancelEditBtn').style.display = 'block';
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelEditMode() {
+            document.getElementById('editIndex').value = '-1';
+            document.getElementById('shiftForm').reset();
+            loadEmployeesCheckboxes();
+            document.getElementById('submitBtn').textContent = '➕ حفظ وإضافة الشفت للنظام';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+        }
+
+        function deleteShift(index) {
+            if (confirm('هل أنت متأكد من حذف هذا الشفت نهائياً؟')) {
+                let shifts = JSON.parse(localStorage.getItem('companyShifts')) || [];
+                shifts.splice(index, 1);
+                localStorage.setItem('companyShifts', JSON.stringify(shifts));
+                loadShifts();
+            }
+        }
+
+        window.onload = () => {
+            loadWorkplaces();
+            loadEmployeesCheckboxes();
+            loadShifts();
+        };
+    </script>
+</body>
+</html>

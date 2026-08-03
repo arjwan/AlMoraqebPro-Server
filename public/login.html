@@ -3,142 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول - نظام المراقب برو</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <title>المراقب برو - تسجيل الدخول</title>
     <style>
-        :root {
-            --primary: #0f172a;
-            --accent: #6366f1;
-            --danger: #ef4444;
-            --bg-light: #f1f5f9;
-            --card-bg: #ffffff;
-            --border: #cbd5e1;
-            --text-main: #1e293b;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            font-family: 'Cairo', sans-serif;
-            background-color: var(--bg-light);
-            margin: 0;
+            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
+            color: #ffffff;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            color: var(--text-main);
+            padding: 20px;
         }
 
         .login-card {
-            background: var(--card-bg);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 400px;
-            border: 1.5px solid var(--border);
+            max-width: 520px;
+            background: #ffffff;
+            color: #1e293b;
+            padding: 50px 40px;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            position: relative;
+        }
+
+        .login-icon {
+            font-size: 45px;
+            margin-bottom: 15px;
         }
 
         h2 {
-            text-align: center;
-            color: var(--primary);
-            font-weight: 900;
+            font-size: 30px;
+            font-weight: 800;
+            color: #0284c7;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #64748b;
             margin-bottom: 25px;
         }
 
+        .info-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            color: #0369a1;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 14px;
+            margin-bottom: 30px;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+
         .form-group {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 20px;
+            text-align: right;
+            margin-bottom: 22px;
         }
 
         label {
-            margin-bottom: 8px;
+            display: block;
+            font-size: 16px;
             font-weight: 700;
-            font-size: 13px;
             color: #334155;
+            margin-bottom: 8px;
         }
 
         input {
-            padding: 12px 14px;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-size: 14px;
-            font-family: 'Cairo', sans-serif;
-            background-color: #f8fafc;
+            width: 100%;
+            padding: 16px 18px;
+            font-size: 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
             outline: none;
-            transition: all 0.2s;
+            transition: 0.3s;
+            background: #f8fafc;
         }
 
         input:focus {
-            border-color: var(--accent);
-            background-color: #fff;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+            border-color: #0284c7;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(2, 132, 199, 0.2);
         }
 
-        .btn-login {
+        .btn-submit {
             width: 100%;
-            padding: 14px;
-            background-color: var(--accent);
-            color: white;
+            background: #0284c7;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 800;
+            padding: 16px;
             border: none;
-            border-radius: 10px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.3);
+        }
+
+        .btn-submit:hover {
+            background: #0369a1;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.4);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: #0284c7;
+            text-decoration: none;
             font-size: 16px;
             font-weight: 700;
-            cursor: pointer;
-            transition: background 0.3s;
-            font-family: 'Cairo', sans-serif;
-            margin-top: 10px;
+            transition: 0.2s;
         }
 
-        .btn-login:hover {
-            background-color: #4f46e5;
-        }
-
-        .error-msg {
-            color: var(--danger);
-            font-size: 13px;
-            font-weight: 700;
-            text-align: center;
-            margin-top: 15px;
-            display: none;
+        .back-link:hover {
+            color: #0369a1;
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
 
-<div class="login-card">
-    <h2>تسجيل الدخول</h2>
-    <form id="loginForm" onsubmit="handleLogin(event)">
-        <div class="form-group">
-            <label>اسم المستخدم:</label>
-            <input type="text" id="username" required placeholder="أدخل اسم المستخدم">
+    <div class="login-card">
+        <div class="login-icon">🔑</div>
+        <h2>تسجيل الدخول</h2>
+        <p class="subtitle">أدخل بيانات صلاتك للوصول لوحة التحكم</p>
+
+        <div class="info-box">
+            💡 الحساب التجريبي المعتمد:<br>
+            المستخدم: <b>admin</b> | كلمة المرور: <b>admin123</b>
         </div>
-        <div class="form-group">
-            <label>كلمة المرور:</label>
-            <input type="password" id="password" required placeholder="أدخل كلمة المرور">
-        </div>
-        <button type="submit" class="btn-login">دخول للنظام</button>
-        <div id="errorMsg" class="error-msg">اسم المستخدم أو كلمة المرور غير صحيحة!</div>
-    </form>
-</div>
 
-<script>
-    function handleLogin(e) {
-        e.preventDefault();
-        const user = document.getElementById('username').value.trim();
-        const pass = document.getElementById('password').value.trim();
+        <form id="loginForm">
+            <div class="form-group">
+                <label>اسم المستخدم:</label>
+                <input type="text" id="username" required placeholder="أدخل اسم المستخدم...">
+            </div>
 
-        // قراءة البيانات المخزنة في الإعدادات إن وجدت، وإلا استخدام القيم الافتراضية
-        const savedUser = localStorage.getItem('adminUser') || 'admin';
-        const savedPass = localStorage.getItem('adminPass') || 'admin123';
+            <div class="form-group">
+                <label>كلمة المرور:</label>
+                <input type="password" id="password" required placeholder="أدخل كلمة المرور...">
+            </div>
 
-        if (user === savedUser && pass === savedPass) {
-            localStorage.setItem('isLoggedIn', 'true');
-            window.location.href = 'dashboard.html';
-        } else {
-            document.getElementById('errorMsg').style.display = 'block';
-        }
-    }
-</script>
+            <button type="submit" class="btn-submit">🚀 دخول لوحة التحكم</button>
+        </form>
 
+        <a href="employee.html" class="back-link">← العودة الرئيسية</a>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+
+            if (user === 'admin' && pass === 'admin123') {
+                localStorage.setItem('isLoggedIn', 'true');
+                window.location.href = 'admin.html';
+            } else {
+                alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - التقارير الإدارية الشاملة والإشعارات الآلية</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
+            color: #1e293b;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1850px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0284c7;
+        }
+
+        .back-btn {
+            background: #f1f5f9;
+            color: #0284c7;
+            padding: 12px 24px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 15px;
+            border: 1px solid #cbd5e1;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #0284c7;
+            color: #fff;
+        }
+
+        /* لوحة التحكم بالتقارير والفلاتر */
+        .report-controls {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        select, input {
+            background: #fff;
+            border: 2px solid #cbd5e1;
+            padding: 12px 15px;
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        select:focus, input:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 8px rgba(2, 132, 199, 0.3);
+        }
+
+        .btn-print-action {
+            grid-column: span 4;
+            background: #0d9488;
+            color: #fff;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-print-action:hover {
+            background: #0f766e;
+        }
+
+        /* قسم إدارة وإرسال الإشعارات الآلية */
+        .section-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0369a1;
+            margin-bottom: 15px;
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notif-form {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 20px;
+            border-radius: 16px;
+            display: grid;
+            grid-template-columns: 2fr 3fr 2fr 1fr;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 25px;
+        }
+
+        .btn-send-notif {
+            background: #16a34a;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-send-notif:hover {
+            background: #15803d;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #f8fafc;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            text-align: center;
+            font-size: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 800;
+        }
+
+        .badge-type {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .top-nav, .report-controls, .notif-form, .btn-send-notif { display: none; }
+            .main-card { box-shadow: none; padding: 0; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <div class="top-nav">
+            <h2>📊 5. التقارير الإدارية الشاملة ونظام الإشعارات الآلي</h2>
+            <a href="admin.html" class="back-btn">← العودة إلى لوحة التحكم</a>
+        </div>
+
+        <!-- لوحة التحكم بالتقارير والفلترة -->
+        <div class="report-controls">
+            <div class="control-group">
+                <label>نوع التقرير:</label>
+                <select id="reportType">
+                    <option value="comprehensive">تقرير الشركة الشامل</option>
+                    <option value="employee">تقرير تخص فرد معين</option>
+                    <option value="attendance">تقرير الحضور والغياب</option>
+                    <option value="leaves">تقرير الإجازات</option>
+                    <option value="loans">تقرير السلف والقروض</option>
+                    <option value="requests">تقرير طلبات النقل وتغيير الشفتات</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>اختر الموظف (إن وجد):</label>
+                <select id="reportEmployee">
+                    <option value="">-- كل الموظفين --</option>
+                    <option value="أحمد محمد علي">أحمد محمد علي</option>
+                    <option value="محمد عبد علي">محمد عبد علي</option>
+                    <option value="علي الزيدي">علي الزيدي</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>من تاريخ:</label>
+                <input type="date" id="dateFrom">
+            </div>
+            <div class="control-group">
+                <label>إلى تاريخ:</label>
+                <input type="date" id="dateTo">
+            </div>
+            <button class="btn-print-action" onclick="generateReport()">🖨️ معاينة وطباعة التقرير (PDF / طباعة مباشرة)</button>
+        </div>
+
+        <!-- نظام إرسال الإشعارات الفورية للموظفين -->
+        <div class="section-title">
+            <span>📢 مركز إرسال الإشعارات الآلية لهواتف الموظفين:</span>
+        </div>
+        <form id="notifForm" class="notif-form">
+            <div class="control-group">
+                <label>الموظف المستهدف:</label>
+                <select id="notifEmp" required>
+                    <option value="الجميع">كافة موظفي الشركة</option>
+                    <option value="أحمد محمد علي">أحمد محمد علي</option>
+                    <option value="محمد عبد علي">محمد عبد علي</option>
+                    <option value="علي الزيدي">علي الزيدي</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>محتوى الإشعار:</label>
+                <input type="text" id="notifText" required placeholder="مثال: تم قبول طلب السلفة / تم رفض البصمة / غياب بدون عذر...">
+            </div>
+            <div class="control-group">
+                <label>نوع الإشعار:</label>
+                <select id="notifType">
+                    <option value="قبول/رفض">قبول أو رفض (سلفة/نقل/شفت)</option>
+                    <option value="بصمة وغياب">رفض بصمة / أيام غياب</option>
+                    <option value="تنبيه عام">تنبيه إداري عام</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-send-notif">🚀 إرسال فوري</button>
+        </form>
+
+        <!-- سجل الإشعارات المرسلة -->
+        <div class="section-title">📋 سجل الإشعارات الآلية المرسلة للموظفين:</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ت</th>
+                        <th>الموظف المستهدف</th>
+                        <th>محتوى الإشعار</th>
+                        <th>التصنيف</th>
+                        <th>تاريخ ووقت الإرسال</th>
+                    </tr>
+                </thead>
+                <tbody id="notifTableBody">
+                    <!-- الحقن الديناميكي للإشعارات -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const initialNotifications = [
+            { emp: "أحمد محمد علي", text: "تم قبول طلب السلفة بمبلغ 300,000 د.ع", type: "قبول/رفض", time: "2026-08-03 01:30 ص" },
+            { emp: "محمد عبد علي", text: "تنبيه: تم تسجيل حالة رفض بصمة ليوم أمس", type: "بصمة وغياب", time: "2026-08-02 08:15 ص" },
+            { emp: "علي الزيدي", text: "تمت الموافقة على طلب تغيير الشفت الخاص بك", type: "قبول/رفض", time: "2026-08-01 11:00 ص" }
+        ];
+
+        function loadNotifications() {
+            const tableBody = document.getElementById('notifTableBody');
+            let notifs = JSON.parse(localStorage.getItem('companyNotifications')) || initialNotifications;
+            tableBody.innerHTML = '';
+
+            notifs.forEach((item, index) => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td><b>${index + 1}</b></td>
+                        <td style="font-weight: 700; color: #0f172a;">${item.emp}</td>
+                        <td>${item.text}</td>
+                        <td><span class="badge-type">${item.type}</span></td>
+                        <td dir="ltr">${item.time}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('notifForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let emp = document.getElementById('notifEmp').value;
+            let text = document.getElementById('notifText').value;
+            let type = document.getElementById('notifType').value;
+            let time = new Date().toLocaleString('ar-IQ');
+
+            let notifs = JSON.parse(localStorage.getItem('companyNotifications')) || initialNotifications;
+            notifs.unshift({ emp, text, type, time });
+
+            localStorage.setItem('companyNotifications', JSON.stringify(notifs));
+            alert('تم إرسال الإشعار بنجاح إلى هاتف الموظف!');
+            document.getElementById('notifForm').reset();
+            loadNotifications();
+        });
+
+        function generateReport() {
+            let type = document.getElementById('reportType').value;
+            let emp = document.getElementById('reportEmployee').value;
+            let from = document.getElementById('dateFrom').value || 'البداية';
+            let to = document.getElementById('dateTo').value || 'الآن';
+
+            alert(`جاري تجهيز وثيقة الطباعة للتقرير (${type}) ${emp ? 'للموظف: ' + emp : 'لكافة الموظفين'} للفترة من (${from}) إلى (${to})...`);
+            window.print();
+        }
+
+        window.onload = () => {
+            if (!localStorage.getItem('companyNotifications')) {
+                localStorage.setItem('companyNotifications', JSON.stringify(initialNotifications));
+            }
+            loadNotifications();
+        };
+    </script>
+</body>
+</html>

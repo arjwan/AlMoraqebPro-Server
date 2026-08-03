@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - حاسبة الرواتب والربط التلقائي المتقدم</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
+            color: #1e293b;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-card {
+            max-width: 2000px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0284c7;
+        }
+
+        .back-btn {
+            background: #f1f5f9;
+            color: #0284c7;
+            padding: 10px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            border: 1px solid #cbd5e1;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #0284c7;
+            color: #fff;
+        }
+
+        /* شريط الأدوات والبحث والطباعة */
+        .toolbar-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: #f8fafc;
+            padding: 15px 20px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .search-box input, .search-box select {
+            padding: 10px 14px;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            background: #fff;
+            flex: 1;
+        }
+
+        .print-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-print, .btn-recalculate {
+            background: #0284c7;
+            color: #fff;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.3s;
+        }
+
+        .btn-print:hover, .btn-recalculate:hover {
+            background: #0369a1;
+        }
+
+        .btn-recalculate {
+            background: #16a34a;
+        }
+
+        .btn-recalculate:hover {
+            background: #15803d;
+        }
+
+        .btn-print-all {
+            background: #0d9488;
+        }
+
+        .btn-print-all:hover {
+            background: #0f766e;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #f8fafc;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            text-align: center;
+            font-size: 12.5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 800;
+        }
+
+        .badge-net {
+            background: #dcfce7;
+            color: #15803d;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        .editable-input, .editable-select {
+            width: 100px;
+            padding: 6px;
+            text-align: center;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            background: #fff;
+        }
+
+        .badge-shift {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .btn-row-print {
+            background: #64748b;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .btn-row-print:hover {
+            background: #475569;
+        }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .top-nav, .toolbar-panel, .btn-row-print { display: none; }
+            .main-card { box-shadow: none; padding: 0; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <div class="top-nav">
+            <h2>💰 إدارة الرواتب والربط التلقائي المتقدم مع الحضور والشفتات والضمان</h2>
+            <a href="admin.html" class="back-btn">← العودة إلى لوحة التحكم</a>
+        </div>
+
+        <!-- شريط الأدوات والبحث والطباعة -->
+        <div class="toolbar-panel">
+            <div class="search-box">
+                <input type="text" id="globalSearch" placeholder="🔍 ابحث باسم الموظف، العنوان الوظيفي، أو الفرع..." onkeyup="loadPayrollData()">
+                <select id="shiftFilter" onchange="loadPayrollData()">
+                    <option value="">-- كل الشفتات --</option>
+                    <option value="الشفت الصباحي الأساسي">الشفت الصباحي الأساسي</option>
+                    <option value="الشفت المسائي">الشفت المسائي</option>
+                    <option value="شفت استثنائي/خاص">شفت استثنائي/خاص</option>
+                </select>
+            </div>
+            <div class="print-actions">
+                <button class="btn-recalculate" onclick="recalculateAndSave()">🔄 إعادة احتساب وتحديث الرواتب</button>
+                <button class="btn-print btn-print-all" onclick="printReport('all')">🖨️ طباعة لكافة الأفراد والشركة</button>
+                <button class="btn-print" onclick="printReport('branch')">🖨️ طباعة لفرع معين</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ت</th>
+                        <th>اسم الموظف</th>
+                        <th>العنوان الوظيفي</th>
+                        <th>مكان العمل (الفرع)</th>
+                        <th>الشفت المُضاف إليه</th>
+                        <th>حالة الضمان الاجتماعي</th>
+                        <th>أيام العمل</th>
+                        <th>الغياب</th>
+                        <th>الإضافي</th>
+                        <th>الراتب الأساسي</th>
+                        <th>المخصصات</th>
+                        <th>المكافآت والإيفادات</th>
+                        <th>مبلغ السلفة</th>
+                        <th>استقطاع السلف</th>
+                        <th>استقطاع الضمان الاجتماعي</th>
+                        <th>الخصومات (غياب)</th>
+                        <th>الراتب الصافي النهائي</th>
+                        <th>إجراء الطباعة</th>
+                    </tr>
+                </thead>
+                <tbody id="payrollTableBody">
+                    <!-- الحقن الديناميكي -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const initialPayrollData = [
+            {
+                name: "أحمد محمد علي",
+                jobTitle: "مطور أنظمة ومسؤول قاعدة بيانات",
+                workplace: "المقر الرئيسي",
+                shiftName: "الشفت الصباحي الأساسي",
+                socialSecurityStatus: "مسجل",
+                completeDays: 22,
+                missingDays: 1,
+                overtime: "ساعة و 15 دقيقة",
+                baseSalary: 750000,
+                allowances: 100000,
+                rewards: 50000,
+                loanAmount: 200000,
+                loanDeduct: 50000,
+                socialSecurityDeduct: 35000
+            },
+            {
+                name: "محمد عبد علي",
+                jobTitle: "مختص شبكات ودعم فني",
+                workplace: "فرع البصرة",
+                shiftName: "الشفت المسائي",
+                socialSecurityStatus: "غير مسجل",
+                completeDays: 20,
+                missingDays: 3,
+                overtime: "لا يوجد",
+                baseSalary: 650000,
+                allowances: 75000,
+                rewards: 0,
+                loanAmount: 150000,
+                loanDeduct: 30000,
+                socialSecurityDeduct: 0
+            },
+            {
+                name: "علي الزيدي",
+                jobTitle: "مشرف أمن ومراقبة ميدانية",
+                workplace: "المخزن الرئيسي",
+                shiftName: "شفت استثنائي/خاص",
+                socialSecurityStatus: "مسجل",
+                completeDays: 23,
+                missingDays: 0,
+                overtime: "45 دقيقة",
+                baseSalary: 700000,
+                allowances: 80000,
+                rewards: 25000,
+                loanAmount: 100000,
+                loanDeduct: 25000,
+                socialSecurityDeduct: 30000
+            }
+        ];
+
+        function loadPayrollData() {
+            const tableBody = document.getElementById('payrollTableBody');
+            const searchVal = document.getElementById('globalSearch').value.toLowerCase();
+            const shiftVal = document.getElementById('shiftFilter').value;
+
+            let records = JSON.parse(localStorage.getItem('companyPayrollRecords')) || initialPayrollData;
+            tableBody.innerHTML = '';
+
+            const filtered = records.filter(item => {
+                const matchText = (item.name || '').toLowerCase().includes(searchVal) ||
+                                  (item.jobTitle || '').toLowerCase().includes(searchVal) ||
+                                  (item.workplace || '').toLowerCase().includes(searchVal);
+                const matchShift = shiftVal ? item.shiftName === shiftVal : true;
+                return matchText && matchShift;
+            });
+
+            if (filtered.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="18" style="padding: 30px; color: #64748b; font-size: 14px;">لا توجد سجلات مطابقة للبحث الحالي</td></tr>`;
+                return;
+            }
+
+            filtered.forEach((rec, index) => {
+                // حسابات الراتب الآلية[cite: 1]
+                const dailyRate = rec.baseSalary / 30;
+                const absenceDeduction = Math.round(rec.missingDays * dailyRate);
+                const overtimeBonus = rec.overtime !== "لا يوجد" ? 25000 : 0;
+                const socialDeduct = parseFloat(rec.socialSecurityDeduct) || 0;
+                
+                // الصافي = الأساسي + المخصصات + المكافآت + الإضافي - (استقطاع السلف + استقطاع الضمان + خصم الغياب)[cite: 1]
+                const netSalary = Math.round(
+                    rec.baseSalary + rec.allowances + rec.rewards + overtimeBonus - (rec.loanDeduct + socialDeduct + absenceDeduction)
+                );
+
+                tableBody.innerHTML = tableBody.innerHTML + `
+                    <tr>
+                        <td><b>${index + 1}</b></td>
+                        <td style="font-weight: 700; color: #0f172a;">${rec.name}</td>
+                        <td><input type="text" class="editable-input" style="width:140px;" value="${rec.jobTitle}" onchange="updateField(${index}, 'jobTitle', this.value)"></td>
+                        <td>${rec.workplace}</td>
+                        <td><span class="badge-shift">${rec.shiftName}</span></td>
+                        <td>
+                            <select class="editable-select" style="width:110px;" onchange="updateField(${index}, 'socialSecurityStatus', this.value)">
+                                <option value="مسجل" ${rec.socialSecurityStatus === 'مسجل' ? 'selected' : ''}>مسجل</option>
+                                <option value="غير مسجل" ${rec.socialSecurityStatus === 'غير مسجل' ? 'selected' : ''}>غير مسجل</option>
+                            </select>
+                        </td>
+                        <td><span style="color: #16a34a; font-weight: bold;">${rec.completeDays} يوم</span></td>
+                        <td><span style="color: #dc2626; font-weight: bold;">${rec.missingDays} يوم</span></td>
+                        <td><span style="color: #b45309; font-weight: bold; font-size: 11px;">${rec.overtime}</span></td>
+                        <td><input type="number" class="editable-input" value="${rec.baseSalary}" onchange="updateField(${index}, 'baseSalary', this.value)"></td>
+                        <td><input type="number" class="editable-input" value="${rec.allowances}" onchange="updateField(${index}, 'allowances', this.value)"></td>
+                        <td><input type="number" class="editable-input" value="${rec.rewards}" onchange="updateField(${index}, 'rewards', this.value)"></td>
+                        <td style="color: #0284c7; font-weight: bold;">${rec.loanAmount.toLocaleString()} د.ع</td>
+                        <td><input type="number" class="editable-input" value="${rec.loanDeduct}" onchange="updateField(${index}, 'loanDeduct', this.value)"></td>
+                        <td><input type="number" class="editable-input" value="${rec.socialSecurityDeduct}" onchange="updateField(${index}, 'socialSecurityDeduct', this.value)"></td>
+                        <td style="color: #dc2626; font-weight: bold;">- ${absenceDeduction.toLocaleString()} د.ع</td>
+                        <td><span class="badge-net">${netSalary.toLocaleString()} د.ع</span></td>
+                        <td>
+                            <button class="btn-row-print" onclick="printSingle('${rec.name}')">🖨️ طباعة الفرد</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function updateField(index, field, value) {
+            let records = JSON.parse(localStorage.getItem('companyPayrollRecords')) || initialPayrollData;
+            if (field === 'baseSalary' || field === 'allowances' || field === 'rewards' || field === 'loanDeduct' || field === 'socialSecurityDeduct') {
+                records[index][field] = parseFloat(value) || 0;
+            } else {
+                records[index][field] = value;
+            }
+            localStorage.setItem('companyPayrollRecords', JSON.stringify(records));
+        }
+
+        function recalculateAndSave() {
+            loadPayrollData();
+            alert('✅ تمت عملية إعادة الاحتساب وحفظ كافة التعديلات بنجاح!');
+        }
+
+        function printSingle(empName) {
+            alert('جاري تجهيز وثيقة الراتب الخاصة بالموظف: ' + empName);
+            window.print();
+        }
+
+        function printReport(type) {
+            if (type === 'all') {
+                alert('جاري طباعة التقرير الشامل لكافة الأفراد والشركة...');
+            } else if (type === 'branch') {
+                let branch = prompt('أدخل اسم الفرع المطلوب طباعته (مثال: المقر الرئيسي أو فرع البصرة):');
+                if (!branch) return;
+                alert('جاري طباعة تقرير الرواتب الخاص بـ: ' + branch);
+            }
+            window.print();
+        }
+
+        window.onload = () => {
+            if (!localStorage.getItem('companyPayrollRecords')) {
+                localStorage.setItem('companyPayrollRecords', JSON.stringify(initialPayrollData));
+            }
+            loadPayrollData();
+        };
+    </script>
+</body>
+</html>
