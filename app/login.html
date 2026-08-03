@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - تسجيل الدخول</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 380px;
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid #334155;
+        }
+
+        h2 {
+            font-size: 20px;
+            color: #38bdf8;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #cbd5e1;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #38bdf8;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            background: #0284c7;
+            color: #fff;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #0369a1;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .back-link a {
+            color: #38bdf8;
+            text-decoration: none;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>🔐 تسجيل الدخول</h2>
+        
+        <div class="form-group">
+            <label>البريد الإلكتروني أو اسم المستخدم:</label>
+            <input type="text" id="loginUser" placeholder="أدخل البريد أو المعرف">
+        </div>
+
+        <div class="form-group">
+            <label>كلمة المرور:</label>
+            <input type="password" id="loginPass" placeholder="أدخل كلمة المرور">
+        </div>
+
+        <button class="btn" onclick="handleUserLogin()">دخول للنظام</button>
+
+        <div class="back-link">
+            <a href="welcome.html">العودة لشاشة الترحيب</a>
+        </div>
+    </div>
+
+    <script>
+        function handleUserLogin() {
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+
+            if(!user || !pass) {
+                alert('⚠️ يرجى تعبئة جميع الحقول المطلوبة');
+                return;
+            }
+
+            // محاكاة تسجيل الدخول الناجح والتوجيه لشاشة البصمة/الحضور
+            alert('✅ تم تسجيل الدخول بنجاح!');
+            window.location.href = 'attendance.html';
+        }
+    </script>
+</body>
+</html>
