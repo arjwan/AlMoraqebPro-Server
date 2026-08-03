@@ -119,19 +119,42 @@
     </div>
 
     <script>
-        function handleUserLogin() {
-            const user = document.getElementById('loginUser').value.trim();
-            const pass = document.getElementById('loginPass').value.trim();
+        async function handleUserLogin() {
+            const identifier = document.getElementById('loginUser').value.trim();
+            const password = document.getElementById('loginPass').value.trim();
 
-            if(!user || !pass) {
+            if(!identifier || !password) {
                 alert('⚠️ يرجى تعبئة جميع الحقول المطلوبة');
                 return;
             }
 
-            // محاكاة تسجيل الدخول الناجح والتوجيه لشاشة البصمة/الحضور
-            alert('✅ تم تسجيل الدخول بنجاح!');
-            window.location.href = 'attendance.html';
+            try {
+                // إرسال طلب تسجيل الدخول إلى مسار الـ Backend (تأكد من مطابقة المسار للـ Route لديك)
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ identifier, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('✅ تم تسجيل الدخول بنجاح!');
+                    // يمكنك حفظ رمز الجلسة أو التوكن هنا إن وجد، ثم التوجيه لشاشة الحضور
+                    window.location.href = 'attendance.html';
+                } else {
+                    alert('❌ خطأ في تسجيل الدخول: ' + (data.message || 'بيانات غير صحيحة'));
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('⚠️ حدث خطأ في الاتصال بالخادم، يرجى المحاولة لاحقاً.');
+            }
         }
     </script>
 </body>
 </html>
+```[cite: 1]
+
+قم بتحديث ملف `login.html` في مشروعك بهذا الكود، ثم احفظ الملف وارفعه إلى المستودع ليصبح جاهزاً للعمل المتكامل مع السيرفر!

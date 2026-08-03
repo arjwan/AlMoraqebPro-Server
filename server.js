@@ -32,6 +32,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 const employeesRouter = require('./routes/employees')(pool);
 app.use('/api/employees', employeesRouter);
 
+// ==========================================
+// 4. ربط مسار تسجيل الدخول والمصادقة (Auth)
+// ==========================================
+const authRouter = require('./routes/auth');
+app.use('/api', authRouter); // سيصبح مسار تسجيل الدخول: /api/login
+
 // مسار افتراضي رئيسي يوجه للوحة التحكم أو الواجهة الأساسية
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
