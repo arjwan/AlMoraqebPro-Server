@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - تسجيل الحضور</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .attendance-card {
+            width: 100%;
+            max-width: 380px;
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid #334155;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 20px;
+            color: #38bdf8;
+            margin-bottom: 10px;
+        }
+
+        .time-display {
+            font-size: 28px;
+            font-weight: bold;
+            color: #f8fafc;
+            margin: 20px 0;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 14px;
+            border: 1px solid #475569;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            margin-bottom: 15px;
+            transition: 0.2s;
+        }
+
+        .btn-checkin {
+            background: #16a34a;
+            color: #fff;
+        }
+
+        .btn-checkin:hover {
+            background: #15803d;
+        }
+
+        .btn-checkout {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .btn-checkout:hover {
+            background: #b91c1c;
+        }
+
+        .status-text {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="attendance-card">
+        <h2>⏱️ بصمة الحضور والانصراف</h2>
+        <p class="status-text">سجل وقت عملك اليومي بكل سهولة</p>
+
+        <div class="time-display" id="liveClock">00:00:00</div>
+
+        <button class="btn-action btn-checkin" onclick="registerAttendance('تسجيل حضور')">🟢 تسجيل حضور</button>
+        <button class="btn-action btn-checkout" onclick="registerAttendance('تسجيل انصراف')">🔴 تسجيل انصراف</button>
+
+        <div id="resultMsg" class="status-text" style="color: #38bdf8; margin-top: 15px;"></div>
+    </div>
+
+    <script>
+        // تحديث الساعة الحية
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').innerText = now.toLocaleTimeString('en-US');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function registerAttendance(actionType) {
+            const currentTime = new Date().toLocaleString();
+            document.getElementById('resultMsg').innerText = `✅ تم بنجاح (${actionType}) في تمام الساعة: ${currentTime}`;
+            
+            // هنا سيتم ربط العملية بقاعدة البيانات عبر السيرفر لاحقاً
+        }
+    </script>
+</body>
+</html>
