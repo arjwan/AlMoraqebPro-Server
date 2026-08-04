@@ -275,7 +275,6 @@
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
             const dateVal = document.getElementById('dateFilter').value;
 
-            // جلب البيانات من LocalStorage أو استخدام العينات الافتراضية
             let records = JSON.parse(localStorage.getItem('companyAttendanceLogs')) || sampleAttendance;
 
             tableBody.innerHTML = '';
@@ -320,12 +319,14 @@
         }
 
         window.onload = () => {
-            // حفظ عينات تجريبية أولية إذا لم تكن موجودة لتعمل الصفحة بشكل مذهل وفوري
             if (!localStorage.getItem('companyAttendanceLogs')) {
                 localStorage.setItem('companyAttendanceLogs', JSON.stringify(sampleAttendance));
             }
             loadAttendanceRecords();
         };
     </script>
+
+    <!-- ملف المزامنة والربط الموحد -->
+    <script src="/employees-sync.js"></script>
 </body>
 </html>

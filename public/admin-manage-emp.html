@@ -72,9 +72,15 @@
             flex-wrap: wrap;
         }
 
+        .search-box-wrapper {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            max-width: 500px;
+        }
+
         .search-box {
             flex: 1;
-            max-width: 400px;
             padding: 14px 18px;
             font-size: 16px;
             border: 1px solid #cbd5e1;
@@ -87,6 +93,21 @@
             border-color: #0284c7;
             background: #fff;
             box-shadow: 0 0 10px rgba(2, 132, 199, 0.2);
+        }
+
+        .btn-search {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-search:hover {
+            background: #0369a1;
         }
 
         .action-btns {
@@ -204,7 +225,11 @@
         </div>
 
         <div class="actions-bar">
-            <input type="text" id="searchInput" class="search-box" placeholder="🔍 بحث سريع عن اسم الموظف أو الاختصاص..." onkeyup="filterEmployees()">
+            <div class="search-box-wrapper">
+                <input type="text" id="searchInput" class="search-box" placeholder="🔍 بحث عن اسم الموظف، الاختصاص، أو مكان العمل..." onkeyup="filterEmployees()">
+                <button class="btn-search" onclick="filterEmployees()">بحث</button>
+            </div>
+            
             <div class="action-btns">
                 <button class="btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
                 <button class="btn-delete-all" onclick="deleteAllEmployees()">🗑️ حذف الكل</button>
@@ -238,12 +263,11 @@
             tableBody.innerHTML = '';
             
             if (employees.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="7" style="color: #64748b; padding: 30px; font-size: 18px;">لا يوجد موظفون مسجلون حالياً</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="7" style="color: #64748b; padding: 30px; font-size: 18px;">لا يوجد موظفون مسجلون حالياً أو تطابق للبحث</td></tr>`;
                 return;
             }
 
             employees.forEach((emp, index) => {
-                // تجميع العنوان التفصيلي بوضوح
                 const fullAddress = `${emp.province || '-'} / ${emp.city || '-'} / ${emp.district || '-'} / محلة ${emp.mahalla || '-'} / زقاق ${emp.alley || '-'} / دار ${emp.houseNo || '-'}`;
                 
                 tableBody.innerHTML += `
@@ -261,12 +285,19 @@
         }
 
         function filterEmployees() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const employees = JSON.parse(localStorage.getItem('employeesList')) || [];
+            
+            if (!query) {
+                loadEmployees(employees);
+                return;
+            }
+
             const filtered = employees.filter(emp => 
                 (emp.name && emp.name.toLowerCase().includes(query)) || 
                 (emp.specialty && emp.specialty.toLowerCase().includes(query)) ||
-                (emp.workplace && emp.workplace.toLowerCase().includes(query))
+                (emp.workplace && emp.workplace.toLowerCase().includes(query)) ||
+                (emp.province && emp.province.toLowerCase().includes(query))
             );
             loadEmployees(filtered);
         }
@@ -276,7 +307,7 @@
                 let employees = JSON.parse(localStorage.getItem('employeesList')) || [];
                 employees.splice(index, 1);
                 localStorage.setItem('employeesList', JSON.stringify(employees));
-                loadEmployees();
+                filterEmployees();
             }
         }
 
@@ -289,5 +320,8 @@
 
         window.onload = () => loadEmployees();
     </script>
+
+    <!-- ملف المزامنة والربط الموحد -->
+    <script src="/employees-sync.js"></script>
 </body>
 </html>
