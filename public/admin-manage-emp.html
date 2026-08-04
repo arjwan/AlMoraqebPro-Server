@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - إدارة وعرض الموظفين</title>
+    <title>المراقب برو - إدارة وعرض موظفي الشركة</title>
     <style>
         * {
             box-sizing: border-box;
@@ -35,15 +35,26 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 20px;
         }
 
         h2 {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 800;
             color: #0284c7;
+        }
+
+        .company-badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 5px;
+            display: inline-block;
         }
 
         .back-btn {
@@ -53,7 +64,7 @@
             border-radius: 14px;
             text-decoration: none;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 15px;
             border: 1px solid #cbd5e1;
             transition: 0.2s;
         }
@@ -82,7 +93,7 @@
         .search-box {
             flex: 1;
             padding: 14px 18px;
-            font-size: 16px;
+            font-size: 15px;
             border: 1px solid #cbd5e1;
             border-radius: 14px;
             background: #f8fafc;
@@ -122,7 +133,7 @@
             padding: 14px 22px;
             border-radius: 14px;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 15px;
             cursor: pointer;
             transition: 0.2s;
         }
@@ -138,7 +149,7 @@
             padding: 14px 22px;
             border-radius: 14px;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 15px;
             cursor: pointer;
             transition: 0.2s;
         }
@@ -164,7 +175,7 @@
         th, td {
             padding: 16px;
             text-align: center;
-            font-size: 16px;
+            font-size: 15px;
             border-bottom: 1px solid #e2e8f0;
         }
 
@@ -220,7 +231,10 @@
 
     <div class="main-card">
         <div class="top-nav">
-            <h2>👥 قائمة وإدارة الموظفين الشاملة</h2>
+            <div>
+                <h2>👥 قائمة وإدارة موظفي الشركة</h2>
+                <div id="companyIndicator" class="company-badge">جاري تحميل بيانات الشركة النشطة...</div>
+            </div>
             <a href="admin.html" class="back-btn">← العودة لوحة التحكم</a>
         </div>
 
@@ -232,7 +246,7 @@
             
             <div class="action-btns">
                 <button class="btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
-                <button class="btn-delete-all" onclick="deleteAllEmployees()">🗑️ حذف الكل</button>
+                <button class="btn-delete-all" onclick="deleteAllEmployees()">🗑️ تصفية جدول الشركة</button>
             </div>
         </div>
 
@@ -250,20 +264,37 @@
                     </tr>
                 </thead>
                 <tbody id="employeesTableBody">
-                    <!-- يتم تعبئتها تلقائياً -->
+                    <!-- يتم تعبئتها ديناميكياً من قاعدة بيانات الشركة المستقلة -->
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
+        // دالة تحديد مفتاح قاعدة البيانات للشركة النشطة حالياً
+        function getActiveCompanyDbKey() {
+            const activeId = localStorage.getItem('activeCompanyId');
+            if (activeId) {
+                return `company_employees_${activeId}`;
+            }
+            // مفتاح احتياطي افتراضي في حال لم يتم تحديد شركة نشطة بعد
+            return 'employeesList';
+        }
+
         function loadEmployees(data = null) {
             const tableBody = document.getElementById('employeesTableBody');
-            const employees = data || JSON.parse(localStorage.getItem('employeesList')) || [];
+            const indicator = document.getElementById('companyIndicator');
+            
+            const activeId = localStorage.getItem('activeCompanyId') || 'افتراضية عامة';
+            indicator.textContent = `قاعدة البيانات النشطة للشركة المعرّفة: [ ${activeId} ]`;
+
+            const dbKey = getActiveCompanyDbKey();
+            const employees = data || JSON.parse(localStorage.getItem(dbKey)) || [];
+            
             tableBody.innerHTML = '';
             
             if (employees.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="7" style="color: #64748b; padding: 30px; font-size: 18px;">لا يوجد موظفون مسجلون حالياً أو تطابق للبحث</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="7" style="color: #64748b; padding: 30px; font-size: 17px;">لا يوجد موظفون مسجلون حالياً في قاعدة بيانات هذه الشركة</td></tr>`;
                 return;
             }
 
@@ -286,7 +317,8 @@
 
         function filterEmployees() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
-            const employees = JSON.parse(localStorage.getItem('employeesList')) || [];
+            const dbKey = getActiveCompanyDbKey();
+            const employees = JSON.parse(localStorage.getItem(dbKey)) || [];
             
             if (!query) {
                 loadEmployees(employees);
@@ -303,25 +335,24 @@
         }
 
         function deleteEmployee(index) {
-            if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
-                let employees = JSON.parse(localStorage.getItem('employeesList')) || [];
+            if (confirm('هل أنت متأكد من حذف هذا الموظف من قاعدة بيانات الشركة؟')) {
+                const dbKey = getActiveCompanyDbKey();
+                let employees = JSON.parse(localStorage.getItem(dbKey)) || [];
                 employees.splice(index, 1);
-                localStorage.setItem('employeesList', JSON.stringify(employees));
+                localStorage.setItem(dbKey, JSON.stringify(employees));
                 filterEmployees();
             }
         }
 
         function deleteAllEmployees() {
-            if (confirm('⚠️ تحذير: هل أنت متأكد من حذف كافة الموظفين المسجلين نهائياً؟')) {
-                localStorage.removeItem('employeesList');
+            if (confirm('⚠️ تحذير: هل أنت متأكد من تفريغ وحذف كافة موظفي هذه الشركة نهائياً من قاعدة بياناتها؟')) {
+                const dbKey = getActiveCompanyDbKey();
+                localStorage.removeItem(dbKey);
                 loadEmployees();
             }
         }
 
         window.onload = () => loadEmployees();
     </script>
-
-    <!-- ملف المزامنة والربط الموحد -->
-    <script src="/employees-sync.js"></script>
 </body>
 </html>

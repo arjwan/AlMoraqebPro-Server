@@ -31,7 +31,6 @@
             border-radius: 28px;
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
             text-align: center;
-            position: relative;
         }
 
         .login-icon {
@@ -62,6 +61,7 @@
             margin-bottom: 30px;
             font-weight: 600;
             line-height: 1.6;
+            text-align: right;
         }
 
         .form-group {
@@ -136,43 +136,58 @@
     <div class="login-card">
         <div class="login-icon">🔑</div>
         <h2>تسجيل الدخول</h2>
-        <p class="subtitle">أدخل بيانات صلاتك للوصول لوحة التحكم</p>
+        <p class="subtitle">أدخل بيانات شركتك ومعرّفها للوصول إلى قاعدة البيانات ولوحة التحكم</p>
 
         <div class="info-box">
-            💡 الحساب التجريبي المعتمد:<br>
-            المستخدم: <b>admin</b> | كلمة المرور: <b>admin123</b>
+            💡 <b>تعليمات الدخول:</b><br>
+            - يمكنك استخدام الحساب التجريبي العام (المستخدم: <b>admin</b> | كلمة المرور: <b>admin123</b>)<br>
+            - أو إدخال معرف الشركة الخاصة بك مباشرة.
         </div>
 
-        <form id="loginForm">
+        <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
-                <label>اسم المستخدم:</label>
-                <input type="text" id="username" required placeholder="أدخل اسم المستخدم...">
+                <label>معرّف الشركة أو اسم المستخدم:</label>
+                <input type="text" id="username" required placeholder="أدخل معرف الشركة أو admin...">
             </div>
 
             <div class="form-group">
-                <label>كلمة المرور:</label>
+                <label>كلمة المرور / مفتاح الترخيص:</label>
                 <input type="password" id="password" required placeholder="أدخل كلمة المرور...">
             </div>
 
             <button type="submit" class="btn-submit">🚀 دخول لوحة التحكم</button>
         </form>
 
-        <a href="employee.html" class="back-link">← العودة الرئيسية</a>
+        <a href="admin-register.html" class="back-link">← ليس لديك حساب؟ إنشاء حساب جديد للشركة</a>
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
+        function handleLogin(event) {
+            event.preventDefault();
+            const user = document.getElementById('username').value.trim().toLowerCase();
+            const pass = document.getElementById('password').value.trim();
 
+            // التحقق من الحساب التجريبي العام الافتراضي
             if (user === 'admin' && pass === 'admin123') {
                 localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('activeCompanyId', 'default_company');
+                window.location.href = 'admin.html';
+                return;
+            }
+
+            // التحقق من الشركات المسجلة بقواعد بياناتها المستقلة
+            const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+            const matchedCompany = companiesList.find(c => c.id === user || c.name.toLowerCase().includes(user));
+
+            if (matchedCompany) {
+                // تفعيل جلسة هذه الشركة حصراً وتوجيهها للوحة التحكم النظيفة الخاصة بها
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('activeCompanyId', matchedCompany.id);
                 window.location.href = 'admin.html';
             } else {
-                alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
+                alert('⚠️ بيانات الدخول غير صحيحة أو أن الشركة غير مسجلة في النظام!');
             }
-        });
+        }
     </script>
 </body>
 </html>
