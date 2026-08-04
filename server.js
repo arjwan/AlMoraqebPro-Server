@@ -30,9 +30,9 @@ app.post('/api/companies/register', (req, res) => {
     });
 });
 
-// توجيه الصفحة الرئيسية لفتح admin.html من داخل مجلد public تلقائياً
+// توجيه الصفحة الرئيسية لفتح صفحة التسجيل (admin-register.html) للزبون الجديد
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    res.sendFile(path.join(__dirname, 'public', 'admin-register.html'));
 });
 
 // تشغيل السيرفر على المنفذ المحدد من Render أو المنفذ المحلي
