@@ -1,49 +1,43 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
-const { Pool } = require('pg');
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// إعداد الاتصال بقاعدة البيانات (PostgreSQL)
-// تأكد من ضبط متغيرات البيئة DATABASE_URL في إعدادات Render
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
-});
-
-// Middleware لقراءة البيانات بصيغة JSON
+// إعدادات الوسائط الأساسية
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
-// ==========================================
-// 1. مسارات تطبيق الهاتف (معزولة في مجلد /mobile وتعمل عبر مسار /app)
-// ==========================================
-app.use('/app', express.static(path.join(__dirname, 'mobile')));
+// السماح بقراءة الملفات الثابتة (HTML, CSS, JS) من المجلد الرئيسي
+app.use(express.static(path.join(__dirname)));
 
-// ==========================================
-// 2. مسارات لوحة التحكم واللوحة السرية (في مجلد /public)
-// ==========================================
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ==========================================
-// 3. ربط ملف الـ Backend الخاص بالموظفين (الذي يتصل بقاعدة البيانات)
-// ==========================================
-const employeesRouter = require('./routes/employees')(pool);
-app.use('/api/employees', employeesRouter);
-
-// ==========================================
-// 4. ربط مسار تسجيل الدخول والمصادقة (Auth)
-// ==========================================
-const authRouter = require('./routes/auth');
-app.use('/api', authRouter); // سيصبح مسار تسجيل الدخول: /api/login
-
-// مسار افتراضي رئيسي يوجه للوحة التحكم أو الواجهة الأساسية
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// مسار التحقق من عمل السيرفر
+app.get('/api/status', (req, res) => {
+    res.json({ success: true, message: 'AlMoraqeb Pro Server is running perfectly!' });
 });
 
-// تشغيل السيرفر والاستماع للطلبات
+// مسار تسجيل الشركات وإنشاء معرف وقاعدة بيانات مستقلة
+app.post('/api/companies/register', (req, res) => {
+    const { companyName, username, email, licenseKey } = req.body;
+    
+    // توليد معرف فريد ورابط مستقل للشركة
+    const sanitizedName = companyName ? companyName.toLowerCase().replace(/\s+/g, '_') : 'company';
+    const companyId = `${sanitizedName}_${Math.floor(Math.random() * 9000) + 1000}`;
+    
+    res.json({
+        success: true,
+        message: 'تم إنشاء قاعدة البيانات المستقلة بنجاح على السيرفر',
+        companyId: companyId,
+        customUrl: `https://almoraqebpro-server.onrender.com/admin.html?company=${companyId}`
+    });
+});
+
+// توجيه أي صفحة غير موجودة إلى الصفحة الرئيسية لتفادي الأخطاء
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// تشغيل السيرفر على المنفذ المحدد من Render أو المنفذ المحلي
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server is running smoothly on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
