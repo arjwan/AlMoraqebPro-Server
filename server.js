@@ -31,8 +31,8 @@ app.post('/api/companies/register', (req, res) => {
     });
 });
 
-// توجيه أي صفحة غير موجودة إلى الصفحة الرئيسية لتفادي الأخطاء
-app.get('*', (req, res) => {
+// الصفحة الرئيسية (إرسال صفحة التحكم)
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
