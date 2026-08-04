@@ -7,8 +7,8 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// السماح بقراءة الملفات الثابتة (HTML, CSS, JS) من المجلد الرئيسي
-app.use(express.static(path.join(__dirname)));
+// جعل مجلد 'public' هو المجلد الأساسي لجميع الملفات الثابتة (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, 'public')));
 
 // مسار التحقق من عمل السيرفر
 app.get('/api/status', (req, res) => {
@@ -19,7 +19,6 @@ app.get('/api/status', (req, res) => {
 app.post('/api/companies/register', (req, res) => {
     const { companyName, username, email, licenseKey } = req.body;
     
-    // توليد معرف فريد ورابط مستقل للشركة
     const sanitizedName = companyName ? companyName.toLowerCase().replace(/\s+/g, '_') : 'company';
     const companyId = `${sanitizedName}_${Math.floor(Math.random() * 9000) + 1000}`;
     
@@ -31,9 +30,9 @@ app.post('/api/companies/register', (req, res) => {
     });
 });
 
-// الصفحة الرئيسية (إرسال صفحة التحكم)
+// توجيه الصفحة الرئيسية لفتح admin.html من داخل مجلد public تلقائياً
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 // تشغيل السيرفر على المنفذ المحدد من Render أو المنفذ المحلي
