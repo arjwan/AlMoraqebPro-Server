@@ -212,31 +212,45 @@
     <script src="/employees-sync.js"></script>
 
     <script>
-        // دالة لجلب اسم الشركة وعرضه وتثبيت تمرير معرف الشركة لجميع الروابط الفرعية
         async function initAdminDashboard() {
             const urlParams = new URLSearchParams(window.location.search);
             const companyId = urlParams.get('company');
 
             if (companyId) {
-                // تمرير معرف الشركة تلقائياً لجميع روابط القائمة لتظل الجلسة آمنة ومستقلة
+                // تمرير معرف الشركة تلقائياً لجميع روابط القائمة لتظل الجلسة آمنة
                 document.querySelectorAll('.dynamic-link').forEach(link => {
                     const currentHref = link.getAttribute('href');
-                    link.setAttribute('href', `${currentHref}?company=${companyId}`);
+                    if (currentHref && !currentHref.includes('company=')) {
+                        link.setAttribute('href', `${currentHref}?company=${companyId}`);
+                    }
                 });
 
                 try {
-                    const response = await fetch(`/api/companies/info?company=${companyId}`);
+                    const response = await fetch(`/api/companies/info?company=${encodeURIComponent(companyId)}`);
                     const data = await response.json();
 
-                    if (data.success && data.company) {
-                        const titleSpan = document.getElementById('company-title-display');
+                    const titleSpan = document.getElementById('company-title-display');
+                    if (data.success && data.company && data.company.company_name) {
                         if (titleSpan) {
                             titleSpan.textContent = `(${data.company.company_name})`;
                         }
                         document.getElementById('page-title').textContent = `المراقب برو - ${data.company.company_name}`;
+                    } else {
+                        if (titleSpan) {
+                            titleSpan.textContent = `(${companyId})`;
+                        }
                     }
                 } catch (err) {
                     console.error('Error fetching company branding:', err);
+                    const titleSpan = document.getElementById('company-title-display');
+                    if (titleSpan) {
+                        titleSpan.textContent = `(${companyId})`;
+                    }
+                }
+            } else {
+                const titleSpan = document.getElementById('company-title-display');
+                if (titleSpan) {
+                    titleSpan.textContent = '(الرابط غير محدد)';
                 }
             }
         }
