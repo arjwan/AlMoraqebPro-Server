@@ -3,20 +3,17 @@ const cors = require('cors');
 const path = require('path');
 const { Pool } = require('pg');
 
-// تعريف التطبيق أولاً لتجنب أي أخطاء
 const app = express();
 
-// إعدادات الوسائط الأساسية
 app.use(express.json());
 app.use(cors());
 
-// إعداد الاتصال بقاعدة بيانات PostgreSQL
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-// إنشاء جدول الشركات تلقائياً عند تشغيل السيرفر إن لم يكن موجوداً
+// إنشاء جدول الشركات شاملاً لجميع التفاصيل (الفرع، المحافظة، العنوان، إلخ)
 async function initDB() {
     try {
         await pool.query(`
@@ -26,17 +23,21 @@ async function initDB() {
                 company_name VARCHAR(255) NOT NULL,
                 username VARCHAR(255),
                 email VARCHAR(255),
+                branch VARCHAR(255),
+                province VARCHAR(255),
+                address TEXT,
+                base_salary NUMERIC,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        console.log("Database table 'companies' is ready.");
+        console.log("Database table 'companies' is ready with full structure.");
     } catch (err) {
         console.error("Error creating database table:", err);
     }
 }
 initDB();
 
-// حماية صفحة الأدمن: منع فتحها مباشرة إلا بوجود معرف شركة صالح وموجود في قاعدة البيانات
+// حماية صفحة الأدمن والتحقق من وجود معرف الشركة
 async function verifyAdminAccess(req, res, next) {
     const companyId = req.query.company;
     
@@ -58,10 +59,8 @@ async function verifyAdminAccess(req, res, next) {
     }
 }
 
-// قراءة مجلد الملفات الثابتة
 app.use(express.static(path.join(__dirname, 'public')));
 
-// توجيه رابط صفحة التسجيل الخاصة بالعملاء لتكون الصفحة الرئيسية
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin-register.html'));
 });
@@ -70,22 +69,19 @@ app.get('/admin-register.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin-register.html'));
 });
 
-// مسار صفحة إدارة الشركات الخاصة بك
 app.get('/create-company.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'create-company.html'));
 });
 
-// مسار صفحة الأدمن المحمي بالكامل
 app.get('/admin.html', verifyAdminAccess, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// مسار التحقق من عمل السيرفر
 app.get('/api/status', (req, res) => {
     res.json({ success: true, message: 'AlMoraqeb Pro Server & Database are running perfectly!' });
 });
 
-// مسار لجلب معلومات الشركة لعرضها في لوحة التحكم
+// مسار جلب معلومات الشركة لعرض اسمها في لوحة التحكم
 app.get('/api/companies/info', async (req, res) => {
     const companyId = req.query.company;
     if (!companyId) {
@@ -93,7 +89,7 @@ app.get('/api/companies/info', async (req, res) => {
     }
 
     try {
-        const result = await pool.query('SELECT company_name, company_id, email, created_at FROM companies WHERE company_id = $1', [companyId]);
+        const result = await pool.query('SELECT company_name, company_id, branch, province, address FROM companies WHERE company_id = $1', [companyId]);
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'الشركة غير موجودة' });
         }
@@ -105,29 +101,40 @@ app.get('/api/companies/info', async (req, res) => {
     }
 });
 
-// مسار تسجيل الشركة الفعلي وحفظها في قاعدة البيانات وتوليد الرابط الخاص بها
+// مسار استقبال بيانات إنشاء الشركة يدوياً وحفظها بالكامل
 app.post('/api/companies/register', async (req, res) => {
-    const { companyName, username, email, licenseKey } = req.body;
+    const { companyName, companyIdInput, username, email, branch, province, address, baseSalary } = req.body;
     
     if (!companyName) {
         return res.status(400).json({ success: false, message: 'اسم الشركة مطلوب' });
     }
 
     try {
+        // استخدام المعرف المدخل يدوياً أو توليده تلقائياً إذا كان فارغاً
         const sanitizedName = companyName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        const companyId = `${sanitizedName}_${Math.floor(Math.random() * 9000) + 1000}`;
+        const companyId = companyIdInput ? companyIdInput.trim() : `${sanitizedName}_${Math.floor(Math.random() * 9000) + 1000}`;
         
         const query = `
-            INSERT INTO companies (company_id, company_name, username, email)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO companies (company_id, company_name, username, email, branch, province, address, base_salary)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *;
         `;
-        const values = [companyId, companyName, username || '', email || ''];
+        const values = [
+            companyId, 
+            companyName, 
+            username || '', 
+            email || '', 
+            branch || '', 
+            province || '', 
+            address || '', 
+            baseSalary || 0
+        ];
+        
         const result = await pool.query(query, values);
 
         res.json({
             success: true,
-            message: 'تم إنشاء قاعدة البيانات والبيانات المستقلة بنجاح في النظام',
+            message: 'تم حفظ وتفعيل قاعدة البيانات المستقلة للشركة بنجاح',
             companyId: result.rows[0].company_id,
             customUrl: `https://almoraqebpro-server.onrender.com/admin.html?company=${result.rows[0].company_id}`
         });
@@ -138,7 +145,6 @@ app.post('/api/companies/register', async (req, res) => {
     }
 });
 
-// تشغيل السيرفر
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

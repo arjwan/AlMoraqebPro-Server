@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - لوحة التحكم الرئيسية</title>
+    <title id="page-title">المراقب برو - لوحة التحكم الرئيسية</title>
     <style>
         * {
             box-sizing: border-box;
@@ -37,8 +37,19 @@
 
         h1 {
             color: #0284c7;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 800;
+        }
+
+        #company-title-display {
+            color: #0369a1;
+            font-size: 18px;
+            background: #f0f9ff;
+            padding: 5px 12px;
+            border-radius: 8px;
+            margin-right: 15px;
+            display: inline-block;
+            border: 1px solid #bae6fd;
         }
 
         .logout-btn {
@@ -104,90 +115,92 @@
 
     <div class="container">
         <header>
-            <h1>🛡️ نظام المراقب برو - لوحة التحكم الإدارية</h1>
-            <a href="login.html" class="logout-btn">تسجيل الخروج</a>
+            <div>
+                <h1>🛡️ نظام المراقب برو <span id="company-title-display">جاري التحميل...</span></h1>
+            </div>
+            <a href="admin-register.html" class="logout-btn">تسجيل الخروج</a>
         </header>
 
         <div class="grid-menu">
             <!-- إضافة موظف -->
-            <a href="admin-employee.html" class="menu-card">
+            <a href="admin-employee.html" class="menu-card dynamic-link">
                 <span class="icon">➕</span>
                 <h3>إضافة موظف جديد</h3>
                 <p>تسجيل موظف جديد مع بياناته الشخصية وبصمة الوجه</p>
             </a>
 
             <!-- إدارة وعرض الموظفين -->
-            <a href="admin-manage-emp.html" class="menu-card">
+            <a href="admin-manage-emp.html" class="menu-card dynamic-link">
                 <span class="icon">👥</span>
                 <h3>إدارة الموظفين</h3>
                 <p>عرض، تعديل، وبحث في بيانات الموظفين المسجلين</p>
             </a>
 
             <!-- الفروع -->
-            <a href="admin-branches.html" class="menu-card">
+            <a href="admin-branches.html" class="menu-card dynamic-link">
                 <span class="icon">🏢</span>
                 <h3>إدارة الفروع</h3>
                 <p>توزيع وإدارة فروع العمل وأماكن التواجد</p>
             </a>
 
             <!-- الدوام والشفتات -->
-            <a href="admin-shifts.html" class="menu-card">
+            <a href="admin-shifts.html" class="menu-card dynamic-link">
                 <span class="icon">⏰</span>
                 <h3>الأوقات والشفتات</h3>
                 <p>إدارة مواعيد الدوام الرسمي والأوقات الخاصة</p>
             </a>
 
             <!-- بصمة الوجه والجي بي إس -->
-            <a href="admin-face-gps.html" class="menu-card">
+            <a href="admin-face-gps.html" class="menu-card dynamic-link">
                 <span class="icon">📍</span>
                 <h3>بصمة الوجه والـ GPS</h3>
                 <p>مراقبة مواقع الحضور والنطاق الجغرافي للموظفين</p>
             </a>
 
             <!-- الرواتب -->
-            <a href="admin-salaries.html" class="menu-card">
+            <a href="admin-salaries.html" class="menu-card dynamic-link">
                 <span class="icon">💰</span>
                 <h3>إدارة الرواتب</h3>
                 <p>احتساب الرواتب الاسمية، الاستقطاعات، والصفاء</p>
             </a>
 
             <!-- السلف -->
-            <a href="admin-loans.html" class="menu-card">
+            <a href="admin-loans.html" class="menu-card dynamic-link">
                 <span class="icon">💳</span>
                 <h3>إدارة السلف</h3>
                 <p>تسجيل ومتابعة سلف الموظفين وأقساطها</p>
             </a>
 
             <!-- التقارير -->
-            <a href="admin-reports.html" class="menu-card">
+            <a href="admin-reports.html" class="menu-card dynamic-link">
                 <span class="icon">📊</span>
                 <h3>التقارير الشاملة</h3>
                 <p>استخراج تقارير الحضور، الغياب، والرواتب</p>
             </a>
 
             <!-- الصلاحيات -->
-            <a href="admin-permissions.html" class="menu-card">
+            <a href="admin-permissions.html" class="menu-card dynamic-link">
                 <span class="icon">🔐</span>
                 <h3>الصلاحيات والأذونات</h3>
                 <p>تحديد صلاحيات المشرفين والمستخدمين</p>
             </a>
 
             <!-- الأرشيف -->
-            <a href="admin-archive.html" class="menu-card">
+            <a href="admin-archive.html" class="menu-card dynamic-link">
                 <span class="icon">📁</span>
                 <h3>أرشيف النظام</h3>
                 <p>الرجوع إلى السجلات والبيانات المؤرشفة</p>
             </a>
 
             <!-- تسجيل / حركة النظام -->
-            <a href="admin-register.html" class="menu-card">
+            <a href="activity-log.html" class="menu-card dynamic-link">
                 <span class="icon">📝</span>
                 <h3>سجل الحركات</h3>
                 <p>متابعة حركة العمليات والنشاطات داخل النظام</p>
             </a>
 
             <!-- الإعدادات -->
-            <a href="admin-settings.html" class="menu-card">
+            <a href="admin-settings.html" class="menu-card dynamic-link">
                 <span class="icon">⚙️</span>
                 <h3>إعدادات النظام</h3>
                 <p>التحكم بالإعدادات العامة والربط البرمجي</p>
@@ -197,5 +210,38 @@
 
     <!-- ملف المزامنة والربط الموحد -->
     <script src="/employees-sync.js"></script>
+
+    <script>
+        // دالة لجلب اسم الشركة وعرضه وتثبيت تمرير معرف الشركة لجميع الروابط الفرعية
+        async function initAdminDashboard() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const companyId = urlParams.get('company');
+
+            if (companyId) {
+                // تمرير معرف الشركة تلقائياً لجميع روابط القائمة لتظل الجلسة آمنة ومستقلة
+                document.querySelectorAll('.dynamic-link').forEach(link => {
+                    const currentHref = link.getAttribute('href');
+                    link.setAttribute('href', `${currentHref}?company=${companyId}`);
+                });
+
+                try {
+                    const response = await fetch(`/api/companies/info?company=${companyId}`);
+                    const data = await response.json();
+
+                    if (data.success && data.company) {
+                        const titleSpan = document.getElementById('company-title-display');
+                        if (titleSpan) {
+                            titleSpan.textContent = `(${data.company.company_name})`;
+                        }
+                        document.getElementById('page-title').textContent = `المراقب برو - ${data.company.company_name}`;
+                    }
+                } catch (err) {
+                    console.error('Error fetching company branding:', err);
+                }
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', initAdminDashboard);
+    </script>
 </body>
 </html>
