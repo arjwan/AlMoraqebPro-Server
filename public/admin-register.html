@@ -79,7 +79,7 @@
 
                 <div class="form-group full-width">
                     <label>9. صورة مدير النظام (صورة شخصية):</label>
-                    <input type="file" id="managerPhoto" accept="image/*" required>
+                    <input type="file" id="managerPhoto" accept="image/*">
                 </div>
             </div>
 
@@ -110,6 +110,8 @@
 
             const compId = document.getElementById('companyId').value.trim().toLowerCase();
             const email = document.getElementById('email').value.trim().toLowerCase();
+            const photoInput = document.getElementById('managerPhoto');
+            const photoName = photoInput.files.length > 0 ? photoInput.files[0].name : 'default.jpg';
 
             try {
                 let activeCompanies = [];
@@ -133,6 +135,7 @@
                     email: email,
                     username: document.getElementById('username').value.trim(),
                     pass: pass,
+                    photo: photoName,
                     status: 'active'
                 };
 
@@ -143,7 +146,7 @@
                 window.location.href = 'index.html';
             } catch (error) {
                 console.error(error);
-                alert('⚠️ حدث خطأ أثناء الحفظ في المتصفح، تأكد من أن التخزين المحلي غير ممتلئ أو مفعل.');
+                alert('⚠️ حدث خطأ أثناء التخزين المؤقت في المتصفح.');
             }
         }
     </script>
