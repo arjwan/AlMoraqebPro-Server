@@ -53,7 +53,7 @@
     </div>
 
     <script>
-        async function handleLogin(event) {
+        function handleLogin(event) {
             event.preventDefault();
             const usernameInput = document.getElementById('username').value.trim();
             const passwordInput = document.getElementById('password').value.trim();
@@ -62,40 +62,36 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'جاري التحقق...';
 
-            try {
-                // إرسال طلب تسجيل الدخول إلى السيرفر
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username: usernameInput,
-                        password: passwordInput
-                    })
-                });
+            // 1. التحقق من الحساب العام الافتراضي
+            if (usernameInput === 'admin' && passwordInput === 'admin123') {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('activeCompanyId', 'default_company');
+                window.location.href = 'admin.html?company=default_company';
+                return;
+            }
 
-                const contentType = response.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    throw new Error("استجابة السيرفر غير صالحة.");
-                }
+            // 2. التحقق من الشركات المسجلة محلياً
+            const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+            
+            const foundCompany = companiesList.find(c => 
+                (c.id === usernameInput || c.company_id === usernameInput || c.username === usernameInput || c.email === usernameInput) &&
+                (c.password === passwordInput)
+            );
 
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    // تخزين البيانات للتنقل السليم
-                    localStorage.setItem('isLoggedIn', 'true');
-                    localStorage.setItem('activeCompanyId', data.companyId);
-                    
-                    // التوجيه للرابط القادم من السيرفر مباشرة (مثل /admin.html?company=...)
-                    window.location.href = data.redirectUrl;
-                } else {
-                    alert('⚠️ ' + (data.message || 'بيانات الدخول غير صحيحة!'));
+            if (foundCompany) {
+                // التحقق مما إذا كانت الشركة متوقفة مؤقتاً
+                if (foundCompany.status === 'stopped') {
+                    alert('⚠️ عذراً، هذه الشركة متوقفة مؤقتاً من قبل الإدارة.');
                     resetSubmitButton(submitBtn);
+                    return;
                 }
-            } catch (error) {
-                console.error('Login Error:', error);
-                alert('⚠️ حدث خطأ في الاتصال بالسيرفر. يرجى التأكد من تشغيل السيرفر وصحة البيانات.');
+
+                const companyId = foundCompany.id || foundCompany.company_id;
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('activeCompanyId', companyId);
+                window.location.href = `admin.html?company=${encodeURIComponent(companyId)}`;
+            } else {
+                alert('⚠️ بيانات الدخول غير صحيحة، أو لم يتم العثور على الحساب!');
                 resetSubmitButton(submitBtn);
             }
         }
