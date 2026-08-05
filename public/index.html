@@ -172,7 +172,7 @@
             const user = document.getElementById('username').value.trim().toLowerCase();
             const pass = document.getElementById('password').value.trim();
 
-            // التحقق من الحساب التجريبي العام الافتراضي
+            // 1. التحقق من الحساب التجريبي العام الافتراضي
             if (user === 'admin' && pass === 'admin123') {
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('activeCompanyId', 'default_company');
@@ -180,16 +180,16 @@
                 return;
             }
 
-            // التحقق من الشركات المسجلة بقواعد بياناتها المستقلة
+            // 2. التحقق من الشركات المسجلة والمفعلة عبر لوحة المطور
             const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            const matchedCompany = companiesList.find(c => c.id === user || c.name.toLowerCase().includes(user));
+            const matchedCompany = companiesList.find(c => (c.id === user || c.username.toLowerCase() === user) && c.pass === pass);
 
             if (matchedCompany) {
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('activeCompanyId', matchedCompany.id);
                 window.location.href = 'admin.html';
             } else {
-                alert('⚠️ بيانات الدخول غير صحيحة أو أن الشركة غير مسجلة في النظام!');
+                alert('⚠️ بيانات الدخول غير صحيحة، أو أن الشركة لم يتم تفعيلها بعد من قبل المطور!');
             }
         }
     </script>
