@@ -120,7 +120,7 @@
             <div>
                 <h1>🛡️ نظام المراقب برو <span id="company-title-display">جاري التحميل...</span></h1>
             </div>
-            <!-- زر تسجيل الخروج يوجه إلى صفحة تسجيل دخول الشركة مع الاحتفاظ بالمعرف -->
+            <!-- زر تسجيل الخروج يوجه إلى صفحة admin-register.html الصحيحة مع الاحتفاظ بالمعرف -->
             <button onclick="logoutAdmin()" class="logout-btn">تسجيل الخروج</button>
         </header>
 
@@ -264,11 +264,11 @@
             const urlParams = new URLSearchParams(window.location.search);
             const companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId');
             
-            // العودة إلى صفحة تسجيل الدخول الخاصة بالشركة مع الاحتفاظ بالمعرف في الرابط
+            // التوجيه الصحيح إلى صفحة admin-register.html مع الاحتفاظ بالمعرف
             if (companyId) {
-                window.location.href = `company-register.html?company=${encodeURIComponent(companyId)}`;
+                window.location.href = `admin-register.html?company=${encodeURIComponent(companyId)}`;
             } else {
-                window.location.href = 'create-company.html';
+                window.location.href = 'admin-register.html';
             }
         }
 
