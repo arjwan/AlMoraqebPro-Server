@@ -34,15 +34,57 @@ async function initDB() {
 }
 initDB();
 
-// جعل مجلد 'public' هو المجلد الأساسي لجميع الملفات الثابتة
-app.use(express.static(path.join(__dirname, 'public')));
+// حماية صفحة الأدمن: منع فتحها مباشرة إلا بوجود معرف شركة صالح وموجود في قاعدة البيانات
+async function verifyAdminAccess(req, res, next) {
+    const companyId = req.query.company;
+    
+    // إذا لم يتم إرفاق معرف الشركة في الرابط، يرفض السيرفر الاستجابة فوراً
+    if (!companyId) {
+        return res.status(403).send("<h1>403 Forbidden</h1><p>غير مسموح بالوصول المباشر لهذه الصفحة. يرجى التسجيل أو التفعيل أولاً.</p>");
+    }
+
+    try {
+        // التحقق مما إذا كانت الشركة موجودة حقاً في قاعدة البيانات
+        const result = await pool.query('SELECT * FROM companies WHERE company_id = $1', [companyId]);
+        
+        if (result.rows.length === 0) {
+            return res.status(403).send("<h1>403 Forbidden</h1><p>معرف الشركة غير صالح أو غير مسجل في النظام.</p>");
+        }
+
+        // إذا كانت الشركة موجودة، يُسمح له بفتح الصفحة
+        next();
+    } catch (err) {
+        console.error("Database Auth Error:", err);
+        return res.status(500).send("حدث خطأ في التحقق من الصلاحيات.");
+    }
+}
+
+// جعل مجلد 'public' عاماً، مع تعطيل الـ index التلقائي لعزل الملفات الحساسة
+app.use(express.static(path.join(__dirname, 'public'), {
+    index: false
+}));
+
+// توجيه الرابط الجديد لفتح صفحة التفعيل/التسجيل حصراً
+app.get('/company-activate.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'company-activate.html'));
+});
+
+// جعل صفحة التفعيل هي الصفحة الرئيسية افتراضياً عند فتح الرابط الأساسي للموقع
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'company-activate.html'));
+});
+
+// مسار صفحة الأدمن المحمي بالكامل (لن تفتح ولن يستجيب السيرفر إلا بمعرف شركة صحيح من القاعدة)
+app.get('/admin.html', verifyAdminAccess, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
 
 // مسار التحقق من عمل السيرفر
 app.get('/api/status', (req, res) => {
     res.json({ success: true, message: 'AlMoraqeb Pro Server & Database are running perfectly!' });
 });
 
-// مسار تسجيل الشركة الفعلي وحفظها في قاعدة البيانات
+// مسار تسجيل الشركة الفعلي وحفظها في قاعدة البيانات وتوليد الرابط الخاص بها
 app.post('/api/companies/register', async (req, res) => {
     const { companyName, username, email, licenseKey } = req.body;
     
@@ -75,11 +117,6 @@ app.post('/api/companies/register', async (req, res) => {
         console.error("Database Error:", err);
         res.status(500).json({ success: false, message: 'حدث خطأ أثناء حفظ الشركة في قاعدة البيانات', error: err.message });
     }
-});
-
-// توجيه الصفحة الرئيسية لفتح صفحة التسجيل للزبون
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin-register.html'));
 });
 
 // تشغيل السيرفر
