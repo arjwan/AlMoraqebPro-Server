@@ -7,9 +7,15 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-
-// مسار ملف تخزين الشركات محلياً على السيرفر
 const DATA_FILE = path.join(__dirname, 'companies.json');
+
+// مسح إجباري لملف الشركات القديم وجعله نظيفاً تماماً
+try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+    console.log("SUCCESS: Database file cleared and reset to empty.");
+} catch (e) {
+    console.log("Error resetting file:", e);
+}
 
 // عند تشغيل السيرفر، نقوم بتفريغ الملف تماماً وجعله نظيفاً
 try {
