@@ -42,15 +42,15 @@
     <div class="container">
         <div class="header">
             <h2>🛡️ لوحة المطور - إدارة الشركات المسجلة</h2>
-            <p>شركة الأرجوان للبرمجيات | التحكم الكامل بالشركات المفعلة (إيقاف، تشغيل، حذف، وبحث حقيقي عبر السيرفر)</p>
+            <p>شركة الأرجوان للبرمجيات | التحكم الكامل بالشركات المفعلة (إيقاف، تشغيل، حذف، وبحث)</p>
         </div>
 
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="🔍 ابحث عن شركة (بالاسم، المعرف، أو اسم المستخدم)..." oninput="filterCompaniesLocally()">
+            <input type="text" id="searchInput" placeholder="🔍 ابحث عن شركة (بالاسم، المعرف، أو اسم المستخدم)..." oninput="filterCompanies()">
         </div>
 
         <div id="companiesContainer">
-            <div class="empty-msg">⏳ جاري تحميل الشركات المسجلة من السيرفر...</div>
+            <!-- يتم تحميل الشركات هنا ديناميكياً -->
         </div>
 
         <div class="dev-footer">
@@ -59,29 +59,21 @@
     </div>
 
     <script>
-        let allCompanies = [];
-
-        async function loadCompanies() {
+        function loadCompanies() {
             const container = document.getElementById('companiesContainer');
-            try {
-                const response = await fetch('/api/developer/companies');
-                const data = await response.json();
+            const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
 
-                if (data.success && data.companies) {
-                    allCompanies = data.companies;
-                    renderCompanies(allCompanies);
-                } else {
-                    container.innerHTML = '<div class="empty-msg">📭 لا توجد أي شركات مسجلة في النظام حالياً.</div>';
-                }
-            } catch (err) {
-                console.error("فشل جلب الشركات من السيرفر:", err);
-                container.innerHTML = '<div class="empty-msg" style="color: #ef4444;">❌ تعذر الاتصال بالسيرفر لجلب قائمة الشركات.</div>';
+            if (companiesList.length === 0) {
+                container.innerHTML = '<div class="empty-msg">📭 لا توجد أي شركات مسجلة في النظام حالياً.</div>';
+                return;
             }
+
+            renderCompanies(companiesList);
         }
 
         function renderCompanies(list) {
             const container = document.getElementById('companiesContainer');
-            if (!list || list.length === 0) {
+            if (list.length === 0) {
                 container.innerHTML = '<div class="empty-msg">🔍 لم يتم العثور على أي شركة تطابق بحثك.</div>';
                 return;
             }
@@ -93,10 +85,10 @@
                 const statusText = isActive ? '🟢 مفعل (يعمل)' : '🟡 متوقف مؤقتاً';
 
                 container.innerHTML += `
-                    <div class="card" id="comp-card-${comp.id}">
+                    <div class="card">
                         <div class="info">
                             <span class="status-badge ${statusClass}">${statusText}</span>
-                            <p>معرف الشركة (ID): <span>${comp.id}</span></p>
+                            <p>معرف الشركة (ID): <span>${comp.id || comp.company_id || 'غير متوفر'}</span></p>
                             <p>اسم الشركة العربي: <span>${comp.name || comp.company_name || 'غير متوفر'}</span></p>
                             <p>اسم المدير: <span>${comp.manager || 'غير متوفر'}</span></p>
                             <p>رقم الهاتف: <span>${comp.phone || 'غير متوفر'}</span></p>
@@ -104,65 +96,51 @@
                         </div>
                         <div class="actions">
                             ${isActive ? 
-                                `<button class="btn btn-pause" onclick="toggleStatus('${comp.id}', 'stop')">⏸️ إيقاف مؤقت</button>` : 
-                                `<button class="btn btn-play" onclick="toggleStatus('${comp.id}', 'start')">▶️ تشغيل النظام</button>`
+                                `<button class="btn btn-pause" onclick="toggleStatus('${comp.id || comp.company_id}', 'stop')">⏸️ إيقاف مؤقت</button>` : 
+                                `<button class="btn btn-play" onclick="toggleStatus('${comp.id || comp.company_id}', 'start')">▶️ تشغيل النظام</button>`
                             }
-                            <button class="btn btn-delete" onclick="deleteCompany('${comp.id}')">🗑️ حذف الشركة</button>
+                            <button class="btn btn-delete" onclick="deleteCompany('${comp.id || comp.company_id}')">🗑️ حذف الشركة</button>
                         </div>
                     </div>
                 `;
             });
         }
 
-        function filterCompaniesLocally() {
+        function filterCompanies() {
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
-            const filtered = allCompanies.filter(c => 
-                (c.id && c.id.toLowerCase().includes(query)) || 
-                (c.name && c.name.toLowerCase().includes(query)) || 
-                (c.company_name && c.company_name.toLowerCase().includes(query)) || 
-                (c.username && c.username.toLowerCase().includes(query)) ||
-                (c.manager && c.manager.toLowerCase().includes(query))
-            );
+            const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+
+            const filtered = companiesList.filter(c => {
+                const id = (c.id || c.company_id || '').toLowerCase();
+                const name = (c.name || c.company_name || '').toLowerCase();
+                const username = (c.username || '').toLowerCase();
+                const manager = (c.manager || '').toLowerCase();
+
+                return id.includes(query) || name.includes(query) || username.includes(query) || manager.includes(query);
+            });
+
             renderCompanies(filtered);
         }
 
-        async function toggleStatus(companyId, action) {
-            try {
-                const response = await fetch(`/api/developer/company-status`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ companyId, status: (action === 'stop' ? 'stopped' : 'active') })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    loadCompanies(); // إعادة تحميل القائمة لتحديث الحالة حقيقياً
-                } else {
-                    alert('❌ ' + (data.message || 'فشل تغيير حالة الشركة.'));
+        function toggleStatus(companyId, action) {
+            let companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+            companiesList = companiesList.map(c => {
+                const currentId = c.id || c.company_id;
+                if (currentId === companyId) {
+                    c.status = (action === 'stop') ? 'stopped' : 'active';
                 }
-            } catch (err) {
-                console.error("Error updating status:", err);
-                alert('❌ حدث خطأ أثناء الاتصال بالسيرفر.');
-            }
+                return c;
+            });
+            localStorage.setItem('registeredCompanies', JSON.stringify(companiesList));
+            filterCompanies();
         }
 
-        async function deleteCompany(companyId) {
-            if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف هذه الشركة نهائياً من السيرفر وقاعدة البيانات؟')) {
-                try {
-                    const response = await fetch(`/api/developer/company-delete`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ companyId })
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        loadCompanies(); // إعادة تحديث القائمة بعد الحذف
-                    } else {
-                        alert('❌ ' + (data.message || 'فشل حذف الشركة.'));
-                    }
-                } catch (err) {
-                    console.error("Error deleting company:", err);
-                    alert('❌ حدث خطأ أثناء الاتصال بالسيرفر للحذف.');
-                }
+        function deleteCompany(companyId) {
+            if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف هذه الشركة نهائياً من النظام؟')) {
+                let companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+                companiesList = companiesList.filter(c => (c.id || c.company_id) !== companyId);
+                localStorage.setItem('registeredCompanies', JSON.stringify(companiesList));
+                filterCompanies();
             }
         }
 
