@@ -1,122 +1,124 @@
-/**
- * محرك مزامنة سجل الحركات والعمليات - نظام المراقب برو
- */
-class ActivitySyncEngine {
-    constructor() {
-        this.dbName = 'AlMoraqebPro_LocalDB';
-        this.storeName = 'activity_logs';
-        this.db = null;
-        this.initDB();
-        this.setupNetworkListeners();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const { Pool } = require('pg');
+const app = express();
+
+// إعدادات الوسائط الأساسية
+app.use(express.json());
+app.use(cors());
+
+// إعداد الاتصال بقاعدة بيانات PostgreSQL (سواء محلياً أو عبر Render)
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
+
+// إنشاء جدول الشركات تلقائياً عند تشغيل السيرفر إن لم يكن موجوداً
+async function initDB() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS companies (
+                id SERIAL PRIMARY KEY,
+                company_id VARCHAR(255) UNIQUE NOT NULL,
+                company_name VARCHAR(255) NOT NULL,
+                username VARCHAR(255),
+                email VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log("Database table 'companies' is ready.");
+    } catch (err) {
+        console.error("Error creating database table:", err);
+    }
+}
+initDB();
+
+// حماية صفحة الأدمن: منع فتحها مباشرة إلا بوجود معرف شركة صالح وموجود في قاعدة البيانات
+async function verifyAdminAccess(req, res, next) {
+    const companyId = req.query.company;
+    
+    // إذا لم يتم إرفاق معرف الشركة في الرابط، يرفض السيرفر الاستجابة فوراً
+    if (!companyId) {
+        return res.status(403).send("<h1>403 Forbidden</h1><p>غير مسموح بالوصول المباشر لهذه الصفحة. يرجى إنشاء الشركة أو التفعيل أولاً.</p>");
     }
 
-    // تهيئة قاعدة البيانات المحلية IndexedDB لضمان أمان عالي وسعة تخزين كبيرة
-    initDB() {
-        const request = indexedDB.open(this.dbName, 1);
-        request.onerror = (event) => console.error("خطأ في فتح قاعدة البيانات المحلية:", event.target.error);
-        request.onsuccess = (event) => {
-            this.db = event.target.result;
-            this.checkAndSync(); // محاولة مزامنة أي بيانات قديمة عند الإقلاع
-        };
-        request.onupgradeneeded = (event) => {
-            let db = event.target.result;
-            if (!db.objectStoreNames.contains(this.storeName)) {
-                db.createObjectStore(this.storeName, { keyPath: 'id', autoIncrement: true });
-            }
-        };
-    }
-
-    // تسجيل حركة جديدة (سواء كان الجهاز متصلاً أو غير متصل)
-    async logActivity(actionType, details, employeeId) {
-        const logData = {
-            actionType,
-            details,
-            employeeId,
-            timestamp: new Date().toISOString(),
-            synced: false
-        };
-
-        if (navigator.onLine) {
-            try {
-                await this.sendToServer(logData);
-                logData.synced = true;
-            } catch (error) {
-                console.warn("فشل الإرسال المباشر، جاري الحفظ محلياً...", error);
-                await this.saveLocally(logData);
-            }
-        } else {
-            await this.saveLocally(logData);
-            this.showOfflineNotification();
+    try {
+        // التحقق مما إذا كانت الشركة موجودة حقاً في قاعدة البيانات
+        const result = await pool.query('SELECT * FROM companies WHERE company_id = $1', [companyId]);
+        
+        if (result.rows.length === 0) {
+            return res.status(403).send("<h1>403 Forbidden</h1><p>معرف الشركة غير صالح أو غير مسجل في النظام.</p>");
         }
-    }
 
-    // حفظ الحركة محلياً في حالة أوفلاين
-    saveLocally(data) {
-        return new Promise((resolve, reject) => {
-            if (!this.db) return reject("قاعدة البيانات المحلية غير جاهزة");
-            const transaction = this.db.transaction([this.storeName], "readwrite");
-            const store = transaction.objectStore(this.storeName);
-            const request = store.add(data);
-            request.onsuccess = () => resolve(true);
-            request.onerror = (e) => reject(e.target.error);
-        });
-    }
-
-    // إرسال البيانات إلى السيرفر
-    async sendToServer(data) {
-        const response = await fetch('/api/system/activity-logs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        if (!response.ok) throw new Error('خطأ في استجابة السيرفر');
-        return await response.json();
-    }
-
-    // الاستماع لعودة الإنترنت ومزامنة البيانات تلقائياً
-    setupNetworkListeners() {
-        window.addEventListener('online', () => {
-            console.تم_الاتصال_بالإنترنت = "تم استعادة الاتصال، بدء المزامنة التلقائية...";
-            this.checkAndSync();
-        });
-    }
-
-    // عملية المزامنة التلقائية للسجلات المعلقة
-    async checkAndSync() {
-        if (!navigator.onLine || !this.db) return;
-
-        const transaction = this.db.transaction([this.storeName], "readwrite");
-        const store = transaction.objectStore(this.storeName);
-        const request = store.getAll();
-
-        request.onsuccess = async () => {
-            const logs = request.result;
-            for (let log of logs) {
-                if (!log.synced) {
-                    try {
-                        await this.sendToServer(log);
-                        // حذف الحركة من التخزين المحلي بعد نجاح رفعها للسيرفر
-                        this.deleteLocalLog(log.id);
-                    } catch (e) {
-                        console.error("فشل مزامنة الحركة رقم:", log.id, e);
-                        break; // إيقاف المؤقت مؤقتاً لحين استقرار الشبكة تماماً
-                    }
-                }
-            }
-        };
-    }
-
-    deleteLocalLog(id) {
-        const transaction = this.db.transaction([this.storeName], "readwrite");
-        const store = transaction.objectStore(this.storeName);
-        store.delete(id);
-    }
-
-    showOfflineNotification() {
-        // تنبيه خفيف للمستخدم بأن النظام يعمل بوضع الأوفلاين ويحفظ محلياً
-        console.log("⚠️ الجهاز غير متصل بالإنترنت. يتم حفظ الحركات محلياً لحين الاتصال.");
+        // إذا كانت الشركة موجودة، يُسمح له بفتح الصفحة
+        next();
+    } catch (err) {
+        console.error("Database Auth Error:", err);
+        return res.status(500).send("حدث خطأ في التحقق من الصلاحيات.");
     }
 }
 
-// تصدير كائن محرك المزامنة للاستخدام العام
-const ActivityLogger = new ActivitySyncEngine();
+// السماح بقراءة مجلد 'public' للملفات الثابتة (CSS, JS, الصور، إلخ)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// توجيه رابط صفحة إنشاء الشركة حصراً
+app.get('/create-company.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'create-company.html'));
+});
+
+// جعل صفحة إنشاء الشركة هي الصفحة الرئيسية افتراضياً عند فتح الرابط الأساسي للموقع
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'create-company.html'));
+});
+
+// مسار صفحة الأدمن المحمي بالكامل (لن تفتح ولن يستجيب السيرفر إلا بمعرف شركة صحيح من القاعدة)
+app.get('/admin.html', verifyAdminAccess, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// مسار التحقق من عمل السيرفر
+app.get('/api/status', (req, res) => {
+    res.json({ success: true, message: 'AlMoraqeb Pro Server & Database are running perfectly!' });
+});
+
+// مسار تسجيل الشركة الفعلي وحفظها في قاعدة البيانات وتوليد الرابط الخاص بها
+app.post('/api/companies/register', async (req, res) => {
+    const { companyName, username, email, licenseKey } = req.body;
+    
+    if (!companyName) {
+        return res.status(400).json({ success: false, message: 'اسم الشركة مطلوب' });
+    }
+
+    try {
+        // توليد معرف فريد للشركة
+        const sanitizedName = companyName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        const companyId = `${sanitizedName}_${Math.floor(Math.random() * 9000) + 1000}`;
+        
+        // حفظ الشركة في قاعدة البيانات الحقيقية
+        const query = `
+            INSERT INTO companies (company_id, company_name, username, email)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *;
+        `;
+        const values = [companyId, companyName, username || '', email || ''];
+        const result = await pool.query(query, values);
+
+        res.json({
+            success: true,
+            message: 'تم إنشاء قاعدة البيانات والبيانات المستقلة بنجاح في النظام',
+            companyId: result.rows[0].company_id,
+            customUrl: `https://almoraqebpro-server.onrender.com/admin.html?company=${result.rows[0].company_id}`
+        });
+
+    } catch (err) {
+        console.error("Database Error:", err);
+        res.status(500).json({ success: false, message: 'حدث خطأ أثناء حفظ الشركة في قاعدة البيانات', error: err.message });
+    }
+});
+
+// تشغيل السيرفر
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
