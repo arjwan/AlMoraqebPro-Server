@@ -9,19 +9,20 @@
         body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; padding: 40px; }
         .container { max-width: 1400px; margin: 0 auto; }
         header { background: #ffffff; padding: 25px 35px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; }
-        h1 { color: #0284c7; font-size: 24px; font-weight: 800; }
-        #company-title-display { color: #0369a1; font-size: 16px; background: #f0f9ff; padding: 5px 12px; border-radius: 8px; margin-right: 15px; display: inline-block; border: 1px solid #bae6fd; }
+        h1 { color: #0284c7; font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        #company-title-display { color: #0369a1; font-size: 16px; background: #f0f9ff; padding: 5px 12px; border-radius: 8px; border: 1px solid #bae6fd; font-weight: 600; }
         .logout-btn { background: #ef4444; color: white; padding: 10px 20px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.2s; cursor: pointer; border: none; }
         .logout-btn:hover { background: #dc2626; }
         .grid-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
-        .menu-card { background: #ffffff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); text-decoration: none; color: #1e293b; display: flex; flex-direction: column; align-items: center; text-align: center; transition: 0.3s; border: 2px solid transparent; }
-        .menu-card:hover { transform: translateY(-8px); border-color: #0284c7; }
-        .icon { font-size: 40px; margin-bottom: 12px; }
-        .menu-card h3 { font-size: 18px; font-weight: 700; color: #0369a1; margin-bottom: 6px; }
-        .menu-card p { font-size: 13px; color: #64748b; }
+        .menu-card { background: #ffffff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); text-decoration: none; color: #1e293b; display: flex; flex-direction: column; align-items: center; text-align: center; transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; border: 2px solid transparent; }
+        .menu-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(2, 132, 199, 0.3); border-color: #0284c7; }
+        .icon { font-size: 45px; margin-bottom: 15px; }
+        .menu-card h3 { font-size: 20px; font-weight: 700; color: #0369a1; margin-bottom: 8px; }
+        .menu-card p { font-size: 14px; color: #64748b; line-height: 1.5; }
     </style>
 </head>
 <body>
+
     <div class="container">
         <header>
             <div>
@@ -34,57 +35,126 @@
             <a href="admin-employee.html" class="menu-card dynamic-link">
                 <span class="icon">➕</span>
                 <h3>إضافة موظف جديد</h3>
-                <p>تسجيل موظف جديد وبصمة الوجه</p>
+                <p>تسجيل موظف جديد مع بياناته الشخصية وبصمة الوجه</p>
             </a>
+
             <a href="admin-manage-emp.html" class="menu-card dynamic-link">
                 <span class="icon">👥</span>
                 <h3>إدارة الموظفين</h3>
-                <p>عرض وتعديل بيانات الموظفين</p>
+                <p>عرض، تعديل، وبحث في بيانات الموظفين المسجلين</p>
             </a>
+
+            <a href="admin-branches.html" class="menu-card dynamic-link">
+                <span class="icon">🏢</span>
+                <h3>إدارة الفروع</h3>
+                <p>توزيع وإدارة فروع العمل وأماكن التواجد</p>
+            </a>
+
+            <a href="admin-shifts.html" class="menu-card dynamic-link">
+                <span class="icon">⏰</span>
+                <h3>الأوقات والشفتات</h3>
+                <p>إدارة مواعيد الدوام الرسمي والأوقات الخاصة</p>
+            </a>
+
+            <a href="admin-face-gps.html" class="menu-card dynamic-link">
+                <span class="icon">📍</span>
+                <h3>بصمة الوجه والـ GPS</h3>
+                <p>مراقبة مواقع الحضور والنطاق الجغرافي للموظفين</p>
+            </a>
+
+            <a href="admin-salaries.html" class="menu-card dynamic-link">
+                <span class="icon">💰</span>
+                <h3>إدارة الرواتب</h3>
+                <p>احتساب الرواتب الاسمية، الاستقطاعات، والصفاء</p>
+            </a>
+
+            <a href="admin-loans.html" class="menu-card dynamic-link">
+                <span class="icon">💳</span>
+                <h3>إدارة السلف</h3>
+                <p>تسجيل ومتابعة سلف الموظفين وأقساطها</p>
+            </a>
+
+            <a href="admin-reports.html" class="menu-card dynamic-link">
+                <span class="icon">📊</span>
+                <h3>التقارير الشاملة</h3>
+                <p>استخراج تقارير الحضور، الغياب، والرواتب</p>
+            </a>
+
+            <a href="admin-permissions.html" class="menu-card dynamic-link">
+                <span class="icon">🔐</span>
+                <h3>الصلاحيات والأذونات</h3>
+                <p>تحديد صلاحيات المشرفين والمستخدمين</p>
+            </a>
+
+            <a href="admin-archive.html" class="menu-card dynamic-link">
+                <span class="icon">📁</span>
+                <h3>أرشيف النظام</h3>
+                <p>الرجوع إلى السجلات والبيانات المؤرشفة</p>
+            </a>
+
             <a href="activity-log.html" class="menu-card dynamic-link">
                 <span class="icon">📝</span>
                 <h3>سجل الحركات</h3>
-                <p>متابعة حركة العمليات والنشاطات</p>
+                <p>متابعة حركة العمليات والنشاطات داخل النظام</p>
+            </a>
+
+            <a href="admin-settings.html" class="menu-card dynamic-link">
+                <span class="icon">⚙️</span>
+                <h3>إعدادات النظام</h3>
+                <p>التحكم بالإعدادات العامة والربط البرمجي</p>
             </a>
         </div>
     </div>
 
     <script>
-        // التحقق من حماية الصفحة وجلسة الدخول المرتبطة بالمعرف
         const urlParams = new URLSearchParams(window.location.search);
-        const companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId');
+        let companyId = urlParams.get('company');
 
-        if (!localStorage.getItem('isLoggedIn') || !companyId) {
-            alert('⚠️ يجب تسجيل الدخول أولاً للوصول إلى لوحة التحكم!');
-            window.location.href = 'company-activate.html';
+        // إذا لم يكن المعرف موجوداً بالرابط، يتم جذبه تلقائياً من الذاكرة المحلية وإعادة صياغة الرابط فوراً
+        if (!companyId) {
+            companyId = localStorage.getItem('activeCompanyId');
+            if (companyId) {
+                const newUrl = window.location.pathname + `?company=` + encodeURIComponent(companyId);
+                window.history.replaceState({}, '', newUrl);
+            }
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            localStorage.setItem('activeCompanyId', companyId);
             const titleSpan = document.getElementById('company-title-display');
 
-            // تمرير معرف الشركة تلقائياً لجميع الروابط الفرعية لضمان عدم ضياعه
-            document.querySelectorAll('.dynamic-link').forEach(link => {
-                const currentHref = link.getAttribute('href');
-                if (currentHref && !currentHref.includes('company=')) {
-                    link.setAttribute('href', `${currentHref}?company=${companyId}`);
-                }
-            });
+            if (companyId) {
+                localStorage.setItem('activeCompanyId', companyId);
 
-            // جلب اسم الشركة وعرضه
-            let companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            let matched = companiesList.find(c => c.id === companyId);
-            if (matched) {
-                titleSpan.textContent = `(${matched.name})`;
-                document.getElementById('page-title').textContent = `المراقب برو - ${matched.name}`;
+                // تمرير معرف الشركة تلقائياً لجميع روابط القائمة لضمان عدم ضياعه أبداً
+                document.querySelectorAll('.dynamic-link').forEach(link => {
+                    const currentHref = link.getAttribute('href');
+                    if (currentHref && !currentHref.includes('company=')) {
+                        link.setAttribute('href', `${currentHref}?company=${encodeURIComponent(companyId)}`);
+                    }
+                });
+
+                // جلب اسم الشركة من الذاكرة وعرضه في اللوحة
+                try {
+                    let companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+                    let matchedComp = companiesList.find(c => c.id === companyId);
+
+                    if (matchedComp && matchedComp.name) {
+                        titleSpan.textContent = `(${matchedComp.name})`;
+                        document.getElementById('page-title').textContent = `المراقب برو - ${matchedComp.name}`;
+                    } else {
+                        titleSpan.textContent = `(${companyId})`;
+                    }
+                } catch (err) {
+                    titleSpan.textContent = `(${companyId})`;
+                }
             } else {
-                titleSpan.textContent = `(${companyId})`;
+                titleSpan.textContent = '(يرجى تسجيل الدخول)';
             }
         });
 
         function logoutAdmin() {
             localStorage.removeItem('isLoggedIn');
-            const comp = urlParams.get('company') || localStorage.getItem('activeCompanyId');
+            const comp = companyId || localStorage.getItem('activeCompanyId');
             window.location.href = comp ? `company-activate.html?company=${encodeURIComponent(comp)}` : 'company-activate.html';
         }
     </script>
