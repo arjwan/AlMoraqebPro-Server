@@ -13,7 +13,7 @@ const pool = new Pool({
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-// إنشاء جدول الشركات شاملاً لجميع التفاصيل (الفرع، المحافظة، العنوان، إلخ)
+// إنشاء جدول الشركات شاملاً لجميع التفاصيل وكلمة المرور
 async function initDB() {
     try {
         await pool.query(`
@@ -23,14 +23,16 @@ async function initDB() {
                 company_name VARCHAR(255) NOT NULL,
                 username VARCHAR(255),
                 email VARCHAR(255),
+                password VARCHAR(255),
                 branch VARCHAR(255),
                 province VARCHAR(255),
                 address TEXT,
                 base_salary NUMERIC,
+                status VARCHAR(50) DEFAULT 'active',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        console.log("Database table 'companies' is ready with full structure.");
+        console.log("Database table 'companies' is ready with full structure and login support.");
     } catch (err) {
         console.error("Error creating database table:", err);
     }
@@ -52,6 +54,11 @@ async function verifyAdminAccess(req, res, next) {
             return res.status(403).send("<h1>403 Forbidden</h1><p>معرف الشركة غير صالح أو غير مسجل في النظام.</p>");
         }
 
+        const company = result.rows[0];
+        if (company.status === 'stopped') {
+            return res.status(403).send("<h1>403 Forbidden</h1><p>عذراً، هذا الحساب متوقف مؤقتاً من قبل الإدارة.</p>");
+        }
+
         next();
     } catch (err) {
         console.error("Database Auth Error:", err);
@@ -62,7 +69,11 @@ async function verifyAdminAccess(req, res, next) {
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin-register.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/admin-register.html', (req, res) => {
@@ -73,7 +84,6 @@ app.get('/create-company.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'create-company.html'));
 });
 
-// مسار صفحة تسجيل الدخول الخاصة بالشركة (تمت إضافته لمنع خطأ Cannot GET)
 app.get('/company-register.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'company-register.html'));
 });
@@ -88,6 +98,65 @@ app.get('/api/status', (req, res) => {
 
 app.get('/company-activate.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'company-activate.html'));
+});
+
+// ==================== مسار تسجيل الدخول الجديد (من قاعدة البيانات) ====================
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return.status(400).json({ success: false, message: 'يرجى إدخال اسم المستخدم وكلمة المرور' });
+    }
+
+    try {
+        const inputVal = username.trim().toLowerCase();
+
+        // 1. التحقق من الحساب العام الافتراضي
+        if (inputVal === 'admin' && password === 'admin123') {
+            return res.json({ 
+                success: true, 
+                role: 'admin', 
+                companyId: 'default_company',
+                redirectUrl: '/admin.html?company=default_company' 
+            });
+        }
+
+        // 2. البحث عن الشركة في قاعدة البيانات (PostgreSQL) بالـ company_id أو username أو email
+        const query = `
+            SELECT * FROM companies 
+            WHERE LOWER(company_id) = $1 OR LOWER(username) = $1 OR LOWER(email) = $1
+        `;
+        const result = await pool.query(query, [inputVal]);
+
+        if (result.rows.length === 0) {
+            return.status(400).json({ success: false, message: 'بيانات الدخول غير صحيحة، لم يتم العثور على الحساب' });
+        }
+
+        const company = result.rows[0];
+
+        // التحقق من حالة الحساب
+        if (company.status === 'stopped') {
+            return.status(403).json({ success: false, message: 'عذراً، هذا الحساب متوقف مؤقتاً من قبل الإدارة.' });
+        }
+
+        // التحقق من كلمة المرور (إذا لم يتم تعيين كلمة مرور أثناء الإنشاء، نقبلها أو نقارنها)
+        if (company.password && company.password !== password) {
+            return.status(400).json({ success: false, message: 'كلمة المرور غير صحيحة' });
+        }
+
+        // تسجيل الدخول بنجاح وإرجاع رابط مخصص مع معرف الشركة لفتح لوحة التحكم الخاصة بها
+        res.json({ 
+            success: true, 
+            role: 'company', 
+            companyId: company.company_id,
+            redirectUrl: `/admin.html?company=${company.company_id}`,
+            message: 'تم تسجيل الدخول بنجاح' 
+        });
+
+    } catch (err) {
+        console.error("Login Error:", err);
+        res.status(500).json({ success: false, message: 'حدث خطأ في السيرفر أثناء تسجيل الدخول' });
+    }
 });
 
 // مسار جلب معلومات الشركة لعرض اسمها في لوحة التحكم
@@ -110,22 +179,22 @@ app.get('/api/companies/info', async (req, res) => {
     }
 });
 
-// مسار استقبال بيانات إنشاء الشركة يدوياً وحفظها بالكامل
+// مسار استقبال بيانات إنشاء الشركة وحفظها مع كلمة المرور في قاعدة البيانات
 app.post('/api/companies/register', async (req, res) => {
-    const { companyName, companyIdInput, username, email, branch, province, address, baseSalary } = req.body;
+    const { companyName, companyIdInput, username, email, password, branch, province, address, baseSalary } = req.body;
     
     if (!companyName) {
         return res.status(400).json({ success: false, message: 'اسم الشركة مطلوب' });
     }
 
     try {
-        // استخدام المعرف المدخل يدوياً أو توليده تلقائياً إذا كان فارغاً
         const sanitizedName = companyName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
         const companyId = companyIdInput ? companyIdInput.trim() : `${sanitizedName}_${Math.floor(Math.random() * 9000) + 1000}`;
+        const companyPassword = password || '123456'; // كلمة مرور افتراضية إذا لم تُرسل
         
         const query = `
-            INSERT INTO companies (company_id, company_name, username, email, branch, province, address, base_salary)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO companies (company_id, company_name, username, email, password, branch, province, address, base_salary)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *;
         `;
         const values = [
@@ -133,6 +202,7 @@ app.post('/api/companies/register', async (req, res) => {
             companyName, 
             username || '', 
             email || '', 
+            companyPassword,
             branch || '', 
             province || '', 
             address || '', 

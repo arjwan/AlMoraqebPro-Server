@@ -46,53 +46,54 @@
                 <input type="password" id="password" required placeholder="أدخل كلمة المرور...">
             </div>
 
-            <button type="submit" class="btn-submit">🚀 دخول لوحة التحكم</button>
+            <button type="submit" class="btn-submit" id="submitBtn">🚀 دخول لوحة التحكم</button>
         </form>
 
         <a href="admin-register.html" class="back-link">← ليس لديك حساب؟ تسجيل شركة جديدة</a>
     </div>
 
     <script>
-        // طباعة الشركات المسجلة في المتصفح للتأكد منها عبر فحص المتصفح (F12)
-        const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        console.log("الشركات المسجلة حالياً في المتصفح:", companiesList);
-
-        function handleLogin(event) {
+        async function handleLogin(event) {
             event.preventDefault();
-            const inputVal = document.getElementById('username').value.trim().toLowerCase();
-            const passVal = document.getElementById('password').value.trim();
+            const usernameInput = document.getElementById('username').value.trim();
+            const passwordInput = document.getElementById('password').value.trim();
+            const submitBtn = document.getElementById('submitBtn');
 
-            // 1. فحص الحساب التجريبي العام
-            if (inputVal === 'admin' && passVal === 'admin123') {
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('activeCompanyId', 'default_company');
-                window.location.href = 'admin.html';
-                return;
-            }
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'جاري التحقق...';
 
-            // 2. البحث المطابق في الشركات المسجلة (بالـ ID أو username أو email)
-            const matchedCompany = companiesList.find(c => {
-                const cId = (c.id || '').trim().toLowerCase();
-                const cUser = (c.username || '').trim().toLowerCase();
-                const cEmail = (c.email || '').trim().toLowerCase();
-                const cPass = (c.pass || '').trim();
+            try {
+                // إرسال طلب تسجيل الدخول إلى السيرفر على Render
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: usernameInput,
+                        password: passwordInput
+                    })
+                });
 
-                const isUserMatch = (cId === inputVal || cUser === inputVal || cEmail === inputVal);
-                const isPassMatch = (cPass === passVal);
+                const data = await response.json();
 
-                return isUserMatch && isPassMatch;
-            });
-
-            if (matchedCompany) {
-                if (matchedCompany.status === 'stopped') {
-                    alert('⚠️ عذراً، هذا الحساب متوقف مؤقتاً من قبل الإدارة.');
-                    return;
+                if (data.success) {
+                    // تخزين حالة الدخول ومعرف الشركة في الـ localStorage مؤقتاً للتوجيه السليم
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('activeCompanyId', data.companyId);
+                    
+                    // التوجيه إلى لوحة التحكم بالرابط الصحيح والمحمي بمعرف الشركة
+                    window.location.href = data.redirectUrl;
+                } else {
+                    alert('⚠️ ' + (data.message || 'بيانات الدخول غير صحيحة!'));
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '🚀 دخول لوحة التحكم';
                 }
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('activeCompanyId', matchedCompany.id);
-                window.location.href = 'admin.html';
-            } else {
-                alert('⚠️ بيانات الدخول غير صحيحة! تأكد من اسم المستخدم أو معرف الشركة وكلمة المرور.');
+            } catch (error) {
+                console.error('Login Error:', error);
+                alert('⚠️ حدث خطأ في الاتصال بالسيرفر. يرجى المحاولة مرة أخرى.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 دخول لوحة التحكم';
             }
         }
     </script>
