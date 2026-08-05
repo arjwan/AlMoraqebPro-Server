@@ -63,7 +63,7 @@
             submitBtn.textContent = 'جاري التحقق...';
 
             try {
-                // إرسال طلب تسجيل الدخول إلى السيرفر على Render
+                // إرسال طلب تسجيل الدخول إلى السيرفر
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: {
@@ -75,26 +75,34 @@
                     })
                 });
 
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new Error("استجابة السيرفر غير صالحة.");
+                }
+
                 const data = await response.json();
 
-                if (data.success) {
-                    // تخزين حالة الدخول ومعرف الشركة في الـ localStorage مؤقتاً للتوجيه السليم
+                if (response.ok && data.success) {
+                    // تخزين البيانات للتنقل السليم
                     localStorage.setItem('isLoggedIn', 'true');
                     localStorage.setItem('activeCompanyId', data.companyId);
                     
-                    // التوجيه إلى لوحة التحكم بالرابط الصحيح والمحمي بمعرف الشركة
+                    // التوجيه للرابط القادم من السيرفر مباشرة (مثل /admin.html?company=...)
                     window.location.href = data.redirectUrl;
                 } else {
                     alert('⚠️ ' + (data.message || 'بيانات الدخول غير صحيحة!'));
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '🚀 دخول لوحة التحكم';
+                    resetSubmitButton(submitBtn);
                 }
             } catch (error) {
                 console.error('Login Error:', error);
-                alert('⚠️ حدث خطأ في الاتصال بالسيرفر. يرجى المحاولة مرة أخرى.');
-                submitBtn.disabled = false;
-                submitBtn.textContent = '🚀 دخول لوحة التحكم';
+                alert('⚠️ حدث خطأ في الاتصال بالسيرفر. يرجى التأكد من تشغيل السيرفر وصحة البيانات.');
+                resetSubmitButton(submitBtn);
             }
+        }
+
+        function resetSubmitButton(btn) {
+            btn.disabled = false;
+            btn.textContent = '🚀 دخول لوحة التحكم';
         }
     </script>
 </body>
