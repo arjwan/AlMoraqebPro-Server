@@ -73,6 +73,11 @@ app.get('/create-company.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'create-company.html'));
 });
 
+// مسار صفحة تسجيل الدخول الخاصة بالشركة (تمت إضافته لمنع خطأ Cannot GET)
+app.get('/company-register.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'company-register.html'));
+});
+
 app.get('/admin.html', verifyAdminAccess, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
