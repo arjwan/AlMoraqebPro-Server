@@ -108,18 +108,32 @@
                 return;
             }
 
+            const compId = document.getElementById('companyId').value.trim().toLowerCase();
+            const email = document.getElementById('email').value.trim().toLowerCase();
+
+            let pendingList = JSON.parse(localStorage.getItem('pendingCompanies')) || [];
+            let activeCompanies = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+
+            // منع التكرار: فحص ما إذا كان المعرف أو الإيميل موجوداً مسبقاً في قائمة الانتظار أو الشركات المفعلة
+            const existsInPending = pendingList.some(c => c.id === compId || c.email.toLowerCase() === email);
+            const existsInActive = activeCompanies.some(c => c.id === compId || c.email.toLowerCase() === email);
+
+            if (existsInPending || existsInActive) {
+                alert('⚠️ عذراً، اسم الشركة (ID) أو البريد الإلكتروني مستخدم مسبقاً، يرجى اختيار بيانات أخرى.');
+                return;
+            }
+
             const newCompany = {
-                id: document.getElementById('companyId').value.trim().toLowerCase(),
+                id: compId,
                 name: document.getElementById('companyNameAr').value.trim(),
                 manager: document.getElementById('managerName').value.trim(),
                 phone: document.getElementById('phoneNumber').value.trim(),
-                email: document.getElementById('email').value.trim(),
+                email: email,
                 username: document.getElementById('username').value.trim(),
                 pass: pass,
                 status: 'pending' // بانتظار موافقة المطور
             };
 
-            let pendingList = JSON.parse(localStorage.getItem('pendingCompanies')) || [];
             pendingList.push(newCompany);
             localStorage.setItem('pendingCompanies', JSON.stringify(pendingList));
 

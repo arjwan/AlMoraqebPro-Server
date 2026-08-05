@@ -40,15 +40,27 @@
     <script>
         function loadPendingRequests() {
             const container = document.getElementById('requestsContainer');
-            const pendingList = JSON.parse(localStorage.getItem('pendingCompanies')) || [];
+            let pendingList = JSON.parse(localStorage.getItem('pendingCompanies')) || [];
 
-            if (pendingList.length === 0) {
+            // إزالة أي تكرار محتمل بناءً على معرف الشركة (id)
+            const uniquePending = [];
+            const seenIds = new Set();
+            for (const comp of pendingList) {
+                if (comp && comp.id && !seenIds.has(comp.id)) {
+                    seenIds.add(comp.id);
+                    uniquePending.push(comp);
+                }
+            }
+            // حفظ القائمة النظيفة بدون تكرار في التخزين المحلي
+            localStorage.setItem('pendingCompanies', JSON.stringify(uniquePending));
+
+            if (uniquePending.length === 0) {
                 container.innerHTML = '<div class="empty-msg">📭 لا توجد طلبات تسجيل شركات معلقة حالياً.</div>';
                 return;
             }
 
             container.innerHTML = '';
-            pendingList.forEach((comp, index) => {
+            uniquePending.forEach((comp, index) => {
                 container.innerHTML += `
                     <div class="card">
                         <div class="info">
@@ -59,23 +71,32 @@
                             <p>5. البريد الإلكتروني: <span>${comp.email}</span></p>
                             <p>6. اسم المستخدم: <span>${comp.username}</span></p>
                         </div>
-                        <button class="btn-approve" onclick="approveCompany(${index})">✔ موافقة وتفعيل النظام</button>
+                        <button class="btn-approve" onclick="approveCompany('${comp.id}')">✔ موافقة وتفعيل النظام</button>
                     </div>
                 `;
             });
         }
 
-        function approveCompany(index) {
+        function approveCompany(companyId) {
             let pendingList = JSON.parse(localStorage.getItem('pendingCompanies')) || [];
+            
+            // العثور على الشركة المستهدفة وحذفها من المعلق
+            const index = pendingList.findIndex(c => c.id === companyId);
+            if (index === -1) return;
+            
             let approvedComp = pendingList.splice(index, 1)[0];
 
             let activeCompanies = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            activeCompanies.push(approvedComp);
+            
+            // التأكد من عدم إضافتها مسبقاً للنشطين
+            if (!activeCompanies.some(c => c.id === approvedComp.id)) {
+                activeCompanies.push(approvedComp);
+            }
 
             localStorage.setItem('registeredCompanies', JSON.stringify(activeCompanies));
             localStorage.setItem('pendingCompanies', JSON.stringify(pendingList));
 
-            alert(`🎉 تم تفعيل النظام بنجاح لشركة (${approvedComp.name})!\n📩 تم إرسال إشعار التفعيل للعميل، ويمكنه تسجيل الدخول الآن.`);
+            alert(`🎉 تم تفعيل النظام بنجاح لشركة (${approvedComp.name})!\n📩 يمكنه تسجيل الدخول الآن.`);
             loadPendingRequests();
         }
 
