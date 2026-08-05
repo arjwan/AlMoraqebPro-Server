@@ -5,130 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المراقب برو - تسجيل الدخول</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 520px;
-            background: #ffffff;
-            color: #1e293b;
-            padding: 50px 40px;
-            border-radius: 28px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
-            text-align: center;
-        }
-
-        .login-icon {
-            font-size: 45px;
-            margin-bottom: 15px;
-        }
-
-        h2 {
-            font-size: 30px;
-            font-weight: 800;
-            color: #0284c7;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            font-size: 15px;
-            color: #64748b;
-            margin-bottom: 25px;
-        }
-
-        .info-box {
-            background: #f0f9ff;
-            border: 1px solid #bae6fd;
-            color: #0369a1;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 14px;
-            margin-bottom: 30px;
-            font-weight: 600;
-            line-height: 1.6;
-            text-align: right;
-        }
-
-        .form-group {
-            text-align: right;
-            margin-bottom: 22px;
-        }
-
-        label {
-            display: block;
-            font-size: 16px;
-            font-weight: 700;
-            color: #334155;
-            margin-bottom: 8px;
-        }
-
-        input {
-            width: 100%;
-            padding: 16px 18px;
-            font-size: 16px;
-            border: 1px solid #cbd5e1;
-            border-radius: 14px;
-            outline: none;
-            transition: 0.3s;
-            background: #f8fafc;
-        }
-
-        input:focus {
-            border-color: #0284c7;
-            background: #fff;
-            box-shadow: 0 0 10px rgba(2, 132, 199, 0.2);
-        }
-
-        .btn-submit {
-            width: 100%;
-            background: #0284c7;
-            color: #ffffff;
-            font-size: 18px;
-            font-weight: 800;
-            padding: 16px;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-top: 10px;
-            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.3);
-        }
-
-        .btn-submit:hover {
-            background: #0369a1;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.4);
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 25px;
-            color: #0284c7;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: 700;
-            transition: 0.2s;
-        }
-
-        .back-link:hover {
-            color: #0369a1;
-            text-decoration: underline;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #ffffff; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .login-card { width: 100%; max-width: 520px; background: #ffffff; color: #1e293b; padding: 50px 40px; border-radius: 28px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); text-align: center; }
+        .login-icon { font-size: 45px; margin-bottom: 15px; }
+        h2 { font-size: 30px; font-weight: 800; color: #0284c7; margin-bottom: 10px; }
+        .subtitle { font-size: 15px; color: #64748b; margin-bottom: 25px; }
+        .info-box { background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; padding: 14px; border-radius: 14px; font-size: 14px; margin-bottom: 30px; font-weight: 600; line-height: 1.6; text-align: right; }
+        .form-group { text-align: right; margin-bottom: 22px; }
+        label { display: block; font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 8px; }
+        input { width: 100%; padding: 16px 18px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 14px; outline: none; transition: 0.3s; background: #f8fafc; }
+        input:focus { border-color: #0284c7; background: #fff; box-shadow: 0 0 10px rgba(2, 132, 199, 0.2); }
+        .btn-submit { width: 100%; background: #0284c7; color: #ffffff; font-size: 18px; font-weight: 800; padding: 16px; border: none; border-radius: 14px; cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 6px 20px rgba(2, 132, 199, 0.3); }
+        .btn-submit:hover { background: #0369a1; transform: translateY(-2px); }
+        .back-link { display: inline-block; margin-top: 25px; color: #0284c7; text-decoration: none; font-size: 16px; font-weight: 700; }
+        .back-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -146,12 +37,12 @@
 
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
-                <label>معرّف الشركة أو اسم المستخدم:</label>
+                <label>اسم المستخدم أو معرف الشركة:</label>
                 <input type="text" id="username" required placeholder="أدخل اسم المستخدم أو admin...">
             </div>
 
             <div class="form-group">
-                <label>كلمة المرور / مفتاح الترخيص:</label>
+                <label>كلمة المرور:</label>
                 <input type="password" id="password" required placeholder="أدخل كلمة المرور...">
             </div>
 
@@ -167,7 +58,7 @@
             const user = document.getElementById('username').value.trim().toLowerCase();
             const pass = document.getElementById('password').value.trim();
 
-            // 1. التحقق الفوري المباشر للحساب التجريبي
+            // 1. التحقق الفوري للحساب التجريبي العام
             if (user === 'admin' && pass === 'admin123') {
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('activeCompanyId', 'default_company');
@@ -175,10 +66,10 @@
                 return;
             }
 
-            // 2. التحقق من الشركات المسجلة والمفعلة
+            // 2. التحقق المرن من الشركات المسجلة (يبحث في المعرف، أو اسم المستخدم، أو الاسم العربي)
             const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
             const matchedCompany = companiesList.find(c => 
-                (c.username.toLowerCase() === user || c.id.toLowerCase() === user) && c.pass === pass
+                (c.id.toLowerCase() === user || c.username.toLowerCase() === user || c.name.toLowerCase().includes(user)) && c.pass === pass
             );
 
             if (matchedCompany) {
@@ -186,7 +77,7 @@
                 localStorage.setItem('activeCompanyId', matchedCompany.id);
                 window.location.href = 'admin.html';
             } else {
-                alert('⚠️ بيانات الدخول غير صحيحة، تأكد من اسم المستخدم وكلمة المرور أو تفعيل الحساب من لوحة المطور.');
+                alert('⚠️ بيانات الدخول غير صحيحة، تأكد من اسم المستخدم وكلمة المرور، أو تفعيل الحساب من لوحة المطور.');
             }
         }
     </script>
