@@ -24,8 +24,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h2>📋 سجل الحركات والنشاطات (قاعدة البيانات المركزية)</h2>
-            <a href="admin.html" class="back-btn">← العودة للوحة التحكم</a>
+            <h2>📋 سجل الحركات والنشاطات (قاعدة البيانات المركزية) <span id="company-badge" style="font-size: 14px; background: #eef2ff; padding: 4px 10px; border-radius: 6px; color: #4f46e5;"></span></h2>
+            <a href="admin.html" id="backDashboardBtn" class="back-btn">← العودة للوحة التحكم</a>
         </div>
 
         <div class="sync-status-bar" id="connectionStatusBar">
@@ -53,7 +53,18 @@
     </div>
 
     <script>
-        const dbName = 'AlMoraqebPro_LocalDB';
+        const urlParams = new URLSearchParams(window.location.search);
+        const companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId');
+
+        // ضبط زر العودة للوحة التحكم ليبقى مرتبطاً بمعرف الشركة حصراً
+        window.addEventListener('DOMContentLoaded', () => {
+            if (companyId) {
+                document.getElementById('backDashboardBtn.html' || 'backDashboardBtn').setAttribute('href', `admin.html?company=${encodeURIComponent(companyId)}`);
+                document.getElementById('company-badge').textContent = `(الشركة: ${companyId})`;
+            }
+        });
+
+        const dbName = 'AlMoraqebPro_LocalDB_' + (companyId || 'default');
         const storeName = 'activity_logs';
         let db = null;
 
@@ -74,7 +85,7 @@
 
         async function fetchLogsFromServer() {
             try {
-                const response = await fetch('/api/system/activity-logs');
+                const response = await fetch(`/api/system/activity-logs?company=${encodeURIComponent(companyId || '')}`);
                 const data = await response.json();
                 if (data.success) {
                     renderTable(data.logs);
@@ -125,7 +136,6 @@
         async function triggerSyncAndRefresh() {
             if (!navigator.onLine || !db) {
                 fetchLogsLocally();
-                alert('⚠️ الجهاز غير متصل بالإنترنت. يتم عرض السجلات المحلية.');
                 return;
             }
 
@@ -141,7 +151,7 @@
                             await fetch('/api/system/activity-logs', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(log)
+                                body: JSON.stringify({ ...log, companyId })
                             });
                             store.delete(log.id);
                         } catch (e) {

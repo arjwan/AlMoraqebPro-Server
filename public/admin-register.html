@@ -5,195 +5,95 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المراقب برو - إنشاء حساب وتفعيل الشركة</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
-            color: #1e293b;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 30px;
-        }
-
-        .main-card {
-            width: 100%;
-            max-width: 550px;
-            background: #ffffff;
-            padding: 40px;
-            border-radius: 28px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        .header-title {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .header-title h2 {
-            font-size: 26px;
-            font-weight: 800;
-            color: #0284c7;
-            margin-bottom: 8px;
-        }
-
-        .header-title p {
-            color: #64748b;
-            font-size: 14px;
-        }
-
-        .form-group {
-            margin-bottom: 18px;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 700;
-            font-size: 14px;
-            color: #334155;
-            margin-bottom: 6px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 13px 16px;
-            border: 2px solid #cbd5e1;
-            border-radius: 14px;
-            font-size: 15px;
-            background: #f8fafc;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        .form-group input:focus {
-            border-color: #0284c7;
-            background: #fff;
-            box-shadow: 0 0 10px rgba(2, 132, 199, 0.15);
-        }
-
-        .hint-text {
-            font-size: 12px;
-            color: #0284c7;
-            margin-top: 5px;
-            display: block;
-            font-weight: 600;
-        }
-
-        .btn-submit {
-            background: #10b981;
-            color: white;
-            border: none;
-            padding: 16px;
-            width: 100%;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-top: 10px;
-        }
-
-        .btn-submit:hover {
-            background: #059669;
-        }
-
-        .footer-link {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .footer-link a {
-            color: #0284c7;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 14px;
-        }
-
-        .footer-link a:hover {
-            text-decoration: underline;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 30px; }
+        .main-card { width: 100%; max-width: 550px; background: #ffffff; padding: 40px; border-radius: 28px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); }
+        .header-title { text-align: center; margin-bottom: 25px; }
+        .header-title h2 { font-size: 24px; font-weight: 800; color: #0284c7; margin-bottom: 8px; }
+        .header-title p { color: #64748b; font-size: 14px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-weight: 700; font-size: 14px; color: #334155; margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 12px 16px; border: 2px solid #cbd5e1; border-radius: 12px; font-size: 15px; background: #f8fafc; outline: none; transition: 0.2s; }
+        .form-group input:focus { border-color: #0284c7; background: #fff; }
+        .btn-submit { background: #10b981; color: white; border: none; padding: 15px; width: 100%; border-radius: 14px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn-submit:hover { background: #059669; }
+        .footer-link { text-align: center; margin-top: 20px; }
+        .footer-link a { color: #0284c7; text-decoration: none; font-weight: 700; font-size: 14px; }
+        .footer-link a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-
     <div class="main-card">
         <div class="header-title">
-            <h2>🏢 بوابة المراقب برو - إنشاء حساب الشركة</h2>
-            <p>أدخل بيانات شركتك ومفتاح الترخيص لتهيئة قاعدة بيانات نظيفة وخالية من الأمثلة</p>
+            <h2>🏢 تسجيل شركة جديدة ونظامها المستقل</h2>
+            <p>أنشئ حساب شركتك وحدد بيانات الدخول الخاصة بك</p>
         </div>
 
-        <form id="registerForm" onsubmit="registerCleanCompany(event)">
+        <form id="registerForm" onsubmit="registerCompany(event)">
             <div class="form-group">
-                <label>اسم الشركة / المؤسسة الرسمية:</label>
-                <input type="text" id="companyName" placeholder="أدخل اسم شركتك..." required>
+                <label>معرّف الشركة بالإنجليزية (Company ID - فريد بدون مسافات):</label>
+                <input type="text" id="companyId" placeholder="مثال: al_bayan_co" required>
             </div>
-
             <div class="form-group">
-                <label>اسم المسؤول / مدير النظام:</label>
-                <input type="text" id="username" placeholder="الاسم الكامل..." required>
+                <label>اسم الشركة أو المؤسسة الرسمي:</label>
+                <input type="text" id="companyName" placeholder="مثال: شركة البيان التقني" required>
             </div>
-
+            <div class="form-group">
+                <label>اسم المستخدم (للدخول):</label>
+                <input type="text" id="adminUser" placeholder="admin_bayan" required>
+            </div>
             <div class="form-group">
                 <label>كلمة المرور:</label>
-                <input type="password" id="password" placeholder="••••••••" required>
+                <input type="password" id="adminPass" placeholder="••••••••" required>
             </div>
-
             <div class="form-group">
-                <label>البريد الإلكتروني:</label>
-                <input type="email" id="email" placeholder="name@company.com" required>
+                <label>مفتاح الترخيص (License Key):</label>
+                <input type="text" id="licenseKey" placeholder="PRO-2026" required>
             </div>
 
-            <div class="form-group">
-                <label>مفتاح التفعيل (License Key):</label>
-                <input type="text" id="licenseKey" placeholder="أدخل مفتاح الترخيص المعتمد..." required>
-                <span class="hint-text">💡 مفتاح الترخيص التجريبي للاختبار: PRO-2026</span>
-            </div>
-
-            <button type="submit" class="btn-submit">إنشاء قاعدة البيانات النظيفة والانتقال للوحة التحكم ✅</button>
+            <button type="submit" class="btn-submit">🚀 إنشاء البيئة والانتقال لتسجيل الدخول</button>
         </form>
 
         <div class="footer-link">
-            <a href="company-activate.html">← لديك حساب مسبق؟ تسجيل الدخول</a>
+            <a href="company-activate.html">← لديك حساب مسجل مسبقاً؟ تسجيل الدخول</a>
         </div>
     </div>
 
     <script>
-        function registerCleanCompany(event) {
+        function registerCompany(event) {
             event.preventDefault();
 
-            const companyName = document.getElementById('companyName').value.trim();
-            const email = document.getElementById('email').value.trim();
+            const cId = document.getElementById('companyId').value.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+            const cName = document.getElementById('companyName').value.trim();
+            const user = document.getElementById('adminUser').value.trim();
+            const pass = document.getElementById('adminPass').value.trim();
             const licenseKey = document.getElementById('licenseKey').value.trim();
 
-            if (licenseKey === "") {
-                alert('الرجاء إدخال مفتاح تفعيل صحيح.');
+            if (!cId || !cName || !user || !pass) {
+                alert('الرجاء إكمال كافة الحقول المطلوبة بدقة.');
                 return;
             }
 
-            // توليد معرف فريد ونظيف للشركة
-            const companyId = companyName.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '') + "_" + Math.floor(Math.random() * 1000);
-
-            // 1. تسجيل الشركة في السجل العام
+            // 1. تحديث أو حفظ قائمة الشركات المسجلة العامة
             let companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            companiesList.push({ id: companyId, name: companyName, email: email });
-            localStorage.setItem('registeredCompanies', JSON.stringify(companiesList));
+            if (!companiesList.some(c => c.id === cId)) {
+                companiesList.push({ id: cId, name: cName });
+                localStorage.setItem('registeredCompanies', JSON.stringify(companiesList));
+            }
 
-            // 2. إنشاء قاعدة بيانات مستقلة وخالية تماماً من البيانات الوهمية (مصفوفة فارغة)
-            const companyDbKey = `company_employees_${companyId}`;
-            localStorage.setItem(companyDbKey, JSON.stringify([]));
+            // 2. حفظ بيانات الاعتماد الخاصة بهذه الشركة حصراً للتحقق لاحقاً أثناء تسجيل الدخول
+            localStorage.setItem(`company_auth_${cId}`, JSON.stringify({ user, pass, companyName: cName }));
 
-            // 3. تفعيل جلسة الشركة الحالية
-            localStorage.setItem('activeCompanyId', companyId);
-            localStorage.setItem(`is_activated_${companyId}`, "true");
+            // 3. إنشاء قاعدة بيانات الموظفين الخاصة بالنظام النظيف لهذه الشركة إذا لم تكن موجودة
+            const dbKeyEmployees = `company_employees_${cId}`;
+            if (!localStorage.getItem(dbKeyEmployees)) {
+                localStorage.setItem(dbKeyEmployees, JSON.stringify([]));
+            }
 
-            alert(`تم إنشاء قاعدة البيانات المستقلة والنظيفة للشركة "${companyName}" بنجاح!`);
-            window.location.href = 'admin.html';
+            alert(`تم إنشاء الحساب والبيئة المستقلة لشركة "${cName}" بنجاح!`);
+            
+            // الانتقال لصفحة تسجيل الدخول الخاصة بهذه الشركة مع تمرير المعرف في الرابط
+            window.location.href = `company-activate.html?company=${encodeURIComponent(cId)}`;
         }
     </script>
 </body>
