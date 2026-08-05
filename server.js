@@ -11,6 +11,14 @@ app.use(cors());
 // مسار ملف تخزين الشركات محلياً على السيرفر
 const DATA_FILE = path.join(__dirname, 'companies.json');
 
+// عند تشغيل السيرفر، نقوم بتفريغ الملف تماماً وجعله نظيفاً
+try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+    console.log("System cleaned: All previous companies have been deleted, database is now clean.");
+} catch (err) {
+    console.error("Error cleaning database file:", err);
+}
+
 // دالة لقراءة الشركات من الملف
 function readCompanies() {
     try {
@@ -88,14 +96,14 @@ app.get('/admin.html', verifyAdminAccess, (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
-    res.json({ success: true, message: 'AlMoraqeb Pro Server & Local JSON Database are running perfectly!' });
+    res.json({ success: true, message: 'AlMoraqeb Pro Server is clean and running perfectly!' });
 });
 
 app.get('/company-activate.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'company-activate.html'));
 });
 
-// ==================== مسار تسجيل الدخول (عبر ملف JSON) ====================
+// ==================== مسار تسجيل الدخول ====================
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
 
@@ -127,12 +135,10 @@ app.post('/api/login', (req, res) => {
         return res.status(400).json({ success: false, message: 'بيانات الدخول غير صحيحة، لم يتم العثور على الحساب' });
     }
 
-    // التحقق من حالة الحساب
     if (company.status === 'stopped') {
         return res.status(403).json({ success: false, message: 'عذراً، هذا الحساب متوقف مؤقتاً من قبل الإدارة.' });
     }
 
-    // التحقق من كلمة المرور
     if (company.password && company.password !== password) {
         return res.status(400).json({ success: false, message: 'كلمة المرور غير صحيحة' });
     }
@@ -146,7 +152,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// مسار جلب معلومات الشركة لعرض اسمها في لوحة التحكم
+// مسار جلب معلومات الشركة
 app.get('/api/companies/info', (req, res) => {
     const companyId = req.query.company;
     if (!companyId) {
@@ -170,7 +176,7 @@ app.get('/api/companies/info', (req, res) => {
     res.json({ success: true, company });
 });
 
-// مسار استقبال بيانات إنشاء الشركة وحفظها في ملف JSON
+// مسار تسجيل شركة جديدة
 app.post('/api/companies/register', (req, res) => {
     const { companyName, companyIdInput, username, email, password, branch, province, address, baseSalary } = req.body;
     
@@ -185,9 +191,8 @@ app.post('/api/companies/register', (req, res) => {
 
         const companies = readCompanies();
 
-        // التأكد من عدم تكرار معرف الشركة
         if (companies.some(c => c.company_id === companyId)) {
-            return res.status(400).json({ success: false, message: 'معرف الشركة مستخدم مسبقاً، ي اختيار معرف آخر' });
+            return res.status(400).json({ success: false, message: 'معرف الشركة مستخدم مسبقاً، يرجى اختيار معرف آخر' });
         }
 
         const newCompany = {
