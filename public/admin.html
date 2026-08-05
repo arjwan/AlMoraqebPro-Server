@@ -120,7 +120,7 @@
             <div>
                 <h1>🛡️ نظام المراقب برو <span id="company-title-display">جاري التحميل...</span></h1>
             </div>
-            <!-- زر تسجيل خروج برمجى آمن يعود لصفحة إدارة الشركات مع الاحتفاظ بالمعرف -->
+            <!-- زر تسجيل الخروج يوجه إلى صفحة تسجيل دخول الشركة مع الاحتفاظ بالمعرف -->
             <button onclick="logoutAdmin()" class="logout-btn">تسجيل الخروج</button>
         </header>
 
@@ -184,7 +184,7 @@
             <!-- الصلاحيات -->
             <a href="admin-permissions.html" class="menu-card dynamic-link">
                 <span class="icon">🔐</span>
-                ### الصلاحيات والأذونات
+                <h3>الصلاحيات والأذونات</h3>
                 <p>تحديد صلاحيات المشرفين والمستخدمين</p>
             </a>
 
@@ -222,10 +222,9 @@
             const titleSpan = document.getElementById('company-title-display');
 
             if (companyId) {
-                // حفظ المعرف في الجلسة المحلية لضمان عدم ضياعه
                 localStorage.setItem('activeCompanyId', companyId);
 
-                // تمرير معرف الشركة تلقائياً لجميع روابط القائمة لتظل الجلسة آمنة
+                // تمرير معرف الشركة تلقائياً لجميع روابط القائمة
                 document.querySelectorAll('.dynamic-link').forEach(link => {
                     const currentHref = link.getAttribute('href');
                     if (currentHref && !currentHref.includes('company=')) {
@@ -234,14 +233,15 @@
                 });
 
                 try {
-                    const response = await fetch(`/api/companies/info?company=${encodeURIComponent(companyId)}`);
-                    const data = await response.json();
+                    // التحقق من اسم الشركة من التخزين المحلي السريع أو السيرفر
+                    let companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+                    let matchedComp = companiesList.find(c => c.id === companyId);
 
-                    if (data.success && data.company && data.company.company_name) {
+                    if (matchedComp && matchedComp.name) {
                         if (titleSpan) {
-                            titleSpan.textContent = `(${data.company.company_name})`;
+                            titleSpan.textContent = `(${matchedComp.name})`;
                         }
-                        document.getElementById('page-title').textContent = `المراقب برو - ${data.company.company_name}`;
+                        document.getElementById('page-title').textContent = `المراقب برو - ${matchedComp.name}`;
                     } else {
                         if (titleSpan) {
                             titleSpan.textContent = `(${companyId})`;
@@ -261,9 +261,15 @@
         }
 
         function logoutAdmin() {
-            // مسح بيانات الجلسة النشطة والتوجيه لصفحة إنشاء/إدارة الشركات بأمان
-            localStorage.removeItem('activeCompanyId');
-            window.location.href = 'create-company.html';
+            const urlParams = new URLSearchParams(window.location.search);
+            const companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId');
+            
+            // العودة إلى صفحة تسجيل الدخول الخاصة بالشركة مع الاحتفاظ بالمعرف في الرابط
+            if (companyId) {
+                window.location.href = `company-register.html?company=${encodeURIComponent(companyId)}`;
+            } else {
+                window.location.href = 'create-company.html';
+            }
         }
 
         window.addEventListener('DOMContentLoaded', initAdminDashboard);
