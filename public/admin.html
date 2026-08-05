@@ -3,190 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل الدخول</title>
+    <title id="page-title">المراقب برو - لوحة التحكم الرئيسية</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 520px;
-            background: #ffffff;
-            color: #1e293b;
-            padding: 50px 40px;
-            border-radius: 28px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
-            text-align: center;
-        }
-
-        .login-icon {
-            font-size: 45px;
-            margin-bottom: 15px;
-        }
-
-        h2 {
-            font-size: 30px;
-            font-weight: 800;
-            color: #0284c7;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            font-size: 15px;
-            color: #64748b;
-            margin-bottom: 25px;
-        }
-
-        .info-box {
-            background: #f0f9ff;
-            border: 1px solid #bae6fd;
-            color: #0369a1;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 14px;
-            margin-bottom: 30px;
-            font-weight: 600;
-            line-height: 1.6;
-            text-align: right;
-        }
-
-        .form-group {
-            text-align: right;
-            margin-bottom: 22px;
-        }
-
-        label {
-            display: block;
-            font-size: 16px;
-            font-weight: 700;
-            color: #334155;
-            margin-bottom: 8px;
-        }
-
-        input {
-            width: 100%;
-            padding: 16px 18px;
-            font-size: 16px;
-            border: 1px solid #cbd5e1;
-            border-radius: 14px;
-            outline: none;
-            transition: 0.3s;
-            background: #f8fafc;
-        }
-
-        input:focus {
-            border-color: #0284c7;
-            background: #fff;
-            box-shadow: 0 0 10px rgba(2, 132, 199, 0.2);
-        }
-
-        .btn-submit {
-            width: 100%;
-            background: #0284c7;
-            color: #ffffff;
-            font-size: 18px;
-            font-weight: 800;
-            padding: 16px;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-top: 10px;
-            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.3);
-        }
-
-        .btn-submit:hover {
-            background: #0369a1;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.4);
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 25px;
-            color: #0284c7;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: 700;
-            transition: 0.2s;
-        }
-
-        .back-link:hover {
-            color: #0369a1;
-            text-decoration: underline;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; padding: 40px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { background: #ffffff; padding: 25px 35px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; }
+        h1 { color: #0284c7; font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        #company-title-display { color: #0369a1; font-size: 16px; background: #f0f9ff; padding: 5px 12px; border-radius: 8px; border: 1px solid #bae6fd; font-weight: 600; }
+        .logout-btn { background: #ef4444; color: white; padding: 10px 20px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.2s; cursor: pointer; border: none; }
+        .logout-btn:hover { background: #dc2626; }
+        .grid-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+        .menu-card { background: #ffffff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); text-decoration: none; color: #1e293b; display: flex; flex-direction: column; align-items: center; text-align: center; transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; border: 2px solid transparent; }
+        .menu-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(2, 132, 199, 0.3); border-color: #0284c7; }
+        .icon { font-size: 45px; margin-bottom: 15px; }
+        .menu-card h3 { font-size: 20px; font-weight: 700; color: #0369a1; margin-bottom: 8px; }
+        .menu-card p { font-size: 14px; color: #64748b; line-height: 1.5; }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <div class="login-icon">🔑</div>
-        <h2>تسجيل الدخول</h2>
-        <p class="subtitle">أدخل بيانات شركتك ومعرّفها للوصول إلى قاعدة البيانات ولوحة التحكم</p>
+    <div class="container">
+        <header>
+            <div>
+                <h1>🛡️ نظام المراقب برو <span id="company-title-display">جاري التحميل...</span></h1>
+            </div>
+            <button onclick="logoutAdmin()" class="logout-btn">تسجيل الخروج</button>
+        </header>
 
-        <div class="info-box">
-            💡 <b>تعليمات الدخول:</b><br>
-            - يمكنك استخدام الحساب التجريبي العام (المستخدم: <b>admin</b> | كلمة المرور: <b>admin123</b>)<br>
-            - أو إدخال معرف الشركة الخاصة بك مباشرة[cite: 9].
+        <div class="grid-menu">
+            <a href="admin-employee.html" class="menu-card dynamic-link">
+                <span class="icon">➕</span>
+                <h3>إضافة موظف جديد</h3>
+                <p>تسجيل موظف جديد مع بياناته الشخصية وبصمة الوجه</p>
+            </a>
+
+            <a href="admin-manage-emp.html" class="menu-card dynamic-link">
+                <span class="icon">👥</span>
+                <h3>إدارة الموظفين</h3>
+                <p>عرض، تعديل، وبحث في بيانات الموظفين المسجلين</p>
+            </a>
+
+            <a href="admin-branches.html" class="menu-card dynamic-link">
+                <span class="icon">🏢</span>
+                <h3>إدارة الفروع</h3>
+                <p>توزيع وإدارة فروع العمل وأماكن التواجد</p>
+            </a>
+
+            <a href="admin-shifts.html" class="menu-card dynamic-link">
+                <span class="icon">⏰</span>
+                <h3>الأوقات والشفتات</h3>
+                <p>إدارة مواعيد الدوام الرسمي والأوقات الخاصة</p>
+            </a>
+
+            <a href="admin-face-gps.html" class="menu-card dynamic-link">
+                <span class="icon">📍</span>
+                <h3>بصمة الوجه والـ GPS</h3>
+                <p>مراقبة مواقع الحضور والنطاق الجغرافي للموظفين</p>
+            </a>
+
+            <a href="admin-salaries.html" class="menu-card dynamic-link">
+                <span class="icon">💰</span>
+                <h3>إدارة الرواتب</h3>
+                <p>احتساب الرواتب الاسمية، الاستقطاعات، والصفاء</p>
+            </a>
+
+            <a href="admin-loans.html" class="menu-card dynamic-link">
+                <span class="icon">💳</span>
+                <h3>إدارة السلف</h3>
+                <p>تسجيل ومتابعة سلف الموظفين وأقساطها</p>
+            </a>
+
+            <a href="admin-reports.html" class="menu-card dynamic-link">
+                <span class="icon">📊</span>
+                <h3>التقارير الشاملة</h3>
+                <p>استخراج تقارير الحضور، الغياب، والرواتب</p>
+            </a>
+
+            <a href="admin-permissions.html" class="menu-card dynamic-link">
+                <span class="icon">🔐</span>
+                <h3>الصلاحيات والأذونات</h3>
+                <p>تحديد صلاحيات المشرفين والمستخدمين</p>
+            </a>
+
+            <a href="admin-archive.html" class="menu-card dynamic-link">
+                <span class="icon">📁</span>
+                <h3>أرشيف النظام</h3>
+                <p>الرجوع إلى السجلات والبيانات المؤرشفة</p>
+            </a>
+
+            <a href="activity-log.html" class="menu-card dynamic-link">
+                <span class="icon">📝</span>
+                <h3>سجل الحركات</h3>
+                <p>متابعة حركة العمليات والنشاطات داخل النظام</p>
+            </a>
+
+            <a href="admin-settings.html" class="menu-card dynamic-link">
+                <span class="icon">⚙️</span>
+                <h3>إعدادات النظام</h3>
+                <p>التحكم بالإعدادات العامة والربط البرمجي</p>
+            </a>
         </div>
-
-        <form id="loginForm" onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label>معرّف الشركة أو اسم المستخدم:</label>
-                <input type="text" id="username" required placeholder="أدخل معرف الشركة أو admin...">
-            </div>
-
-            <div class="form-group">
-                <label>كلمة المرور / مفتاح الترخيص:</label>
-                <input type="password" id="password" required placeholder="أدخل كلمة المرور...">
-            </div>
-
-            <button type="submit" class="btn-submit">🚀 دخول لوحة التحكم</button>
-        </form>
-
-        <a href="admin-register.html" class="back-link">← ليس لديك حساب؟ إنشاء حساب جديد للشركة</a>
     </div>
 
     <script>
-        function handleLogin(event) {
-            event.preventDefault();
-            const user = document.getElementById('username').value.trim().toLowerCase();
-            const pass = document.getElementById('password').value.trim();
+        const urlParams = new URLSearchParams(window.location.search);
+        let companyId = urlParams.get('company');
 
-            // التحقق من الحساب التجريبي العام الافتراضي
-            if (user === 'admin' && pass === 'admin123') {
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('activeCompanyId', 'default_company');
-                window.location.href = 'admin.html?company=default_company';
-                return;
+        // إذا لم يكن المعرف موجوداً بالرابط، يتم جذبه تلقائياً من الذاكرة المحلية وإعادة صياغة الرابط
+        if (!companyId) {
+            companyId = localStorage.getItem('activeCompanyId');
+            if (companyId) {
+                const newUrl = window.location.pathname + `?company=` + encodeURIComponent(companyId);
+                window.history.replaceState({}, '', newUrl);
             }
+        }
 
-            // التحقق من الشركات المسجلة بقواعد بياناتها المستقلة
-            const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            const matchedCompany = companiesList.find(c => c.id === user || c.name.toLowerCase().includes(user));
+        window.addEventListener('DOMContentLoaded', async () => {
+            const titleSpan = document.getElementById('company-title-display');
 
-            if (matchedCompany) {
-                // تفعيل جلسة هذه الشركة حصراً وتوجيهها للوحة التحكم النظيفة الخاصة بها مع تمرير المعرف في الرابط
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('activeCompanyId', matchedCompany.id);
-                window.location.href = `admin.html?company=${encodeURIComponent(matchedCompany.id)}`;
+            if (companyId) {
+                localStorage.setItem('activeCompanyId', companyId);
+
+                // تمرير معرف الشركة تلقائياً لجميع روابط القائمة الفرعية لضمان عدم ضياع الجلسة
+                document.querySelectorAll('.dynamic-link').forEach(link => {
+                    const currentHref = link.getAttribute('href');
+                    if (currentHref && !currentHref.includes('company=')) {
+                        link.setAttribute('href', `${currentHref}?company=${encodeURIComponent(companyId)}`);
+                    }
+                });
+
+                // جلب اسم الشركة من السيرفر مباشرة عبر الـ API للتأكد من مطابقتها لقاعدة البيانات
+                try {
+                    const response = await fetch(`/api/companies/info?company=${encodeURIComponent(companyId)}`);
+                    const data = await response.json();
+
+                    if (data.success && data.company) {
+                        const compName = data.company.company_name || companyId;
+                        titleSpan.textContent = `(${compName})`;
+                        document.getElementById('page-title').textContent = `المراقب برو - ${compName}`;
+                    } else {
+                        titleSpan.textContent = `(${companyId})`;
+                    }
+                } catch (err) {
+                    console.warn('تعذر جلب بيانات الشركة من السيرفر، استخدام المعرف المحلي:', err);
+                    titleSpan.textContent = `(${companyId})`;
+                }
             } else {
-                alert('⚠️ بيانات الدخول غير صحيحة أو أن الشركة غير مسجلة في النظام!');
+                titleSpan.textContent = '(يرجى تسجيل الدخول)';
             }
+        });
+
+        function logoutAdmin() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('activeCompanyId');
+            window.location.href = 'index.html';
         }
     </script>
 </body>
