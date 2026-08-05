@@ -32,7 +32,7 @@
         <div class="info-box">
             💡 <b>تعليمات الدخول:</b><br>
             - الحساب التجريبي العام: المستخدم: <b>admin</b> | كلمة المرور: <b>admin123</b><br>
-            - أو استخدم اسم المستخدم وكلمة المرور للشركة المفعلة الخاصة بك.
+            - أو استخدم اسم المستخدم وكلمة المرور الخاصة بشركتك المفعلة[cite: 4].
         </div>
 
         <form id="loginForm" onsubmit="handleLogin(event)">
@@ -66,18 +66,24 @@
                 return;
             }
 
-            // 2. التحقق المرن من الشركات المسجلة (يبحث في المعرف، أو اسم المستخدم، أو الاسم العربي)
+            // 2. التحقق المرن من الشركات المسجلة والمفعلة مسبقاً
             const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            const matchedCompany = companiesList.find(c => 
-                (c.id.toLowerCase() === user || c.username.toLowerCase() === user || c.name.toLowerCase().includes(user)) && c.pass === pass
-            );
+            
+            // البحث عن الشركة التي تطابق اسم المستخدم (أو المعرف) وتطابق كلمة المرور
+            const matchedCompany = companiesList.find(c => {
+                const cUser = (c.username || '').trim().toLowerCase();
+                const cId = (c.id || '').trim().toLowerCase();
+                const cPass = (c.pass || '').trim();
+                
+                return (cUser === user || cId === user) && cPass === pass;
+            });
 
             if (matchedCompany) {
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('activeCompanyId', matchedCompany.id);
                 window.location.href = 'admin.html';
             } else {
-                alert('⚠️ بيانات الدخول غير صحيحة، تأكد من اسم المستخدم وكلمة المرور، أو تفعيل الحساب من لوحة المطور.');
+                alert('⚠️ بيانات الدخول غير صحيحة، تأكد من اسم المستخدم وكلمة المرور، أو تأكد من تفعيل الحساب من لوحة المطور.');
             }
         }
     </script>
