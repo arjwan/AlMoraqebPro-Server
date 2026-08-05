@@ -27,18 +27,18 @@
     <div class="login-card">
         <div class="login-icon">🔑</div>
         <h2>تسجيل الدخول</h2>
-        <p class="subtitle">أدخل بيانات شركتك ومعرّفها للوصول إلى قاعدة البيانات ولوحة التحكم</p>
+        <p class="subtitle">أدخل بيانات شركتك ومعرّفها للوصول إلى لوحة التحكم</p>
 
         <div class="info-box">
-            💡 <b>تعليمات الدخول:</b><br>
-            - الحساب التجريبي العام: المستخدم: <b>admin</b> | كلمة المرور: <b>admin123</b><br>
-            - أو استخدم اسم المستخدم وكلمة المرور الخاصة بشركتك المفعلة.
+            💡 <b>معلومات الدخول:</b><br>
+            - الحساب العام: <b>admin</b> | كلمة المرور: <b>admin123</b><br>
+            - أو استخدم اسم المستخدم / معرف الشركة الذي سجلت به.
         </div>
 
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
-                <label>اسم المستخدم أو معرف الشركة:</label>
-                <input type="text" id="username" required placeholder="أدخل اسم المستخدم أو admin...">
+                <label>معرف الشركة، اسم المستخدم، أو الإيميل:</label>
+                <input type="text" id="username" required placeholder="أدخل بيانات الدخول...">
             </div>
 
             <div class="form-group">
@@ -49,40 +49,50 @@
             <button type="submit" class="btn-submit">🚀 دخول لوحة التحكم</button>
         </form>
 
-        <a href="admin-register.html" class="back-link">← ليس لديك حساب؟ إنشاء حساب جديد للشركة</a>
+        <a href="admin-register.html" class="back-link">← ليس لديك حساب؟ تسجيل شركة جديدة</a>
     </div>
 
     <script>
+        // طباعة الشركات المسجلة في المتصفح للتأكد منها عبر فحص المتصفح (F12)
+        const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        console.log("الشركات المسجلة حالياً في المتصفح:", companiesList);
+
         function handleLogin(event) {
             event.preventDefault();
-            const user = document.getElementById('username').value.trim().toLowerCase();
-            const pass = document.getElementById('password').value.trim();
+            const inputVal = document.getElementById('username').value.trim().toLowerCase();
+            const passVal = document.getElementById('password').value.trim();
 
-            // 1. التحقق الفوري للحساب التجريبي العام
-            if (user === 'admin' && pass === 'admin123') {
+            // 1. فحص الحساب التجريبي العام
+            if (inputVal === 'admin' && passVal === 'admin123') {
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('activeCompanyId', 'default_company');
                 window.location.href = 'admin.html';
                 return;
             }
 
-            // 2. التحقق المرن من الشركات المسجلة والمفعلة مسبقاً
-            const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            
+            // 2. البحث المطابق في الشركات المسجلة (بالـ ID أو username أو email)
             const matchedCompany = companiesList.find(c => {
-                const cUser = (c.username || '').trim().toLowerCase();
                 const cId = (c.id || '').trim().toLowerCase();
+                const cUser = (c.username || '').trim().toLowerCase();
+                const cEmail = (c.email || '').trim().toLowerCase();
                 const cPass = (c.pass || '').trim();
-                
-                return (cUser === user || cId === user) && cPass === pass;
+
+                const isUserMatch = (cId === inputVal || cUser === inputVal || cEmail === inputVal);
+                const isPassMatch = (cPass === passVal);
+
+                return isUserMatch && isPassMatch;
             });
 
             if (matchedCompany) {
+                if (matchedCompany.status === 'stopped') {
+                    alert('⚠️ عذراً، هذا الحساب متوقف مؤقتاً من قبل الإدارة.');
+                    return;
+                }
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('activeCompanyId', matchedCompany.id);
                 window.location.href = 'admin.html';
             } else {
-                alert('⚠️ بيانات الدخول غير صحيحة، تأكد من اسم المستخدم وكلمة المرور، أو تأكد من تفعيل الحساب من لوحة المطور.');
+                alert('⚠️ بيانات الدخول غير صحيحة! تأكد من اسم المستخدم أو معرف الشركة وكلمة المرور.');
             }
         }
     </script>
