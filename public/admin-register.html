@@ -3,97 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - إنشاء حساب وتفعيل الشركة</title>
+    <title>المراقب برو - تسجيل شركة جديدة</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 30px; }
-        .main-card { width: 100%; max-width: 550px; background: #ffffff; padding: 40px; border-radius: 28px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); }
-        .header-title { text-align: center; margin-bottom: 25px; }
-        .header-title h2 { font-size: 24px; font-weight: 800; color: #0284c7; margin-bottom: 8px; }
+        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 40px 20px; }
+        .register-container { width: 100%; max-width: 750px; background: #ffffff; padding: 45px; border-radius: 28px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); }
+        .header-title { text-align: center; margin-bottom: 30px; }
+        .header-title h2 { color: #0284c7; font-size: 28px; font-weight: 800; margin-bottom: 8px; }
         .header-title p { color: #64748b; font-size: 14px; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-weight: 700; font-size: 14px; color: #334155; margin-bottom: 6px; }
-        .form-group input { width: 100%; padding: 12px 16px; border: 2px solid #cbd5e1; border-radius: 12px; font-size: 15px; background: #f8fafc; outline: none; transition: 0.2s; }
-        .form-group input:focus { border-color: #0284c7; background: #fff; }
-        .btn-submit { background: #10b981; color: white; border: none; padding: 15px; width: 100%; border-radius: 14px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; margin-top: 10px; }
-        .btn-submit:hover { background: #059669; }
-        .footer-link { text-align: center; margin-top: 20px; }
-        .footer-link a { color: #0284c7; text-decoration: none; font-weight: 700; font-size: 14px; }
-        .footer-link a:hover { text-decoration: underline; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { text-align: right; margin-bottom: 18px; }
+        .form-group.full-width { grid-column: span 2; }
+        label { display: block; font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 6px; }
+        input, select { width: 100%; padding: 14px 16px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; background: #f8fafc; transition: 0.3s; }
+        input:focus { border-color: #0284c7; background: #fff; box-shadow: 0 0 8px rgba(2, 132, 199, 0.2); }
+        .btn-submit { width: 100%; background: #10b981; color: white; font-size: 18px; font-weight: 800; padding: 16px; border: none; border-radius: 14px; cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); }
+        .btn-submit:hover { background: #059669; transform: translateY(-2px); }
+        .developer-card { margin-top: 35px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; text-align: center; }
+        .developer-card h4 { color: #0369a1; font-size: 16px; margin-bottom: 8px; font-weight: 700; }
+        .developer-card p { color: #475569; font-size: 13px; line-height: 1.6; }
+        .developer-card span { font-weight: bold; color: #0f172a; }
+        .login-link { display: block; text-align: center; margin-top: 20px; color: #0284c7; text-decoration: none; font-weight: 700; font-size: 15px; }
+        .login-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <div class="main-card">
+
+    <div class="register-container">
         <div class="header-title">
-            <h2>🏢 تسجيل شركة جديدة ونظامها المستقل</h2>
-            <p>أنشئ حساب شركتك وحدد بيانات الدخول الخاصة بك</p>
+            <h2>🏢 تسجيل شركة جديدة - نظام المراقب برو</h2>
+            <p>أدخل بيانات شركتك بدقة لإرسال طلب التفعيل إلى إدارة المطورين</p>
         </div>
 
-        <form id="registerForm" onsubmit="registerCompany(event)">
-            <div class="form-group">
-                <label>معرّف الشركة بالإنجليزية (Company ID - فريد بدون مسافات):</label>
-                <input type="text" id="companyId" placeholder="مثال: al_bayan_co" required>
-            </div>
-            <div class="form-group">
-                <label>اسم الشركة أو المؤسسة الرسمي:</label>
-                <input type="text" id="companyName" placeholder="مثال: شركة البيان التقني" required>
-            </div>
-            <div class="form-group">
-                <label>اسم المستخدم (للدخول):</label>
-                <input type="text" id="adminUser" placeholder="admin_bayan" required>
-            </div>
-            <div class="form-group">
-                <label>كلمة المرور:</label>
-                <input type="password" id="adminPass" placeholder="••••••••" required>
-            </div>
-            <div class="form-group">
-                <label>مفتاح الترخيص (License Key):</label>
-                <input type="text" id="licenseKey" placeholder="PRO-2026" required>
+        <form id="registerForm" onsubmit="handleClientRegister(event)">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>1. اسم الشركة بالإنجليزية (Company ID):</label>
+                    <input type="text" id="companyId" required placeholder="مثال: alarjwan (بدون مسافات)">
+                </div>
+
+                <div class="form-group">
+                    <label>2. اسم الشركة العربي (المؤسسة):</label>
+                    <input type="text" id="companyNameAr" required placeholder="شركة الأرجوان للبرمجيات">
+                </div>
+
+                <div class="form-group">
+                    <label>3. اسم المدير:</label>
+                    <input type="text" id="managerName" required placeholder="محمد علي">
+                </div>
+
+                <div class="form-group">
+                    <label>4. رقم الهاتف الثابت للنظام:</label>
+                    <input type="tel" id="phoneNumber" required placeholder="07xxxxxxxx">
+                </div>
+
+                <div class="form-group full-width">
+                    <label>5. البريد الإلكتروني (الإيميل):</label>
+                    <input type="email" id="email" required placeholder="example@domain.com">
+                </div>
+
+                <div class="form-group">
+                    <label>6. اسم المستخدم (دخول لوحة التحكم):</label>
+                    <input type="text" id="username" required placeholder="admin_user">
+                </div>
+
+                <div class="form-group">
+                    <label>7. كلمة المرور:</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+
+                <div class="form-group full-width">
+                    <label>8. تأكيد كلمة المرور:</label>
+                    <input type="password" id="confirmPassword" required placeholder="••••••••">
+                </div>
+
+                <div class="form-group full-width">
+                    <label>9. صورة مدير النظام (صورة شخصية):</label>
+                    <input type="file" id="managerPhoto" accept="image/*" required>
+                </div>
             </div>
 
-            <button type="submit" class="btn-submit">🚀 إنشاء البيئة والانتقال لتسجيل الدخول</button>
+            <button type="submit" class="btn-submit">🚀 إرسال الطلب واعتماد التسجيل</button>
         </form>
 
-        <div class="footer-link">
-            <a href="company-activate.html">← لديك حساب مسجل مسبقاً؟ تسجيل الدخول</a>
+        <a href="index.html" class="login-link">← لديك حساب مسجل مسبقاً؟ تسجيل الدخول</a>
+
+        <div class="developer-card">
+            <h4>🛠️ جهة التطوير والبرمجة (شركة الأرجوان للبرمجيات)</h4>
+            <p>
+                للدعم الفني والاستفسارات: <span>07807807491</span> (متوفر واتساب)<br>
+                البريد الإلكتروني الرسمي: <span>mohmed1628@gmail.com</span>
+            </p>
         </div>
     </div>
 
     <script>
-        function registerCompany(event) {
+        function handleClientRegister(event) {
             event.preventDefault();
+            const pass = document.getElementById('password').value;
+            const confirmPass = document.getElementById('confirmPassword').value;
 
-            const cId = document.getElementById('companyId').value.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-            const cName = document.getElementById('companyName').value.trim();
-            const user = document.getElementById('adminUser').value.trim();
-            const pass = document.getElementById('adminPass').value.trim();
-            const licenseKey = document.getElementById('licenseKey').value.trim();
-
-            if (!cId || !cName || !user || !pass) {
-                alert('الرجاء إكمال كافة الحقول المطلوبة بدقة.');
+            if (pass !== confirmPass) {
+                alert('⚠️ كلمة المرور وتأكيد كلمة المرور غير متطابقتين!');
                 return;
             }
 
-            // 1. تحديث أو حفظ قائمة الشركات المسجلة العامة
-            let companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            if (!companiesList.some(c => c.id === cId)) {
-                companiesList.push({ id: cId, name: cName });
-                localStorage.setItem('registeredCompanies', JSON.stringify(companiesList));
-            }
+            const newCompany = {
+                id: document.getElementById('companyId').value.trim().toLowerCase(),
+                name: document.getElementById('companyNameAr').value.trim(),
+                manager: document.getElementById('managerName').value.trim(),
+                phone: document.getElementById('phoneNumber').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                username: document.getElementById('username').value.trim(),
+                pass: pass,
+                status: 'pending' // بانتظار موافقة المطور
+            };
 
-            // 2. حفظ بيانات الاعتماد الخاصة بهذه الشركة حصراً للتحقق لاحقاً أثناء تسجيل الدخول
-            localStorage.setItem(`company_auth_${cId}`, JSON.stringify({ user, pass, companyName: cName }));
+            let pendingList = JSON.parse(localStorage.getItem('pendingCompanies')) || [];
+            pendingList.push(newCompany);
+            localStorage.setItem('pendingCompanies', JSON.stringify(pendingList));
 
-            // 3. إنشاء قاعدة بيانات الموظفين الخاصة بالنظام النظيف لهذه الشركة إذا لم تكن موجودة
-            const dbKeyEmployees = `company_employees_${cId}`;
-            if (!localStorage.getItem(dbKeyEmployees)) {
-                localStorage.setItem(dbKeyEmployees, JSON.stringify([]));
-            }
-
-            alert(`تم إنشاء الحساب والبيئة المستقلة لشركة "${cName}" بنجاح!`);
-            
-            // الانتقال لصفحة تسجيل الدخول الخاصة بهذه الشركة مع تمرير المعرف في الرابط
-            window.location.href = `company-activate.html?company=${encodeURIComponent(cId)}`;
+            alert('✅ تم إرسال طلب تسجيل الشركة بنجاح!\n⏳ النظام الآن بانتظار موافقة المطور وتفعيل الحساب لتصلك رسالة الدخول.');
+            window.location.href = 'index.html';
         }
     </script>
 </body>
