@@ -7,29 +7,24 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
+
+// مسار ملف تخزين الشركات محلياً على السيرفر
 const DATA_FILE = path.join(__dirname, 'companies.json');
 
-// مسح إجباري لملف الشركات القديم وجعله نظيفاً تماماً
+// التأكد من وجود ملف البيانات أو إنشاؤه فارغاً إذا لم يكن موجوداً
 try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
-    console.log("SUCCESS: Database file cleared and reset to empty.");
-} catch (e) {
-    console.log("Error resetting file:", e);
-}
-
-// عند تشغيل السيرفر، نقوم بتفريغ الملف تماماً وجعله نظيفاً
-try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
-    console.log("System cleaned: All previous companies have been deleted, database is now clean.");
+    if (!fs.existsSync(DATA_FILE)) {
+        fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+    }
 } catch (err) {
-    console.error("Error cleaning database file:", err);
+    console.error("Error initializing database file:", err);
 }
 
 // دالة لقراءة الشركات من الملف
 function readCompanies() {
     try {
         if (!fs.existsSync(DATA_FILE)) {
-            fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+            return [];
         }
         const data = fs.readFileSync(DATA_FILE, 'utf8');
         return JSON.parse(data);
@@ -56,7 +51,6 @@ function verifyAdminAccess(req, res, next) {
         return res.status(403).send("<h1>403 Forbidden</h1><p>غير مسموح بالوصول المباشر لهذه الصفحة. يرجى إنشاء الشركة أو التفعيل أولاً.</p>");
     }
 
-    // السماح للحساب العام مباشرة
     if (companyId === 'default_company') {
         return next();
     }
@@ -102,7 +96,7 @@ app.get('/admin.html', verifyAdminAccess, (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
-    res.json({ success: true, message: 'AlMoraqeb Pro Server is clean and running perfectly!' });
+    res.json({ success: true, message: 'AlMoraqeb Pro Server is running perfectly!' });
 });
 
 app.get('/company-activate.html', (req, res) => {
@@ -117,10 +111,11 @@ app.post('/api/login', (req, res) => {
         return res.status(400).json({ success: false, message: 'يرجى إدخال اسم المستخدم وكلمة المرور' });
     }
 
-    const inputVal = username.trim().toLowerCase();
+    const inputVal = username.trim();
+    const passVal = password.trim();
 
-    // 1. التحقق من الحساب العام الافتراضي
-    if (inputVal === 'admin' && password === 'admin123') {
+    // 1. التحقق المباشر والصريح للحساب العام الافتراضي
+    if (inputVal === 'admin' && passVal === 'admin123') {
         return res.json({ 
             success: true, 
             role: 'admin', 
@@ -132,9 +127,9 @@ app.post('/api/login', (req, res) => {
     // 2. البحث عن الشركة في الملف المحلي
     const companies = readCompanies();
     const company = companies.find(c => 
-        (c.company_id && c.company_id.toLowerCase() === inputVal) || 
-        (c.username && c.username.toLowerCase() === inputVal) || 
-        (c.email && c.email.toLowerCase() === inputVal)
+        (c.company_id && c.company_id === inputVal) || 
+        (c.username && c.username === inputVal) || 
+        (c.email && c.email === inputVal)
     );
 
     if (!company) {
@@ -145,7 +140,7 @@ app.post('/api/login', (req, res) => {
         return res.status(403).json({ success: false, message: 'عذراً، هذا الحساب متوقف مؤقتاً من قبل الإدارة.' });
     }
 
-    if (company.password && company.password !== password) {
+    if (company.password && company.password !== passVal) {
         return res.status(400).json({ success: false, message: 'كلمة المرور غير صحيحة' });
     }
 
