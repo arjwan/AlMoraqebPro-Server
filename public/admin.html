@@ -60,6 +60,8 @@
             text-decoration: none;
             font-weight: 700;
             transition: 0.2s;
+            cursor: pointer;
+            border: none;
         }
 
         .logout-btn:hover {
@@ -118,7 +120,8 @@
             <div>
                 <h1>🛡️ نظام المراقب برو <span id="company-title-display">جاري التحميل...</span></h1>
             </div>
-            <a href="admin-register.html" class="logout-btn">تسجيل الخروج</a>
+            <!-- زر تسجيل خروج برمجى آمن -->
+            <button onclick="logoutAdmin()" class="logout-btn">تسجيل الخروج</button>
         </header>
 
         <div class="grid-menu">
@@ -252,6 +255,11 @@
                     titleSpan.textContent = '(الرابط غير محدد)';
                 }
             }
+        }
+
+        function logoutAdmin() {
+            // توجيه المستخدم مباشرة إلى الصفحة الرئيسية للجذر لتفادي أي صفحات غير مسجلة
+            window.location.href = '/';
         }
 
         window.addEventListener('DOMContentLoaded', initAdminDashboard);

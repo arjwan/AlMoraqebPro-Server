@@ -81,6 +81,10 @@ app.get('/api/status', (req, res) => {
     res.json({ success: true, message: 'AlMoraqeb Pro Server & Database are running perfectly!' });
 });
 
+app.get('/company-activate.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'company-activate.html'));
+});
+
 // مسار جلب معلومات الشركة لعرض اسمها في لوحة التحكم
 app.get('/api/companies/info', async (req, res) => {
     const companyId = req.query.company;

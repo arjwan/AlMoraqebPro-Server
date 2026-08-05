@@ -186,7 +186,6 @@
             const cId = document.getElementById('companyId').value.trim().toLowerCase().replace(/\s+/g, '_');
             const cName = document.getElementById('companyName').value.trim();
             
-            // تجهيز هيكل الشركة والمدير الأول
             const adminData = {
                 name: document.getElementById('managerName').value,
                 specialty: document.getElementById('specialty').value,
@@ -201,23 +200,22 @@
                 photo: 'https://via.placeholder.com/150'
             };
 
-            // 1. حفظ قائمة الشركات المسجلة في النظام العام
+            // حفظ البيانات محلياً للربط الفوري
             let companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
             if (!companiesList.some(c => c.id === cId)) {
                 companiesList.push({ id: cId, name: cName });
                 localStorage.setItem('registeredCompanies', JSON.stringify(companiesList));
             }
 
-            // 2. إنشاء قاعدة بيانات مستقلة خاصة بهذه الشركة حصراً
             const companyDbKey = `company_employees_${cId}`;
             let companyEmployees = [adminData];
             localStorage.setItem(companyDbKey, JSON.stringify(companyEmployees));
-
-            // تعيين الشركة الحالية النشطة في الجلسة
             localStorage.setItem('activeCompanyId', cId);
 
-            alert(`تم إنشاء قاعدة البيانات المستقلة للشركة "${cName}" (المعرف: ${cId}) بنجاح وتم تسجيل المدير كأول موظف فيها!`);
-            window.location.href = 'admin-manage-emp.html';
+            alert(`تم إنشاء قاعدة البيانات المستقلة للشركة "${cName}" (المعرف: ${cId}) بنجاح!`);
+            
+            // الانتقال المباشر للوحة التحكم مع ثبات المعرف في الرابط لضمان عدم ضياع البيانات
+            window.location.href = `admin.html?company=${encodeURIComponent(cId)}`;
         }
     </script>
 </body>
