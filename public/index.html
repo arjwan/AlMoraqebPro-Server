@@ -140,14 +140,14 @@
 
         <div class="info-box">
             💡 <b>تعليمات الدخول:</b><br>
-            - يمكنك استخدام الحساب التجريبي العام (المستخدم: <b>admin</b> | كلمة المرور: <b>admin123</b>)<br>
-            - أو إدخال معرف الشركة الخاصة بك مباشرة.
+            - الحساب التجريبي العام: المستخدم: <b>admin</b> | كلمة المرور: <b>admin123</b><br>
+            - أو استخدم اسم المستخدم وكلمة المرور للشركة المفعلة الخاصة بك.
         </div>
 
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
                 <label>معرّف الشركة أو اسم المستخدم:</label>
-                <input type="text" id="username" required placeholder="أدخل معرف الشركة أو admin...">
+                <input type="text" id="username" required placeholder="أدخل اسم المستخدم أو admin...">
             </div>
 
             <div class="form-group">
@@ -162,17 +162,12 @@
     </div>
 
     <script>
-        // التحقق التلقائي عند فتح الموقع: إذا كان مسجلاً مسبقاً، حوله للوحة التحكم فوراً
-        if (localStorage.getItem('isLoggedIn') === 'true') {
-            window.location.href = 'admin.html';
-        }
-
         function handleLogin(event) {
             event.preventDefault();
             const user = document.getElementById('username').value.trim().toLowerCase();
             const pass = document.getElementById('password').value.trim();
 
-            // 1. التحقق من الحساب التجريبي العام الافتراضي
+            // 1. التحقق الفوري المباشر للحساب التجريبي
             if (user === 'admin' && pass === 'admin123') {
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('activeCompanyId', 'default_company');
@@ -180,16 +175,18 @@
                 return;
             }
 
-            // 2. التحقق من الشركات المسجلة والمفعلة عبر لوحة المطور
+            // 2. التحقق من الشركات المسجلة والمفعلة
             const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            const matchedCompany = companiesList.find(c => (c.id === user || c.username.toLowerCase() === user) && c.pass === pass);
+            const matchedCompany = companiesList.find(c => 
+                (c.username.toLowerCase() === user || c.id.toLowerCase() === user) && c.pass === pass
+            );
 
             if (matchedCompany) {
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('activeCompanyId', matchedCompany.id);
                 window.location.href = 'admin.html';
             } else {
-                alert('⚠️ بيانات الدخول غير صحيحة، أو أن الشركة لم يتم تفعيلها بعد من قبل المطور!');
+                alert('⚠️ بيانات الدخول غير صحيحة، تأكد من اسم المستخدم وكلمة المرور أو تفعيل الحساب من لوحة المطور.');
             }
         }
     </script>
