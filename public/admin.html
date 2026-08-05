@@ -216,6 +216,8 @@
             const urlParams = new URLSearchParams(window.location.search);
             const companyId = urlParams.get('company');
 
+            const titleSpan = document.getElementById('company-title-display');
+
             if (companyId) {
                 // تمرير معرف الشركة تلقائياً لجميع روابط القائمة لتظل الجلسة آمنة
                 document.querySelectorAll('.dynamic-link').forEach(link => {
@@ -229,7 +231,6 @@
                     const response = await fetch(`/api/companies/info?company=${encodeURIComponent(companyId)}`);
                     const data = await response.json();
 
-                    const titleSpan = document.getElementById('company-title-display');
                     if (data.success && data.company && data.company.company_name) {
                         if (titleSpan) {
                             titleSpan.textContent = `(${data.company.company_name})`;
@@ -242,13 +243,11 @@
                     }
                 } catch (err) {
                     console.error('Error fetching company branding:', err);
-                    const titleSpan = document.getElementById('company-title-display');
                     if (titleSpan) {
                         titleSpan.textContent = `(${companyId})`;
                     }
                 }
             } else {
-                const titleSpan = document.getElementById('company-title-display');
                 if (titleSpan) {
                     titleSpan.textContent = '(الرابط غير محدد)';
                 }
