@@ -32,7 +32,7 @@
     <div class="register-container">
         <div class="header-title">
             <h2>🏢 تسجيل شركة جديدة - نظام المراقب برو</h2>
-            <p>أدخل بيانات شركتك بدقة لإرسال طلب التفعيل إلى إدارة المطورين</p>
+            <p>أدخل بيانات شركتك بدقة لتفعيل النظام والانتقال لتسجيل الدخول فوراً</p>
         </div>
 
         <form id="registerForm" onsubmit="handleClientRegister(event)">
@@ -83,7 +83,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit">🚀 إرسال الطلب واعتماد التسجيل</button>
+            <button type="submit" class="btn-submit">🚀 إرسال وتفعيل الحساب فوراً</button>
         </form>
 
         <a href="index.html" class="login-link">← لديك حساب مسجل مسبقاً؟ تسجيل الدخول</a>
@@ -111,34 +111,40 @@
             const compId = document.getElementById('companyId').value.trim().toLowerCase();
             const email = document.getElementById('email').value.trim().toLowerCase();
 
-            let pendingList = JSON.parse(localStorage.getItem('pendingCompanies')) || [];
-            let activeCompanies = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+            try {
+                let activeCompanies = [];
+                const storedData = localStorage.getItem('registeredCompanies');
+                if (storedData) {
+                    activeCompanies = JSON.parse(storedData);
+                }
 
-            // منع التكرار: فحص ما إذا كان المعرف أو الإيميل موجوداً مسبقاً في قائمة الانتظار أو الشركات المفعلة
-            const existsInPending = pendingList.some(c => c.id === compId || c.email.toLowerCase() === email);
-            const existsInActive = activeCompanies.some(c => c.id === compId || c.email.toLowerCase() === email);
+                // منع التكرار
+                const exists = activeCompanies.some(c => c.id === compId || c.email.toLowerCase() === email);
+                if (exists) {
+                    alert('⚠️ عذراً، اسم الشركة (ID) أو البريد الإلكتروني مستخدم مسبقاً.');
+                    return;
+                }
 
-            if (existsInPending || existsInActive) {
-                alert('⚠️ عذراً، اسم الشركة (ID) أو البريد الإلكتروني مستخدم مسبقاً، يرجى اختيار بيانات أخرى.');
-                return;
+                const newCompany = {
+                    id: compId,
+                    name: document.getElementById('companyNameAr').value.trim(),
+                    manager: document.getElementById('managerName').value.trim(),
+                    phone: document.getElementById('phoneNumber').value.trim(),
+                    email: email,
+                    username: document.getElementById('username').value.trim(),
+                    pass: pass,
+                    status: 'active'
+                };
+
+                activeCompanies.push(newCompany);
+                localStorage.setItem('registeredCompanies', JSON.stringify(activeCompanies));
+
+                alert('🎉 تم إنشاء وحفظ الشركة وتفعيلها بنجاح!\nيمكنك تسجيل الدخول الآن.');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error(error);
+                alert('⚠️ حدث خطأ أثناء الحفظ في المتصفح، تأكد من أن التخزين المحلي غير ممتلئ أو مفعل.');
             }
-
-            const newCompany = {
-                id: compId,
-                name: document.getElementById('companyNameAr').value.trim(),
-                manager: document.getElementById('managerName').value.trim(),
-                phone: document.getElementById('phoneNumber').value.trim(),
-                email: email,
-                username: document.getElementById('username').value.trim(),
-                pass: pass,
-                status: 'pending' // بانتظار موافقة المطور
-            };
-
-            pendingList.push(newCompany);
-            localStorage.setItem('pendingCompanies', JSON.stringify(pendingList));
-
-            alert('✅ تم إرسال طلب تسجيل الشركة بنجاح!\n⏳ النظام الآن بانتظار موافقة المطور وتفعيل الحساب لتصلك رسالة الدخول.');
-            window.location.href = 'index.html';
         }
     </script>
 </body>
