@@ -3,129 +3,390 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل شركة جديدة</title>
+    <title>المراقب برو - التقارير الشاملة</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 40px 20px; }
-        .register-container { width: 100%; max-width: 750px; background: #ffffff; padding: 45px; border-radius: 28px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); }
-        .header-title { text-align: center; margin-bottom: 30px; }
-        .header-title h2 { color: #0284c7; font-size: 28px; font-weight: 800; margin-bottom: 8px; }
-        .header-title p { color: #64748b; font-size: 14px; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { text-align: right; margin-bottom: 18px; }
-        .form-group.full-width { grid-column: span 2; }
-        label { display: block; font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 6px; }
-        input, select { width: 100%; padding: 14px 16px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; background: #f8fafc; transition: 0.3s; }
-        input:focus { border-color: #0284c7; background: #fff; box-shadow: 0 0 8px rgba(2, 132, 199, 0.2); }
-        .btn-submit { width: 100%; background: #10b981; color: white; font-size: 18px; font-weight: 800; padding: 16px; border: none; border-radius: 14px; cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); }
-        .btn-submit:hover { background: #059669; transform: translateY(-2px); }
-        .developer-card { margin-top: 35px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; text-align: center; }
-        .developer-card h4 { color: #0369a1; font-size: 16px; margin-bottom: 8px; font-weight: 700; }
-        .developer-card p { color: #475569; font-size: 13px; line-height: 1.6; }
-        .developer-card span { font-weight: bold; color: #0f172a; }
-        .login-link { display: block; text-align: center; margin-top: 20px; color: #0284c7; text-decoration: none; font-weight: 700; font-size: 15px; }
-        .login-link:hover { text-decoration: underline; }
+        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; padding: 30px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        header { background: #ffffff; padding: 20px 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        h1 { color: #0284c7; font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .back-btn { background: #64748b; color: white; padding: 8px 16px; border-radius: 10px; text-decoration: none; font-weight: 600; transition: 0.2s; }
+        .back-btn:hover { background: #475569; }
+
+        /* صندوق الفلاتر والخيارات */
+        .filter-card { background: #ffffff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); margin-bottom: 25px; }
+        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .filter-group { display: flex; flex-direction: column; gap: 6px; }
+        .filter-group label { font-size: 14px; font-weight: 700; color: #334155; }
+        .filter-group input, .filter-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; outline: none; transition: 0.2s; }
+        .filter-group input:focus, .filter-group select:focus { border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
+
+        /* أزرار التحكم والعمليات */
+        .actions-bar { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        .action-btn { padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+        .btn-generate { background: #0284c7; color: white; }
+        .btn-generate:hover { background: #0369a1; }
+        .btn-print { background: #0d9488; color: white; }
+        .btn-print:hover { background: #0f766e; }
+        .btn-excel { background: #16a34a; color: white; }
+        .btn-excel:hover { background: #15803d; }
+        .btn-pdf { background: #dc2626; color: white; }
+        .btn-pdf:hover { background: #b91c1c; }
+
+        /* صندوق عرض النتائج والجدول */
+        .report-result-card { background: #ffffff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); overflow-x: auto; }
+        .report-header-info { margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .report-header-info h3 { color: #0f172a; font-size: 18px; }
+        .report-header-info span { font-size: 13px; color: #64748b; }
+
+        table { width: 100%; border-collapse: collapse; text-align: right; margin-top: 10px; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background: #f8fafc; color: #334155; font-weight: 700; }
+        tr:hover { background: #f1f5f9; }
+        .empty-state { text-align: center; padding: 40px; color: #64748b; font-size: 16px; }
+
+        @media print {
+            body { background: white; padding: 0; color: black; }
+            header, .filter-card, .actions-bar { display: none !important; }
+            .report-result-card { box-shadow: none; padding: 0; }
+            table { width: 100%; border: 1px solid #000; }
+            th, td { border: 1px solid #000; color: black; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="register-container">
-        <div class="header-title">
-            <h2>🏢 تسجيل شركة جديدة - نظام المراقب برو</h2>
-            <p>أدخل بيانات شركتك بدقة لإرسال طلب التفعيل إلى إدارة المطورين</p>
-        </div>
+    <div class="container">
+        <!-- الهيدر -->
+        <header>
+            <h1>📊 التقارير الشاملة والتحليلات</h1>
+            <a href="admin.html" class="back-btn" id="backLink">⬅ العودة لوحة التحكم</a>
+        </header>
 
-        <form id="registerForm" onsubmit="handleClientRegister(event)">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>1. اسم الشركة بالإنجليزية (Company ID):</label>
-                    <input type="text" id="companyId" required placeholder="مثال: alarjwan (بدون مسافات)">
+        <!-- فلاتر البحث المتقدم -->
+        <div class="filter-card">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>اسم الشركة:</label>
+                    <select id="companySelect">
+                        <option value="">جميع الشركات / الشركة الحالية</option>
+                    </select>
                 </div>
-
-                <div class="form-group">
-                    <label>2. اسم الشركة العربي (المؤسسة):</label>
-                    <input type="text" id="companyNameAr" required placeholder="شركة الأرجوان للبرمجيات">
+                <div class="filter-group">
+                    <label>الفرع:</label>
+                    <select id="branchSelect">
+                        <option value="all">جميع الفروع</option>
+                    </select>
                 </div>
-
-                <div class="form-group">
-                    <label>3. اسم المدير:</label>
-                    <input type="text" id="managerName" required placeholder="اسم المدير العام">
+                <div class="filter-group">
+                    <label>الشفت / الوجبة:</label>
+                    <select id="shiftSelect">
+                        <option value="all">جميع الشفتات</option>
+                    </select>
                 </div>
-
-                <div class="form-group">
-                    <label>4. رقم الهاتف الثابت للنظام:</label>
-                    <input type="tel" id="phoneNumber" required placeholder="07xxxxxxxx">
+                <div class="filter-group">
+                    <label>نوع التقرير:</label>
+                    <select id="reportType">
+                        <option value="attendance">تقرير الحضور والغياب</option>
+                        <option value="salaries">تقرير الرواتب والصافي</option>
+                        <option value="loans">تقرير السلف والأقساط</option>
+                        <option value="leaves">تقرير الإجازات (مرضية، عادية، غياب)</option>
+                        <option value="employees">تقرير أسماء الموظفين وعناوينهم</option>
+                    </select>
                 </div>
-
-                <div class="form-group full-width">
-                    <label>5. البريد الإلكتروني (الإيميل):</label>
-                    <input type="email" id="email" required placeholder="example@domain.com">
+                <div class="filter-group">
+                    <label>من تاريخ:</label>
+                    <input type="date" id="dateFrom">
                 </div>
-
-                <div class="form-group">
-                    <label>6. اسم المستخدم (دخول لوحة التحكم):</label>
-                    <input type="text" id="username" required placeholder="admin_user">
-                </div>
-
-                <div class="form-group">
-                    <label>7. كلمة المرور:</label>
-                    <input type="password" id="password" required placeholder="••••••••">
-                </div>
-
-                <div class="form-group full-width">
-                    <label>8. تأكيد كلمة المرور:</label>
-                    <input type="password" id="confirmPassword" required placeholder="••••••••">
-                </div>
-
-                <div class="form-group full-width">
-                    <label>9. صورة مدير النظام (صورة شخصية):</label>
-                    <input type="file" id="managerPhoto" accept="image/*" required>
+                <div class="filter-group">
+                    <label>إلى تاريخ:</label>
+                    <input type="date" id="dateTo">
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit">🚀 إرسال الطلب واعتماد التسجيل</button>
-        </form>
+            <!-- شريط الأزرار والإجراءات -->
+            <div class="actions-bar">
+                <div class="btn-group">
+                    <button onclick="generateReport()" class="action-btn btn-generate">🔍 إعداد وعرض التقرير</button>
+                </div>
+                <div class="btn-group">
+                    <button onclick="printReport()" class="action-btn btn-print">🖨️ طباعة</button>
+                    <button onclick="exportToExcel()" class="action-btn btn-excel">📊 تصدير إلى Excel</button>
+                    <button onclick="exportToPDF()" class="action-btn btn-pdf">📄 تصدير إلى PDF</button>
+                </div>
+            </div>
+        </div>
 
-        <a href="index.html" class="login-link">← لديك حساب مسجل مسبقاً؟ تسجيل الدخول</a>
+        <!-- منطقة عرض النتائج والجدول -->
+        <div class="report-result-card" id="printableArea">
+            <div class="report-header-info">
+                <div>
+                    <h3 id="reportTitleDisplay">تقرير الحضور والغياب الشامل</h3>
+                    <span id="reportPeriodDisplay">الفترة: غير محددة</span>
+                </div>
+                <div>
+                    <span id="reportMetaDisplay">عدد السجلات: 0</span>
+                </div>
+            </div>
 
-        <div class="developer-card">
-            <h4>🛠️ جهة التطوير والبرمجة</h4>
-            <p>
-                المطور: <span>محمد العبيدي</span> | شركة الأرجوان للبرمجيات<br>
-                للدعم الفني: <span>07807807491</span> (متوفر واتساب)<br>
-                البريد الإلكتروني الرسمي: <span>mohmed1628@gmail.com</span>
-            </p>
+            <div id="tableContainer">
+                <div class="empty-state">يرجى اختيار المعايير المطلوبة والنقر على زر "إعداد وعرض التقرير"</div>
+            </div>
         </div>
     </div>
 
     <script>
-        function handleClientRegister(event) {
-            event.preventDefault();
-            const pass = document.getElementById('password').value;
-            const confirmPass = document.getElementById('confirmPassword').value;
+        // ضبط الروابط وتمرير معرف الشركة برمجياً
+        const urlParams = new URLSearchParams(window.location.search);
+        let companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId');
 
-            if (pass !== confirmPass) {
-                alert('⚠️ كلمة المرور وتأكيد كلمة المرور غير متطابقتين!');
-                return;
+        if (companyId) {
+            const backLink = document.getElementById('backLink');
+            backLink.setAttribute('href', `admin.html?company=${encodeURIComponent(companyId)}`);
+        }
+
+        // ضبط تواريخ الافتراضية (اليوم الحالي)
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateTo').value = today;
+            
+            const firstDay = new Date();
+            firstDay.setDate(1);
+            document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
+            
+            loadInitialFilters();
+        });
+
+        async function loadInitialFilters() {
+            try {
+                // جلب بيانات الفروع والشفتات إن وجدت من السيرفر أو التخزين
+                const res = await fetch(`/api/companies/info?company=${encodeURIComponent(companyId || 'default_company')}`);
+                const data = await res.json();
+                if(data.success && data.company) {
+                    const compSelect = document.getElementById('companySelect');
+                    compSelect.innerHTML = `<option value="${data.company.company_id || companyId}">${data.company.company_name || 'الشركة الحالية'}</option>`;
+                }
+            } catch (e) {
+                console.log('وضع التشغيل المحلي للفلاتر');
+            }
+        }
+
+        // دالة توليد وعرض التقرير بناءً على الاختيارات
+        function generateReport() {
+            const type = document.getElementById('reportType').value;
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+            const titleDisplay = document.getElementById('reportTitleDisplay');
+            const periodDisplay = document.getElementById('reportPeriodDisplay');
+            const metaDisplay = document.getElementById('reportMetaDisplay');
+            const container = document.getElementById('tableContainer');
+
+            periodDisplay.textContent = `الفترة من: ${from} إلى: ${to}`;
+
+            // محاكاة بيانات حية حسب نوع التقرير المختار
+            let html = '';
+            if (type === 'employees') {
+                titleDisplay.textContent = 'تقرير أسماء الموظفين وعناوينهم';
+                html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ت</th>
+                                <th>اسم الموظف</th>
+                                <th>الفرع</th>
+                                <th>الشفت</th>
+                                <th>العنوان التفصيلي</th>
+                                <th>رقم الهاتف</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                1
+                                <td>أحمد محمد علي</td>
+                                <td>الفرع الرئيسي - بغداد</td>
+                                <td>الصباحي</td>
+                                <td>بغداد، الكرادة</td>
+                                <td>07700000000</td>
+                            </tr>
+                            <tr>
+                                2
+                                <td>سارة حسن إبراهيم</td>
+                                <td>فرع المنصور</td>
+                                <td>الصباحي</td>
+                                <td>بغداد، المنصور</td>
+                                <td>07800000000</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+                metaDisplay.textContent = 'عدد الموظفين: 2';
+            } else if (type === 'salaries') {
+                titleDisplay.textContent = 'تقرير الرواتب الشامل والصافي';
+                html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ت</th>
+                                <th>اسم الموظف</th>
+                                <th>الراتب الأساسي</th>
+                                <th>الإضافات / الحوافز</th>
+                                <th>الاستقطاعات / السلف</th>
+                                <th>الصافي المستحق</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>أحمد محمد علي</td>
+                                <td>1,000,000 د.ع</td>
+                                <td>50,000 د.ع</td>
+                                <td>100,000 د.ع</td>
+                                <td><strong>950,000 د.ع</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+                metaDisplay.textContent = 'إجمالي الرواتب: 950,000 د.ع';
+            } else if (type === 'loans') {
+                titleDisplay.textContent = 'تقرير السلف والأقساط المستحقة';
+                html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ت</th>
+                                <th>اسم الموظف</th>
+                                <th>إجمالي السلفة</th>
+                                <th>المبلغ المدفوع</th>
+                                <th>المتبقي ذمته</th>
+                                <th>قسط الشهر</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>أحمد محمد علي</td>
+                                <td>500,000 د.ع</td>
+                                <td>200,000 د.ع</td>
+                                <td>300,000 د.ع</td>
+                                <td>50,000 د.ع</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+                metaDisplay.textContent = 'إجمالي السلف المتبقية: 300,000 د.ع';
+            } else if (type === 'leaves') {
+                titleDisplay.textContent = 'تقرير الإجازات (مرضية، عادية، غياب)';
+                html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ت</th>
+                                <th>اسم الموظف</th>
+                                <th>إجازات عادية</th>
+                                <th>إجازات مرضية</th>
+                                <th>أيام الغياب بدون عذر</th>
+                                <th>المجموع الكلي</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>أحمد محمد علي</td>
+                                <td>2 أيام</td>
+                                <td>1 يوم</td>
+                                <td>0 أيام</td>
+                                <td>3 أيام</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+                metaDisplay.textContent = 'إجمالي السجلات: 1';
+            } else {
+                titleDisplay.textContent = 'تقرير الحضور والغياب العام';
+                html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ت</th>
+                                <th>التاريخ</th>
+                                <th>اسم الموظف</th>
+                                <th>وقت الحضور</th>
+                                <th>وقت الانصراف</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>${from}</td>
+                                <td>أحمد محمد علي</td>
+                                <td>08:00 ص</td>
+                                <td>03:00 م</td>
+                                <td><span style="color: green; font-weight: bold;">حاضر</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+                metaDisplay.textContent = 'عدد السجلات: 1';
             }
 
-            const newCompany = {
-                id: document.getElementById('companyId').value.trim().toLowerCase(),
-                name: document.getElementById('companyNameAr').value.trim(),
-                manager: document.getElementById('managerName').value.trim(),
-                phone: document.getElementById('phoneNumber').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                username: document.getElementById('username').value.trim(),
-                pass: pass,
-                status: 'pending' // بانتظار موافقة المطور
-            };
+            container.innerHTML = html;
+        }
 
-            let pendingList = JSON.parse(localStorage.getItem('pendingCompanies')) || [];
-            pendingList.push(newCompany);
-            localStorage.setItem('pendingCompanies', JSON.stringify(pendingList));
+        // دالة الطباعة المباشرة مع استدعاء نافذة المتصفح
+        function printReport() {
+            window.print();
+        }
 
-            alert('✅ تم إرسال طلب تسجيل الشركة بنجاح!\n⏳ النظام الآن بانتظار موافقة المطور (محمد العبيدي) وتفعيل الحساب لتصلك رسالة الدخول.');
-            window.location.href = 'index.html';
+        // دالة التصدير إلى Excel مع إمكانية اختيار مكان الحفظ وتنزيل الملف
+        function exportToExcel() {
+            const tableHTML = document.getElementById('printableArea').innerHTML;
+            const blob = new Blob(['\ufeff' + tableHTML], {
+                type: 'application/vnd.ms-excel;charset=utf-8'
+            });
+            triggerDownload(blob, 'AlMoraqebPro_Report.xls', 'تحديد مكان حفظ ملف Excel');
+        }
+
+        // دالة التصدير إلى PDF (عبر نافذة الطباعة الافتراضية مع توجيه الحفظ كملف PDF)
+        function exportToPDF() {
+            alert('💡 لتنزيل التقرير بصيغة PDF، يرجى اختيار "حفظ كـ PDF" (Save as PDF) من نافذة الطباعة التي ستفتح حالاً واختيار مكان الحفظ المناسب.');
+            window.print();
+        }
+
+        // وظيفة مساعدة لتنزيل الملفات مع دعم واجهة اختيار مسار الحفظ الحديثة إن توفرت بالمتصفح
+        async function triggerDownload(blob, filename, description) {
+            if (window.showSaveFilePicker) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: filename,
+                        types: [{
+                            description: description,
+                            accept: { 'application/vnd.ms-excel': ['.xls'] },
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.log('تم التراجع عن الحفظ اليدوي، استخدام التنزيل التلقائي...');
+                    } else {
+                        return;
+                    }
+                }
+            }
+            // الطريقة التقليدية المدعومة
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
