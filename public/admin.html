@@ -84,7 +84,6 @@
                 <p>تسجيل ومتابعة سلف الموظفين وأقساطها</p>
             </a>
 
-            <!-- إعادة بطاقة التقارير الشاملة التي اختفت -->
             <a href="admin-reports.html" class="menu-card dynamic-link">
                 <span class="icon">📊</span>
                 <h3>التقارير الشاملة</h3>
@@ -103,7 +102,8 @@
                 <p>الرجوع إلى السجلات والبيانات المؤرشفة</p>
             </a>
 
-            <a href="activity-log.html" class="menu-card dynamic-link">
+            <!-- تم التعديل إلى activate.html بناءً على طلبك -->
+            <a href="activate.html" class="menu-card dynamic-link">
                 <span class="icon">📝</span>
                 <h3>سجل الحركات</h3>
                 <p>متابعة حركة العمليات والنشاطات داخل النظام</p>
@@ -121,7 +121,6 @@
         const urlParams = new URLSearchParams(window.location.search);
         let companyId = urlParams.get('company');
 
-        // إذا لم يكن المعرف موجوداً بالرابط، يتم جذبه تلقائياً من الذاكرة المحلية وإعادة صياغة الرابط
         if (!companyId) {
             companyId = localStorage.getItem('activeCompanyId');
             if (companyId) {
@@ -136,7 +135,6 @@
             if (companyId) {
                 localStorage.setItem('activeCompanyId', companyId);
 
-                // تمرير معرف الشركة تلقائياً لجميع روابط القائمة الفرعية لضمان عدم ضياع الجلسة
                 document.querySelectorAll('.dynamic-link').forEach(link => {
                     const currentHref = link.getAttribute('href');
                     if (currentHref && !currentHref.includes('company=')) {
@@ -144,7 +142,6 @@
                     }
                 });
 
-                // جلب اسم الشركة من السيرفر مباشرة عبر الـ API للتأكد من مطابقتها لقاعدة البيانات
                 try {
                     const response = await fetch(`/api/companies/info?company=${encodeURIComponent(companyId)}`);
                     const data = await response.json();
@@ -157,7 +154,7 @@
                         titleSpan.textContent = `(${companyId})`;
                     }
                 } catch (err) {
-                    console.warn('تعذر جلب بيانات الشركة من السيرفر، استخدام المعرف المحلي:', err);
+                    console.warn('تعذر جلب بيانات الشركة من السيرفر:', err);
                     titleSpan.textContent = `(${companyId})`;
                 }
             } else {
@@ -165,7 +162,6 @@
             }
         });
 
-        // دالة التحديث والمزامنة الحقيقية مع السيرفر
         async function syncSystemData() {
             const syncBtn = document.getElementById('syncBtn');
             syncBtn.disabled = true;
@@ -175,9 +171,7 @@
                 const currentCompId = companyId || 'default_company';
                 const response = await fetch(`/api/sync-update?company=${encodeURIComponent(currentCompId)}`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    headers: { 'Content-Type': 'application/json' }
                 });
 
                 const data = await response.json();
@@ -189,7 +183,7 @@
                 }
             } catch (error) {
                 console.error('Sync Error:', error);
-                alert('❌ فشل الاتصال بالسيرفر أثناء عملية المزامنة. تأكد من اتصالك وحاول مجدداً.');
+                alert('❌ فشل الاتصال بالسيرفر أثناء عملية المزامنة.');
             } finally {
                 syncBtn.disabled = false;
                 syncBtn.textContent = '🔄 تحديث ومزامنة';
