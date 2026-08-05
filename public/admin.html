@@ -120,7 +120,7 @@
             <div>
                 <h1>🛡️ نظام المراقب برو <span id="company-title-display">جاري التحميل...</span></h1>
             </div>
-            <!-- زر تسجيل خروج برمجى آمن -->
+            <!-- زر تسجيل خروج برمجى آمن يعود لصفحة إدارة الشركات مع الاحتفاظ بالمعرف -->
             <button onclick="logoutAdmin()" class="logout-btn">تسجيل الخروج</button>
         </header>
 
@@ -184,7 +184,7 @@
             <!-- الصلاحيات -->
             <a href="admin-permissions.html" class="menu-card dynamic-link">
                 <span class="icon">🔐</span>
-                <h3>الصلاحيات والأذونات</h3>
+                ### الصلاحيات والأذونات
                 <p>تحديد صلاحيات المشرفين والمستخدمين</p>
             </a>
 
@@ -222,6 +222,9 @@
             const titleSpan = document.getElementById('company-title-display');
 
             if (companyId) {
+                // حفظ المعرف في الجلسة المحلية لضمان عدم ضياعه
+                localStorage.setItem('activeCompanyId', companyId);
+
                 // تمرير معرف الشركة تلقائياً لجميع روابط القائمة لتظل الجلسة آمنة
                 document.querySelectorAll('.dynamic-link').forEach(link => {
                     const currentHref = link.getAttribute('href');
@@ -258,8 +261,9 @@
         }
 
         function logoutAdmin() {
-            // توجيه المستخدم مباشرة إلى الصفحة الرئيسية للجذر لتفادي أي صفحات غير مسجلة
-            window.location.href = '/';
+            // مسح بيانات الجلسة النشطة والتوجيه لصفحة إنشاء/إدارة الشركات بأمان
+            localStorage.removeItem('activeCompanyId');
+            window.location.href = 'create-company.html';
         }
 
         window.addEventListener('DOMContentLoaded', initAdminDashboard);
