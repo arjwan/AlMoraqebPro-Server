@@ -3,14 +3,14 @@ const cors = require('cors');
 const path = require('path');
 const { Pool } = require('pg');
 
-// 1. تعريف التطبيق أولاً
+// تعريف التطبيق أولاً لتجنب أي أخطاء
 const app = express();
 
 // إعدادات الوسائط الأساسية
 app.use(express.json());
 app.use(cors());
 
-// إعداد الاتصال بقاعدة بيانات PostgreSQL (سواء محلياً أو عبر Render)
+// إعداد الاتصال بقاعدة بيانات PostgreSQL
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
@@ -58,7 +58,7 @@ async function verifyAdminAccess(req, res, next) {
     }
 }
 
-// 2. قراءة مجلد الملفات الثابتة تأتي بعد تعريف app
+// قراءة مجلد الملفات الثابتة
 app.use(express.static(path.join(__dirname, 'public')));
 
 // توجيه رابط صفحة التسجيل الخاصة بالعملاء لتكون الصفحة الرئيسية
@@ -83,6 +83,26 @@ app.get('/admin.html', verifyAdminAccess, (req, res) => {
 // مسار التحقق من عمل السيرفر
 app.get('/api/status', (req, res) => {
     res.json({ success: true, message: 'AlMoraqeb Pro Server & Database are running perfectly!' });
+});
+
+// مسار لجلب معلومات الشركة لعرضها في لوحة التحكم
+app.get('/api/companies/info', async (req, res) => {
+    const companyId = req.query.company;
+    if (!companyId) {
+        return res.status(400).json({ success: false, message: 'معرف الشركة مفقود' });
+    }
+
+    try {
+        const result = await pool.query('SELECT company_name, company_id, email, created_at FROM companies WHERE company_id = $1', [companyId]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'الشركة غير موجودة' });
+        }
+
+        res.json({ success: true, company: result.rows[0] });
+    } catch (err) {
+        console.error("Error fetching company info:", err);
+        res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
+    }
 });
 
 // مسار تسجيل الشركة الفعلي وحفظها في قاعدة البيانات وتوليد الرابط الخاص بها
