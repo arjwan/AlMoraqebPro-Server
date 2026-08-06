@@ -59,13 +59,19 @@
         .btn-submit:hover { background: #2980b9; }
         .btn-face { background: #27ae60; color: white; }
         .btn-face:hover { background: #219653; }
+        .btn-capture { background: #e67e22; color: white; display: none; margin-top: 8px; }
+        .btn-capture:hover { background: #d35400; }
         
+        #video-container {
+            position: relative;
+            margin-top: 12px;
+            display: none;
+        }
         #video { 
             width: 100%; 
             border-radius: 6px; 
-            margin-top: 12px; 
-            display: none; 
             background: #000; 
+            display: block;
         }
         
         .developer-info { 
@@ -91,10 +97,14 @@
         <input type="text" id="username" placeholder="اسم المستخدم" required>
         <input type="password" id="password" placeholder="كلمة المرور" required>
         <button type="submit" class="btn btn-submit">دخول بكلمة المرور</button>
-        <button type="button" id="faceBtn" class="btn btn-face">📸 تسجيل الدخول ببصمة الوجه</button>
+        <button type="button" id="faceBtn" class="btn btn-face">📸 فتح كاميرا بصمة الوجه</button>
     </form>
     
-    <video id="video" autoplay muted playsinline></video>
+    <!-- حاوية الكاميرا مع زر التقاط الصورة -->
+    <div id="video-container">
+        <video id="video" autoplay muted playsinline></video>
+        <button type="button" id="captureBtn" class="btn btn-capture">🔘 التقاط الصورة والتحقق</button>
+    </div>
 
     <!-- معلومات الشركة، المطور، ووسائل التواصل -->
     <div class="developer-info">
@@ -107,33 +117,42 @@
 
 <script>
     const video = document.getElementById('video');
+    const videoContainer = document.getElementById('video-container');
     const faceBtn = document.getElementById('faceBtn');
+    const captureBtn = document.getElementById('captureBtn');
 
     async function loadModels() {
         await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
         await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
     }
 
+    // فتح الكاميرا عند الضغط على زر بصمة الوجه
     faceBtn.addEventListener('click', async () => {
         try {
             await loadModels();
             const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
             video.srcObject = stream;
-            video.style.display = 'block';
-            
-            video.addEventListener('play', () => {
-                setInterval(async () => {
-                    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
-                    if (detections.length > 0) {
-                        console.log("وجهك ظاهر! جاري المطابقة...");
-                    }
-                }, 1000);
-            });
+            videoContainer.style.display = 'block';
+            captureBtn.style.display = 'block';
+            faceBtn.style.display = 'none'; // إخفاء زر الفتح لعدم التكرار
         } catch (err) {
-            alert('تعذر فتح الكاميرا، تأكد من الأذونات.');
+            alert('تعذر فتح الكاميرا، تأكد من أذونات المتصفح.');
         }
     });
 
+    // التقاط الصورة يدوياً عند الضغط على زر الالتقاط
+    captureBtn.addEventListener('click', async () => {
+        const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
+        
+        if (detections) {
+            alert('تم التقاط الوجه بنجاح! جاري مطابقة البيانات...');
+            // هنا يمكنك إرسال بيانات الصورة أو بصمة الوجه للخادم للسيرفر لاحقاً
+        } else {
+            alert('لم يتم رصد وجه بوضوح أمام الكاميرا، حاول مرة أخرى.');
+        }
+    });
+
+    // تسجيل الدخول بكلمة المرور
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = document.getElementById('username').value;
