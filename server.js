@@ -1,59 +1,61 @@
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
+const { pool, initDB } = require('./database'); // استدعاء الاتصال والجداول من ملف database.js
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// تفعيل استقبال البيانات بصيغة JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// تقديم الملفات الثابتة من المجلد الحالي
 app.use(express.static(path.join(__dirname)));
 
-// 1. مسار جلب معلومات الشركة
-app.get('/api/companies/info', (req, res) => {
+// تشغيل تهيئة قاعدة البيانات عند إقلاع السيرفر
+initDB();
+
+// 1. مسار جلب أو إنشاء معلومات الشركة
+app.get('/api/companies/info', async (req, res) => {
     const companyId = req.query.company || 'default_company';
     try {
-        const dbPath = path.join(__dirname, 'database.json');
-        let companyName = companyId;
-        
-        if (fs.existsSync(dbPath)) {
-            const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-            if (dbData[companyId] && dbData[companyId].companyName) {
-                companyName = dbData[companyId].companyName;
-            }
+        let result = await pool.query('SELECT * FROM companies WHERE company_id = $1', [companyId]);
+        if (result.rows.length === 0) {
+            await pool.query('INSERT INTO companies (company_id, company_name) VALUES ($1, $2)', [companyId, companyId]);
+            result = await pool.query('SELECT * FROM companies WHERE company_id = $1', [companyId]);
         }
-
-        res.json({ 
-            success: true, 
-            company: { company_name: companyName } 
-        });
+        res.json({ success: true, company: { company_name: result.rows[0].company_name } });
     } catch (err) {
-        res.json({ success: true, company: { company_name: companyId } });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// 2. مسار استقبال ومزامنة بيانات الموظفين والجداول وتحديث database.json
-app.post('/api/sync-update', (req, res) => {
+// 2. مسار تسجيل موظف جديد وحفظه في PostgreSQL
+app.post('/api/employees/register', async (req, res) => {
+    const { companyId, name, username, phone, password } = req.body;
     try {
-        const syncData = req.body;
-        const dbPath = path.join(__dirname, 'database.json');
-        
-        let db = {};
-        if (fs.existsSync(dbPath)) {
-            db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+        const compId = companyId || 'default_company';
+        const checkUser = await pool.query('SELECT * FROM employees WHERE username = $1', [username]);
+        if (checkUser.rows.length > 0) {
+            return res.json({ success: false, message: 'اسم المستخدم مستخدم مسبقاً!' });
         }
 
-        const compId = syncData.companyId || 'default_company';
-        db[compId] = syncData;
-        
-        fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
+        await pool.query(
+            'INSERT INTO employees (company_id, name, username, phone, password) VALUES ($1, $2, $3, $4, $5)',
+            [compId, name, username, phone, password]
+        );
 
-        res.json({ success: true, message: 'تمت مزامنة وتحديث السيرفر والجداول بنجاح' });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        res.json({ success: true, message: 'تم تسجیل الموظف وحفظه في قاعدة البيانات بنجاح' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 3. مسار جلب قائمة موظفي الشركة للجداول
+app.get('/api/employees/list', async (req, res) => {
+    const companyId = req.query.company || 'default_company';
+    try {
+        const result = await pool.query('SELECT name, username, phone, created_at FROM employees WHERE company_id = $1', [companyId]);
+        res.json({ success: true, employees: result.rows });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
