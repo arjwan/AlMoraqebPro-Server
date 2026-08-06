@@ -3,316 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - إنشاء حساب موظف</title>
+    <title>المراقب برو - تسجيل موظف جديد</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        
+        .card { background: #1e293b; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 100%; max-width: 420px; border: 1px solid #334155; }
+        h2 { color: #38bdf8; font-size: 22px; margin-bottom: 5px; text-align: center; }
+        .subtitle { color: #94a3b8; font-size: 13px; margin-bottom: 20px; text-align: center; }
 
-        body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: #f8fafc;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+        .form-group { margin-bottom: 15px; text-align: right; }
+        label { display: block; font-size: 13px; color: #cbd5e1; margin-bottom: 6px; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 14px; }
+        input:focus { outline: none; border-color: #38bdf8; }
 
-        .card {
-            width: 100%;
-            max-width: 440px;
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 28px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-            border: 1px solid #334155;
-        }
+        .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn-primary { background: #0284c7; color: white; }
+        .btn-primary:hover { background: #0369a1; }
 
-        h2 {
-            font-size: 20px;
-            color: #38bdf8;
-            margin-bottom: 20px;
-            text-align: center;
-        }
+        .back-link { display: block; text-align: center; margin-top: 15px; color: #94a3b8; font-size: 13px; text-decoration: none; }
+        .back-link:hover { color: #38bdf8; }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 5px;
-            color: #cbd5e1;
-        }
-
-        label span.required {
-            color: #ef4444;
-            margin-right: 3px;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #475569;
-            background: #0f172a;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-        }
-
-        input:focus {
-            border-color: #38bdf8;
-        }
-
-        .face-capture-section {
-            background: #0f172a;
-            border: 1px dashed #475569;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        .camera-box {
-            width: 100%;
-            height: 160px;
-            background: #1e293b;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        video, canvas {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-        }
-
-        .camera-placeholder {
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        .btn-cam {
-            background: #334155;
-            color: #f8fafc;
-            border: 1px solid #475569;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 13px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .btn-cam:hover {
-            background: #475569;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 15px;
-            cursor: pointer;
-            border: none;
-            background: #16a34a;
-            color: #fff;
-            margin-top: 5px;
-            transition: 0.2s;
-        }
-
-        .btn:hover {
-            background: #15803d;
-        }
-
-        .back-link {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .back-link a {
-            color: #38bdf8;
-            text-decoration: none;
-            font-size: 13px;
-        }
-
-        #toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 10px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        #alertBox { margin-top: 15px; padding: 10px; border-radius: 8px; font-size: 13px; text-align: center; display: none; }
+        .alert-success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>📝 إنشاء حساب جديد</h2>
-        
-        <div class="form-group">
-            <label><span class="required">*</span> اسم الشركة:</label>
-            <input type="text" id="companyName" placeholder="أدخل اسم الشركة (إجباري)">
-        </div>
+        <h2>📝 تسجيل موظف جديد</h2>
+        <p class="subtitle">ربط حسابك برمز الشركة وفظ بياناتك آلياً</p>
 
-        <div class="form-group">
-            <label><span class="required">*</span> اسم الموظف:</label>
-            <input type="text" id="name" placeholder="الاسم الكامل">
-        </div>
-
-        <div class="form-group">
-            <label><span class="required">*</span> رقم الهاتف أو واتساب:</label>
-            <input type="text" id="phone" placeholder="07xxxxxxxx">
-        </div>
-
-        <div class="form-group">
-            <label><span class="required">*</span> اسم المستخدم:</label>
-            <input type="text" id="username" placeholder="اسم المستخدم لتسجيل الدخول">
-        </div>
-
-        <div class="form-group">
-            <label><span class="required">*</span> كلمة المرور:</label>
-            <input type="password" id="password" placeholder="أدخل كلمة المرور">
-        </div>
-
-        <div class="form-group">
-            <label><span class="required">*</span> إعادة كلمة المرور:</label>
-            <input type="password" id="confirmPassword" placeholder="إعادة كتابة كلمة المرور">
-        </div>
-
-        <!-- بصمة الوجه الحي -->
-        <div class="face-capture-section">
-            <label style="margin-bottom: 8px;"><span class="required">*</span> بصمة الوجه الحي:</label>
-            <div class="camera-box">
-                <div id="camPlaceholder" class="camera-placeholder">الكاميرا مغلقة</div>
-                <video id="registerVideo" autoplay playsinline></video>
-                <canvas id="snapshotCanvas"></canvas>
+        <form id="registerForm" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label>رمز أو معرف الشركة (مثال: al-arqwan)</label>
+                <input type="text" id="companyId" required placeholder="أدخل معرف الشركة الفريد">
             </div>
-            <button type="button" class="btn-cam" onclick="startRegisterCamera()">📷 التقاط بصمة الوجه الحي</button>
-        </div>
 
-        <button class="btn" onclick="registerEmployee()">حفظ وتسجيل في النظام</button>
+            <div class="form-group">
+                <label>اسم الموظف الثلاثي</label>
+                <input type="text" id="employeeName" required placeholder="أدخل اسمك الكامل">
+            </div>
 
-        <div class="back-link">
-            <a href="welcome.html">العودة لشاشة الترحيب</a>
-        </div>
+            <div class="form-group">
+                <label>رقم الهاتف / معرف الدخول</label>
+                <input type="text" id="employeePhone" required placeholder="أدخل رقم الهاتف">
+            </div>
+
+            <button type="submit" class="btn btn-primary">إتمام التسجيل والربط</button>
+        </form>
+
+        <a href="login.html" class="back-link">العودة لتسجيل الدخول</a>
+
+        <div id="alertBox"></div>
     </div>
 
-    <div id="toast"></div>
-
     <script>
-        let capturedFaceData = null;
+        function handleRegister(event) {
+            event.preventDefault();
 
-        function showToast(message, color = '#10b981') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.style.background = color;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 4000);
-        }
+            const companyId = document.getElementById('companyId').value.trim();
+            const employeeName = document.getElementById('employeeName').value.trim();
+            const employeePhone = document.getElementById('employeePhone').value.trim();
 
-        // تشغيل الكاميرا لالتقاط بصمة الوجه الحي
-        async function startRegisterCamera() {
-            const video = document.getElementById('registerVideo');
-            const placeholder = document.getElementById('camPlaceholder');
-            const canvas = document.getElementById('snapshotCanvas');
+            // 1. حفظ بيانات الربط في ذاكرة الهاتف المحلية (LocalStorage) لتلصق الموظف بشركته فوراً
+            localStorage.setItem('activeCompanyId', companyId);
+            localStorage.setItem('activeEmployee', employeeName);
+            localStorage.setItem('activeEmployeePhone', employeePhone);
 
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-                video.srcObject = stream;
-                video.style.display = 'block';
-                placeholder.style.display = 'none';
-                
-                // التقاط الصورة تلقائياً بعد ثانية لتأكيد الحيوية
-                setTimeout(() => {
-                    canvas.width = video.videoWidth || 320;
-                    canvas.height = video.videoHeight || 240;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    
-                    capturedFaceData = canvas.toDataURL('image/jpeg');
-                    
-                    // إيقاف الكاميرا بعد التقاط الصورة بنجاح
-                    stream.getTracks().forEach(track => track.stop());
-                    video.style.display = 'none';
-                    canvas.style.display = 'block';
-                    showToast('✅ تم التقاط بصمة الوجه الحي بنجاح!');
-                }, 2000);
-
-            } catch (err) {
-                console.error(err);
-                showToast('❌ تعذر الوصول للكاميرا لبصمة الوجه', '#ef4444');
-            }
-        }
-
-        async function registerEmployee() {
-            const companyName = document.getElementById('companyName').value.trim();
-            const name = document.getElementById('name').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const confirmPassword = document.getElementById('confirmPassword').value.trim();
-
-            if(!companyName) {
-                showToast('⚠️ حقل اسم الشركة إجباري', '#f59e0b');
-                return;
-            }
-
-            if(!name || !phone || !username || !password || !confirmPassword) {
-                showToast('⚠️ يرجى تعبئة كافة الحقول المطلوبة', '#f59e0b');
-                return;
-            }
-
-            if(password !== confirmPassword) {
-                showToast('❌ كلمة المرور غير متطابقة مع إعادة الكلمة', '#ef4444');
-                return;
-            }
-
-            if(!capturedFaceData) {
-                showToast('⚠️ يرجى التقاط بصمة الوجه الحي أولاً', '#f59e0b');
-                return;
-            }
-
-            const registrationPayload = {
-                companyName,
-                name,
-                phone,
-                username,
-                password,
-                faceData: capturedFaceData
+            // 2. تسجيل الموظف آلياً في قائمة موظفي هذه الشركة المحددة
+            const companyEmployeesKey = `company_employees_${companyId}`;
+            const employeesList = JSON.parse(localStorage.getItem(companyEmployeesKey)) || [];
+            
+            const newEmployeeData = {
+                name: employeeName,
+                phone: employeePhone,
+                registeredAt: new Date().toLocaleString('ar-EG')
             };
 
-            try {
-                const response = await fetch('/api/employees/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(registrationPayload)
-                });
+            employeesList.push(newEmployeeData);
+            localStorage.setItem(companyEmployeesKey, JSON.stringify(employeesList));
 
-                if(response.ok) {
-                    showToast('✅ تم إنشاء الحساب وحفظ بصمة الوجه بنجاح!');
-                    setTimeout(() => { window.location.href = 'login.html'; }, 1500);
-                } else {
-                    // تخزين محلي احتياطي للتأكيد الفوري في حال عدم اتصال السيرفر باللحظة الحالية
-                    localStorage.setItem(`user_${username}`, JSON.stringify(registrationPayload));
-                    showToast('✅ تم حفظ الحساب وبصمة الوجه محلياً بنجاح!');
-                    setTimeout(() => { window.location.href = 'login.html'; }, 1500);
-                }
-            } catch (err) {
-                console.error(err);
-                const fallbackUsers = JSON.parse(localStorage.getItem('offline_registered_users')) || [];
-                fallbackUsers.push(registrationPayload);
-                localStorage.setItem('offline_registered_users', JSON.stringify(fallbackUsers));
-                showToast('⚠️ تم الحفظ محلياً لعدم توفر الاتصال بالسيرفر', '#f59e0b');
-                setTimeout(() => { window.location.href = 'login.html'; }, 1500);
-            }
+            // 3. إظهار رسالة النجاح والتحويل التلقائي لصفحة الحضور (البصمة)
+            const alertBox = document.getElementById('alertBox');
+            alertBox.style.display = 'block';
+            alertBox.className = 'alert-success';
+            alertBox.textContent = `✅ تم ربطك بنجاح بشركة (${companyId}) جاري تحويلك...`;
+
+            setTimeout(() => {
+                window.location.href = 'attendance.html'; // الانتقال لصفحة البصمة والخدمات فوراً
+            }, 1500);
         }
     </script>
 </body>
