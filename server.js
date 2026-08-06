@@ -12,11 +12,11 @@ app.use(express.static(path.join(__dirname)));
 // تشغيل تهيئة قاعدة البيانات عند بدء التشغيل
 initDB();
 
-// توجيه الصفحة الرئيسية مباشرة إلى صفحة admin-register.html
+// توجيه الصفحة الرئيسية مباشرة إلى مسارها الصحيح داخل مجلد public
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin-register.html'), (err) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin-register.html'), (err) => {
         if (err) {
-            res.status(404).send('❌ Error: admin-register.html file not found in the directory.');
+            res.status(404).send('❌ Error: admin-register.html file not found in public folder.');
         }
     });
 });
