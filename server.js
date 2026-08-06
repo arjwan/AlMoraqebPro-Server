@@ -12,9 +12,9 @@ app.use(express.static(path.join(__dirname)));
 // تشغيل تهيئة قاعدة البيانات عند بدء التشغيل
 initDB();
 
-// توجيه الصفحة الرئيسية مباشرة إلى صفحة التسجيل (registr.html)
+// توجيه الصفحة الرئيسية مباشرة إلى صفحة admin-register.html
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'registr.html'));
+    res.sendFile(path.join(__dirname, 'admin-register.html'));
 });
 
 // 1. مسار جلب أو إنشاء معلومات الشركة
