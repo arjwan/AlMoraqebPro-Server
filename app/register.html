@@ -26,18 +26,19 @@
 
         #alertBox { margin-top: 15px; padding: 10px; border-radius: 8px; font-size: 13px; text-align: center; display: none; }
         .alert-success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+        .alert-error { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>📝 تسجيل موظف جديد</h2>
-        <p class="subtitle">ربط حسابك برمز الشركة وفظ بياناتك آلياً</p>
+        <p class="subtitle">أدخل رمز الشركة (مثل B-2026) لربط حسابك آلياً</p>
 
         <form id="registerForm" onsubmit="handleRegister(event)">
             <div class="form-group">
-                <label>رمز أو معرف الشركة (مثال: al-arqwan)</label>
-                <input type="text" id="companyId" required placeholder="أدخل معرف الشركة الفريد">
+                <label>معرف الشركة الفريد (إجباري)</label>
+                <input type="text" id="companyId" required placeholder="مثال: B-2026" style="text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
             </div>
 
             <div class="form-group">
@@ -50,7 +51,7 @@
                 <input type="text" id="employeePhone" required placeholder="أدخل رقم الهاتف">
             </div>
 
-            <button type="submit" class="btn btn-primary">إتمام التسجيل والربط</button>
+            <button type="submit" class="btn btn-primary">إتمام التسجيل والربط الآلي</button>
         </form>
 
         <a href="login.html" class="back-link">العودة لتسجيل الدخول</a>
@@ -62,16 +63,25 @@
         function handleRegister(event) {
             event.preventDefault();
 
-            const companyId = document.getElementById('companyId').value.trim();
+            const companyId = document.getElementById('companyId').value.trim().toUpperCase();
             const employeeName = document.getElementById('employeeName').value.trim();
             const employeePhone = document.getElementById('employeePhone').value.trim();
+            const alertBox = document.getElementById('alertBox');
 
-            // 1. حفظ بيانات الربط في ذاكرة الهاتف المحلية (LocalStorage) لتلصق الموظف بشركته فوراً
+            // التحقق من صيغة المعرف (مثال بسيط للتأكد من إدخاله)
+            if (!companyId) {
+                alertBox.style.display = 'block';
+                alertBox.className = 'alert-error';
+                alertBox.textContent = '❌ يرجى إدخال معرف الشركة الإجباري!';
+                return;
+            }
+
+            // 1. حفظ بيانات الربط في ذاكرة الهاتف المحلية (LocalStorage) لتلتصق الموظف بشركته فوراً
             localStorage.setItem('activeCompanyId', companyId);
             localStorage.setItem('activeEmployee', employeeName);
             localStorage.setItem('activeEmployeePhone', employeePhone);
 
-            // 2. تسجيل الموظف آلياً في قائمة موظفي هذه الشركة المحددة
+            // 2. تسجيل الموظف آلياً في قائمة موظفي هذه الشركة المحددة بالرمز
             const companyEmployeesKey = `company_employees_${companyId}`;
             const employeesList = JSON.parse(localStorage.getItem(companyEmployeesKey)) || [];
             
@@ -85,10 +95,9 @@
             localStorage.setItem(companyEmployeesKey, JSON.stringify(employeesList));
 
             // 3. إظهار رسالة النجاح والتحويل التلقائي لصفحة الحضور (البصمة)
-            const alertBox = document.getElementById('alertBox');
             alertBox.style.display = 'block';
             alertBox.className = 'alert-success';
-            alertBox.textContent = `✅ تم ربطك بنجاح بشركة (${companyId}) جاري تحويلك...`;
+            alertBox.textContent = `✅ تم ربطك بنجاح بالشركة ذات المعرف (${companyId})، جاري تحويلك...`;
 
             setTimeout(() => {
                 window.location.href = 'attendance.html'; // الانتقال لصفحة البصمة والخدمات فوراً

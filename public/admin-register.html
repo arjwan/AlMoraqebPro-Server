@@ -37,9 +37,10 @@
 
         <form id="registerForm" onsubmit="handleClientRegister(event)">
             <div class="form-grid">
+                <!-- الحقل الأساسي والإجباري لمعرف الشركة الفريد بصيغة B-2026 -->
                 <div class="form-group">
-                    <label>1. اسم الشركة بالإنجليزية (Company ID):</label>
-                    <input type="text" id="companyId" required placeholder="مثال: alarjwan (بدون مسافات)">
+                    <label>1. معرف الشركة الفريد (إجباري):</label>
+                    <input type="text" id="companyId" required placeholder="مثال: B-2026" style="text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
                 </div>
 
                 <div class="form-group">
@@ -108,7 +109,8 @@
                 return;
             }
 
-            const compId = document.getElementById('companyId').value.trim().toLowerCase();
+            // ضبط معرف الشركة ليكون بأحرف كبيرة ومرتبطة بالصيغة المطلوبة
+            const compId = document.getElementById('companyId').value.trim().toUpperCase();
             const email = document.getElementById('email').value.trim().toLowerCase();
             const photoInput = document.getElementById('managerPhoto');
             const photoName = photoInput.files.length > 0 ? photoInput.files[0].name : 'default.jpg';
@@ -120,10 +122,10 @@
                     activeCompanies = JSON.parse(storedData);
                 }
 
-                // منع التكرار
+                // منع التكرار لمعرف الشركة أو البريد الإلكتروني
                 const exists = activeCompanies.some(c => c.id === compId || c.email.toLowerCase() === email);
                 if (exists) {
-                    alert('⚠️ عذراً، اسم الشركة (ID) أو البريد الإلكتروني مستخدم مسبقاً.');
+                    alert('⚠️ عذراً، معرف الشركة الفريد (مثل B-2026) أو البريد الإلكتروني مستخدم مسبقاً.');
                     return;
                 }
 
@@ -142,7 +144,7 @@
                 activeCompanies.push(newCompany);
                 localStorage.setItem('registeredCompanies', JSON.stringify(activeCompanies));
 
-                alert('🎉 تم إنشاء وحفظ الشركة وتفعيلها بنجاح!\nيمكنك تسجيل الدخول الآن.');
+                alert('🎉 تم إنشاء وحفظ الشركة وتفعيلها بنجاح بالمعرف (' + compId + ')!\nيمكنك تسجيل الدخول الآن.');
                 window.location.href = 'index.html';
             } catch (error) {
                 console.error(error);
