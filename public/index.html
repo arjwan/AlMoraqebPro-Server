@@ -3,153 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل الدخول</title>
+    <title>المراقب برو - تسجيل الدخول الآمن</title>
+    <!-- استدعاء المكتبة للذكاء الاصطناعي وبصمة الوجه -->
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2c3e50, #4ca1af);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            color: #333;
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #2c3e50, #4ca1af); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            color: #333; 
         }
-        .login-card {
-            background: #ffffff;
-            padding: 35px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            text-align: center;
-            max-width: 440px;
-            width: 100%;
+        .login-card { 
+            background: #ffffff; 
+            padding: 25px 30px; 
+            border-radius: 14px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25); 
+            text-align: center; 
+            max-width: 380px; 
+            width: 90%; 
         }
-        .icon {
-            font-size: 38px;
-            margin-bottom: 5px;
+        h2 { 
+            color: #2c3e50; 
+            margin-bottom: 15px; 
+            font-size: 20px;
         }
-        h2 {
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-        .subtitle {
-            color: #7f8c8d;
+        input { 
+            width: 100%; 
+            padding: 10px 12px; 
+            margin: 6px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
             font-size: 13px;
-            margin-bottom: 20px;
-        }
-        .form-group {
-            text-align: right;
-            margin-bottom: 12px;
-        }
-        label {
-            display: block;
-            margin-bottom: 4px;
-            font-size: 13px;
-            font-weight: bold;
-            color: #34495e;
-        }
-        input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 14px;
             outline: none;
-            transition: border-color 0.3s;
         }
         input:focus {
             border-color: #3498db;
         }
-        .btn-submit {
-            width: 100%;
-            background: #3498db;
-            color: white;
-            padding: 11px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: background 0.3s;
-        }
-        .btn-submit:hover {
-            background: #2980b9;
-        }
-        .btn-face {
-            width: 100%;
-            background: #27ae60;
-            color: white;
-            padding: 11px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: background 0.3s;
-        }
-        .btn-face:hover {
-            background: #219653;
-        }
-        .error-msg {
-            color: #e74c3c;
+        .btn { 
+            width: 100%; 
+            padding: 10px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 8px; 
             font-size: 13px;
-            margin-top: 10px;
-            display: none;
+            transition: 0.3s; 
         }
-        .developer-info {
-            margin-top: 20px;
-            padding-top: 12px;
-            border-top: 1px solid #eee;
-            text-align: center;
-            font-size: 12px;
+        .btn-submit { background: #3498db; color: white; }
+        .btn-submit:hover { background: #2980b9; }
+        .btn-face { background: #27ae60; color: white; }
+        .btn-face:hover { background: #219653; }
+        
+        #video { 
+            width: 100%; 
+            border-radius: 6px; 
+            margin-top: 12px; 
+            display: none; 
+            background: #000; 
+        }
+        
+        .developer-info { 
+            margin-top: 15px; 
+            font-size: 11px; 
+            border-top: 1px solid #eee; 
+            padding-top: 10px; 
             color: #555;
+            line-height: 1.5;
         }
-        .developer-info p {
-            margin: 3px 0;
-        }
-        .developer-name {
+        .developer-info .company {
             font-weight: bold;
             color: #2c3e50;
-            font-size: 13px;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <div class="icon">🔑</div>
-        <h2>تسجيل الدخول</h2>
-        <div class="subtitle">أدخل بيانات شركتك، أو استخدم بصمة الوجه السريعة</div>
+<div class="login-card">
+    <h2>🔑 تسجيل الدخول</h2>
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="اسم المستخدم" required>
+        <input type="password" id="password" placeholder="كلمة المرور" required>
+        <button type="submit" class="btn btn-submit">دخول بكلمة المرور</button>
+        <button type="button" id="faceBtn" class="btn btn-face">📸 تسجيل الدخول ببصمة الوجه</button>
+    </form>
+    
+    <video id="video" autoplay muted playsinline></video>
 
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="username">اسم المستخدم:</label>
-                <input type="text" id="username" name="username" required placeholder="أدخل اسم المستخدم...">
-            </div>
-
-            <div class="form-group">
-                <label for="password">كلمة المرور:</label>
-                <input type="password" id="password" name="password" required placeholder="أدخل كلمة المرور...">
-            </div>
-
-            <button type="submit" class="btn-submit">🚀 دخول بكلمة المرور</button>
-            <button type="button" class="btn-face" onclick="alert('خاصية بصمة الوجه قيد التشغيل...')">📸 تسجيل الدخول ببصمة الوجه</button>
-            
-            <div id="errorMsg" class="error-msg"></div>
-        </form>
-
-        <!-- معلومات المطور والشركة -->
-        <div class="developer-info">
-            <p class="developer-name">شركة الأرجوان للبرمجيات</p>
-            <p>المطور: محمد العبيدي</p>
-            <p>واتساب: <span dir="ltr">07807807491</span></p>
-            <p>الإيميل: <span dir="ltr">mohmmed1628@gmail.com</span></p>
-        </div>
+    <!-- معلومات الشركة، المطور، ووسائل التواصل -->
+    <div class="developer-info">
+        <div class="company">شركة الأرجوان للبرمجيات</div>
+        <div>المطور: محمد العبيدي</div>
+        <div>واتساب: <span dir="ltr">07807807491</span></div>
+        <div>الإيميل: <span dir="ltr">mohmmed1628@gmail.com</span></div>
     </div>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const faceBtn = document.getElementById('faceBtn');
+
+    async function loadModels() {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+    }
+
+    faceBtn.addEventListener('click', async () => {
+        try {
+            await loadModels();
+            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+            video.srcObject = stream;
+            video.style.display = 'block';
+            
+            video.addEventListener('play', () => {
+                setInterval(async () => {
+                    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
+                    if (detections.length > 0) {
+                        console.log("وجهك ظاهر! جاري المطابقة...");
+                    }
+                }, 1000);
+            });
+        } catch (err) {
+            alert('تعذر فتح الكاميرا، تأكد من الأذونات.');
+        }
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('تم تسجيل الدخول بنجاح!');
+            } else {
+                alert(data.message || 'فشل تسجيل الدخول، تحقق من البيانات');
+            }
+        } catch (err) {
+            alert('حدث خطأ في الاتصال بالخادم');
+        }
+    });
+</script>
 
 </body>
 </html>
