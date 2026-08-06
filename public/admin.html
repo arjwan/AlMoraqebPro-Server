@@ -17,6 +17,9 @@
         .sync-btn:hover { background: #0369a1; }
         .sync-btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
+        .backup-btn { background: #8b5cf6; color: white; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.2s; cursor: pointer; border: none; }
+        .backup-btn:hover { background: #7c3aed; }
+
         .restore-btn { background: #10b981; color: white; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.2s; cursor: pointer; border: none; }
         .restore-btn:hover { background: #059669; }
 
@@ -30,7 +33,7 @@
         .menu-card h3 { font-size: 20px; font-weight: 700; color: #0369a1; margin-bottom: 8px; }
         .menu-card p { font-size: 14px; color: #64748b; line-height: 1.5; }
 
-        /* نظام الإشعارات الحقيقي بدلاً من الـ alert الوهمي */
+        /* نظام الإشعارات الحقيقي */
         #toast-notification {
             position: fixed;
             bottom: 30px;
@@ -50,10 +53,7 @@
             opacity: 0;
             transition: transform 0.3s ease, opacity 0.3s ease;
         }
-        #toast-notification.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
+        #toast-notification.show { transform: translateY(0); opacity: 1; }
         #toast-notification.success { background: #10b981; }
         #toast-notification.error { background: #ef4444; }
         #toast-notification.warning { background: #f59e0b; color: #1e293b; }
@@ -67,7 +67,8 @@
                 <h1>🛡️ نظام المراقب برو <span id="company-title-display">جاري التحميل...</span></h1>
             </div>
             <div class="header-actions">
-                <button onclick="syncSystemData()" class="sync-btn" id="syncBtn">🔄 تحديث ومزامنة</button>
+                <button onclick="syncSystemData()" class="sync-btn" id="syncBtn">🔄 مزامنة السيرفر</button>
+                <button onclick="takeSystemBackup()" class="backup-btn">💾 اخذ نسخة احتياطية</button>
                 <button onclick="document.getElementById('restoreFile').click()" class="restore-btn">📂 استعادة البيانات</button>
                 <input type="file" id="restoreFile" style="display: none;" accept=".json" onchange="restoreSystemData(event)">
                 <button onclick="logoutAdmin()" class="logout-btn">تسجيل الخروج</button>
@@ -149,7 +150,6 @@
         </div>
     </div>
 
-    <!-- عنصر الإشعارات الحقيقي -->
     <div id="toast-notification"></div>
 
     <script>
@@ -164,15 +164,11 @@
             }
         }
 
-        // إظهار إشعار حقيقي ومرئي للمستخدم بدلاً من الرسائل الوهمية
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast-notification');
             toast.textContent = message;
             toast.className = `show ${type}`;
-            
-            setTimeout(() => {
-                toast.className = '';
-            }, 4000);
+            setTimeout(() => { toast.className = ''; }, 4000);
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -200,7 +196,6 @@
                         titleSpan.textContent = `(${companyId})`;
                     }
                 } catch (err) {
-                    console.warn('وضع العمل المحلي النشط:', err);
                     titleSpan.textContent = `(${companyId}) [محلي]`;
                 }
             } else {
@@ -208,15 +203,14 @@
             }
         });
 
-        // تنفيذ المزامنة الحقيقية وتوليد الملف الفعلي
+        // زر مزامنة السيرفر فقط
         async function syncSystemData() {
             const syncBtn = document.getElementById('syncBtn');
             syncBtn.disabled = true;
-            syncBtn.textContent = '⏳ جاري المزامنة والحفظ...';
+            syncBtn.textContent = '⏳ جاري المزامنة...';
 
             try {
                 const currentCompId = companyId || 'default_company';
-                
                 const localData = {
                     companyId: currentCompId,
                     employees: JSON.parse(localStorage.getItem(`employees_${currentCompId}`)) || [],
@@ -233,10 +227,32 @@
                         body: JSON.stringify(localData)
                     });
 
-                    if (!response.ok) throw new Error('فشل التزامن مع السيرفر السحابي');
+                    if (!response.ok) throw new Error('فشل التزامن');
+                    showToast('✅ تمت مزامنة البيانات مع السيرفر بنجاح!', 'success');
+                } else {
+                    showToast('⚠️ لا يوجد اتصال بالإنترنت للمزامنة السحابية.', 'warning');
                 }
+            } catch (error) {
+                showToast('❌ تعذر الاتصال بالسيرفر للمزامنة.', 'error');
+            } finally {
+                syncBtn.disabled = false;
+                syncBtn.textContent = '🔄 مزامنة السيرفر';
+            }
+        }
 
-                // توليد ملف النسخة الاحتياطية الحقيقي وتنزيله مباشرة للجهاز
+        // زر مستقل لإنشاء وحفظ النسخة الاحتياطية (يمكنك اختيار مجلد المستندات عند ظهور نافذة الحفظ)
+        function takeSystemBackup() {
+            try {
+                const currentCompId = companyId || 'default_company';
+                const localData = {
+                    companyId: currentCompId,
+                    employees: JSON.parse(localStorage.getItem(`employees_${currentCompId}`)) || [],
+                    attendance: JSON.parse(localStorage.getItem(`attendance_${currentCompId}`)) || [],
+                    salaries: JSON.parse(localStorage.getItem(`salaries_${currentCompId}`)) || [],
+                    branches: JSON.parse(localStorage.getItem(`branches_${currentCompId}`)) || [],
+                    timestamp: new Date().toISOString()
+                };
+
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localData, null, 2));
                 const downloadAnchor = document.createElement('a');
                 downloadAnchor.setAttribute("href", dataStr);
@@ -245,18 +261,13 @@
                 downloadAnchor.click();
                 downloadAnchor.remove();
 
-                showToast('✅ تمت المزامنة وتنزيل ملف النسخة الاحتياطية بنجاح!', 'success');
-
+                showToast('💾 تم إنشاء النسخة الاحتياطية وتوجيهها للحفظ بنجاح!', 'success');
             } catch (error) {
-                console.error(error);
-                showToast('⚠️ تم الحفظ محلياً لعدم استجابة السيرفر.', 'warning');
-            } finally {
-                syncBtn.disabled = false;
-                syncBtn.textContent = '🔄 تحديث ومزامنة';
+                showToast('❌ فشل إنشاء النسخة الاحتياطية.', 'error');
             }
         }
 
-        // تنفيذ الاستعادة الحقيقية لملف البيانات المختارة
+        // زر استعادة البيانات الحقيقي
         function restoreSystemData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -265,13 +276,9 @@
             reader.onload = function(e) {
                 try {
                     const backupData = JSON.parse(e.target.result);
-                    
-                    if (!backupData.companyId) {
-                        throw new Error('ملف التنسيق غير صالح');
-                    }
+                    if (!backupData.companyId) throw new Error('ملف تالف');
 
                     const targetCompId = backupData.companyId;
-
                     if (backupData.employees) localStorage.setItem(`employees_${targetCompId}`, JSON.stringify(backupData.employees));
                     if (backupData.attendance) localStorage.setItem(`attendance_${targetCompId}`, JSON.stringify(backupData.attendance));
                     if (backupData.salaries) localStorage.setItem(`salaries_${targetCompId}`, JSON.stringify(backupData.salaries));
@@ -280,7 +287,6 @@
                     showToast('📂 تمت استعادة كافة بيانات الشركة بنجاح!', 'success');
                     setTimeout(() => location.reload(), 1500);
                 } catch (err) {
-                    console.error(err);
                     showToast('❌ ملف النسخة الاحتياطية غير صالح أو تالف.', 'error');
                 }
             };
