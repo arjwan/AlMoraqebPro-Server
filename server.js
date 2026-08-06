@@ -14,7 +14,11 @@ initDB();
 
 // توجيه الصفحة الرئيسية مباشرة إلى صفحة admin-register.html
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin-register.html'));
+    res.sendFile(path.join(__dirname, 'admin-register.html'), (err) => {
+        if (err) {
+            res.status(404).send('❌ Error: admin-register.html file not found in the directory.');
+        }
+    });
 });
 
 // 1. مسار جلب أو إنشاء معلومات الشركة
