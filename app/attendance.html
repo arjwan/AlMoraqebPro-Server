@@ -14,14 +14,14 @@
 
         .time-box { background: #0f172a; border: 1px solid #334155; padding: 15px; border-radius: 14px; font-size: 26px; font-weight: bold; color: #f8fafc; margin-bottom: 25px; letter-spacing: 1px; }
 
-        .btn { width: 100%; padding: 14px; border-radius: 14px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn { width: 100%; padding: 14px; border-radius: 14px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
         .btn-checkin { background: #10b981; color: white; }
         .btn-checkin:hover { background: #059669; }
         .btn-checkout { background: #ef4444; color: white; }
         .btn-checkout:hover { background: #dc2626; }
         
-        /* زر الانتقال لصفحة الخدمات الجديد */
-        .btn-services { background: #0ea5e9; color: white; margin-top: 10px; }
+        /* زر الخدمات المضاف خصيصاً لينقل الموظف لصفحة الخدمات */
+        .btn-services { background: #0ea5e9; color: white; margin-top: 5px; }
         .btn-services:hover { background: #0284c7; }
 
         #alertBox { margin-top: 15px; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: bold; display: none; }
@@ -44,10 +44,10 @@
             🔴 تسجيل انصراف
         </button>
 
-        <!-- زر الانتقال لصفحة الخدمات والطلبات المطلوبة -->
-        <button class="btn btn-services" onclick="window.location.href='services.html'">
+        <!-- زر الانتقال المباشر لصفحة الخدمات والطلبات -->
+        <a href="services.html" class="btn btn-services">
             🗂️ الانتقال إلى صفحة الخدمات والطلبات
-        </button>
+        </a>
 
         <div id="alertBox"></div>
     </div>
