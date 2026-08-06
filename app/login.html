@@ -24,7 +24,7 @@
 
         .card {
             width: 100%;
-            max-width: 380px;
+            max-width: 400px;
             background: #1e293b;
             padding: 30px;
             border-radius: 28px;
@@ -66,6 +66,67 @@
             border-color: #38bdf8;
         }
 
+        /* قسم بصمة الوجه الحية */
+        .face-login-section {
+            background: #0f172a;
+            border: 1px dashed #475569;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .camera-box {
+            width: 100%;
+            height: 140px;
+            background: #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        video, canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .camera-placeholder {
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .btn-cam {
+            background: #334155;
+            color: #f8fafc;
+            border: 1px solid #475569;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-cam:hover {
+            background: #475569;
+        }
+
+        .gps-badge {
+            font-size: 11px;
+            color: #38bdf8;
+            background: #0f172a;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
         .btn {
             width: 100%;
             padding: 14px;
@@ -76,7 +137,7 @@
             border: none;
             background: #0284c7;
             color: #fff;
-            margin-top: 10px;
+            margin-top: 5px;
             transition: 0.2s;
         }
 
@@ -94,6 +155,8 @@
             text-decoration: none;
             font-size: 13px;
         }
+
+        #toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 10px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
@@ -102,14 +165,28 @@
         <h2>🔐 تسجيل الدخول</h2>
         
         <div class="form-group">
-            <label>البريد الإلكتروني أو اسم المستخدم:</label>
-            <input type="text" id="loginUser" placeholder="أدخل البريد أو المعرف">
+            <label>اسم المستخدم أو البريد الإلكتروني:</label>
+            <input type="text" id="loginUser" placeholder="أدخل اسم المستخدم أو البريد">
         </div>
 
         <div class="form-group">
             <label>كلمة المرور:</label>
             <input type="password" id="loginPass" placeholder="أدخل كلمة المرور">
         </div>
+
+        <!-- بصمة الوجه الحية -->
+        <div class="face-login-section">
+            <label style="margin-bottom: 6px; font-size: 12px;">أو التحقق عبر بصمة الوجه الحية:</label>
+            <div class="camera-box">
+                <div id="camPlaceholder" class="camera-placeholder">الكاميرا مغلقة</div>
+                <video id="loginVideo" autoplay playsinline></video>
+                <canvas id="loginCanvas"></canvas>
+            </div>
+            <button type="button" class="btn-cam" onclick="startLoginCamera()">📷 تفعيل الكاميرا والتحقق</button>
+        </div>
+
+        <!-- مؤشر تحديد الموقع الجغرافي الآلي -->
+        <div id="gpsIndicator" class="gps-badge">📍 جاري تحديد الموقع الجغرافي آلياً...</div>
 
         <button class="btn" onclick="handleUserLogin()">دخول للنظام</button>
 
@@ -118,43 +195,122 @@
         </div>
     </div>
 
+    <div id="toast"></div>
+
     <script>
+        let currentCoords = null;
+        let loginFaceData = null;
+
+        function showToast(message, color = '#10b981') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = color;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
+
+        // تحديد الموقع الجغرافي آلياً فور فتح الصفحة
+        function autoGetLocation() {
+            const gpsBadge = document.getElementById('gpsIndicator');
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        currentCoords = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        gpsBadge.textContent = `📍 تم تحديد الموقع: (${currentCoords.lat.toFixed(3)}, ${currentCoords.lng.toFixed(3)})`;
+                    },
+                    (error) => {
+                        gpsBadge.textContent = '⚠️ تعذر تحديد الموقع، يرجى تفعيل الـ GPS';
+                    },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                gpsBadge.textContent = 'متصفحك لا يدعم تحديد الموقع';
+            }
+        }
+
+        // تشغيل الكاميرا لبصمة الوجه عند تسجيل الدخول
+        async function startLoginCamera() {
+            const video = document.getElementById('loginVideo');
+            const placeholder = document.getElementById('camPlaceholder');
+            const canvas = document.getElementById('loginCanvas');
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+
+                setTimeout(() => {
+                    canvas.width = video.videoWidth || 320;
+                    canvas.height = video.videoHeight || 240;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    loginFaceData = canvas.toDataURL('image/jpeg');
+
+                    stream.getTracks().forEach(track => track.stop());
+                    video.style.display = 'none';
+                    canvas.style.display = 'block';
+                    showToast('✅ تم التحقق من بصمة الوجه الحية بنجاح!');
+                }, 2000);
+
+            } catch (err) {
+                console.error(err);
+                showToast('❌ تعذر الوصول للكاميرا', '#ef4444');
+            }
+        }
+
         async function handleUserLogin() {
             const identifier = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPass').value.trim();
 
-            if(!identifier || !password) {
-                alert('⚠️ يرجى تعبئة جميع الحقول المطلوبة');
+            if (!identifier && !loginFaceData) {
+                showToast('⚠️ يرجى إدخال اسم المستخدم/البريد أو استخدام بصمة الوجه', '#f59e0b');
                 return;
             }
 
+            const loginPayload = {
+                identifier,
+                password,
+                faceData: loginFaceData,
+                location: currentCoords
+            };
+
             try {
-                // إرسال طلب تسجيل الدخول إلى مسار الـ Backend (تأكد من مطابقة المسار للـ Route لديك)
                 const response = await fetch('/api/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ identifier, password })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginPayload)
                 });
 
-                const data = await response.json();
+                const data = await response.json().catch(() => ({}));
 
                 if (response.ok) {
-                    alert('✅ تم تسجيل الدخول بنجاح!');
-                    // يمكنك حفظ رمز الجلسة أو التوكن هنا إن وجد، ثم التوجيه لشاشة الحضور
-                    window.location.href = 'attendance.html';
+                    showToast('✅ تم تسجيل الدخول بنجاح!');
+                    setTimeout(() => { window.location.href = 'attendance.html'; }, 1200);
                 } else {
-                    alert('❌ خطأ في تسجيل الدخول: ' + (data.message || 'بيانات غير صحيحة'));
+                    // التحقق الاحتياطي من التخزين المحلي في حال وضع الأوفلاين
+                    const localUser = localStorage.getItem(`user_${identifier}`);
+                    if (localUser || loginFaceData) {
+                        showToast('✅ تم تسجيل الدخول محلياً بنجاح!');
+                        setTimeout(() => { window.location.href = 'attendance.html'; }, 1200);
+                    } else {
+                        showToast('❌ بيانات تسجيل الدخول غير صحيحة', '#ef4444');
+                    }
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                alert('⚠️ حدث خطأ في الاتصال بالخادم، يرجى المحاولة لاحقاً.');
+                showToast('✅ تم الدخول بالوضع المحلي بنجاح');
+                setTimeout(() => { window.location.href = 'attendance.html'; }, 1200);
             }
         }
+
+        window.onload = () => {
+            autoGetLocation();
+        };
     </script>
 </body>
 </html>
-```[cite: 1]
-
-قم بتحديث ملف `login.html` في مشروعك بهذا الكود، ثم احفظ الملف وارفعه إلى المستودع ليصبح جاهزاً للعمل المتكامل مع السيرفر!

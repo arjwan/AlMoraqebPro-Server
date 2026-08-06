@@ -24,30 +24,45 @@
 
         .welcome-card {
             width: 100%;
-            max-width: 380px;
+            max-width: 420px;
             background: #1e293b;
-            padding: 40px 30px;
+            padding: 35px 30px;
             border-radius: 30px;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
             border: 1px solid #334155;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .app-icon {
             font-size: 50px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         h1 {
             font-size: 24px;
             color: #38bdf8;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
-        p {
+        .company-name {
+            font-size: 14px;
+            color: #38bdf8;
+            font-weight: 600;
+            margin-bottom: 15px;
+            background: #0f172a;
+            padding: 4px 10px;
+            border-radius: 6px;
+            display: inline-block;
+            border: 1px solid #334155;
+        }
+
+        p.desc {
             font-size: 14px;
             color: #94a3b8;
-            margin-bottom: 35px;
+            margin-bottom: 25px;
             line-height: 1.5;
         }
 
@@ -55,6 +70,7 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            margin-bottom: 25px;
         }
 
         .btn {
@@ -88,34 +104,66 @@
         .btn-register:hover {
             background: #475569;
         }
+
+        /* قسم تفاصيل المطور والشركة */
+        .developer-info {
+            border-top: 1px solid #334155;
+            padding-top: 15px;
+            font-size: 13px;
+            color: #94a3b8;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .developer-info .dev-name {
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        .developer-info div {
+            margin-bottom: 4px;
+        }
+
+        .developer-info a {
+            color: #38bdf8;
+            text-decoration: none;
+        }
+
+        .developer-info a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
 
     <div class="welcome-card">
-        <div class="app-icon">🛡️</div>
-        <h1>المراقب برو</h1>
-        <p>النظام الذكي لإدارة الحضور، الشفتات، وبيانات الموظفين بكل كفاءة وأمان.</p>
+        <div>
+            <div class="app-icon">🛡️</div>
+            <h1>المراقب برو</h1>
+            <div class="company-name">شركة الأرجوان للبرمجيات</div>
+            <p class="desc">النظام الذكي لإدارة الحضور، الشفتات، وبيانات الموظفين بكل كفاءة وأمان.</p>
 
-        <div class="btn-group">
-            <!-- زر تسجيل الدخول -->
-            <button class="btn btn-login" onclick="goToLogin()">تسجيل الدخول</button>
-            
-            <!-- زر إنشاء حساب -->
-            <button class="btn btn-register" onclick="goToRegister()">إنشاء حساب جديد</button>
+            <div class="btn-group">
+                <button class="btn btn-login" onclick="goToLogin()">تسجيل الدخول</button>
+                <button class="btn btn-register" onclick="goToRegister()">إنشاء حساب جديد</button>
+            </div>
+        </div>
+
+        <!-- تفاصيل المطور والشركة الحقيقية -->
+        <div class="developer-info">
+            <div>تطوير وبرمجة: <span class="dev-name">محمد العبيدي</span></div>
+            <div>📧 <a href="mailto:mohmmd1628@gmail.com">mohmmd1628@gmail.com</a></div>
+            <div>📞 واتساب / هاتف: <span dir="ltr">07807807491</span></div>
         </div>
     </div>
 
     <script>
         function goToLogin() {
-            // توجيه المستخدم إلى صفحة تسجيل الدخول (index.html أو login.html)
             window.location.href = 'index.html';
         }
 
         function goToRegister() {
-            // توجيه المستخدم إلى صفحة إنشاء الحساب أو نموذج التسجيل
-            alert('⚙️ سيتم توجيهك إلى نافذة إنشاء حساب موظف جديد.');
-            // window.location.href = 'register.html';
+            window.location.href = 'register.html';
         }
     </script>
 </body>

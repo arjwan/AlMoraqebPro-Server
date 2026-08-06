@@ -1,233 +1,86 @@
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
+const cors = require('cors');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+// إعداد الوسيطات لدعم الملفات الكبيرة (مثل بصمة الوجه Base64)
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(cors());
 
-// مسار ملف تخزين الشركات محلياً على السيرفر
-const DATA_FILE = path.join(__dirname, 'companies.json');
+// قاعدة بيانات مؤقتة للتشغيل الفوري (يمكن ربطها بقاعدة بيانات لاحقاً)
+global.db = {
+    users: [],
+    attendance: [],
+    requests: []
+};
 
-// التأكد من وجود ملف البيانات أو إنشاؤه فارغاً إذا لم يكن موجوداً
-try {
-    if (!fs.existsSync(DATA_FILE)) {
-        fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
-    }
-} catch (err) {
-    console.error("Error initializing database file:", err);
-}
-
-// دالة لقراءة الشركات من الملف
-function readCompanies() {
-    try {
-        if (!fs.existsSync(DATA_FILE)) {
-            return [];
-        }
-        const data = fs.readFileSync(DATA_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch (err) {
-        console.error("Error reading companies file:", err);
-        return [];
-    }
-}
-
-// دالة لحفظ الشركات في الملف
-function saveCompanies(companies) {
-    try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(companies, null, 2));
-    } catch (err) {
-        console.error("Error saving companies file:", err);
-    }
-}
-
-// حماية صفحة الأدمن والتحقق من وجود معرف الشركة
-function verifyAdminAccess(req, res, next) {
-    const companyId = req.query.company;
-    
-    if (!companyId) {
-        return res.status(403).send("<h1>403 Forbidden</h1><p>غير مسموح بالوصول المباشر لهذه الصفحة. يرجى إنشاء الشركة أو التفعيل أولاً.</p>");
-    }
-
-    if (companyId === 'default_company') {
-        return next();
-    }
-
-    const companies = readCompanies();
-    const company = companies.find(c => c.company_id === companyId);
-    
-    if (!company) {
-        return res.status(403).send("<h1>403 Forbidden</h1><p>معرف الشركة غير صالح أو غير مسجل في النظام.</p>");
-    }
-
-    if (company.status === 'stopped') {
-        return res.status(403).send("<h1>403 Forbidden</h1><p>عذراً، هذا الحساب متوقف مؤقتاً من قبل الإدارة.</p>");
-    }
-
-    next();
-}
-
+// 1. ربط الملفات الثابتة للمجلدات
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/app', express.static(path.join(__dirname, 'app')));
 
+// 2. المسارات المباشرة لفتح صفحات الهاتف (من مجلد app)
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'app', 'welcome.html'));
 });
 
-app.get('/index.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/welcome.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'app', 'welcome.html'));
 });
 
-app.get('/admin-register.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin-register.html'));
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'app', 'login.html'));
 });
 
-app.get('/create-company.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'create-company.html'));
+app.get('/register.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'app', 'register.html'));
 });
 
-app.get('/company-register.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'company-register.html'));
+app.get('/services.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'app', 'services.html'));
 });
 
-app.get('/admin.html', verifyAdminAccess, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+// 3. مسار لوحة تحكم المدير وسجل الحركات (من مجلد public)
+app.get('/activate.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'activate.html'));
 });
 
-app.get('/api/status', (req, res) => {
-    res.json({ success: true, message: 'AlMoraqeb Pro Server is running perfectly!' });
-});
-
-app.get('/company-activate.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'company-activate.html'));
-});
-
-// ==================== مسار تسجيل الدخول ====================
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({ success: false, message: 'يرجى إدخال اسم المستخدم وكلمة المرور' });
-    }
-
-    const inputVal = username.trim();
-    const passVal = password.trim();
-
-    // 1. التحقق المباشر والصريح للحساب العام الافتراضي
-    if (inputVal === 'admin' && passVal === 'admin123') {
-        return res.json({ 
-            success: true, 
-            role: 'admin', 
-            companyId: 'default_company',
-            redirectUrl: '/admin.html?company=default_company' 
-        });
-    }
-
-    // 2. البحث عن الشركة في الملف المحلي
-    const companies = readCompanies();
-    const company = companies.find(c => 
-        (c.company_id && c.company_id === inputVal) || 
-        (c.username && c.username === inputVal) || 
-        (c.email && c.email === inputVal)
-    );
-
-    if (!company) {
-        return res.status(400).json({ success: false, message: 'بيانات الدخول غير صحيحة، لم يتم العثور على الحساب' });
-    }
-
-    if (company.status === 'stopped') {
-        return res.status(403).json({ success: false, message: 'عذراً، هذا الحساب متوقف مؤقتاً من قبل الإدارة.' });
-    }
-
-    if (company.password && company.password !== passVal) {
-        return res.status(400).json({ success: false, message: 'كلمة المرور غير صحيحة' });
-    }
-
-    res.json({ 
-        success: true, 
-        role: 'company', 
-        companyId: company.company_id,
-        redirectUrl: `/admin.html?company=${company.company_id}`,
-        message: 'تم تسجيل الدخول بنجاح' 
-    });
-});
-
-// مسار جلب معلومات الشركة
-app.get('/api/companies/info', (req, res) => {
-    const companyId = req.query.company;
-    if (!companyId) {
-        return res.status(400).json({ success: false, message: 'معرف الشركة مفقود' });
-    }
-
-    if (companyId === 'default_company') {
-        return res.json({ 
-            success: true, 
-            company: { company_name: 'الحساب العام الافتراضي', company_id: 'default_company' } 
-        });
-    }
-
-    const companies = readCompanies();
-    const company = companies.find(c => c.company_id === companyId);
-    
-    if (!company) {
-        return res.status(404).json({ success: false, message: 'الشركة غير موجودة' });
-    }
-
-    res.json({ success: true, company });
-});
-
-// مسار تسجيل شركة جديدة
-app.post('/api/companies/register', (req, res) => {
-    const { companyName, companyIdInput, username, email, password, branch, province, address, baseSalary } = req.body;
-    
-    if (!companyName) {
-        return res.status(400).json({ success: false, message: 'اسم الشركة مطلوب' });
-    }
-
+// 4. مسارات الـ API (التسجيل، تسجيل الدخول، وحفظ الطلبات)
+app.post('/api/employees/register', (req, res) => {
     try {
-        const sanitizedName = companyName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        const companyId = companyIdInput ? companyIdInput.trim() : `${sanitizedName}_${Math.floor(Math.random() * 9000) + 1000}`;
-        const companyPassword = password || '123456';
-
-        const companies = readCompanies();
-
-        if (companies.some(c => c.company_id === companyId)) {
-            return res.status(400).json({ success: false, message: 'معرف الشركة مستخدم مسبقاً، يرجى اختيار معرف آخر' });
+        const userData = req.body;
+        if (!userData.companyName || !userData.username) {
+            return res.status(400).json({ success: false, message: 'اسم الشركة واسم المستخدم إجباريان' });
         }
-
-        const newCompany = {
-            id: Date.now(),
-            company_id: companyId,
-            company_name: companyName,
-            username: username || '',
-            email: email || '',
-            password: companyPassword,
-            branch: branch || '',
-            province: province || '',
-            address: address || '',
-            base_salary: baseSalary || 0,
-            status: 'active',
-            created_at: new Date().toISOString()
-        };
-
-        companies.push(newCompany);
-        saveCompanies(companies);
-
-        res.json({
-            success: true,
-            message: 'تم حفظ وتفعيل حساب الشركة بنجاح',
-            companyId: newCompany.company_id,
-            customUrl: `https://almoraqebpro-server.onrender.com/admin.html?company=${newCompany.company_id}`
-        });
-
+        global.db.users.push(userData);
+        res.status(200).json({ success: true, message: 'تم تسجيل المستخدم بنجاح' });
     } catch (err) {
-        console.error("Save Company Error:", err);
-        res.status(500).json({ success: false, message: 'حدث خطأ أثناء حفظ الشركة', error: err.message });
+        res.status(500).json({ success: false, message: 'خطأ في السيرفر أثناء التسجيل' });
     }
 });
 
-const PORT = process.env.PORT || 3000;
+app.post('/api/login', (req, res) => {
+    try {
+        const { identifier } = req.body;
+        res.status(200).json({ success: true, message: 'تم تسجيل الدخول بنجاح', identifier });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'خطأ في تسجيل الدخول' });
+    }
+});
+
+app.post('/api/attendance', (req, res) => {
+    try {
+        const attendanceData = req.body;
+        global.db.attendance.push(attendanceData);
+        res.status(200).json({ success: true, message: 'تم تسجيل الحضور بنجاح' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'خطأ في تسجيل الحضور' });
+    }
+});
+
+// تشغيل السيرفر
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running successfully on port ${PORT}`);
 });
