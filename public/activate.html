@@ -3,184 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - سجل الحركات والعمليات والمزامنة</title>
+    <title>المراقب برو - سجل الحركات والأحداث</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #1e1b4b 0%, #31103f 50%, #0f0c1b 100%); color: #1e293b; min-height: 100vh; padding: 25px; }
-        .container { max-width: 1400px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 25px; }
-        h2 { color: #4f46e5; font-size: 22px; font-weight: 800; }
-        .back-btn { background: #eef2ff; color: #4f46e5; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; border: 1px solid #c7d2fe; transition: 0.2s; }
-        .back-btn:hover { background: #4f46e5; color: #fff; }
-        .sync-status-bar { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #166534; font-weight: bold; }
-        .table-container { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
-        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        th, td { padding: 12px 15px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        th { background: #eef2ff; color: #4f46e5; font-weight: 800; }
-        .badge-synced { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
-        .badge-pending { background: #fef9c3; color: #854d0e; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; padding: 40px; }
+        .container { max-width: 1300px; margin: 0 auto; }
+        
+        header { background: #ffffff; padding: 25px 35px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; flex-wrap: wrap; gap: 15px; }
+        h1 { color: #0284c7; font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        
+        .back-btn { background: #64748b; color: white; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.2s; cursor: pointer; border: none; }
+        .back-btn:hover { background: #475569; }
+
+        .section-card { background: #ffffff; padding: 30px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 30px; }
+        .section-card h3 { color: #0369a1; margin-bottom: 20px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+
+        table { width: 100%; border-collapse: collapse; text-align: right; font-size: 14px; }
+        th { background: #f0f9ff; color: #0369a1; padding: 12px; font-weight: 700; border-bottom: 2px solid #bae6fd; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; }
+        tr:hover { background: #f8fafc; }
+
+        .badge-pending { background: #f59e0b; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .badge-approved { background: #10b981; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .badge-rejected { background: #ef4444; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+
+        .btn-action { padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
+        .btn-approve { background: #10b981; color: white; margin-left: 5px; }
+        .btn-approve:hover { background: #059669; }
+        .btn-reject { background: #ef4444; color: white; }
+        .btn-reject:hover { background: #dc2626; }
+
+        .empty-text { color: #64748b; font-size: 14px; text-align: center; padding: 20px; }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <div class="header">
-            <h2>📋 سجل الحركات والنشاطات (قاعدة البيانات المركزية) <span id="company-badge" style="font-size: 14px; background: #eef2ff; padding: 4px 10px; border-radius: 6px; color: #4f46e5;"></span></h2>
-            <a href="admin.html" id="backDashboardBtn" class="back-btn">← العودة للوحة التحكم</a>
+        <header>
+            <h1>📝 سجل الحركات والنشاطات الشامل</h1>
+            <button onclick="history.back()" class="back-btn">⬅️ العودة لوحة التحكم</button>
+        </header>
+
+        <!-- قسم طلبات الموظفين الواردة (سلف وإجازات) -->
+        <div class="section-card">
+            <h3>📥 طلبات وإشعارات الموظفين الواردة (مع إمكانية القبول والرفض)</h3>
+            <div id="managerRequestsContainer">
+                <p class="empty-text">جاري تحميل الطلبات الواردة...</p>
+            </div>
         </div>
 
-        <div class="sync-status-bar" id="connectionStatusBar">
-            <span id="connectionText">🌐 حالة الاتصال: جارِ التحقق...</span>
-            <button onclick="triggerSyncAndRefresh()" style="background: #166534; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold;">مزامنة وتحديث البيانات</button>
-        </div>
-
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ت</th>
-                        <th>نوع الحركة</th>
-                        <th>تفاصيل النشاط</th>
-                        <th>معرف الموظف</th>
-                        <th>التوقيت</th>
-                        <th>حالة المزامنة</th>
-                    </tr>
-                </thead>
-                <tbody id="logsTableBody">
-                    <tr><td colspan="6" style="padding: 20px; color: #64748b;">جاري جلب السجلات من السيرفر...</td></tr>
-                </tbody>
-            </table>
+        <!-- قسم سجل حركات النظام العامة -->
+        <div class="section-card">
+            <h3>📊 سجل نشاطات وحركات النظام</h3>
+            <div id="systemLogsContainer">
+                <table id="logsTable">
+                    <thead>
+                        <tr>
+                            <th>نوع الحركة / الحدث</th>
+                            <th>التفاصيل</th>
+                            <th>المستخدم / الجهة</th>
+                            <th>الوقت والتاريخ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr>
+                            <td colspan="4" class="empty-text">لا توجد حركات مسجلة حديثاً في النظام.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId');
+        const currentCompany = localStorage.getItem('activeCompanyId') || 'default_company';
 
-        // ضبط زر العودة للوحة التحكم ليبقى مرتبطاً بمعرف الشركة حصراً
-        window.addEventListener('DOMContentLoaded', () => {
-            if (companyId) {
-                document.getElementById('backDashboardBtn.html' || 'backDashboardBtn').setAttribute('href', `admin.html?company=${encodeURIComponent(companyId)}`);
-                document.getElementById('company-badge').textContent = `(الشركة: ${companyId})`;
-            }
-        });
+        // تحميل وعرض طلبات الموظفين المعلقة
+        function loadManagerRequests() {
+            const requests = JSON.parse(localStorage.getItem(`manager_requests_${currentCompany}`)) || [];
+            const container = document.getElementById('managerRequestsContainer');
 
-        const dbName = 'AlMoraqebPro_LocalDB_' + (companyId || 'default');
-        const storeName = 'activity_logs';
-        let db = null;
-
-        function initDB() {
-            const request = indexedDB.open(dbName, 1);
-            request.onerror = (e) => console.error("خطأ في فتح قاعدة البيانات المحلية", e);
-            request.onsuccess = (e) => {
-                db = e.target.result;
-                triggerSyncAndRefresh();
-            };
-            request.onupgradeneeded = (e) => {
-                let database = e.target.result;
-                if (!database.objectStoreNames.contains(storeName)) {
-                    database.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
-                }
-            };
-        }
-
-        async function fetchLogsFromServer() {
-            try {
-                const response = await fetch(`/api/system/activity-logs?company=${encodeURIComponent(companyId || '')}`);
-                const data = await response.json();
-                if (data.success) {
-                    renderTable(data.logs);
-                }
-            } catch (err) {
-                console.warn("تعذر الجلب من السيرفر، جاري عرض السجلات المحلية...", err);
-                fetchLogsLocally();
-            }
-        }
-
-        function fetchLogsLocally() {
-            if (!db) return;
-            const transaction = db.transaction([storeName], "readonly");
-            const store = transaction.objectStore(storeName);
-            const request = store.getAll();
-            request.onsuccess = () => {
-                renderTable(request.result, true);
-            };
-        }
-
-        function renderTable(logs, isLocal = false) {
-            const tbody = document.getElementById('logsTableBody');
-            tbody.innerHTML = '';
-
-            if (!logs || logs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px; color: #64748b;">لا توجد حركات مسجلة حتى الآن.</td></tr>`;
+            if(requests.length === 0) {
+                container.innerHTML = '<p class="empty-text">لا توجد طلبات معلقة من الموظفين حالياً.</p>';
                 return;
             }
 
-            logs.forEach((log, index) => {
-                let statusBadge = isLocal 
-                    ? '<span class="badge-pending">محفوظ محلياً (بانتظار الاتصال)</span>' 
-                    : '<span class="badge-synced">متزامن على السيرفر</span>';
+            let html = '<table>';
+            html += '<tr><th>الموظف</th><th>نوع الطلب</th><th>التفاصيل والملاحظات</th><th>حالة الطلب</th><th>الإجراءات الفورية</th></tr>';
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td><b>${index + 1}</b></td>
-                        <td style="font-weight: 700; color: #4f46e5;">${log.actionType}</td>
-                        <td>${log.details}</td>
-                        <td><b>${log.employeeId || 'النظام'}</b></td>
-                        <td dir="ltr">${(log.timestamp || '').replace('T', ' ').substring(0, 19)}</td>
-                        <td>${statusBadge}</td>
-                    </tr>
-                `;
+            requests.forEach((req) => {
+                let statusBadge = `<span class="badge-pending">قيد الانتظار</span>`;
+                if(req.status === 'approved') statusBadge = `<span class="badge-approved">تم القبول ✅</span>`;
+                if(req.status === 'rejected') statusBadge = `<span class="badge-rejected">تم الرفض ❌</span>`;
+
+                html += `<tr>
+                    <td style="font-weight: bold;">${req.employeeName}</td>
+                    <td>${req.type}</td>
+                    <td>${req.details} <br><small style="color: #64748b;">${req.notes || 'بدون ملاحظات'}</small></td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        ${req.status === 'pending' ? `
+                            <button class="btn-action btn-approve" onclick="updateRequestStatus('${req.id}', 'approved')">قبول ✅</button>
+                            <button class="btn-action btn-reject" onclick="updateRequestStatus('${req.id}', 'rejected')">رفض ❌</button>
+                        ` : '<span style="color: #64748b; font-size: 13px;">تم اتخاذ قرار</span>'}
+                    </td>
+                </tr>`;
             });
+            html += '</table>';
+            container.innerHTML = html;
         }
 
-        async function triggerSyncAndRefresh() {
-            if (!navigator.onLine || !db) {
-                fetchLogsLocally();
+        // تحديث حالة الطلب وإرسال الإشعار الفوري للموظف وتسجيل الحدث
+        function updateRequestStatus(requestId, newStatus) {
+            let requests = JSON.parse(localStorage.getItem(`manager_requests_${currentCompany}`)) || [];
+            const reqIndex = requests.findIndex(r => r.id === requestId);
+
+            if(reqIndex !== -1) {
+                requests[reqIndex].status = newStatus;
+                localStorage.setItem(`manager_requests_${currentCompany}`, JSON.stringify(requests));
+
+                // إضافة الحدث إلى سجل النظام العام
+                logSystemEvent(
+                    newStatus === 'approved' ? 'قبول طلب موظف' : 'رفض طلب موظف',
+                    `تم ${newStatus === 'approved' ? 'قبول' : 'رفض'} (${requests[reqIndex].type}) للموظف: ${requests[reqIndex].employeeName}`,
+                    'المدير (Admin)'
+                );
+
+                alert(newStatus === 'approved' ? '✅ تم قبول الطلب وإرسال الإشعار للموظف بنجاح!' : '❌ تم رفض الطلب وإبلاغ الموظف.');
+                loadManagerRequests();
+                loadSystemLogs();
+            }
+        }
+
+        // تسجيل حدث في النظام
+        function logSystemEvent(actionType, details, user) {
+            const logs = JSON.parse(localStorage.getItem(`system_logs_${currentCompany}`)) || [];
+            logs.unshift({
+                type: actionType,
+                details: details,
+                user: user,
+                timestamp: new Date().toLocaleString()
+            });
+            localStorage.setItem(`system_logs_${currentCompany}`, JSON.stringify(logs));
+        }
+
+        // تحميل سجل حركات النظام العامة
+        function loadSystemLogs() {
+            const logs = JSON.parse(localStorage.getItem(`system_logs_${currentCompany}`)) || [];
+            const tbody = document.getElementById('logsTableBody');
+
+            if(logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-text">لا توجد حركات مسجلة حديثاً في النظام.</td></tr>';
                 return;
             }
 
-            const transaction = db.transaction([storeName], "readwrite");
-            const store = transaction.objectStore(storeName);
-            const request = store.getAll();
-
-            request.onsuccess = async () => {
-                const logs = request.result;
-                for (let log of logs) {
-                    if (!log.synced) {
-                        try {
-                            await fetch('/api/system/activity-logs', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ...log, companyId })
-                            });
-                            store.delete(log.id);
-                        } catch (e) {
-                            console.error("فشل مزامنة السجل:", log.id);
-                        }
-                    }
-                }
-                await fetchLogsFromServer();
-            };
+            let html = '';
+            logs.forEach(log => {
+                html += `<tr>
+                    <td style="font-weight: bold; color: #0284c7;">${log.type}</td>
+                    <td>${log.details}</td>
+                    <td>${log.user}</td>
+                    <td style="font-size: 12px; color: #64748b;">${log.timestamp}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
         }
 
-        window.addEventListener('online', () => {
-            document.getElementById('connectionText').innerHTML = "🟢 متصل بالإنترنت - يتم المزامنة وتحديث السيرفر الآن";
-            triggerSyncAndRefresh();
+        window.addEventListener('DOMContentLoaded', () => {
+            loadManagerRequests();
+            loadSystemLogs();
         });
-
-        window.addEventListener('offline', () => {
-            document.getElementById('connectionText').innerHTML = "🔴 غير متصل بالإنترنت - يتم العرض من التخزين المحلي";
-            fetchLogsLocally();
-        });
-
-        window.onload = () => {
-            if (navigator.onLine) {
-                document.getElementById('connectionText').innerHTML = "🟢 متصل بالإنترنت - يتم جلب السجلات من السيرفر";
-            } else {
-                document.getElementById('connectionText').innerHTML = "🔴 غير متصل بالإنترنت - يتم العرض محلياً";
-            }
-            initDB();
-        };
     </script>
 </body>
 </html>
