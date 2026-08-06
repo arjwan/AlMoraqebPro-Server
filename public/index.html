@@ -94,6 +94,12 @@
         .btn-face:hover {
             background: #219653;
         }
+        .error-msg {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
         .developer-info {
             margin-top: 20px;
             padding-top: 12px;
@@ -119,10 +125,10 @@
         <h2>تسجيل الدخول</h2>
         <div class="subtitle">أدخل بيانات شركتك، أو استخدم بصمة الوجه السريعة</div>
 
-        <form action="/api/auth/login" method="POST">
+        <form id="loginForm">
             <div class="form-group">
-                <label for="username">معرف الشركة، اسم المستخدم، أو الإيميل:</label>
-                <input type="text" id="username" name="username" required placeholder="أدخل بيانات الدخول...">
+                <label for="username">اسم المستخدم:</label>
+                <input type="text" id="username" name="username" required placeholder="أدخل اسم المستخدم...">
             </div>
 
             <div class="form-group">
@@ -132,6 +138,8 @@
 
             <button type="submit" class="btn-submit">🚀 دخول بكلمة المرور</button>
             <button type="button" class="btn-face" onclick="alert('خاصية بصمة الوجه قيد التشغيل...')">📸 تسجيل الدخول ببصمة الوجه</button>
+            
+            <div id="errorMsg" class="error-msg"></div>
         </form>
 
         <!-- معلومات المطور والشركة -->
@@ -142,6 +150,38 @@
             <p>الإيميل: <span dir="ltr">mohmmed1628@gmail.com</span></p>
         </div>
     </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMsg');
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('تم تسجيل الدخول بنجاح!');
+                    // يمكنك توجيهه للصفحة الرئيسية الخاصة بالوحة التحكم لاحقاً هنا
+                    // window.location.href = '/dashboard.html';
+                } else {
+                    errorDiv.style.display = 'block';
+                    errorDiv.textContent = data.message || 'فشل تسجيل الدخول، تحقق من البيانات';
+                }
+            } catch (err) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'حدث خطأ في الاتصال بالخادم';
+            }
+        });
+    </script>
 
 </body>
 </html>
