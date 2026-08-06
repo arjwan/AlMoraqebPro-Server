@@ -17,7 +17,6 @@
             height: 100vh; 
             color: #333; 
         }
-        /* تم تكبير الصندوق والعرض ليكون واسعاً ومريحاً */
         .login-card { 
             background: #ffffff; 
             padding: 40px; 
@@ -69,7 +68,6 @@
             margin-top: 15px;
             display: none;
         }
-        /* تم تكبير مساحة الكاميرا لتكون واسعة وواضحة جداً */
         #video { 
             width: 100%; 
             max-height: 340px;
@@ -105,7 +103,6 @@
         <button type="button" id="faceBtn" class="btn btn-face">📸 فتح كاميرا بصمة الوجه</button>
     </form>
     
-    <!-- مساحة الكاميرا الموسعة والواسعة -->
     <div id="video-container">
         <video id="video" autoplay muted playsinline></video>
         <button type="button" id="captureBtn" class="btn btn-capture">🔘 التقاط الصورة والتحقق</button>
@@ -116,7 +113,7 @@
         <div class="company">شركة الأرجوان للبرمجيات</div>
         <div>المطور: محمد العبيدي</div>
         <div>واتساب: <span dir="ltr">07807807491</span></div>
-        <div>الإيميل: <span dir="ltr">mohmmed1628@gmail.com</span></div>
+        <div>الإيميل: <span dir="ltr">mohmed1628@gmail.com</span></div>
     </div>
 </div>
 
@@ -154,10 +151,11 @@
         }
     });
 
+    // ربط نموذج تسجيل الدخول بالسيرفر وقاعدة البيانات
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
 
         try {
             const response = await fetch('/api/auth/login', {
@@ -166,13 +164,16 @@
                 body: JSON.stringify({ username, password })
             });
             const data = await response.json();
+            
             if (data.success) {
-                alert('تم تسجيل الدخول بنجاح!');
+                alert('✅ تم تسجيل الدخول بنجاح!');
+                // يمكنك توجيهه للوحة التحكم هنا لاحقاً، مثل: window.location.href = 'dashboard.html';
             } else {
-                alert(data.message || 'فشل تسجيل الدخول، تحقق من البيانات');
+                alert('❌ ' + (data.message || 'فشل تسجيل الدخول، تأكد من اسم المستخدم أو كلمة المرور'));
             }
         } catch (err) {
-            alert('حدث خطأ في الاتصال بالخادم');
+            console.error(err);
+            alert('⚠️ حدث خطأ في الاتصال بالخادم على Render');
         }
     });
 </script>
