@@ -1,62 +1,63 @@
-// نظام المزامنة والربط الآلي الشامل - المراقب برو
-const STORAGE_KEYS = {
-    EMPLOYEES: 'companyEmployees',
-    ATTENDANCE: 'companyAttendanceLogs',
-    NOTIFICATIONS: 'companyNotifications',
-    REQUESTS: 'companyRequests'
-};
+// ==========================================
+// ملف المزامنة والربط الشامل لنظام المراقب برو (Local & Sync Core)
+// ==========================================
 
-// جلب جميع الموظفين المسجلين
+// 1. جلب جميع الموظفين المسجلين للشركة الحالية
 function getAllEmployees() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.EMPLOYEES)) || [];
+    const compId = localStorage.getItem('activeCompanyId') || 'default_company';
+    return JSON.parse(localStorage.getItem(`employees_${compId}`)) || JSON.parse(localStorage.getItem('companyEmployees')) || [];
 }
 
-// حفظ أو إضافة موظف جديد وتوليد إشعار وطلب آلي للمدير
+// 2. تسجيل موظف جديد وحفظه في التخزين المحلي فوراً لضمان ظهوره في الجداول
 function registerNewEmployee(employeeData) {
-    let employees = getAllEmployees();
-    
-    // التحقق من عدم تكرار اسم المستخدم أو الهاتف
-    const exists = employees.find(emp => emp.username === employeeData.username || emp.phone === employeeData.phone);
-    if (exists) {
-        return { success: false, message: 'اسم المستخدم أو رقم الهاتف مسجل مسبقاً!' };
+    try {
+        const compId = employeeData.companyId || localStorage.getItem('activeCompanyId') || 'default_company';
+        localStorage.setItem('activeCompanyId', compId);
+
+        // جلب القائمة الحالية
+        let employees = JSON.parse(localStorage.getItem(`employees_${compId}`)) || [];
+        
+        // التحقق من عدم تكرار اسم المستخدم
+        const exists = employees.find(emp => emp.username === employeeData.username || emp.phone === employeeData.phone);
+        if (exists) {
+            return { success: false, message: 'اسم المستخدم أو رقم الهاتف مستخدم مسبقاً!' };
+        }
+
+        employees.push(employeeData);
+        
+        // حفظ في المفتاح الخاص بالشركة والمفتاح العام
+        localStorage.setItem(`employees_${compId}`, JSON.stringify(employees));
+        localStorage.setItem('companyEmployees', JSON.stringify(employees));
+
+        // إضافة إشعار لوحة تحكم المدير
+        addCompanyNotification(`تم تسجيل موظف جديد: ${employeeData.name}`);
+
+        return { success: true, message: 'تم التسجيل بنجاح' };
+    } catch (error) {
+        console.error("خطأ في التسجيل:", error);
+        return { success: false, message: 'حدث خطأ أثناء حفظ البيانات محلياً.' };
     }
-
-    employees.push(employeeData);
-    localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees));
-
-    // توليد إشعار تلقائي للمدير بوجود تسجيل جديد
-    addNotification({
-        id: 'notif_' + Date.now(),
-        title: 'تسجيل موظف جديد 📱',
-        message: `قام الموظف (${employeeData.name}) بالتسجيل والانضمام للشركة (${employeeData.companyName || 'بدون اسم'})`,
-        date: new Date().toLocaleString(),
-        read: false
-    });
-
-    // توليد طلب تفعيل حساب آلي للمدير
-    addRequest({
-        id: 'req_' + Date.now(),
-        employeeId: employeeData.id,
-        name: employeeData.name,
-        phone: employeeData.phone,
-        companyId: employeeData.companyId,
-        status: 'قيد الانتظار',
-        date: new Date().toLocaleDateString()
-    });
-
-    return { success: true, message: 'تم التسجيل والربط بنجاح!' };
 }
 
-// إضافة إشعار جديد
-function addNotification(notif) {
-    let notifs = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) || [];
-    notifs.unshift(notif);
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+// 3. نظام الإشعارات والطلبات للمدير
+function addCompanyNotification(text) {
+    let notifications = JSON.parse(localStorage.getItem('companyNotifications')) || [];
+    notifications.unshift({ text, time: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString() });
+    localStorage.setItem('companyNotifications', JSON.stringify(notifications));
 }
 
-// إضافة طلب جديد
-function addRequest(req) {
-    let reqs = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS)) || [];
-    reqs.unshift(req);
-    localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(reqs));
+// 4. محاكاة مزامنة محلية ناجحة بدون أخطاء سيرفر
+function simulateLocalSync(companyId) {
+    try {
+        const compId = companyId || localStorage.getItem('activeCompanyId') || 'default_company';
+        const syncData = {
+            companyId: compId,
+            employees: getAllEmployees(),
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem(`sync_backup_${compId}`, JSON.stringify(syncData));
+        return { success: true };
+    } catch (e) {
+        return { success: false };
+    }
 }

@@ -1,82 +1,59 @@
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
-const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// إعداد الوسيطات لدعم الملفات الكبيرة (مثل بصمة الوجه Base64)
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: true, limit: '20mb' }));
-app.use(cors());
+// تفعيل استقبال البيانات بصيغة JSON
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// قاعدة بيانات مؤقتة للتشغيل الفوري (يمكن ربطها بقاعدة بيانات لاحقاً)
-global.db = {
-    users: [],
-    attendance: [],
-    requests: []
-};
+// تقديم الملفات الثابتة من المجلد الحالي
+app.use(express.static(path.join(__dirname)));
 
-// 1. ربط الملفات الثابتة للمجلدات
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/app', express.static(path.join(__dirname, 'app')));
-
-// 2. المسارات المباشرة لفتح صفحات الهاتف (من مجلد app)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'app', 'welcome.html'));
-});
-
-app.get('/welcome.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'app', 'welcome.html'));
-});
-
-app.get('/login.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'app', 'login.html'));
-});
-
-app.get('/register.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'app', 'register.html'));
-});
-
-app.get('/services.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'app', 'services.html'));
-});
-
-// 3. مسار لوحة تحكم المدير وسجل الحركات (من مجلد public)
-app.get('/activate.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'activate.html'));
-});
-
-// 4. مسارات الـ API (التسجيل، تسجيل الدخول، وحفظ الطلبات)
-app.post('/api/employees/register', (req, res) => {
+// 1. مسار جلب معلومات الشركة
+app.get('/api/companies/info', (req, res) => {
+    const companyId = req.query.company || 'default_company';
     try {
-        const userData = req.body;
-        if (!userData.companyName || !userData.username) {
-            return res.status(400).json({ success: false, message: 'اسم الشركة واسم المستخدم إجباريان' });
+        const dbPath = path.join(__dirname, 'database.json');
+        let companyName = companyId;
+        
+        if (fs.existsSync(dbPath)) {
+            const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+            if (dbData[companyId] && dbData[companyId].companyName) {
+                companyName = dbData[companyId].companyName;
+            }
         }
-        global.db.users.push(userData);
-        res.status(200).json({ success: true, message: 'تم تسجيل المستخدم بنجاح' });
+
+        res.json({ 
+            success: true, 
+            company: { company_name: companyName } 
+        });
     } catch (err) {
-        res.status(500).json({ success: false, message: 'خطأ في السيرفر أثناء التسجيل' });
+        res.json({ success: true, company: { company_name: companyId } });
     }
 });
 
-app.post('/api/login', (req, res) => {
+// 2. مسار استقبال ومزامنة بيانات الموظفين والجداول وتحديث database.json
+app.post('/api/sync-update', (req, res) => {
     try {
-        const { identifier } = req.body;
-        res.status(200).json({ success: true, message: 'تم تسجيل الدخول بنجاح', identifier });
-    } catch (err) {
-        res.status(500).json({ success: false, message: 'خطأ في تسجيل الدخول' });
-    }
-});
+        const syncData = req.body;
+        const dbPath = path.join(__dirname, 'database.json');
+        
+        let db = {};
+        if (fs.existsSync(dbPath)) {
+            db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+        }
 
-app.post('/api/attendance', (req, res) => {
-    try {
-        const attendanceData = req.body;
-        global.db.attendance.push(attendanceData);
-        res.status(200).json({ success: true, message: 'تم تسجيل الحضور بنجاح' });
-    } catch (err) {
-        res.status(500).json({ success: false, message: 'خطأ في تسجيل الحضور' });
+        const compId = syncData.companyId || 'default_company';
+        db[compId] = syncData;
+        
+        fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
+
+        res.json({ success: true, message: 'تمت مزامنة وتحديث السيرفر والجداول بنجاح' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
