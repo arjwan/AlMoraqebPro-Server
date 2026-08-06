@@ -201,7 +201,7 @@
             <a href="admin.html" class="back-btn">← العودة إلى لوحة التحكم الرئيسية</a>
         </div>
 
-        <!-- شريط الفلترة والبحث -->
+        <!-- شريط البحث والفلترة السريع -->
         <div class="filter-toolbar">
             <div class="filter-group">
                 <label>بحث بالموظف أو الشفت أو الموقع:</label>
@@ -294,20 +294,21 @@
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
             const dateVal = document.getElementById('dateFilter').value;
 
-            let records = JSON.parse(localStorage.getItem('companyAttendanceLogs')) || sampleAttendance;
+            // التأكد من جلب البيانات أو إنشاء البيانات الافتراضية مع المعرفات الصريحة
+            let records = JSON.parse(localStorage.getItem('companyAttendanceLogs'));
+            if (!records || !Array.isArray(records) || records.length === 0) {
+                records = sampleAttendance;
+                localStorage.setItem('companyAttendanceLogs', JSON.stringify(records));
+            }
 
-            // التأكد من توفر معرفات فريدة لكل سجل وتحديث التخزين المحلي فوراً إذا لزم الأمر
-            let needsUpdate = false;
+            // ضمان وجود ID فريد لكل عنصر
             records = records.map((rec, idx) => {
                 if (!rec.id) {
                     rec.id = 'att_rec_' + idx + '_' + Date.now();
-                    needsUpdate = true;
                 }
                 return rec;
             });
-            if (needsUpdate) {
-                localStorage.setItem('companyAttendanceLogs', JSON.stringify(records));
-            }
+            localStorage.setItem('companyAttendanceLogs', JSON.stringify(records));
 
             tableBody.innerHTML = '';
 
@@ -349,17 +350,17 @@
 
         function deleteAttendanceRecord(recordId) {
             if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف سجل الحضور هذا نهائياً؟')) {
-                let records = JSON.parse(localStorage.getItem('companyAttendanceLogs')) || sampleAttendance;
+                let records = JSON.parse(localStorage.getItem('companyAttendanceLogs')) || [];
                 
-                // استبعاد السجل المطابق للمعرف المحدد
-                const updatedRecords = records.filter(item => item.id !== recordId);
+                // تصفية المصفوفة وإلغاء العنصر الذي يطابق المعرف تماماً
+                const updatedRecords = records.filter(item => String(item.id) !== String(recordId));
                 
-                // تحديث التخزين المحلي بالبيانات الجديدة
+                // حفظ التحديثات في التخزين المحلي
                 localStorage.setItem('companyAttendanceLogs', JSON.stringify(updatedRecords));
                 
                 alert('✅ تم حذف سجل الحضور بنجاح.');
                 
-                // إعادة تحميل الجدول فوراً لتحديث العرض للمستخدم
+                // إعادة تحميل الجدول لتحديث العرض فوراً
                 loadAttendanceRecords();
             }
         }
