@@ -294,21 +294,13 @@
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
             const dateVal = document.getElementById('dateFilter').value;
 
-            // التأكد من جلب البيانات أو إنشاء البيانات الافتراضية مع المعرفات الصريحة
             let records = JSON.parse(localStorage.getItem('companyAttendanceLogs'));
+            
+            // إذا كانت البيانات فارغة تماماً (أي تم حذف آخر شخص)، يتم إرجاع البيانات الافتراضية بالكامل
             if (!records || !Array.isArray(records) || records.length === 0) {
-                records = sampleAttendance;
+                records = JSON.parse(JSON.stringify(sampleAttendance));
                 localStorage.setItem('companyAttendanceLogs', JSON.stringify(records));
             }
-
-            // ضمان وجود ID فريد لكل عنصر
-            records = records.map((rec, idx) => {
-                if (!rec.id) {
-                    rec.id = 'att_rec_' + idx + '_' + Date.now();
-                }
-                return rec;
-            });
-            localStorage.setItem('companyAttendanceLogs', JSON.stringify(records));
 
             tableBody.innerHTML = '';
 
@@ -352,15 +344,19 @@
             if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف سجل الحضور هذا نهائياً؟')) {
                 let records = JSON.parse(localStorage.getItem('companyAttendanceLogs')) || [];
                 
-                // تصفية المصفوفة وإلغاء العنصر الذي يطابق المعرف تماماً
+                // استبعاد العنصر المراد حذفه
                 const updatedRecords = records.filter(item => String(item.id) !== String(recordId));
                 
-                // حفظ التحديثات في التخزين المحلي
-                localStorage.setItem('companyAttendanceLogs', JSON.stringify(updatedRecords));
+                // إذا تم حذف آخر شخص، سيصبح الطول 0، وهنا نقوم بإعادة تعبئة القائمة بالكامل تلقائياً
+                if (updatedRecords.length === 0) {
+                    localStorage.setItem('companyAttendanceLogs', JSON.stringify(sampleAttendance));
+                    alert('✅ تم حذف السجل الأخير بنجاح. نظراً لفرغة القائمة، تم إعادة تحميل جميع السجلات الأساسية تلقائياً.');
+                } else {
+                    localStorage.setItem('companyAttendanceLogs', JSON.stringify(updatedRecords));
+                    alert('✅ تم حذف سجل الحضور بنجاح.');
+                }
                 
-                alert('✅ تم حذف سجل الحضور بنجاح.');
-                
-                // إعادة تحميل الجدول لتحديث العرض فوراً
+                // إعادة تحميل الجدول فوراً لتحديث العرض
                 loadAttendanceRecords();
             }
         }
