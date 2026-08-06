@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل الدخول</title>
+    <title>المراقب برو - تسجيل دخول الموظف</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,8 +13,8 @@
         }
 
         body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: #f8fafc;
+            background: linear-gradient(135deg, #1e1b4b 0%, #31103f 50%, #0f172a 100%);
+            color: #1e293b;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -22,295 +22,163 @@
             padding: 20px;
         }
 
-        .card {
+        .login-card {
             width: 100%;
-            max-width: 400px;
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 28px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-            border: 1px solid #334155;
+            max-width: 420px;
+            background: #ffffff;
+            padding: 30px 25px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
         }
 
-        h2 {
-            font-size: 20px;
-            color: #38bdf8;
-            margin-bottom: 20px;
+        .header-title {
             text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header-title h2 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0284c7;
+            margin-bottom: 5px;
+        }
+
+        .header-title p {
+            font-size: 13px;
+            color: #64748b;
         }
 
         .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
             margin-bottom: 15px;
         }
 
-        label {
-            display: block;
+        .form-group label {
             font-size: 13px;
             font-weight: 700;
-            margin-bottom: 5px;
-            color: #cbd5e1;
+            color: #475569;
         }
 
-        input {
-            width: 100%;
-            padding: 12px;
+        .form-group input {
+            padding: 12px 14px;
+            border: 2px solid #cbd5e1;
             border-radius: 12px;
-            border: 1px solid #475569;
-            background: #0f172a;
-            color: #fff;
             font-size: 14px;
             outline: none;
-        }
-
-        input:focus {
-            border-color: #38bdf8;
-        }
-
-        /* قسم بصمة الوجه الحية */
-        .face-login-section {
-            background: #0f172a;
-            border: 1px dashed #475569;
-            padding: 12px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        .camera-box {
-            width: 100%;
-            height: 140px;
-            background: #1e293b;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        video, canvas {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-        }
-
-        .camera-placeholder {
-            color: #64748b;
-            font-size: 12px;
-        }
-
-        .btn-cam {
-            background: #334155;
-            color: #f8fafc;
-            border: 1px solid #475569;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .btn-cam:hover {
-            background: #475569;
-        }
-
-        .gps-badge {
-            font-size: 11px;
-            color: #38bdf8;
-            background: #0f172a;
-            padding: 6px 10px;
-            border-radius: 8px;
-            border: 1px solid #334155;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 15px;
-            cursor: pointer;
-            border: none;
-            background: #0284c7;
-            color: #fff;
-            margin-top: 5px;
             transition: 0.2s;
+            width: 100%;
         }
 
-        .btn:hover {
-            background: #0369a1;
+        .form-group input:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
         }
 
-        .back-link {
-            text-align: center;
-            margin-top: 15px;
+        .btn-submit {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #fff;
+            border: none;
+            padding: 13px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+            transition: 0.2s;
+            margin-top: 10px;
         }
 
-        .back-link a {
-            color: #38bdf8;
-            text-decoration: none;
+        .btn-submit:hover {
+            opacity: 0.95;
+        }
+
+        .links-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
             font-size: 13px;
         }
 
-        #toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 10px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .links-container a {
+            color: #0284c7;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .links-container a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>🔐 تسجيل الدخول</h2>
-        
-        <div class="form-group">
-            <label>اسم المستخدم أو البريد الإلكتروني:</label>
-            <input type="text" id="loginUser" placeholder="أدخل اسم المستخدم أو البريد">
+    <div class="login-card">
+        <div class="header-title">
+            <h2>🔐 تسـجيل دخول الموظف</h2>
+            <p>المراقب برو - تطبيق الهاتف المحلي</p>
         </div>
 
-        <div class="form-group">
-            <label>كلمة المرور:</label>
-            <input type="password" id="loginPass" placeholder="أدخل كلمة المرور">
-        </div>
-
-        <!-- بصمة الوجه الحية -->
-        <div class="face-login-section">
-            <label style="margin-bottom: 6px; font-size: 12px;">أو التحقق عبر بصمة الوجه الحية:</label>
-            <div class="camera-box">
-                <div id="camPlaceholder" class="camera-placeholder">الكاميرا مغلقة</div>
-                <video id="loginVideo" autoplay playsinline></video>
-                <canvas id="loginCanvas"></canvas>
+        <form id="loginForm" onsubmit="handleEmployeeLogin(event)">
+            <div class="form-group">
+                <label>اسم المستخدم أو رقم الهاتف:</label>
+                <input type="text" id="loginUsername" required placeholder="أدخل اسم المستخدم...">
             </div>
-            <button type="button" class="btn-cam" onclick="startLoginCamera()">📷 تفعيل الكاميرا والتحقق</button>
-        </div>
 
-        <!-- مؤشر تحديد الموقع الجغرافي الآلي -->
-        <div id="gpsIndicator" class="gps-badge">📍 جاري تحديد الموقع الجغرافي آلياً...</div>
+            <div class="form-group">
+                <label>كلمة المرور:</label>
+                <input type="password" id="loginPassword" required placeholder="••••••••">
+            </div>
 
-        <button class="btn" onclick="handleUserLogin()">دخول للنظام</button>
+            <button type="submit" class="btn-submit">تسجيل الدخول</button>
 
-        <div class="back-link">
-            <a href="welcome.html">العودة لشاشة الترحيب</a>
-        </div>
+            <div class="links-container">
+                <a href="register.html">إنشاء حساب جديد</a>
+                <a href="#" onclick="alert('يرجى مراجعة مدير النظام لإعادة تعيين كلمة المرور.')">نسيت كلمة المرور؟</a>
+            </div>
+        </form>
     </div>
 
-    <div id="toast"></div>
+    <!-- ربط ملف المزامنة والبيانات المشتركة -->
+    <script src="employees-sync.js"></script>
 
     <script>
-        let currentCoords = null;
-        let loginFaceData = null;
+        function handleEmployeeLogin(e) {
+            e.preventDefault(); // منع إعادة تحميل الصفحة الافتراضي
 
-        function showToast(message, color = '#10b981') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.style.background = color;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 4000);
-        }
+            const usernameInput = document.getElementById('loginUsername').value.trim();
+            const passwordInput = document.getElementById('loginPassword').value;
 
-        // تحديد الموقع الجغرافي آلياً فور فتح الصفحة
-        function autoGetLocation() {
-            const gpsBadge = document.getElementById('gpsIndicator');
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        currentCoords = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
-                        gpsBadge.textContent = `📍 تم تحديد الموقع: (${currentCoords.lat.toFixed(3)}, ${currentCoords.lng.toFixed(3)})`;
-                    },
-                    (error) => {
-                        gpsBadge.textContent = '⚠️ تعذر تحديد الموقع، يرجى تفعيل الـ GPS';
-                    },
-                    { enableHighAccuracy: true }
-                );
-            } else {
-                gpsBadge.textContent = 'متصفحك لا يدعم تحديد الموقع';
-            }
-        }
+            // استدعاء دالة جلب الموظفين من ملف المزامنة المشترك
+            const employees = getAllEmployees();
 
-        // تشغيل الكاميرا لبصمة الوجه عند تسجيل الدخول
-        async function startLoginCamera() {
-            const video = document.getElementById('loginVideo');
-            const placeholder = document.getElementById('camPlaceholder');
-            const canvas = document.getElementById('loginCanvas');
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-                video.srcObject = stream;
-                video.style.display = 'block';
-                placeholder.style.display = 'none';
-
-                setTimeout(() => {
-                    canvas.width = video.videoWidth || 320;
-                    canvas.height = video.videoHeight || 240;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                    loginFaceData = canvas.toDataURL('image/jpeg');
-
-                    stream.getTracks().forEach(track => track.stop());
-                    video.style.display = 'none';
-                    canvas.style.display = 'block';
-                    showToast('✅ تم التحقق من بصمة الوجه الحية بنجاح!');
-                }, 2000);
-
-            } catch (err) {
-                console.error(err);
-                showToast('❌ تعذر الوصول للكاميرا', '#ef4444');
-            }
-        }
-
-        async function handleUserLogin() {
-            const identifier = document.getElementById('loginUser').value.trim();
-            const password = document.getElementById('loginPass').value.trim();
-
-            if (!identifier && !loginFaceData) {
-                showToast('⚠️ يرجى إدخال اسم المستخدم/البريد أو استخدام بصمة الوجه', '#f59e0b');
+            if (employees.length === 0) {
+                alert('⚠️ لا توجد أي حسابات مسجلة محلياً في النظام حتى الآن. يرجى إنشاء حساب جديد أولاً.');
                 return;
             }
 
-            const loginPayload = {
-                identifier,
-                password,
-                faceData: loginFaceData,
-                location: currentCoords
-            };
+            // البحث عن الموظف بالمطابقة (اسم المستخدم أو رقم الهاتف + كلمة المرور)
+            const matchedEmployee = employees.find(emp => 
+                (emp.username === usernameInput || emp.phone === usernameInput) && emp.password === passwordInput
+            );
 
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(loginPayload)
-                });
+            if (matchedEmployee) {
+                // حفظ الجلسة الحالية للموظف
+                localStorage.setItem('activeEmployee', JSON.stringify(matchedEmployee));
+                localStorage.setItem('isEmployeeLoggedIn', 'true');
 
-                const data = await response.json().catch(() => ({}));
-
-                if (response.ok) {
-                    showToast('✅ تم تسجيل الدخول بنجاح!');
-                    setTimeout(() => { window.location.href = 'attendance.html'; }, 1200);
-                } else {
-                    // التحقق الاحتياطي من التخزين المحلي في حال وضع الأوفلاين
-                    const localUser = localStorage.getItem(`user_${identifier}`);
-                    if (localUser || loginFaceData) {
-                        showToast('✅ تم تسجيل الدخول محلياً بنجاح!');
-                        setTimeout(() => { window.location.href = 'attendance.html'; }, 1200);
-                    } else {
-                        showToast('❌ بيانات تسجيل الدخول غير صحيحة', '#ef4444');
-                    }
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                showToast('✅ تم الدخول بالوضع المحلي بنجاح');
-                setTimeout(() => { window.location.href = 'attendance.html'; }, 1200);
+                alert(`🎉 أهلاً بك يا ${matchedEmployee.name}، تم تسجيل الدخول بنجاح!`);
+                
+                // الانتقال إلى واجهة الموظف الرئيسية أو صفحة البصمة
+                // (يمكنك تغيير اسم الصفحة المستهدفة حسب اسم ملف الواجهة لديك، مثل employee-dashboard.html)
+                window.location.href = 'employee-dashboard.html'; 
+            } else {
+                alert('❌ اسم المستخدم أو كلمة المرور غير صحيحة! تأكد من البيانات المدعومة محلياً.');
             }
         }
-
-        window.onload = () => {
-            autoGetLocation();
-        };
     </script>
 </body>
 </html>
