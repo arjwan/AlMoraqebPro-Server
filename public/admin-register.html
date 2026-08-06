@@ -17,6 +17,17 @@
         label { display: block; font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 6px; }
         input, select { width: 100%; padding: 14px 16px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; background: #f8fafc; transition: 0.3s; }
         input:focus { border-color: #0284c7; background: #fff; box-shadow: 0 0 8px rgba(2, 132, 199, 0.2); }
+        
+        /* تنسيقات قسم التقاط الكاميرا وتحميل الملفات */
+        .photo-options-container { background: #f1f5f9; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; }
+        .camera-box { display: none; margin-top: 10px; text-align: center; }
+        #webcam { width: 100%; max-height: 220px; border-radius: 8px; background: #000; object-fit: cover; }
+        .btn-cam-action { background: #8b5cf6; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 8px; transition: 0.3s; }
+        .btn-cam-action:hover { background: #7c3aed; }
+        .btn-toggle-cam { background: #0ea5e9; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; }
+        .btn-toggle-cam:hover { background: #0284c7; }
+        #photoPreview { margin-top: 10px; max-width: 100px; border-radius: 8px; display: none; border: 2px solid #10b981; }
+
         .btn-submit { width: 100%; background: #10b981; color: white; font-size: 18px; font-weight: 800; padding: 16px; border: none; border-radius: 14px; cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); }
         .btn-submit:hover { background: #059669; transform: translateY(-2px); }
         .developer-card { margin-top: 35px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; text-align: center; }
@@ -78,9 +89,31 @@
                     <input type="password" id="confirmPassword" required placeholder="••••••••">
                 </div>
 
+                <!-- 9. قسم الصورة (تحميل من الملفات + التقاط بالكاميرا) -->
                 <div class="form-group full-width">
-                    <label>9. صورة مدير النظام (صورة شخصية):</label>
-                    <input type="file" id="managerPhoto" accept="image/*">
+                    <label>9. صورة مدير النظام (صورة شخصية / بصمة وجه):</label>
+                    <div class="photo-options-container">
+                        <!-- التحميل التقليدي -->
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size: 13px; color: #64748b;">اختر ملف من الجهاز:</label>
+                            <input type="file" id="managerPhoto" accept="image/*">
+                        </div>
+
+                        <div style="text-align: center; margin: 10px 0; font-weight: bold; color: #94a3b8;">أو</div>
+
+                        <!-- التقاط بالكاميرا -->
+                        <button type="button" class="btn-toggle-cam" onclick="toggleCamera()">📸 فتح الكاميرا لالتقاط الصورة</button>
+                        <div id="cameraBox" class="camera-box">
+                            <video id="webcam" autoplay muted playsinline></video>
+                            <button type="button" class="btn-cam-action" onclick="captureSnapshot()">🔘 التقاط الصورة الحالية</button>
+                            <canvas id="snapshotCanvas" style="display:none;"></canvas>
+                        </div>
+
+                        <!-- معاينة الصورة الملتقطة -->
+                        <div style="text-align: center;">
+                            <img id="photoPreview" alt="معاينة الصورة الشخصية">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -99,6 +132,50 @@
     </div>
 
     <script>
+        let capturedImageBase64 = null;
+        let mediaStream = null;
+
+        // تشغيل وإيقاف الكاميرا
+        async function toggleCamera() {
+            const box = document.getElementById('cameraBox');
+            const video = document.getElementById('webcam');
+
+            if (box.style.display === 'block') {
+                box.style.display = 'none';
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                }
+            } else {
+                try {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = mediaStream;
+                    box.style.display = 'block';
+                } catch (err) {
+                    alert('⚠️ تعذر الوصول إلى الكاميرا، تأكد من الأذونات في المتصفح.');
+                }
+            }
+        }
+
+        // التقاط الصورة من الفيديو
+        function captureSnapshot() {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('snapshotCanvas');
+            const preview = document.getElementById('photoPreview');
+
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 240;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            capturedImageBase64 = canvas.toDataURL('image/jpeg');
+            preview.src = capturedImageBase64;
+            preview.style.display = 'inline-block';
+
+            // إغلاق الكاميرا بعد الالتقاط
+            toggleCamera();
+            alert('✅ تم التقاط الصورة بنجاح!');
+        }
+
         function handleClientRegister(event) {
             event.preventDefault();
             const pass = document.getElementById('password').value;
@@ -113,7 +190,13 @@
             const compId = document.getElementById('companyId').value.trim().toUpperCase();
             const email = document.getElementById('email').value.trim().toLowerCase();
             const photoInput = document.getElementById('managerPhoto');
-            const photoName = photoInput.files.length > 0 ? photoInput.files[0].name : 'default.jpg';
+            
+            let photoData = 'default.jpg';
+            if (capturedImageBase64) {
+                photoData = capturedImageBase64; // استخدام الصورة الملتقطة بالكاميرا
+            } else if (photoInput.files.length > 0) {
+                photoData = photoInput.files[0].name; // أو اسم الملف المرفع تقليدياً
+            }
 
             try {
                 let activeCompanies = [];
@@ -137,7 +220,7 @@
                     email: email,
                     username: document.getElementById('username').value.trim(),
                     pass: pass,
-                    photo: photoName,
+                    photo: photoData,
                     status: 'active'
                 };
 
