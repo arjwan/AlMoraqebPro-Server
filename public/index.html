@@ -5,164 +5,143 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المراقب برو - تسجيل الدخول</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #ffffff; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .login-card { width: 100%; max-width: 520px; background: #ffffff; color: #1e293b; padding: 40px 30px; border-radius: 28px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); text-align: center; }
-        .login-icon { font-size: 40px; margin-bottom: 10px; }
-        h2 { font-size: 26px; font-weight: 800; color: #0284c7; margin-bottom: 8px; }
-        .subtitle { font-size: 14px; color: #64748b; margin-bottom: 20px; }
-        .info-box { background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; padding: 12px; border-radius: 12px; font-size: 13px; margin-bottom: 20px; font-weight: 600; text-align: right; }
-        .form-group { text-align: right; margin-bottom: 18px; }
-        label { display: block; font-size: 15px; font-weight: 700; color: #334155; margin-bottom: 6px; }
-        input { width: 100%; padding: 14px 16px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; background: #f8fafc; }
-        input:focus { border-color: #0284c7; background: #fff; box-shadow: 0 0 8px rgba(2, 132, 199, 0.2); }
-        
-        .btn-submit { width: 100%; background: #0284c7; color: #ffffff; font-size: 16px; font-weight: 800; padding: 14px; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; margin-top: 5px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3); }
-        .btn-submit:hover { background: #0369a1; }
-        
-        .btn-face { width: 100%; background: #10b981; color: #ffffff; font-size: 16px; font-weight: 800; padding: 14px; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
-        .btn-face:hover { background: #059669; }
-
-        /* نافذة كاميرا بصمة الوجه */
-        #faceModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: #1e293b; padding: 30px; border-radius: 20px; text-align: center; max-width: 400px; width: 90%; color: #fff; border: 1px solid #334155; }
-        video { width: 100%; max-height: 250px; border-radius: 12px; background: #000; margin-bottom: 15px; transform: scaleX(-1); }
-        .btn-capture { background: #38bdf8; color: #0f172a; font-weight: bold; padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; width: 100%; }
-        .btn-capture:hover { background: #0ea5e9; }
-        .close-modal { margin-top: 10px; background: transparent; color: #94a3b8; border: none; cursor: pointer; font-size: 14px; }
-
-        .back-link { display: inline-block; margin-top: 20px; color: #0284c7; text-decoration: none; font-size: 15px; font-weight: 700; }
-        .back-link:hover { text-decoration: underline; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+        }
+        .login-card {
+            background: #ffffff;
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 440px;
+            width: 100%;
+        }
+        .icon {
+            font-size: 38px;
+            margin-bottom: 5px;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            text-align: right;
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            border-color: #3498db;
+        }
+        .btn-submit {
+            width: 100%;
+            background: #3498db;
+            color: white;
+            padding: 11px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.3s;
+        }
+        .btn-submit:hover {
+            background: #2980b9;
+        }
+        .btn-face {
+            width: 100%;
+            background: #27ae60;
+            color: white;
+            padding: 11px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.3s;
+        }
+        .btn-face:hover {
+            background: #219653;
+        }
+        .developer-info {
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            font-size: 12px;
+            color: #555;
+        }
+        .developer-info p {
+            margin: 3px 0;
+        }
+        .developer-name {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
 
     <div class="login-card">
-        <div class="login-icon">🔑</div>
+        <div class="icon">🔑</div>
         <h2>تسجيل الدخول</h2>
-        <p class="subtitle">أدخل بيانات شركتك أو استخدم بصمة الوجه السريعة</p>
+        <div class="subtitle">أدخل بيانات شركتك، أو استخدم بصمة الوجه السريعة</div>
 
-        <div class="info-box">
-            💡 <b>معلومات الدخول:</b><br>
-            - الحساب العام: <b>admin</b> | كلمة المرور: <b>admin123</b><br>
-            - أو استخدم اسم المستخدم وكلمة المرور، أو <b>بصمة الوجه</b>.
-        </div>
-
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <form action="/api/auth/login" method="POST">
             <div class="form-group">
-                <label>معرف الشركة، اسم المستخدم، أو الإيميل:</label>
-                <input type="text" id="username" placeholder="أدخل بيانات الدخول...">
+                <label for="username">معرف الشركة، اسم المستخدم، أو الإيميل:</label>
+                <input type="text" id="username" name="username" required placeholder="أدخل بيانات الدخول...">
             </div>
 
             <div class="form-group">
-                <label>كلمة المرور:</label>
-                <input type="password" id="password" placeholder="أدخل كلمة المرور...">
+                <label for="password">كلمة المرور:</label>
+                <input type="password" id="password" name="password" required placeholder="أدخل كلمة المرور...">
             </div>
 
-            <button type="submit" class="btn-submit" id="submitBtn">🚀 دخول بكلمة المرور</button>
-            <button type="button" class="btn-face" onclick="openFaceScanner()">📸 تسجيل الدخول ببصمة الوجه</button>
+            <button type="submit" class="btn-submit">🚀 دخول بكلمة المرور</button>
+            <button type="button" class="btn-face" onclick="alert('خاصية بصمة الوجه قيد التشغيل...')">📸 تسجيل الدخول ببصمة الوجه</button>
         </form>
 
-        <a href="admin-register.html" class="back-link">← ليس لديك حساب؟ تسجيل شركة جديدة</a>
-    </div>
-
-    <!-- نافذة الكاميرا لالتقاط الوجه -->
-    <div id="faceModal">
-        <div class="modal-content">
-            <h3>📷 بصمة الوجه الذكية</h3>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">انظر إلى الكاميرا ليتم التعرف على وجهك وتسجيل الدخول تلقائياً</p>
-            <video id="videoElement" autoplay playsinline></video>
-            <button class="btn-capture" onclick="captureAndVerifyFace()">التقاط وتحقق</button>
-            <br>
-            <button class="close-modal" onclick="closeFaceScanner()">إلغاء وإغلاق</button>
+        <!-- معلومات المطور والشركة -->
+        <div class="developer-info">
+            <p class="developer-name">شركة الأرجوان للبرمجيات</p>
+            <p>المطور: محمد العبيدي</p>
+            <p>واتساب: <span dir="ltr">07807807491</span></p>
+            <p>الإيميل: <span dir="ltr">mohmmed1628@gmail.com</span></p>
         </div>
     </div>
 
-    <script>
-        let mediaStream = null;
-
-        function handleLogin(event) {
-            event.preventDefault();
-            const usernameInput = document.getElementById('username').value.trim();
-            const passwordInput = document.getElementById('password').value.trim();
-            
-            if(!usernameInput || !passwordInput) {
-                alert('⚠️ يرجى إدخال اسم المستخدم وكلمة المرور أولاً.');
-                return;
-            }
-
-            if (usernameInput === 'admin' && passwordInput === 'admin123') {
-                loginSuccess('default_company');
-                return;
-            }
-
-            const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            const foundCompany = companiesList.find(c => 
-                (c.id === usernameInput || c.company_id === usernameInput || c.username === usernameInput) &&
-                (c.password === passwordInput)
-            );
-
-            if (foundCompany) {
-                if (foundCompany.status === 'stopped') {
-                    alert('⚠️ عذراً، هذه الشركة متوقفة مؤقته من قبل الإدارة.');
-                    return;
-                }
-                loginSuccess(foundCompany.id || foundCompany.company_id);
-            } else {
-                alert('⚠️ بيانات الدخول غير صحيحة!');
-            }
-        }
-
-        function loginSuccess(companyId) {
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('activeCompanyId', companyId);
-            window.location.href = `admin.html?company=${encodeURIComponent(companyId)}`;
-        }
-
-        // فتح الكاميرا لبصمة الوجه
-        async function openFaceScanner() {
-            const modal = document.getElementById('faceModal');
-            const video = document.getElementById('videoElement');
-            modal.style.display = 'flex';
-
-            try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = mediaStream;
-            } catch (err) {
-                console.error("Camera error:", err);
-                alert('❌ تعذر الوصول إلى كاميرا الويب. يرجى السماح بالصلاحيات.');
-                closeFaceScanner();
-            }
-        }
-
-        function closeFaceScanner() {
-            const modal = document.getElementById('faceModal');
-            modal.style.display = 'none';
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => track.stop());
-                mediaStream = null;
-            }
-        }
-
-        // التحقق من بصمة الوجه (محاكاة ذكية للتعرف البصري أو السماح بأول حساب مسجل كمدير)
-        function captureAndVerifyFace() {
-            const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            
-            if (companiesList.length > 0) {
-                // الدخول تلقائياً لأول شركة مسجلة كمثال حي لبصمة الوجه الناجحة
-                const targetCompany = companiesList[0];
-                const companyId = targetCompany.id || targetCompany.company_id;
-                
-                alert('✅ تم التعرف على الوجه بنجاح! أهلاً بك.');
-                closeFaceScanner();
-                loginSuccess(companyId);
-            } else {
-                // إذا لم تكن هناك شركات، يتم الدخول بحساب الـ admin
-                alert('✅ تم التعرف على الوجه بنجاح (حساب المدير العام)!');
-                closeFaceScanner();
-                loginSuccess('default_company');
-            }
-        }
-    </script>
 </body>
 </html>
