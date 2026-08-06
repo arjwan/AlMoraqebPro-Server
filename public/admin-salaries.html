@@ -60,7 +60,6 @@
             color: #fff;
         }
 
-        /* شريط الأدوات والبحث والطباعة */
         .toolbar-panel {
             display: flex;
             justify-content: space-between;
@@ -231,7 +230,6 @@
             <a href="admin.html" class="back-btn">← العودة إلى لوحة التحكم</a>
         </div>
 
-        <!-- شريط الأدوات والبحث والطباعة -->
         <div class="toolbar-panel">
             <div class="search-box">
                 <input type="text" id="globalSearch" placeholder="🔍 ابحث باسم الموظف، العنوان الوظيفي، أو الفرع..." onkeyup="loadPayrollData()">
@@ -283,7 +281,7 @@
     <script>
         const initialPayrollData = [
             {
-                id: "emp_1",
+                id: "sal_1",
                 name: "أحمد محمد علي",
                 jobTitle: "مطور أنظمة ومسؤول قاعدة بيانات",
                 workplace: "المقر الرئيسي",
@@ -300,7 +298,7 @@
                 socialSecurityDeduct: 35000
             },
             {
-                id: "emp_2",
+                id: "sal_2",
                 name: "محمد عبد علي",
                 jobTitle: "مختص شبكات ودعم فني",
                 workplace: "فرع البصرة",
@@ -317,7 +315,7 @@
                 socialSecurityDeduct: 0
             },
             {
-                id: "emp_3",
+                id: "sal_3",
                 name: "علي الزيدي",
                 jobTitle: "مشرف أمن ومراقبة ميدانية",
                 workplace: "المخزن الرئيسي",
@@ -342,11 +340,12 @@
 
             let records = JSON.parse(localStorage.getItem('companyPayrollRecords')) || initialPayrollData;
             
-            // التأكد من وجود معرفات فريدة للسجلات القديمة
+            // التأكد من توفر معرفات فريدة لكل سجل
             records = records.map((rec, idx) => {
-                if (!rec.id) rec.id = 'rec_' + idx + '_' + Date.now();
+                if (!rec.id) rec.id = 'sal_rec_' + idx + '_' + Date.now();
                 return rec;
             });
+            localStorage.setItem('companyPayrollRecords', JSON.stringify(records));
 
             tableBody.innerHTML = '';
 
@@ -373,18 +372,15 @@
                     rec.baseSalary + rec.allowances + rec.rewards + overtimeBonus - (rec.loanDeduct + socialDeduct + absenceDeduction)
                 );
 
-                // البحث عن الموقع الحقيقي للسجل داخل المصفوفة العامة بناءً على معرفه الفريد لضمان دقة التعديل والحذف
-                const globalIndex = records.findIndex(r => r.id === rec.id);
-
                 tableBody.innerHTML += `
                     <tr>
                         <td><b>${index + 1}</b></td>
                         <td style="font-weight: 700; color: #0f172a;">${rec.name}</td>
-                        <td><input type="text" class="editable-input" style="width:140px;" value="${rec.jobTitle}" onchange="updateField(${globalIndex}, 'jobTitle', this.value)"></td>
+                        <td><input type="text" class="editable-input" style="width:140px;" value="${rec.jobTitle}" onchange="updateField('${rec.id}', 'jobTitle', this.value)"></td>
                         <td>${rec.workplace}</td>
                         <td><span class="badge-shift">${rec.shiftName}</span></td>
                         <td>
-                            <select class="editable-select" style="width:110px;" onchange="updateField(${globalIndex}, 'socialSecurityStatus', this.value)">
+                            <select class="editable-select" style="width:110px;" onchange="updateField('${rec.id}', 'socialSecurityStatus', this.value)">
                                 <option value="مسجل" ${rec.socialSecurityStatus === 'مسجل' ? 'selected' : ''}>مسجل</option>
                                 <option value="غير مسجل" ${rec.socialSecurityStatus === 'غير مسجل' ? 'selected' : ''}>غير مسجل</option>
                             </select>
@@ -392,12 +388,12 @@
                         <td><span style="color: #16a34a; font-weight: bold;">${rec.completeDays} يوم</span></td>
                         <td><span style="color: #dc2626; font-weight: bold;">${rec.missingDays} يوم</span></td>
                         <td><span style="color: #b45309; font-weight: bold; font-size: 11px;">${rec.overtime}</span></td>
-                        <td><input type="number" class="editable-input" value="${rec.baseSalary}" onchange="updateField(${globalIndex}, 'baseSalary', this.value)"></td>
-                        <td><input type="number" class="editable-input" value="${rec.allowances}" onchange="updateField(${globalIndex}, 'allowances', this.value)"></td>
-                        <td><input type="number" class="editable-input" value="${rec.rewards}" onchange="updateField(${globalIndex}, 'rewards', this.value)"></td>
+                        <td><input type="number" class="editable-input" value="${rec.baseSalary}" onchange="updateField('${rec.id}', 'baseSalary', this.value)"></td>
+                        <td><input type="number" class="editable-input" value="${rec.allowances}" onchange="updateField('${rec.id}', 'allowances', this.value)"></td>
+                        <td><input type="number" class="editable-input" value="${rec.rewards}" onchange="updateField('${rec.id}', 'rewards', this.value)"></td>
                         <td style="color: #0284c7; font-weight: bold;">${rec.loanAmount.toLocaleString()} د.ع</td>
-                        <td><input type="number" class="editable-input" value="${rec.loanDeduct}" onchange="updateField(${globalIndex}, 'loanDeduct', this.value)"></td>
-                        <td><input type="number" class="editable-input" value="${rec.socialSecurityDeduct}" onchange="updateField(${globalIndex}, 'socialSecurityDeduct', this.value)"></td>
+                        <td><input type="number" class="editable-input" value="${rec.loanDeduct}" onchange="updateField('${rec.id}', 'loanDeduct', this.value)"></td>
+                        <td><input type="number" class="editable-input" value="${rec.socialSecurityDeduct}" onchange="updateField('${rec.id}', 'socialSecurityDeduct', this.value)"></td>
                         <td style="color: #dc2626; font-weight: bold;">- ${absenceDeduction.toLocaleString()} د.ع</td>
                         <td><span class="badge-net">${netSalary.toLocaleString()} د.ع</span></td>
                         <td>
@@ -409,27 +405,31 @@
             });
         }
 
-        function updateField(index, field, value) {
+        function updateField(recordId, field, value) {
             let records = JSON.parse(localStorage.getItem('companyPayrollRecords')) || initialPayrollData;
-            if (field === 'baseSalary' || field === 'allowances' || field === 'rewards' || field === 'loanDeduct' || field === 'socialSecurityDeduct') {
-                records[index][field] = parseFloat(value) || 0;
-            } else {
-                records[index][field] = value;
+            const record = records.find(r => r.id === recordId);
+            if (record) {
+                if (['baseSalary', 'allowances', 'rewards', 'loanDeduct', 'socialSecurityDeduct'].includes(field)) {
+                    record[field] = parseFloat(value) || 0;
+                } else {
+                    record[field] = value;
+                }
+                localStorage.setItem('companyPayrollRecords', JSON.stringify(records));
+                loadPayrollData();
             }
-            localStorage.setItem('companyPayrollRecords', JSON.stringify(records));
         }
 
         function deleteSalaryRecord(recordId) {
             if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف سجل الراتب هذا نهائياً؟')) {
                 let records = JSON.parse(localStorage.getItem('companyPayrollRecords')) || initialPayrollData;
                 
-                // تصفية السجلات وإزالة السجل المطابق للمعرف
+                // تصفية السجلات وإلغاء السجل المطابق للمعرف الفريد
                 records = records.filter(item => item.id !== recordId);
                 
                 localStorage.setItem('companyPayrollRecords', JSON.stringify(records));
                 
                 alert('✅ تم حذف السجل بنجاح.');
-                loadPayrollData(); // تحديث الجدول فوراً بدون إعادة تحميل كاملة للصفحة
+                loadPayrollData(); // تحديث الجدول فوراً
             }
         }
 
