@@ -152,6 +152,9 @@
 
     <div id="toast-notification"></div>
 
+    <!-- ملف المزامنة والربط المشترك -->
+    <script src="employees-sync.js"></script>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         let companyId = urlParams.get('company');
@@ -171,8 +174,24 @@
             setTimeout(() => { toast.className = ''; }, 4000);
         }
 
+        // دالة تحديث وعرض بيانات الموظفين والطلبات والاشعارات تلقائياً في صفحة المدير
+        function loadAdminDashboardData() {
+            const employees = getAllEmployees();
+            const requests = JSON.parse(localStorage.getItem('companyRequests')) || [];
+            const notifications = JSON.parse(localStorage.getItem('companyNotifications')) || [];
+
+            console.log("عدد الموظفين المرتبطين حالياً:", employees.length);
+            console.log("الطلبات المعلقة:", requests.length);
+            console.log("الإشعارات الجديدة:", notifications.length);
+            
+            // يمكنك هنا ربط العناصر بعناصر الـ HTML الخاصة بجدول المدير لتحديثها فوراً
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             const titleSpan = document.getElementById('company-title-display');
+
+            // تشغيل دالة جلب بيانات الموظفين والإشعارات والطلبات
+            loadAdminDashboardData();
 
             if (companyId) {
                 localStorage.setItem('activeCompanyId', companyId);
@@ -240,7 +259,7 @@
             }
         }
 
-        // زر مستقل لإنشاء وحفظ النسخة الاحتياطية (يمكنك اختيار مجلد المستندات عند ظهور نافذة الحفظ)
+        // زر مستقل لإنشاء وحفظ النسخة الاحتياطية
         function takeSystemBackup() {
             try {
                 const currentCompId = companyId || 'default_company';
@@ -267,7 +286,7 @@
             }
         }
 
-        // زر استعادة البيانات الحقيقي
+        // زر استعادة البيانات
         function restoreSystemData(event) {
             const file = event.target.files[0];
             if (!file) return;
