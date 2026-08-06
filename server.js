@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { pool, initDB } = require('./database'); // استدعاء الاتصال والجداول من ملف database.js
+const { pool, initDB } = require('./database'); // استدعاء ملف قاعدة البيانات
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,8 +9,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
-// تشغيل تهيئة قاعدة البيانات عند إقلاع السيرفر
+// تشغيل تهيئة قاعدة البيانات عند بدء التشغيل
 initDB();
+
+// توجيه الصفحة الرئيسية مباشرة إلى صفحة التسجيل (registr.html)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'registr.html'));
+});
 
 // 1. مسار جلب أو إنشاء معلومات الشركة
 app.get('/api/companies/info', async (req, res) => {
@@ -27,7 +32,7 @@ app.get('/api/companies/info', async (req, res) => {
     }
 });
 
-// 2. مسار تسجيل موظف جديد وحفظه في PostgreSQL
+// 2. مسار تسجيل موظف جديد
 app.post('/api/employees/register', async (req, res) => {
     const { companyId, name, username, phone, password } = req.body;
     try {
