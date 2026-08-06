@@ -3,155 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل الحضور والانصراف</title>
+    <title>المراقب برو - بصمة الحضور والانصراف</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .card { width: 100%; max-width: 420px; background: #1e293b; padding: 30px; border-radius: 28px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6); border: 1px solid #334155; text-align: center; }
-        h2 { font-size: 20px; color: #38bdf8; margin-bottom: 20px; }
         
-        .camera-container { width: 100%; height: 240px; background: #0f172a; border-radius: 16px; overflow: hidden; position: relative; margin-bottom: 20px; border: 2px dashed #475569; display: flex; justify-content: center; align-items: center; }
-        video { width: 100%; height: 100%; object-fit: cover; display: none; }
-        .camera-placeholder { color: #64748b; font-size: 14px; }
+        .card { background: #1e293b; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 100%; max-width: 420px; text-align: center; border: 1px solid #334155; }
+        h2 { color: #38bdf8; font-size: 22px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .subtitle { color: #94a3b8; font-size: 13px; margin-bottom: 25px; }
 
-        .status-box { background: #0f172a; padding: 12px; border-radius: 12px; font-size: 13px; color: #cbd5e1; margin-bottom: 20px; border: 1px solid #334155; text-align: right; }
-        .status-box span { display: block; font-weight: bold; color: #38bdf8; margin-bottom: 4px; }
+        .time-box { background: #0f172a; border: 1px solid #334155; padding: 15px; border-radius: 14px; font-size: 26px; font-weight: bold; color: #f8fafc; margin-bottom: 25px; letter-spacing: 1px; }
 
-        .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        .btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; color: #fff; }
-        .btn-checkin { background: #10b981; }
+        .btn { width: 100%; padding: 14px; border-radius: 14px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-checkin { background: #10b981; color: white; }
         .btn-checkin:hover { background: #059669; }
-        .btn-checkout { background: #ef4444; }
+        .btn-checkout { background: #ef4444; color: white; }
         .btn-checkout:hover { background: #dc2626; }
+        
+        /* زر الانتقال لصفحة الخدمات الجديد */
+        .btn-services { background: #0ea5e9; color: white; margin-top: 10px; }
+        .btn-services:hover { background: #0284c7; }
 
-        .btn-cam { width: 100%; background: #334155; color: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #475569; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
-        .btn-cam:hover { background: #475569; }
-
-        .back-link a { color: #38bdf8; text-decoration: none; font-size: 13px; }
-
-        #toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 10px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        #alertBox { margin-top: 15px; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: bold; display: none; }
+        .alert-success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>📍 بصمة الحضور والانصراف</h2>
+        <h2>⏱️ بصمة الحضور والانصراف</h2>
+        <p class="subtitle" id="companySubtitle">سجل وقت عملك اليومي بكل سهولة</p>
 
-        <div class="camera-container">
-            <div id="placeholder" class="camera-placeholder">الكاميرا متوقفة - اضغط تشغيل الكاميرا</div>
-            <video id="videoFeed" autoplay playsinline></video>
-        </div>
+        <div class="time-box" id="liveClock">00:00:00</div>
 
-        <button class="btn-cam" onclick="startCamera()">📷 تشغيل الكاميرا للتعرف</button>
+        <button class="btn btn-checkin" onclick="registerAttendance('تسجيل حضور')">
+            🟢 تسجيل حضور
+        </button>
+        
+        <button class="btn btn-checkout" onclick="registerAttendance('تسجيل انصراف')">
+            🔴 تسجيل انصراف
+        </button>
 
-        <div class="status-box">
-            <span>📍 حالة الموقع الجغرافي (GPS):</span>
-            <div id="gpsStatus">جاري تحديد الموقع...</div>
-        </div>
+        <!-- زر الانتقال لصفحة الخدمات والطلبات المطلوبة -->
+        <button class="btn btn-services" onclick="window.location.href='services.html'">
+            🗂️ الانتقال إلى صفحة الخدمات والطلبات
+        </button>
 
-        <div class="btn-group">
-            <button class="btn btn-checkin" onclick="submitAttendance('check-in')">تسجيل حضور</button>
-            <button class="btn btn-checkout" onclick="submitAttendance('check-out')">تسجيل انصراف</button>
-        </div>
-
-        <div class="back-link">
-            <a href="login.html">تسجيل الخروج</a>
-        </div>
+        <div id="alertBox"></div>
     </div>
 
-    <div id="toast"></div>
-
     <script>
-        let currentCoords = null;
+        // تحديث الساعة الحية
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('liveClock').textContent = now.toLocaleTimeString();
+        }, 1000);
 
-        function showToast(message, color = '#10b981') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.style.background = color;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 4000);
-        }
+        const currentEmployee = localStorage.getItem('activeEmployee') || 'موظف تجريبي';
+        const currentCompany = localStorage.getItem('activeCompanyId') || 'default_company';
 
-        // تشغيل الكاميرا الفورية للموظف
-        async function startCamera() {
-            const video = document.getElementById('videoFeed');
-            const placeholder = document.getElementById('placeholder');
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-                video.srcObject = stream;
-                video.style.display = 'block';
-                placeholder.style.display = 'none';
-                showToast('✅ تم تشغيل الكاميرا بنجاح');
-            } catch (err) {
-                console.error(err);
-                showToast('❌ تعذر الوصول إلى الكاميرا', '#ef4444');
-            }
-        }
+        document.getElementById('companySubtitle').textContent = `الموظف: ${currentEmployee} | الشركة المرتبطة`;
 
-        // جلب الإحداثيات الجغرافية الحقيقية للموظف
-        function getGeolocation() {
-            const gpsDiv = document.getElementById('gpsStatus');
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        currentCoords = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
-                        gpsDiv.textContent = `خط العرض: ${currentCoords.lat.toFixed(4)} | خط الطول: ${currentCoords.lng.toFixed(4)}`;
-                    },
-                    (error) => {
-                        gpsDiv.textContent = '⚠️ فشل جلب الموقع، يرجى تفعيل الـ GPS';
-                        showToast('⚠️ يرجى السماح بالوصول للموقع الجغرافي', '#f59e0b');
-                    },
-                    { enableHighAccuracy: true }
-                );
-            } else {
-                gpsDiv.textContent = 'متصفحك لا يدعم تحديد الموقع الجغرافي';
-            }
-        }
-
-        // إرسال طلب تسجيل الحضور أو الانصراف للسيرفر
-        async function submitAttendance(type) {
-            if (!currentCoords) {
-                showToast('⚠️ يرجى الانتظار لحين تحديد الموقع الجغرافي', '#f59e0b');
-                getGeolocation();
-                return;
-            }
-
-            const attendanceData = {
-                type: type, // 'check-in' أو 'check-out'
-                timestamp: new Date().toISOString(),
-                location: currentCoords
+        // تسجيل الحضور والانصراف وتخزينه مع إشعار فوري
+        function registerAttendance(type) {
+            const nowTime = new Date().toLocaleString('ar-EG');
+            
+            const attendanceRecord = {
+                id: 'ATT_' + Date.now(),
+                companyId: currentCompany,
+                employeeName: currentEmployee,
+                type: type,
+                timestamp: nowTime
             };
 
-            try {
-                const response = await fetch('/api/attendance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(attendanceData)
-                });
+            // حفظ السجل محلياً وإرساله لسجل حركات النظام للمدير
+            const logs = JSON.parse(localStorage.getItem(`system_logs_${currentCompany}`)) || [];
+            logs.unshift({
+                type: type,
+                details: `قام الموظف (${currentEmployee}) بعملية ${type} بنجاح`,
+                user: currentEmployee,
+                timestamp: nowTime
+            });
+            localStorage.setItem(`system_logs_${currentCompany}`, JSON.stringify(logs));
 
-                if (response.ok) {
-                    const actionName = type === 'check-in' ? 'الحضور' : 'الانصراف';
-                    showToast(`✅ تم تسجيل ${actionName} بنجاح!`);
-                } else {
-                    showToast('❌ فشل تسجيل العملية، أنت خارج النطاق المسموح', '#ef4444');
-                }
-            } catch (err) {
-                console.error(err);
-                // تخزين مؤقت محلياً في حال انقطاع الشبكة
-                const offlineLogs = JSON.parse(localStorage.getItem('offline_attendance')) || [];
-                offlineLogs.push(attendanceData);
-                localStorage.setItem('offline_attendance', JSON.stringify(offlineLogs));
-                showToast('⚠️ تم الحفظ محلياً لعدم توفر الاتصال', '#f59e0b');
-            }
+            // إظهار الإشعار الفوري للموظف
+            const alertBox = document.getElementById('alertBox');
+            alertBox.style.display = 'block';
+            alertBox.className = 'alert-success';
+            alertBox.textContent = `✅ تم بنجاح (${type}) في تمام الساعة: ${nowTime}`;
+
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 4000);
         }
-
-        // جلب الموقع فور فتح الصفحة
-        window.onload = () => {
-            getGeolocation();
-        };
     </script>
 </body>
 </html>
