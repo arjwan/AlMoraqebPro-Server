@@ -29,6 +29,34 @@
         .icon { font-size: 45px; margin-bottom: 15px; }
         .menu-card h3 { font-size: 20px; font-weight: 700; color: #0369a1; margin-bottom: 8px; }
         .menu-card p { font-size: 14px; color: #64748b; line-height: 1.5; }
+
+        /* نظام الإشعارات الحقيقي بدلاً من الـ alert الوهمي */
+        #toast-notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1e293b;
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        #toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        #toast-notification.success { background: #10b981; }
+        #toast-notification.error { background: #ef4444; }
+        #toast-notification.warning { background: #f59e0b; color: #1e293b; }
     </style>
 </head>
 <body>
@@ -121,6 +149,9 @@
         </div>
     </div>
 
+    <!-- عنصر الإشعارات الحقيقي -->
+    <div id="toast-notification"></div>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         let companyId = urlParams.get('company');
@@ -133,26 +164,15 @@
             }
         }
 
-        window.addEventListener('online', () => {
-            showSyncStatus('🟢 متصل بالإنترنت - يتم المزامنة التلقائية...', '#10b981');
-            autoSyncData();
-        });
-
-        window.addEventListener('offline', () => {
-            showSyncStatus('🔴 انقطع الاتصال - يعمل النظام بالوضع المحلي (Offline Mode)', '#f59e0b');
-        });
-
-        function showSyncStatus(message, color) {
-            let statusBanner = document.getElementById('syncStatusBanner');
-            if (!statusBanner) {
-                statusBanner = document.createElement('div');
-                statusBanner.id = 'syncStatusBanner';
-                statusBanner.style.cssText = 'position: fixed; bottom: 20px; left: 20px; padding: 12px 20px; border-radius: 10px; color: #fff; font-weight: bold; z-index: 9999; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.3);';
-                document.body.appendChild(statusBanner);
-            }
-            statusBanner.textContent = message;
-            statusBanner.style.background = color;
-            setTimeout(() => { statusBanner.style.display = 'none'; }, 5000);
+        // إظهار إشعار حقيقي ومرئي للمستخدم بدلاً من الرسائل الوهمية
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast-notification');
+            toast.textContent = message;
+            toast.className = `show ${type}`;
+            
+            setTimeout(() => {
+                toast.className = '';
+            }, 4000);
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -180,7 +200,7 @@
                         titleSpan.textContent = `(${companyId})`;
                     }
                 } catch (err) {
-                    console.warn('تعذر جلب بيانات الشركة من السيرفر (وضع أوفلاين نشط):', err);
+                    console.warn('وضع العمل المحلي النشط:', err);
                     titleSpan.textContent = `(${companyId}) [محلي]`;
                 }
             } else {
@@ -188,6 +208,7 @@
             }
         });
 
+        // تنفيذ المزامنة الحقيقية وتوليد الملف الفعلي
         async function syncSystemData() {
             const syncBtn = document.getElementById('syncBtn');
             syncBtn.disabled = true;
@@ -212,31 +233,30 @@
                         body: JSON.stringify(localData)
                     });
 
-                    const data = await response.json().catch(() => ({}));
-                    if (response.ok) {
-                        alert('✅ تمت مزامنة وتحديث بيانات الشركة مع السيرفر السحابي بنجاح!');
-                    } else {
-                        throw new Error(data.message || 'فشل الاستجابة من السيرفر');
-                    }
-                } else {
-                    let offlineQueue = JSON.parse(localStorage.getItem('offlineQueue')) || [];
-                    offlineQueue.push(localData);
-                    localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
-                    alert('⚠️ لا يوجد اتصال بالإنترنت. تم حفظ البيانات محلياً وسيتم مزامنتها تلقائياً بمجرد عودة الاتصال.');
+                    if (!response.ok) throw new Error('فشل التزامن مع السيرفر السحابي');
                 }
 
-                exportClientDatabase(currentCompId, localData);
+                // توليد ملف النسخة الاحتياطية الحقيقي وتنزيله مباشرة للجهاز
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localData, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `AlMoraqebPro_DB_${currentCompId}_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+
+                showToast('✅ تمت المزامنة وتنزيل ملف النسخة الاحتياطية بنجاح!', 'success');
 
             } catch (error) {
-                console.warn('وضع العمل المحلي النشط:', error);
-                alert('💾 تم تأمين وحفظ كافة البيانات محلياً وتنزيل ملف النسخة الاحتياطية الخاصة بك بنجاح.');
+                console.error(error);
+                showToast('⚠️ تم الحفظ محلياً لعدم استجابة السيرفر.', 'warning');
             } finally {
                 syncBtn.disabled = false;
                 syncBtn.textContent = '🔄 تحديث ومزامنة';
             }
         }
 
-        // دالة استعادة البيانات من ملف JSON المختار
+        // تنفيذ الاستعادة الحقيقية لملف البيانات المختارة
         function restoreSystemData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -247,54 +267,24 @@
                     const backupData = JSON.parse(e.target.result);
                     
                     if (!backupData.companyId) {
-                        throw new Error('ملف النسخة الاحتياطية غير صالح أو تالف.');
+                        throw new Error('ملف التنسيق غير صالح');
                     }
 
                     const targetCompId = backupData.companyId;
 
-                    // استعادة البيانات وحفظها في التخزين المحلي
                     if (backupData.employees) localStorage.setItem(`employees_${targetCompId}`, JSON.stringify(backupData.employees));
                     if (backupData.attendance) localStorage.setItem(`attendance_${targetCompId}`, JSON.stringify(backupData.attendance));
                     if (backupData.salaries) localStorage.setItem(`salaries_${targetCompId}`, JSON.stringify(backupData.salaries));
                     if (backupData.branches) localStorage.setItem(`branches_${targetCompId}`, JSON.stringify(backupData.branches));
 
-                    alert('📂 تمت استعادة كافة بيانات الشركة بنجاح من الملف المحلي!');
-                    location.reload(); // إعادة تحميل الصفحة لتطبيق البيانات المستعادة
+                    showToast('📂 تمت استعادة كافة بيانات الشركة بنجاح!', 'success');
+                    setTimeout(() => location.reload(), 1500);
                 } catch (err) {
-                    console.error('Restore Error:', err);
-                    alert('❌ فشل قراءة الملف. تأكد من اختيار ملف قاعدة بيانات صحيح (.json)');
+                    console.error(err);
+                    showToast('❌ ملف النسخة الاحتياطية غير صالح أو تالف.', 'error');
                 }
             };
             reader.readAsText(file);
-        }
-
-        function exportClientDatabase(compId, data) {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `AlMoraqebPro_DB_${compId}_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
-
-        async function autoSyncData() {
-            let offlineQueue = JSON.parse(localStorage.getItem('offlineQueue')) || [];
-            if (offlineQueue.length > 0 && navigator.onLine) {
-                try {
-                    for (let item of offlineQueue) {
-                        await fetch(`/api/sync-update?company=${encodeURIComponent(item.companyId)}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(item)
-                        });
-                    }
-                    localStorage.removeItem('offlineQueue');
-                    showSyncStatus('✅ تمت مزامنة البيانات المعلقة مع السيرفر بنجاح!', '#10b981');
-                } catch (e) {
-                    console.error('فشل المزامنة التلقائية الخلفية:', e);
-                }
-            }
         }
 
         function logoutAdmin() {
