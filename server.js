@@ -5,8 +5,8 @@ const { pool, initDB } = require('./database'); // استدعاء قاعدة ا�
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // زيادة الحد المسموح لقبول صور الـ Base64 الكبيرة
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // تشغيل تهيئة قاعدة البيانات عند بدء التشغيل
@@ -17,32 +17,31 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 1. مسار المطور (صفحة التسجيل): إنشاء شركة جديدة وتوليد رمز خاص بها مع حساب المدير
+// 1. مسار تسجيل شركة جديدة من واجهة المتصفح (المتطابق مع صفحة التسجيل الجديدة)
 app.post('/api/developer/register-company', async (req, res) => {
-    const { companyName, adminUsername, adminPassword } = req.body;
+    const { companyId, companyName, manager, phone, email, username, password, photo } = req.body;
     try {
-        // توليد رمز فريد ومميز للشركة (مثال: COMP-8421)
-        const companyCode = 'COMP-' + Math.floor(1000 + Math.random() * 9000);
+        const compId = companyId.trim().toUpperCase();
 
-        // حفظ الشركة في قاعدة البيانات مع رمزها
+        // حفظ الشركة في جدول companies
         await pool.query(
-            'INSERT INTO companies (company_id, company_name) VALUES ($1, $2)',
-            [companyCode, companyName]
+            'INSERT INTO companies (company_id, company_name) VALUES ($1, $2) ON CONFLICT (company_id) DO NOTHING',
+            [compId, companyName]
         );
 
-        // إنشاء حساب المدير (المسؤول عن الشركة)
+        // إنشاء حساب المدير (المسؤول عن الشركة) في جدول employees مع حقل pass و photo
         await pool.query(
-            'INSERT INTO employees (company_id, name, username, password, role) VALUES ($1, $2, $3, $4, $5)',
-            [companyCode, 'مدير الشركة', adminUsername, adminPassword, 'admin']
+            'INSERT INTO employees (company_id, name, username, phone, password, pass, role, photo) VALUES ($1, $2, $3, $4, $5, $5, $6, $7)',
+            [compId, manager, username, phone, password, 'admin', photo || 'default.jpg']
         );
 
         res.json({ 
             success: true, 
-            message: 'تم تسجيل الشركة وتوليد الرمز بنجاح!', 
-            companyCode: companyCode,
-            adminUsername: adminUsername
+            message: 'تم تسجيل الشركة وتفعيل الحساب بنجاح!', 
+            companyCode: compId
         });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -51,21 +50,18 @@ app.post('/api/developer/register-company', async (req, res) => {
 app.post('/api/employees/register', async (req, res) => {
     const { companyCode, name, username, phone, password } = req.body;
     try {
-        // التحقق هل رمز الشركة صحيح وموجود في قاعدة البيانات؟
         const checkCompany = await pool.query('SELECT * FROM companies WHERE company_id = $1', [companyCode]);
         if (checkCompany.rows.length === 0) {
             return res.json({ success: false, message: 'رمز الشركة غير صحيح، يرجى التأكد من الإدارة!' });
         }
 
-        // التحقق من عدم تكرار اسم المستخدم
         const checkUser = await pool.query('SELECT * FROM employees WHERE username = $1', [username]);
         if (checkUser.rows.length > 0) {
             return res.json({ success: false, message: 'اسم المستخدم مستخدم مسبقاً!' });
         }
 
-        // إدخال الموظف وربطه تلقائياً بشركة الزبون
         await pool.query(
-            'INSERT INTO employees (company_id, name, username, phone, password, role) VALUES ($1, $2, $3, $4, $5, $6)',
+            'INSERT INTO employees (company_id, name, username, phone, password, pass, role) VALUES ($1, $2, $3, $4, $5, $5, $6)',
             [companyCode, name, username, phone, password, 'employee']
         );
 
@@ -75,29 +71,34 @@ app.post('/api/employees/register', async (req, res) => {
     }
 });
 
-// 3. مسار تسجيل الدخول الموحد (للمدير أو الموظف)
+// 3. مسار تسجيل الدخول الموحد (للمدير أو الموظف) - يدعم حقول password أو pass
 app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const result = await pool.query('SELECT * FROM employees WHERE username = $1 AND password = $2', [username, password]);
+        const result = await pool.query(
+            'SELECT * FROM employees WHERE username = $1 AND (password = $2 OR pass = $2)', 
+            [username, password]
+        );
+        
         if (result.rows.length > 0) {
             const user = result.rows[0];
             res.json({ 
                 success: true, 
                 message: 'تم تسجيل الدخول بنجاح', 
                 companyCode: user.company_id,
-                role: user.role, // لمعرفة ما إذا كان مديراً أم موظفاً لتوجيهه للوحة الخاصة به
+                role: user.role, 
                 user: user 
             });
         } else {
             res.json({ success: false, message: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
         }
     } catch (err) {
+        console.error(err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// 4. مسار جلب قائمة موظفي الشركة المحددة فقط للوحة تحكم المدير
+// 4. مسار جلب قائمة موظفي الشركة المحددة فقط لوحة تحكم المدير
 app.get('/api/employees/list', async (req, res) => {
     const companyCode = req.query.company;
     try {
