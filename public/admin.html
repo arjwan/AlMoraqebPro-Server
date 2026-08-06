@@ -8,16 +8,19 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; padding: 40px; }
         .container { max-width: 1400px; margin: 0 auto; }
-        header { background: #ffffff; padding: 25px 35px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; }
+        header { background: #ffffff; padding: 25px 35px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; flex-wrap: wrap; gap: 15px; }
         h1 { color: #0284c7; font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
         #company-title-display { color: #0369a1; font-size: 16px; background: #f0f9ff; padding: 5px 12px; border-radius: 8px; border: 1px solid #bae6fd; font-weight: 600; }
         
-        .header-actions { display: flex; align-items: center; gap: 12px; }
-        .sync-btn { background: #0284c7; color: white; padding: 10px 20px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.2s; cursor: pointer; border: none; }
+        .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .sync-btn { background: #0284c7; color: white; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.2s; cursor: pointer; border: none; }
         .sync-btn:hover { background: #0369a1; }
         .sync-btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
-        .logout-btn { background: #ef4444; color: white; padding: 10px 20px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.2s; cursor: pointer; border: none; }
+        .restore-btn { background: #10b981; color: white; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.2s; cursor: pointer; border: none; }
+        .restore-btn:hover { background: #059669; }
+
+        .logout-btn { background: #ef4444; color: white; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.2s; cursor: pointer; border: none; }
         .logout-btn:hover { background: #dc2626; }
         
         .grid-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
@@ -37,6 +40,8 @@
             </div>
             <div class="header-actions">
                 <button onclick="syncSystemData()" class="sync-btn" id="syncBtn">🔄 تحديث ومزامنة</button>
+                <button onclick="document.getElementById('restoreFile').click()" class="restore-btn">📂 استعادة البيانات</button>
+                <input type="file" id="restoreFile" style="display: none;" accept=".json" onchange="restoreSystemData(event)">
                 <button onclick="logoutAdmin()" class="logout-btn">تسجيل الخروج</button>
             </div>
         </header>
@@ -128,7 +133,6 @@
             }
         }
 
-        // مراقبة حالة الاتصال بالإنترنت فوراً وإظهار تنبيه بصري
         window.addEventListener('online', () => {
             showSyncStatus('🟢 متصل بالإنترنت - يتم المزامنة التلقائية...', '#10b981');
             autoSyncData();
@@ -184,7 +188,6 @@
             }
         });
 
-        // دالة المزامنة الهجينة الحقيقية الاحترافية
         async function syncSystemData() {
             const syncBtn = document.getElementById('syncBtn');
             syncBtn.disabled = true;
@@ -193,7 +196,6 @@
             try {
                 const currentCompId = companyId || 'default_company';
                 
-                // 1. تجميع قاعدة البيانات المحلية الخاصة بالعميل من التخزين المحلي
                 const localData = {
                     companyId: currentCompId,
                     employees: JSON.parse(localStorage.getItem(`employees_${currentCompId}`)) || [],
@@ -203,7 +205,6 @@
                     timestamp: new Date().toISOString()
                 };
 
-                // 2. محاولة الإرسال للسيرفر إذا توفر الإنترنت
                 if (navigator.onLine) {
                     const response = await fetch(`/api/sync-update?company=${encodeURIComponent(currentCompId)}`, {
                         method: 'POST',
@@ -218,14 +219,12 @@
                         throw new Error(data.message || 'فشل الاستجابة من السيرفر');
                     }
                 } else {
-                    // حفظ مؤقت في طابور المزامنة المحلي إذا كان أوفلاين
                     let offlineQueue = JSON.parse(localStorage.getItem('offlineQueue')) || [];
                     offlineQueue.push(localData);
                     localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
                     alert('⚠️ لا يوجد اتصال بالإنترنت. تم حفظ البيانات محلياً وسيتم مزامنتها تلقائياً بمجرد عودة الاتصال.');
                 }
 
-                // 3. التوليد التلقائي لملف قاعدة البيانات (JSON Backup) خاص بالعميل لحمايته من أي ضياع
                 exportClientDatabase(currentCompId, localData);
 
             } catch (error) {
@@ -237,7 +236,38 @@
             }
         }
 
-        // دالة تصدير ملف قاعدة البيانات الاحتياطي لكل عميل
+        // دالة استعادة البيانات من ملف JSON المختار
+        function restoreSystemData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    
+                    if (!backupData.companyId) {
+                        throw new Error('ملف النسخة الاحتياطية غير صالح أو تالف.');
+                    }
+
+                    const targetCompId = backupData.companyId;
+
+                    // استعادة البيانات وحفظها في التخزين المحلي
+                    if (backupData.employees) localStorage.setItem(`employees_${targetCompId}`, JSON.stringify(backupData.employees));
+                    if (backupData.attendance) localStorage.setItem(`attendance_${targetCompId}`, JSON.stringify(backupData.attendance));
+                    if (backupData.salaries) localStorage.setItem(`salaries_${targetCompId}`, JSON.stringify(backupData.salaries));
+                    if (backupData.branches) localStorage.setItem(`branches_${targetCompId}`, JSON.stringify(backupData.branches));
+
+                    alert('📂 تمت استعادة كافة بيانات الشركة بنجاح من الملف المحلي!');
+                    location.reload(); // إعادة تحميل الصفحة لتطبيق البيانات المستعادة
+                } catch (err) {
+                    console.error('Restore Error:', err);
+                    alert('❌ فشل قراءة الملف. تأكد من اختيار ملف قاعدة بيانات صحيح (.json)');
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function exportClientDatabase(compId, data) {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
             const downloadAnchor = document.createElement('a');
@@ -248,7 +278,6 @@
             downloadAnchor.remove();
         }
 
-        // المزامنة التلقائية الخلفية عند عودة النت
         async function autoSyncData() {
             let offlineQueue = JSON.parse(localStorage.getItem('offlineQueue')) || [];
             if (offlineQueue.length > 0 && navigator.onLine) {
