@@ -62,7 +62,7 @@
     <div class="card">
         <h2>🛡️ تسجيل موظف (نظام منع التكرار الذكي)</h2>
         
-        <!-- حقل رمز الشركة (أصبح قابل للتعديل والكتابة بحرية) -->
+        <!-- حقل رمز الشركة (قابل للتعديل أو التعبئة التلقائية) -->
         <div class="form-group">
             <label>رمز الشركة المرتبط (معرّف الشركة):</label>
             <input type="text" id="companyIdInput" placeholder="أدخل رمز الشركة هنا" style="color: #38bdf8; font-weight: bold;">
@@ -104,7 +104,7 @@
             <div id="gpsStatus" class="gps-status">📍 جاري رصد الـ GPS والمعرف الفريد للجهاز...</div>
         </div>
 
-        <button class="btn" onclick="registerWithStrictValidation()">💾 حفظ نهائي ومزامنة مع النظام</button>
+        <button type="button" class="btn" onclick="registerWithStrictValidation()">💾 حفظ نهائي ومزامنة مع النظام</button>
         <div id="successMsg">✅ تم التحقق والتسجيل بنجاح! جاري تحويلك...</div>
     </div>
 
@@ -154,9 +154,8 @@
         window.onload = function() {
             deviceUniqueId = getOrCreateDeviceID();
             
-            // جلب رمز الشركة ووضعه كقيمة افتراضية يمكن للمستخدم تعديلها متى شاء
             const urlParams = new URLSearchParams(window.location.search);
-            let companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'B-2060';
+            let companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'COMP-01';
             document.getElementById('companyIdInput').value = companyId;
 
             if (navigator.geolocation) {
@@ -192,22 +191,26 @@
                 return;
             }
 
-            // تحديث التخزين المؤقت بالرمز الجديد الذي أدخله المستخدم
             localStorage.setItem('activeCompanyId', companyId);
             const storageKey = `company_employees_${companyId}`;
-            let employees = JSON.parse(localStorage.getItem(storageKey)) || [];
+            
+            let employees = [];
+            try {
+                employees = JSON.parse(localStorage.getItem(storageKey)) || [];
+            } catch (e) {
+                employees = [];
+            }
 
-            // 1. فحص تكرار المعرف الفريد للجهاز
+            // فحص التكرار (للبريد أو اسم المستخدم أو الجهاز)
             const deviceExists = employees.some(emp => emp.deviceId === deviceUniqueId);
             if (deviceExists) {
                 alert("❌ عذراً، هذا الهاتف مسجل مسبقاً في النظام لهذه الشركة ولا يمكن تسجيل موظف آخر بنفس الجهاز.");
                 return;
             }
 
-            // 2. فحص تكرار البريد أو اسم المستخدم
-            const conflictExists = employees.some(emp => emp.email === email || emp.username === username || emp.name === name);
+            const conflictExists = employees.some(emp => emp.email === email || emp.username === username);
             if (conflictExists) {
-                alert("❌ خطأ: اسم المستخدم، البريد الإلكتروني، أو الاسم الكامل موجود مسبقاً في قاعدة بيانات هذه الشركة!");
+                alert("❌ خطأ: اسم المستخدم أو البريد الإلكتروني مستخدم مسبقاً في قاعدة بيانات هذه الشركة!");
                 return;
             }
 
@@ -226,15 +229,22 @@
             };
 
             employees.unshift(newEmp);
-            localStorage.setItem(storageKey, JSON.stringify(employees));
-            localStorage.setItem('company_employees', JSON.stringify(employees));
-            localStorage.setItem(`active_session_${username}`, JSON.stringify(newEmp));
+            
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(employees));
+                localStorage.setItem('company_employees', JSON.stringify(employees));
+                localStorage.setItem(`active_session_${username}`, JSON.stringify(newEmp));
+            } catch (err) {
+                alert("⚠️ خطأ في مساحة التخزين المحلية (LocalStorage Full)، يرجى تصغير حجم الصورة.");
+                return;
+            }
 
             document.getElementById('successMsg').style.display = 'block';
 
+            // الانتقال الفوري والمؤكد إلى صفحة تسجيل الدخول مع تمرير رمز الشركة في الرابط
             setTimeout(() => {
-                window.location.href = `login.html?company=${companyId}`;
-            }, 1200);
+                window.location.href = `login.html?company=${encodeURIComponent(companyId)}`;
+            }, 1000);
         }
     </script>
 </body>
