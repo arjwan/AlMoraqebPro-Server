@@ -66,6 +66,8 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
+            cursor: pointer;
+            border: none;
         }
 
         .btn-dashboard:hover {
@@ -183,7 +185,7 @@
         <div class="top-header">
             <h2>➕ إضافة موظف جديد</h2>
             <div class="header-actions">
-                <a href="admin-employee.html" class="btn-dashboard" id="backToDashBtn">🏠 العودة لوحة التحكم</a>
+                <button type="button" class="btn-dashboard" onclick="goToDashboard()">🏠 العودة لوحة التحكم</button>
                 <div class="date-box" id="currentDateDisplay">التاريخ: جاري التحميل...</div>
             </div>
         </div>
@@ -193,7 +195,7 @@
             <!-- 1. رمز الشركة -->
             <div class="form-group">
                 <label>رمز الشركة:</label>
-                <input type="text" id="companyId" placeholder="مثال: B-2060" required oninput="updateDashboardLink()">
+                <input type="text" id="companyId" placeholder="مثال: B-2060" required oninput="saveActiveCompany()">
             </div>
 
             <!-- 2. اسم الشركة -->
@@ -284,20 +286,26 @@
             const compParam = urlParams.get('company');
             if (compParam) {
                 document.getElementById('companyId').value = compParam;
+                localStorage.setItem('activeCompanyId', compParam);
             } else {
                 const savedComp = localStorage.getItem('activeCompanyId');
                 if (savedComp) document.getElementById('companyId').value = savedComp;
             }
-            updateDashboardLink();
         };
 
-        function updateDashboardLink() {
+        function saveActiveCompany() {
             const compId = document.getElementById('companyId').value.trim();
-            const dashBtn = document.getElementById('backToDashBtn');
             if (compId) {
-                dashBtn.href = `admin-employee.html?company=${compId}`;
+                localStorage.setItem('activeCompanyId', compId);
+            }
+        }
+
+        function goToDashboard() {
+            const compId = document.getElementById('companyId').value.trim();
+            if (compId) {
+                window.location.href = `admin-employee.html?company=${encodeURIComponent(compId)}`;
             } else {
-                dashBtn.href = `admin-employee.html`;
+                window.location.href = 'admin-employee.html';
             }
         }
 
@@ -350,7 +358,7 @@
         }
 
         function getLocation() {
-            const statusEl = document.getElementById('locationStatus');
+            const statusEl = document.getElementById('locationStatus'); مفصل
             const locationInput = document.getElementById('employeeLocation');
 
             if (navigator.geolocation) {
@@ -377,6 +385,11 @@
             event.preventDefault();
 
             const compId = document.getElementById('companyId').value.trim();
+            if (!compId) {
+                alert('يرجى إدخال رمز الشركة أولاً!');
+                return;
+            }
+
             const newEmployee = {
                 companyId: compId,
                 companyName: document.getElementById('companyName').value.trim(),
@@ -392,48 +405,52 @@
                 startDate: new Date().toLocaleDateString('ar-EG')
             };
 
-            // 1. الحفظ في تخزين الشركة المخصص
-            const storageKey = `company_employees_${compId}`;
-            let existingEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            existingEmployees.push(newEmployee);
-            localStorage.setItem(storageKey, JSON.stringify(existingEmployees));
+            try {
+                // 1. الحفظ في تخزين الشركة المخصص (جداول الموظفين الخاصة بالشركة)
+                const storageKey = `company_employees_${compId}`;
+                let existingEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                existingEmployees.push(newEmployee);
+                localStorage.setItem(storageKey, JSON.stringify(existingEmployees));
 
-            // 2. الترحيل العام لبقية اللوحات
-            let generalEmployees = JSON.parse(localStorage.getItem('company_employees') || '[]');
-            generalEmployees.push(newEmployee);
-            localStorage.setItem('company_employees', JSON.stringify(generalEmployees));
+                // 2. الترحيل العام للقائمة العامة للموظفين
+                let generalEmployees = JSON.parse(localStorage.getItem('company_employees') || '[]');
+                generalEmployees.push(newEmployee);
+                localStorage.setItem('company_employees', JSON.stringify(generalEmployees));
 
-            // 3. ترحيل بيانات الرواتب
-            let salariesList = JSON.parse(localStorage.getItem(`salaries_${compId}`) || '[]');
-            salariesList.push({ username: newEmployee.username, name: newEmployee.name, salary: newEmployee.salary, allowances: newEmployee.allowances });
-            localStorage.setItem(`salaries_${compId}`, JSON.stringify(salariesList));
+                // 3. ترحيل بيانات الرواتب لجدول الرواتب
+                let salariesList = JSON.parse(localStorage.getItem(`salaries_${compId}`) || '[]');
+                salariesList.push({ username: newEmployee.username, name: newEmployee.name, salary: newEmployee.salary, allowances: newEmployee.allowances });
+                localStorage.setItem(`salaries_${compId}`, JSON.stringify(salariesList));
 
-            // 4. ترحيل بيانات الشفتات والتوثيق الأمني
-            let shiftsList = JSON.parse(localStorage.getItem(`shifts_${compId}`) || '[]');
-            shiftsList.push({ username: newEmployee.username, name: newEmployee.name, workplace: newEmployee.workplace, status: 'نشط' });
-            localStorage.setItem(`shifts_${compId}`, JSON.stringify(shiftsList));
+                // 4. ترحيل بيانات الشفتات لجدول الشفتات
+                let shiftsList = JSON.parse(localStorage.getItem(`shifts_${compId}`) || '[]');
+                shiftsList.push({ username: newEmployee.username, name: newEmployee.name, workplace: newEmployee.workplace, status: 'نشط' });
+                localStorage.setItem(`shifts_${compId}`, JSON.stringify(shiftsList));
 
-            let securityList = JSON.parse(localStorage.getItem(`security_${compId}`) || '[]');
-            securityList.push({ username: newEmployee.username, name: newEmployee.name, verified: true, date: newEmployee.startDate });
-            localStorage.setItem(`security_${compId}`, JSON.stringify(securityList));
+                // 5. ترحيل بيانات التوثيق الأمني لجدول الأمان
+                let securityList = JSON.parse(localStorage.getItem(`security_${compId}`) || '[]');
+                securityList.push({ username: newEmployee.username, name: newEmployee.name, verified: true, date: newEmployee.startDate });
+                localStorage.setItem(`security_${compId}`, JSON.stringify(securityList));
 
-            alert('🎉 تم حفظ وتسجيل الموظف وترحيل بياناته بنجاح إلى كافة اللوحات!');
-            
-            // تفريغ حقول النموذج لإضافة موظف جديد دون مغادرة الصفحة
-            document.getElementById('employeeName').value = '';
-            document.getElementById('employeeSpecialty').value = '';
-            document.getElementById('employeeWorkplace').value = '';
-            document.getElementById('employeeSalary').value = '';
-            document.getElementById('employeeAllowances').value = '';
-            document.getElementById('employeeUsername').value = '';
-            document.getElementById('employeePassword').value = '';
-            document.getElementById('employeePhoto').value = '';
-            document.getElementById('uploadImageInput').value = '';
-            document.getElementById('employeeLocation').value = 'غير متوفر';
-            document.getElementById('locationStatus').innerText = 'لم يتم تحديد الموقع بعد';
-            capturedPhotoData = '';
-            
-            // الحفاظ على رمز الشركة واسمها لتسهيل إدخال موظف آخر لنفس الشركة
+                alert('🎉 تم حفظ وتخزين وترحيل بيانات الموظف بنجاح إلى كافة الجداول واللوحات المرتبطة!');
+
+                // تفريغ حقول إدخال بيانات الموظف الجديدة وتجهيز النموذج لعملية إدخال تالية
+                document.getElementById('employeeName').value = '';
+                document.getElementById('employeeSpecialty').value = '';
+                document.getElementById('employeeWorkplace').value = '';
+                document.getElementById('employeeSalary').value = '';
+                document.getElementById('employeeAllowances').value = '';
+                document.getElementById('employeeUsername').value = '';
+                document.getElementById('employeePassword').value = '';
+                document.getElementById('employeePhoto').value = '';
+                document.getElementById('uploadImageInput').value = '';
+                document.getElementById('employeeLocation').value = 'غير متوفر';
+                document.getElementById('locationStatus').innerText = 'لم يتم تحديد الموقع بعد';
+                capturedPhotoData = '';
+
+            } catch (error) {
+                alert('حدث خطأ أثناء حفظ البيانات في التخزين المحلي (LocalStorage): ' + error.message);
+            }
         }
     </script>
 </body>
