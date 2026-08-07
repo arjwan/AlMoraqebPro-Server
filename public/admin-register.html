@@ -3,235 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل شركة جديدة</title>
+    <title>المراقب برو - تسجيل الشركات والمديرين</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 40px 20px; }
-        .register-container { width: 100%; max-width: 750px; background: #ffffff; padding: 45px; border-radius: 28px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); }
-        .header-title { text-align: center; margin-bottom: 30px; }
-        .header-title h2 { color: #0284c7; font-size: 28px; font-weight: 800; margin-bottom: 8px; }
-        .header-title p { color: #64748b; font-size: 14px; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { text-align: right; margin-bottom: 18px; }
-        .form-group.full-width { grid-column: span 2; }
-        label { display: block; font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 6px; }
-        input, select { width: 100%; padding: 14px 16px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; background: #f8fafc; transition: 0.3s; }
-        input:focus { border-color: #0284c7; background: #fff; box-shadow: 0 0 8px rgba(2, 132, 199, 0.2); }
+        body { background: linear-gradient(135deg, #1e293b, #0f172a); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; color: #1e293b; }
         
-        /* تنسيقات قسم التقاط الكاميرا وتحميل الملفات */
-        .photo-options-container { background: #f1f5f9; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; }
-        .camera-box { display: none; margin-top: 10px; text-align: center; }
-        #webcam { width: 100%; max-height: 220px; border-radius: 8px; background: #000; object-fit: cover; }
-        .btn-cam-action { background: #8b5cf6; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 8px; transition: 0.3s; }
-        .btn-cam-action:hover { background: #7c3aed; }
-        .btn-toggle-cam { background: #0ea5e9; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; }
-        .btn-toggle-cam:hover { background: #0284c7; }
-        #photoPreview { margin-top: 10px; max-width: 100px; border-radius: 8px; display: none; border: 2px solid #10b981; }
+        .register-container { background: #ffffff; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); width: 100%; max-width: 500px; text-align: center; }
+        h2 { margin-bottom: 8px; color: #1e293b; font-size: 24px; font-weight: 800; }
+        .subtitle { font-size: 14px; color: #64748b; margin-bottom: 25px; }
+        
+        .form-group { margin-bottom: 15px; text-align: right; }
+        label { display: block; margin-bottom: 6px; color: #334155; font-size: 14px; font-weight: 600; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 15px; outline: none; transition: all 0.3s; }
+        input:focus { border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); }
+        
+        .btn { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
+        .btn:hover { background: #1e293b; }
 
-        .btn-submit { width: 100%; background: #10b981; color: white; font-size: 18px; font-weight: 800; padding: 16px; border: none; border-radius: 14px; cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); }
-        .btn-submit:hover { background: #059669; transform: translateY(-2px); }
-        .developer-card { margin-top: 35px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; text-align: center; }
-        .developer-card h4 { color: #0369a1; font-size: 16px; margin-bottom: 8px; font-weight: 700; }
-        .developer-card p { color: #475569; font-size: 13px; line-height: 1.6; }
-        .developer-card span { font-weight: bold; color: #0f172a; }
-        .login-link { display: block; text-align: center; margin-top: 20px; color: #0284c7; text-decoration: none; font-weight: 700; font-size: 15px; }
-        .login-link:hover { text-decoration: underline; }
+        /* فقرة الدخول السريع المضافة حديثاً */
+        .quick-login-section { margin-top: 30px; border-top: 2px dashed #e2e8f0; padding-top: 20px; text-align: right; }
+        .quick-login-section h3 { font-size: 16px; color: #0284c7; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .quick-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .quick-row input { flex: 1; }
+        .quick-btn { background: #0284c7; color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: background 0.3s; width: 100%; }
+        .quick-btn:hover { background: #0369a1; }
+
+        .status-msg { margin-top: 15px; font-size: 14px; font-weight: bold; text-align: center; min-height: 22px; }
     </style>
 </head>
 <body>
 
     <div class="register-container">
-        <div class="header-title">
-            <h2>🏢 تسجيل شركة جديدة - نظام المراقب برو</h2>
-            <p>أدخل بيانات شركتك بدقة لتفعيل النظام والانتقال لتسجيل الدخول فوراً</p>
-        </div>
-
-        <form id="registerForm" onsubmit="handleClientRegister(event)">
-            <div class="form-grid">
-                <!-- الحقل الأساسي والإجباري لمعرف الشركة الفريد بصيغة B-2026 -->
-                <div class="form-group">
-                    <label>1. معرف الشركة الفريد (إجباري):</label>
-                    <input type="text" id="companyId" required placeholder="مثال: B-2026" style="text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
-                </div>
-
-                <div class="form-group">
-                    <label>2. اسم الشركة العربي (المؤسسة):</label>
-                    <input type="text" id="companyNameAr" required placeholder="شركة الأرجوان للبرمجيات">
-                </div>
-
-                <div class="form-group">
-                    <label>3. اسم المدير:</label>
-                    <input type="text" id="managerName" required placeholder="محمد علي">
-                </div>
-
-                <div class="form-group">
-                    <label>4. رقم الهاتف الثابت للنظام:</label>
-                    <input type="tel" id="phoneNumber" required placeholder="07xxxxxxxx">
-                </div>
-
-                <div class="form-group full-width">
-                    <label>5. البريد الإلكتروني (الإيميل):</label>
-                    <input type="email" id="email" required placeholder="example@domain.com">
-                </div>
-
-                <div class="form-group">
-                    <label>6. اسم المستخدم (دخول لوحة التحكم):</label>
-                    <input type="text" id="username" required placeholder="admin_user">
-                </div>
-
-                <div class="form-group">
-                    <label>7. كلمة المرور:</label>
-                    <input type="password" id="password" required placeholder="••••••••">
-                </div>
-
-                <div class="form-group full-width">
-                    <label>8. تأكيد كلمة المرور:</label>
-                    <input type="password" id="confirmPassword" required placeholder="••••••••">
-                </div>
-
-                <!-- 9. قسم الصورة (تحميل من الملفات + التقاط بالكاميرا) -->
-                <div class="form-group full-width">
-                    <label>9. صورة مدير النظام (صورة شخصية / بصمة وجه):</label>
-                    <div class="photo-options-container">
-                        <!-- التحميل التقليدي -->
-                        <div style="margin-bottom: 10px;">
-                            <label style="font-size: 13px; color: #64748b;">اختر ملف من الجهاز:</label>
-                            <input type="file" id="managerPhoto" accept="image/*">
-                        </div>
-
-                        <div style="text-align: center; margin: 10px 0; font-weight: bold; color: #94a3b8;">أو</div>
-
-                        <!-- التقاط بالكاميرا -->
-                        <button type="button" class="btn-toggle-cam" onclick="toggleCamera()">📸 فتح الكاميرا لالتقاط الصورة</button>
-                        <div id="cameraBox" class="camera-box">
-                            <video id="webcam" autoplay muted playsinline></video>
-                            <button type="button" class="btn-cam-action" onclick="captureSnapshot()">🔘 التقاط الصورة الحالية</button>
-                            <canvas id="snapshotCanvas" style="display:none;"></canvas>
-                        </div>
-
-                        <!-- معاينة الصورة الملتقطة -->
-                        <div style="text-align: center;">
-                            <img id="photoPreview" alt="معاينة الصورة الشخصية">
-                        </div>
-                    </div>
-                </div>
+        <h2>🏢 تسجيل شركة جديدة</h2>
+        <p class="subtitle">أنشئ حساب شركتك وابدأ الإدارة فوراً</p>
+        
+        <!-- نموذج تسجيل الشركة الأساسي -->
+        <form id="registerForm" onsubmit="handleRegisterCompany(event)">
+            <div class="form-group">
+                <label for="companyId">رمز الشركة (المعرف الفريد)</label>
+                <input type="text" id="companyId" required placeholder="مثال: COMP-01">
             </div>
 
-            <button type="submit" class="btn-submit">🚀 إرسال وتفعيل الحساب فوراً</button>
+            <div class="form-group">
+                <label for="companyName">اسم الشركة</label>
+                <input type="text" id="companyName" required placeholder="أدخل اسم الشركة الكامل">
+            </div>
+
+            <div class="form-group">
+                <label for="manager">اسم المدير المسؤول</label>
+                <input type="text" id="manager" required placeholder="أدخل اسم المدير">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">رقم هاتف المدير (يستخدم للدخول السريع)</label>
+                <input type="text" id="phone" required placeholder="أدخل رقم الهاتف">
+            </div>
+
+            <div class="form-group">
+                <label for="username">اسم المستخدم</label>
+                <input type="text" id="username" required placeholder="اسم المستخدم الخاص بالدخول">
+            </div>
+
+            <div class="form-group">
+                <label for="password">كلمة المرور</label>
+                <input type="password" id="password" required placeholder="أدخل كلمة المرور">
+            </div>
+
+            <button type="submit" class="btn">حفظ وتسجيل الشركة</button>
         </form>
 
-        <a href="index.html" class="login-link">← لديك حساب مسجل مسبقاً؟ تسجيل الدخول</a>
-
-        <div class="developer-card">
-            <h4>🛠️ جهة التطوير والبرمجة (شركة الأرجوان للبرمجيات)</h4>
-            <p>
-                للدعم الفني والاستفسارات: <span>07807807491</span> (متوفر واتساب)<br>
-                البريد الإلكتروني الرسمي: <span>mohmed1628@gmail.com</span>
-            </p>
+        <!-- فقرة الدخول السريع برمز الشركة ورقم الهاتف -->
+        <div class="quick-login-section">
+            <h3>⚡ دخول سريع للمدير المسجل مسبقاً</h3>
+            <div class="quick-row">
+                <input type="text" id="quickCompanyCode" placeholder="رمز الشركة">
+                <input type="text" id="quickPhone" placeholder="رقم الهاتف">
+            </div>
+            <button type="button" class="quick-btn" onclick="handleQuickLogin()">دخول فوري لوحة التحكم</button>
         </div>
+
+        <div class="status-msg" id="statusMsg"></div>
     </div>
 
     <script>
-        let capturedImageBase64 = null;
-        let mediaStream = null;
+        // إرسال بيانات تسجيل الشركة الجديدة للخادم
+        async function handleRegisterCompany(e) {
+            e.preventDefault();
+            const statusMsg = document.getElementById('statusMsg');
+            
+            const payload = {
+                companyId: document.getElementById('companyId').value.trim(),
+                companyName: document.getElementById('companyName').value.trim(),
+                manager: document.getElementById('manager').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value.trim()
+            };
 
-        // تشغيل وإيقاف الكاميرا
-        async function toggleCamera() {
-            const box = document.getElementById('cameraBox');
-            const video = document.getElementById('webcam');
+            statusMsg.style.color = "#0284c7";
+            statusMsg.textContent = "جاري حفظ بيانات الشركة...";
 
-            if (box.style.display === 'block') {
-                box.style.display = 'none';
-                if (mediaStream) {
-                    mediaStream.getTracks().forEach(track => track.stop());
+            try {
+                const response = await fetch('/api/developer/register-company', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    statusMsg.style.color = "#16a34a";
+                    statusMsg.textContent = "تم تسجيل الشركة بنجاح! جاري التوجيه...";
+                    localStorage.setItem('activeCompanyId', data.companyCode);
+                    setTimeout(() => {
+                        window.location.href = `admin.html?company=${encodeURIComponent(data.companyCode)}`;
+                    }, 1000);
+                } else {
+                    statusMsg.style.color = "#dc2626";
+                    statusMsg.textContent = data.error || "فشل تسجيل الشركة";
                 }
-            } else {
-                try {
-                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    video.srcObject = mediaStream;
-                    box.style.display = 'block';
-                } catch (err) {
-                    alert('⚠️ تعذر الوصول إلى الكاميرا، تأكد من الأذونات في المتصفح.');
-                }
+            } catch (err) {
+                statusMsg.style.color = "#dc2626";
+                statusMsg.textContent = "حدث خطأ في الاتصال بالسيرفر";
             }
         }
 
-        // التقاط الصورة من الفيديو
-        function captureSnapshot() {
-            const video = document.getElementById('webcam');
-            const canvas = document.getElementById('snapshotCanvas');
-            const preview = document.getElementById('photoPreview');
+        // دالة الدخول السريع عبر مطابقة رمز الشركة ورقم الهاتف مباشرة من نفس الصفحة
+        async function handleQuickLogin() {
+            const companyCode = document.getElementById('quickCompanyCode').value.trim();
+            const phone = document.getElementById('quickPhone').value.trim();
+            const statusMsg = document.getElementById('statusMsg');
 
-            canvas.width = video.videoWidth || 320;
-            canvas.height = video.videoHeight || 240;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            capturedImageBase64 = canvas.toDataURL('image/jpeg');
-            preview.src = capturedImageBase64;
-            preview.style.display = 'inline-block';
-
-            // إغلاق الكاميرا بعد الالتقاط
-            toggleCamera();
-            alert('✅ تم التقاط الصورة بنجاح!');
-        }
-
-        function handleClientRegister(event) {
-            event.preventDefault();
-            const pass = document.getElementById('password').value;
-            const confirmPass = document.getElementById('confirmPassword').value;
-
-            if (pass !== confirmPass) {
-                alert('⚠️ كلمة المرور وتأكيد كلمة المرور غير متطابقتين!');
+            if (!companyCode || !phone) {
+                statusMsg.style.color = "#dc2626";
+                statusMsg.textContent = "يرجى إدخال رمز الشركة ورقم الهاتف معاً للدخول السريع";
                 return;
             }
 
-            // ضبط معرف الشركة ليكون بأحرف كبيرة ومرتبطة بالصيغة المطلوبة
-            const compId = document.getElementById('companyId').value.trim().toUpperCase();
-            const email = document.getElementById('email').value.trim().toLowerCase();
-            const photoInput = document.getElementById('managerPhoto');
-            
-            let photoData = 'default.jpg';
-            if (capturedImageBase64) {
-                photoData = capturedImageBase64; // استخدام الصورة الملتقطة بالكاميرا
-            } else if (photoInput.files.length > 0) {
-                photoData = photoInput.files[0].name; // أو اسم الملف المرفع تقليدياً
-            }
+            statusMsg.style.color = "#0284c7";
+            statusMsg.textContent = "جاري التحقق من مطابقة المعرف ورقم الهاتف...";
 
             try {
-                let activeCompanies = [];
-                const storedData = localStorage.getItem('registeredCompanies');
-                if (storedData) {
-                    activeCompanies = JSON.parse(storedData);
+                const response = await fetch('/api/auth/quick-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ companyCode, phone })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    statusMsg.style.color = "#16a34a";
+                    statusMsg.textContent = "تم الدخول بنجاح، جاري نقلك للوحة التحكم...";
+                    localStorage.setItem('activeCompanyId', data.companyCode);
+                    setTimeout(() => {
+                        window.location.href = `admin.html?company=${encodeURIComponent(data.companyCode)}`;
+                    }, 800);
+                } else {
+                    statusMsg.style.color = "#dc2626";
+                    statusMsg.textContent = data.message || "رمز الشركة أو رقم الهاتف غير صحيح";
                 }
-
-                // منع التكرار لمعرف الشركة أو البريد الإلكتروني
-                const exists = activeCompanies.some(c => c.id === compId || c.email.toLowerCase() === email);
-                if (exists) {
-                    alert('⚠️ عذراً، معرف الشركة الفريد (مثل B-2026) أو البريد الإلكتروني مستخدم مسبقاً.');
-                    return;
-                }
-
-                const newCompany = {
-                    id: compId,
-                    name: document.getElementById('companyNameAr').value.trim(),
-                    manager: document.getElementById('managerName').value.trim(),
-                    phone: document.getElementById('phoneNumber').value.trim(),
-                    email: email,
-                    username: document.getElementById('username').value.trim(),
-                    pass: pass,
-                    photo: photoData,
-                    status: 'active'
-                };
-
-                activeCompanies.push(newCompany);
-                localStorage.setItem('registeredCompanies', JSON.stringify(activeCompanies));
-
-                alert('🎉 تم إنشاء وحفظ الشركة وتفعيلها بنجاح بالمعرف (' + compId + ')!\nيمكنك تسجيل الدخول الآن.');
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error(error);
-                alert('⚠️ حدث خطأ أثناء التخزين المؤقت في المتصفح.');
+            } catch (err) {
+                statusMsg.style.color = "#dc2626";
+                statusMsg.textContent = "تعذر الاتصال بالخادم";
             }
         }
     </script>
