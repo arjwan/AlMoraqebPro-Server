@@ -180,3 +180,20 @@
 
 </body>
 </html>
+console.log("بدء إرسال بيانات المطابقة إلى السيرفر...");
+// الرابط الذي يتم إرسال البيانات إليه
+fetch('/api/auth/face-login', { // أو المسار الخاص بك
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ /* بيانات الوجه أو اسم المستخدم */ })
+})
+.then(response => response.json())
+.then(data => {
+    console.log("استجابة السيرفر:", data);
+    if (data.success) {
+        window.location.href = 'dashboard.html'; // أو صفحة التحكم
+    } else {
+        alert(data.message || 'فشلت المطابقة');
+    }
+})
+.catch(err => console.error("خطأ في الاتصال:", err));
