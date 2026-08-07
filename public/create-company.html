@@ -36,7 +36,6 @@
             font-size: 17px;
         }
 
-        /* كارد النموذج الفاخر */
         .glass-card {
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(16px);
@@ -72,7 +71,7 @@
             font-weight: 700;
         }
         input {
-            padding: 18px 20px;
+            padding: 16px 20px;
             background: rgba(15, 23, 42, 0.8);
             border: 2px solid rgba(255, 255, 255, 0.08);
             border-radius: 14px;
@@ -85,6 +84,40 @@
             box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
             outline: none;
             background: rgba(15, 23, 42, 0.95);
+        }
+
+        /* تنسيق أزرار رفع والتقاط الصورة */
+        .photo-buttons-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .btn-upload-option {
+            flex: 1;
+            padding: 12px;
+            background: #334155;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: #f8fafc;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .btn-upload-option:hover {
+            background: #475569;
+            border-color: #38bdf8;
+        }
+        
+        #previewThumb {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #38bdf8;
+            display: none;
+            margin-top: 10px;
         }
 
         .btn-main {
@@ -106,15 +139,11 @@
             box-shadow: 0 15px 30px rgba(99, 102, 241, 0.5);
         }
 
-        /* بطاقات الشركات المحفوظة */
         .section-title {
             font-size: 26px;
             color: #f1f5f9;
             margin-bottom: 25px;
             font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
         .company-card {
@@ -129,19 +158,9 @@
             justify-content: space-between;
             gap: 25px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease;
-        }
-        .company-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(56, 189, 248, 0.3);
         }
 
-        .comp-info {
-            display: flex;
-            align-items: center;
-            gap: 25px;
-            flex: 1;
-        }
+        .comp-info { display: flex; align-items: center; gap: 25px; flex: 1; }
         .comp-photo {
             width: 95px;
             height: 95px;
@@ -150,23 +169,10 @@
             border: 3px solid #38bdf8;
             box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
         }
-        .text-data h3 {
-            font-size: 22px;
-            margin-bottom: 8px;
-            color: #f8fafc;
-        }
-        .text-data p {
-            color: #94a3b8;
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
+        .text-data h3 { font-size: 22px; margin-bottom: 8px; color: #f8fafc; }
+        .text-data p { color: #94a3b8; font-size: 16px; margin-bottom: 4px; }
 
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-width: 150px;
-        }
+        .actions { display: flex; flex-direction: column; gap: 10px; min-width: 150px; }
         .btn-action {
             padding: 12px;
             border: none;
@@ -179,13 +185,10 @@
             transition: 0.2s;
         }
         .btn-edit { background: #0284c7; }
-        .btn-edit:hover { background: #0369a1; }
         .btn-save { background: #10b981; display: none; }
-        .btn-save:hover { background: #059669; }
         .btn-status-stop { background: #f59e0b; color: #000; font-weight: 900; }
         .btn-status-play { background: #10b981; }
         .btn-del { background: #ef4444; }
-        .btn-del:hover { background: #dc2626; }
 
         .status-badge {
             display: inline-block;
@@ -252,10 +255,24 @@
                 <label>إيميل الشركة (البريد الإلكتروني)</label>
                 <input type="email" id="cEmail" required placeholder="company@domain.com">
             </div>
-            <div class="input-group">
-                <label>رابط صورة المدير الشخصية (URL)</label>
-                <input type="text" id="mPhoto" required placeholder="ضع رابط الصورة هنا">
+            
+            <!-- حقل الصورة مع أزرار البحث عن ملف أو التقاط بالكاميرا -->
+            <div class="input-group full-width">
+                <label>صورة المدير (اختر ملف أو التقط بالكاميرا أو ضع رابط)</label>
+                <input type="text" id="mPhoto" required placeholder="رابط الصورة أو يتم تعبئته تلقائياً عند الرفع/الالتقاط">
+                
+                <div class="photo-buttons-group">
+                    <button type="button" class="btn-upload-option" onclick="document.getElementById('fileInput').click()">📁 استعراض الملفات (بحث عن صورة)</button>
+                    <button type="button" class="btn-upload-option" onclick="document.getElementById('cameraInput').click()">📸 التقاط صورة بالكاميرا</button>
+                </div>
+
+                <!-- ملفات مخفية للرفع والالتقاط -->
+                <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleImageUpload(event)">
+
+                <img id="previewThumb" alt="معاينة الصورة">
             </div>
+
             <button type="submit" class="btn-main">حفظ وتنشيط الشركة في النظام 🚀</button>
         </form>
     </div>
@@ -266,6 +283,23 @@
 </div>
 
 <script>
+    // دالة لتحويل الصورة المرفوعة أو الملتقطة إلى Base64 لعرضها وحفظها
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64String = e.target.result;
+                document.getElementById('mPhoto').value = base64String;
+                
+                const thumb = document.getElementById('previewThumb');
+                thumb.src = base64String;
+                thumb.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
     document.getElementById('regForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const newComp = {
@@ -286,6 +320,7 @@
         localStorage.setItem('registeredCompanies', JSON.stringify(list));
         renderList();
         this.reset();
+        document.getElementById('previewThumb').style.display = 'none';
     });
 
     function renderList() {
