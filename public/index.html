@@ -169,7 +169,7 @@
                 console.error("خطأ في تشغيل الكاميرا:", err);
             });
 
-        // تسجيل الدخول العادي
+        // تسجيل الدخول العادي بكلمة المرور
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const username = document.getElementById('username').value.trim();
@@ -204,11 +204,19 @@
             }
         });
 
-        // التقاط الوجه وإرساله للسيرفر
+        // التقاط الوجه وإرساله مع اسم المستخدم للسيرفر
         document.getElementById('faceLoginBtn').addEventListener('click', async function() {
+            const username = document.getElementById('username').value.trim();
             const statusMsg = document.getElementById('statusMsg');
+
+            if (!username) {
+                statusMsg.style.color = "#dc2626";
+                statusMsg.textContent = "يرجى كتابة اسم المستخدم أولاً لإتمام التوثيق البصري";
+                return;
+            }
+
             statusMsg.style.color = "#0284c7";
-            statusMsg.textContent = "تم التقاط الوجه بنجاح، جاري مطابقة البيانات...";
+            statusMsg.textContent = "جاري التقاط الصورة وتوثيق الدخول...";
 
             try {
                 const canvas = document.createElement('canvas');
@@ -221,24 +229,24 @@
                 const response = await fetch('/api/auth/face-login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: imageBase64 })
+                    body: JSON.stringify({ username: username, image: imageBase64 })
                 });
 
                 const data = await response.json();
                 if (data.success) {
                     statusMsg.style.color = "#16a34a";
-                    statusMsg.textContent = "تمت المطابقة بنجاح، جاري التحويل...";
+                    statusMsg.textContent = "تم توثيق وتسجيل الدخول بنجاح، جاري التحويل...";
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';
                     }, 1000);
                 } else {
                     statusMsg.style.color = "#dc2626";
-                    statusMsg.textContent = data.message || "لم يتم التعرف على الوجه، حاول مجدداً";
+                    statusMsg.textContent = data.message || "فشل التحقق من اسم المستخدم";
                 }
             } catch (err) {
                 console.error("خطأ في الاتصال بالسيرفر:", err);
                 statusMsg.style.color = "#dc2626";
-                statusMsg.textContent = "خطأ: تأكد من إضافة مسار الوجه في السيرفر";
+                statusMsg.textContent = "حدث خطأ أثناء الاتصال بالخادم";
             }
         });
     </script>
