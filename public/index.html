@@ -127,62 +127,94 @@
     </div>
 
     <script>
-        // تشغيل الكاميرا للوجه
-        const video = document.getElementById('video');
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                video.srcObject = stream;
-            })
-            .catch(err => {
-                console.error("خطأ في تشغيل الكاميرا:", err);
+    // تشغيل الكاميرا للوجه
+    const video = document.getElementById('video');
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(err => {
+            console.error("خطأ في تشغيل الكاميرا:", err);
+        });
+
+    // تسجيل الدخول العادي بكلمة المرور
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const statusMsg = document.getElementById('statusMsg');
+
+        statusMsg.style.color = "#007bff";
+        statusMsg.textContent = "جاري التحقق من البيانات...";
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
             });
 
-        // تسجيل الدخول العادي
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const statusMsg = document.getElementById('statusMsg');
-
-            statusMsg.style.color = "#007bff";
-            statusMsg.textContent = "جاري التحقق من البيانات...";
-
-            try {
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    statusMsg.style.color = "green";
-                    statusMsg.textContent = "تم تسجيل الدخول بنجاح، جاري التحويل...";
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
-                } else {
-                    statusMsg.style.color = "red";
-                    statusMsg.textContent = data.message || "اسم المستخدم أو كلمة المرور غير صحيحة";
-                }
-            } catch (err) {
-                console.error("خطأ في الاتصال:", err);
+            const data = await response.json();
+            if (data.success) {
+                statusMsg.style.color = "green";
+                statusMsg.textContent = "تم تسجيل الدخول بنجاح، جاري التحويل...";
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+            } else {
                 statusMsg.style.color = "red";
-                statusMsg.textContent = "حدث خطأ في الاتصال بالسيرفر";
+                statusMsg.textContent = data.message || "اسم المستخدم أو كلمة المرور غير صحيحة";
             }
-        });
+        } catch (err) {
+            console.error("خطأ في الاتصال:", err);
+            statusMsg.style.color = "red";
+            statusMsg.textContent = "حدث خطأ في الاتصال بالسيرفر";
+        }
+    });
 
-        // زر تسجيل الدخول بالوجه (مع زر التقاط واضح وغير مخفي)
-        document.getElementById('faceLoginBtn').addEventListener('click', async function() {
-            const statusMsg = document.getElementById('statusMsg');
-            statusMsg.style.color = "#007bff";
-            statusMsg.textContent = "تم التقاط الوجه بنجاح، جاري مطابقة البيانات...";
+    // زر تسجيل الدخول بالوجه (يقوم بالتقاط صورة من الفيديو وإرسالها للسيرفر)
+    document.getElementById('faceLoginBtn').addEventListener('click', async function() {
+        const statusMsg = document.getElementById('statusMsg');
+        statusMsg.style.color = "#007bff";
+        statusMsg.textContent = "تم التقاط الوجه بنجاح، جاري مطابقة البيانات...";
 
-            // هنا يمكنك إضافة كود إرسال صورة الوجه للسيرفر للمطابقة
-            setTimeout(() => {
-                console.log("إرسال بيانات المطابقة للسيرفر...");
-            }, 1000);
-        });
-    </script>
+        try {
+            // رسم صورة من الكاميرا إلى عنصر Canvas مؤقت لتحويلها إلى Base64
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 240;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageBase64 = canvas.toDataURL('image/jpeg');
+
+            console.log("إرسال بيانات المطابقة للسيرفر...");
+
+            // إرسال الصورة إلى مسار الـ API الخاص بالوجه في السيرفر
+            const response = await fetch('/api/auth/face-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageBase64 })
+            });
+
+            const data = await response.json();
+            console.log("استجابة السيرفر للوجه:", data);
+
+            if (data.success) {
+                statusMsg.style.color = "green";
+                statusMsg.textContent = "تمت المطابقة بنجاح، جاري التحويل...";
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+            } else {
+                statusMsg.style.color = "red";
+                statusMsg.textContent = data.message || "لم يتم التعرف على الوجه، حاول مجدداً";
+            }
+        } catch (err) {
+            console.error("خطأ في الاتصال بالسيرفر:", err);
+            statusMsg.style.color = "red";
+            statusMsg.textContent = "حدث خطأ أثناء الاتصال للتحقق من الوجه";
+        }
+    });
+</script>
 </body>
 </html>
