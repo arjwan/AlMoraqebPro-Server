@@ -24,11 +24,11 @@
 
         .main-card {
             width: 100%;
-            max-width: 1600px;
+            max-width: 1300px;
             background: #ffffff;
-            padding: 45px;
-            border-radius: 28px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+            padding: 35px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
         }
 
         .top-nav {
@@ -37,193 +37,110 @@
             align-items: center;
             margin-bottom: 25px;
             border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 20px;
+            padding-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         h2 {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 800;
             color: #0284c7;
         }
 
-        .company-badge {
+        .badge-company {
             background: #e0f2fe;
             color: #0369a1;
             padding: 6px 14px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 700;
-            margin-top: 5px;
-            display: inline-block;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
         }
 
-        .back-btn {
-            background: #f1f5f9;
-            color: #0284c7;
-            padding: 12px 24px;
-            border-radius: 14px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 15px;
-            border: 1px solid #cbd5e1;
-            transition: 0.2s;
-        }
-
-        .back-btn:hover {
-            background: #0284c7;
-            color: #fff;
-        }
-
-        .actions-bar {
+        .controls-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            gap: 15px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
-        }
-
-        .search-box-wrapper {
-            display: flex;
             gap: 10px;
-            flex: 1;
-            max-width: 500px;
         }
 
         .search-box {
+            display: flex;
+            gap: 8px;
             flex: 1;
-            padding: 14px 18px;
-            font-size: 15px;
-            border: 1px solid #cbd5e1;
-            border-radius: 14px;
-            background: #f8fafc;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
             outline: none;
         }
 
-        .search-box:focus {
+        .search-box input:focus {
             border-color: #0284c7;
-            background: #fff;
-            box-shadow: 0 0 10px rgba(2, 132, 199, 0.2);
         }
 
-        .btn-search {
+        .btn {
             background: #0284c7;
-            color: white;
+            color: #fff;
             border: none;
-            padding: 0 20px;
-            border-radius: 14px;
-            font-weight: 700;
+            padding: 10px 18px;
+            border-radius: 10px;
             cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
             transition: 0.2s;
         }
 
-        .btn-search:hover {
-            background: #0369a1;
+        .btn:hover {
+            opacity: 0.9;
         }
 
-        .action-btns {
-            display: flex;
-            gap: 12px;
-        }
-
-        .btn-print {
-            background: #0284c7;
-            color: white;
-            border: none;
-            padding: 14px 22px;
-            border-radius: 14px;
-            font-weight: 700;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .btn-print:hover {
-            background: #0369a1;
-        }
-
-        .btn-delete-all {
+        .btn-danger {
             background: #ef4444;
-            color: white;
-            border: none;
-            padding: 14px 22px;
-            border-radius: 14px;
-            font-weight: 700;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.2s;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 8px;
         }
 
-        .btn-delete-all:hover {
+        .btn-danger:hover {
             background: #dc2626;
-        }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            border-radius: 14px;
-            border: 1px solid #e2e8f0;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             background: #f8fafc;
-            white-space: nowrap;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
         }
 
         th, td {
-            padding: 16px;
+            padding: 14px;
             text-align: center;
-            font-size: 15px;
+            font-size: 14px;
             border-bottom: 1px solid #e2e8f0;
         }
 
         th {
-            background: #e0f2fe;
-            color: #0369a1;
-            font-weight: 800;
+            background: #f1f5f9;
+            color: #334155;
+            font-weight: 700;
         }
 
         td img {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid #0284c7;
-        }
-
-        .btn-delete {
-            background: #ef4444;
-            color: #fff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .btn-delete:hover {
-            background: #dc2626;
-        }
-
-        @media print {
-            body {
-                background: white;
-                padding: 0;
-            }
-            .main-card {
-                box-shadow: none;
-                padding: 0;
-                max-width: 100%;
-            }
-            .top-nav, .actions-bar, .btn-delete {
-                display: none !important;
-            }
-            table {
-                font-size: 14px;
-            }
         }
     </style>
 </head>
@@ -231,128 +148,134 @@
 
     <div class="main-card">
         <div class="top-nav">
+            <h2>👥 قائمة وإدارة موظفي الشركة</h2>
+            <div id="companyBadge" class="badge-company">قاعدة البيانات للشركة المعزولة: جاري التحميل...</div>
+        </div>
+
+        <div class="controls-bar">
             <div>
-                <h2>👥 قائمة وإدارة موظفي الشركة</h2>
-                <div id="companyIndicator" class="company-badge">جاري تحميل بيانات الشركة النشطة...</div>
+                <button class="btn" style="background: #475569;" onclick="window.location.href='admin-dashboard.html'">← العودة لوحة التحكم</button>
             </div>
-            <a href="admin.html" class="back-btn">← العودة لوحة التحكم</a>
-        </div>
-
-        <div class="actions-bar">
-            <div class="search-box-wrapper">
-                <input type="text" id="searchInput" class="search-box" placeholder="🔍 بحث عن اسم الموظف، الاختصاص، أو مكان العمل..." onkeyup="filterEmployees()">
-                <button class="btn-search" onclick="filterEmployees()">بحث</button>
-            </div>
-            
-            <div class="action-btns">
-                <button class="btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
-                <button class="btn-delete-all" onclick="deleteAllEmployees()">🗑️ تصفية جدول الشركة</button>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="بحث عن اسم الموظف، الاختصاص، أو مكان العمل..." onkeyup="filterEmployees()">
+                <button class="btn" onclick="filterEmployees()">بحث</button>
             </div>
         </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>الصورة</th>
-                        <th>الاسم الكامل</th>
-                        <th>العنوان الوظيفي</th>
-                        <th>مكان العمل</th>
-                        <th>الراتب الاسمي</th>
-                        <th>العنوان (محافظة / مدينة / حي / محلة / زقاق / دار)</th>
-                        <th>الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="employeesTableBody">
-                    <!-- يتم تعبئتها ديناميكياً من قاعدة بيانات الشركة المستقلة -->
-                </tbody>
-            </table>
-        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>الصورة</th>
+                    <th>الاسم الكامل</th>
+                    <th>العنوان الوظيفي</th>
+                    <th>مكان العمل</th>
+                    <th>اسم المستخدم</th>
+                    <th>الموقع (الإحداثيات)</th>
+                    <th>تاريخ التسجيل</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody id="employeesTableBody">
+                <!-- تعبئة تلقائية -->
+            </tbody>
+        </table>
     </div>
 
     <script>
-        // دالة تحديد مفتاح قاعدة البيانات للشركة النشطة حالياً
-        function getActiveCompanyDbKey() {
-            const activeId = localStorage.getItem('activeCompanyId');
-            if (activeId) {
-                return `company_employees_${activeId}`;
+        let allCompanyEmployees = [];
+        let currentCompanyId = '';
+
+        function loadEmployees() {
+            // 1. استخراج رمز الشركة من رابط الصفحة (URL Query) مثل ?company=B-2060
+            const urlParams = new URLSearchParams(window.location.search);
+            currentCompanyId = urlParams.get('company');
+
+            // إذا لم يوجد في الرابط، نبحث عنه في الذاكرة المحلية
+            if (!currentCompanyId) {
+                currentCompanyId = localStorage.getItem('activeCompanyId') || 'B-2060';
             }
-            // مفتاح احتياطي افتراضي في حال لم يتم تحديد شركة نشطة بعد
-            return 'employeesList';
+
+            document.getElementById('companyBadge').innerText = `قاعدة البيانات للشركة المعزولة: [ ${currentCompanyId} ]`;
+
+            // 2. البحث في كافة مفاتيح التخزين المحتملة لضمان جلب البيانات بغض النظر عن طريقة حفظها السابقة
+            const possibleKeys = [
+                `company_employees_${currentCompanyId}`,
+                `employees_${currentCompanyId}`,
+                'company_employees',
+                'employees'
+            ];
+
+            allCompanyEmployees = [];
+            for (let key of possibleKeys) {
+                const data = localStorage.getItem(key);
+                if (data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            // تصفية الموظفين التابعين لهذه الشركة حصراً إذا كانت القائمة مشتركة
+                            const filtered = parsed.filter(emp => !emp.companyId || emp.companyId === currentCompanyId);
+                            if (filtered.length > 0) {
+                                allCompanyEmployees = filtered;
+                                break;
+                            }
+                        }
+                    } catch(e) {}
+                }
+            }
+
+            renderTable(allCompanyEmployees);
         }
 
-        function loadEmployees(data = null) {
-            const tableBody = document.getElementById('employeesTableBody');
-            const indicator = document.getElementById('companyIndicator');
-            
-            const activeId = localStorage.getItem('activeCompanyId') || 'افتراضية عامة';
-            indicator.textContent = `قاعدة البيانات النشطة للشركة المعرّفة: [ ${activeId} ]`;
+        function renderTable(employees) {
+            const tbody = document.getElementById('employeesTableBody');
+            tbody.innerHTML = '';
 
-            const dbKey = getActiveCompanyDbKey();
-            const employees = data || JSON.parse(localStorage.getItem(dbKey)) || [];
-            
-            tableBody.innerHTML = '';
-            
             if (employees.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="7" style="color: #64748b; padding: 30px; font-size: 17px;">لا يوجد موظفون مسجلون حالياً في قاعدة بيانات هذه الشركة</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="color: #64748b; padding: 30px;">لا يوجد موظفون مسجلون حالياً في قاعدة بيانات هذه الشركة.</td></tr>`;
                 return;
             }
 
             employees.forEach((emp, index) => {
-                const fullAddress = `${emp.province || '-'} / ${emp.city || '-'} / ${emp.district || '-'} / محلة ${emp.mahalla || '-'} / زقاق ${emp.alley || '-'} / دار ${emp.houseNo || '-'}`;
-                
-                tableBody.innerHTML += `
+                tbody.innerHTML = `
                     <tr>
-                        <td><img src="${emp.photo || 'https://via.placeholder.com/50'}" alt="صورة"></td>
-                        <td><b>${emp.name || '-'}</b></td>
+                        <td><img src="${emp.photo || 'https://via.placeholder.com/40'}" alt="صورة"></td>
+                        <td><b>${emp.name || emp.fullName || 'بدون اسم'}</b></td>
                         <td>${emp.specialty || '-'}</td>
                         <td>${emp.workplace || '-'}</td>
-                        <td style="color: #0d9488; font-weight: 800;">${emp.salary || '0'} د.ع</td>
-                        <td>${fullAddress}</td>
-                        <td><button class="btn-delete" onclick="deleteEmployee(${index})">حذف</button></td>
+                        <td style="color: #0284c7; font-weight: bold;">${emp.username || '-'}</td>
+                        <td style="font-size: 12px; color: #475569;">📍 ${emp.location || 'غير متوفر'}</td>
+                        <td>${emp.startDate || new Date().toLocaleDateString()}</td>
+                        <td><button class="btn btn-danger" onclick="deleteEmp('${emp.username}')">حذف</button></td>
                     </tr>
                 `;
             });
         }
 
         function filterEmployees() {
-            const query = document.getElementById('searchInput').value.toLowerCase().trim();
-            const dbKey = getActiveCompanyDbKey();
-            const employees = JSON.parse(localStorage.getItem(dbKey)) || [];
-            
-            if (!query) {
-                loadEmployees(employees);
-                return;
-            }
-
-            const filtered = employees.filter(emp => 
-                (emp.name && emp.name.toLowerCase().includes(query)) || 
-                (emp.specialty && emp.specialty.toLowerCase().includes(query)) ||
-                (emp.workplace && emp.workplace.toLowerCase().includes(query)) ||
-                (emp.province && emp.province.toLowerCase().includes(query))
-            );
-            loadEmployees(filtered);
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allCompanyEmployees.filter(emp => {
+                const name = (emp.name || emp.fullName || '').toLowerCase();
+                const specialty = (emp.specialty || '').toLowerCase();
+                const workplace = (emp.workplace || '').toLowerCase();
+                return name.includes(query) || specialty.includes(query) || workplace.includes(query);
+            });
+            renderTable(filtered);
         }
 
-        function deleteEmployee(index) {
-            if (confirm('هل أنت متأكد من حذف هذا الموظف من قاعدة بيانات الشركة؟')) {
-                const dbKey = getActiveCompanyDbKey();
-                let employees = JSON.parse(localStorage.getItem(dbKey)) || [];
-                employees.splice(index, 1);
-                localStorage.setItem(dbKey, JSON.stringify(employees));
-                filterEmployees();
+        function deleteEmp(username) {
+            if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
+                allCompanyEmployees = allCompanyEmployees.filter(emp => emp.username !== username);
+                
+                // تحديث الحفظ في التخزين المحلي
+                const storageKey = `company_employees_${currentCompanyId}`;
+                localStorage.setItem(storageKey, JSON.stringify(allCompanyEmployees));
+                
+                renderTable(allCompanyEmployees);
             }
         }
 
-        function deleteAllEmployees() {
-            if (confirm('⚠️ تحذير: هل أنت متأكد من تفريغ وحذف كافة موظفي هذه الشركة نهائياً من قاعدة بياناتها؟')) {
-                const dbKey = getActiveCompanyDbKey();
-                localStorage.removeItem(dbKey);
-                loadEmployees();
-            }
-        }
-
-        window.onload = () => loadEmployees();
+        // تشغيل التحميل فور فتح الصفحة
+        window.onload = loadEmployees;
     </script>
 </body>
 </html>
