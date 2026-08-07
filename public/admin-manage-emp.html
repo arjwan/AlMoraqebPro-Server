@@ -174,8 +174,8 @@
 
         <div class="controls-bar">
             <div class="actions-group">
-                <!-- زر العودة الموجه للصفحة الرئيسية أو لوحة التحكم المتاحة لديك -->
-                <button class="btn btn-secondary" onclick="goBackDashboard()">← العودة لوحة التحكم</button>
+                <!-- زر العودة يوجه مباشرة إلى admin.html -->
+                <button class="btn btn-secondary" onclick="window.location.href='admin.html'">← العودة لوحة التحكم</button>
                 <!-- زر الطباعة -->
                 <button class="btn btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
             </div>
@@ -288,13 +288,6 @@
                 localStorage.setItem(storageKey, JSON.stringify(allCompanyEmployees));
                 renderTable(allCompanyEmployees);
             }
-        }
-
-        // دالة ذكية للعودة إلى لوحة التحكم الرئيسية المتوفرة لديك لتجنب الصفحات الفارغة
-        function goBackDashboard() {
-            const possibleDashboards = ['admin-dashboard.html', 'dashboard.html', 'index.html', 'admin.html'];
-            // يمكنك توجيهه مباشرة إلى الملف الرئيسي للوحة التحكم لديك
-            window.location.href = 'admin-dashboard.html';
         }
 
         window.onload = loadEmployees;
