@@ -86,7 +86,6 @@
             background: rgba(15, 23, 42, 0.95);
         }
 
-        /* تنسيق أزرار رفع والتقاط الصورة */
         .photo-buttons-group {
             display: flex;
             gap: 12px;
@@ -256,7 +255,6 @@
                 <input type="email" id="cEmail" required placeholder="company@domain.com">
             </div>
             
-            <!-- حقل الصورة مع أزرار البحث عن ملف أو التقاط بالكاميرا -->
             <div class="input-group full-width">
                 <label>صورة المدير (اختر ملف أو التقط بالكاميرا أو ضع رابط)</label>
                 <input type="text" id="mPhoto" required placeholder="رابط الصورة أو يتم تعبئته تلقائياً عند الرفع/الالتقاط">
@@ -266,7 +264,6 @@
                     <button type="button" class="btn-upload-option" onclick="document.getElementById('cameraInput').click()">📸 التقاط صورة بالكاميرا</button>
                 </div>
 
-                <!-- ملفات مخفية للرفع والالتقاط -->
                 <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
                 <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleImageUpload(event)">
 
@@ -283,7 +280,6 @@
 </div>
 
 <script>
-    // دالة لتحويل الصورة المرفوعة أو الملتقطة إلى Base64 لعرضها وحفظها
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (file) {
@@ -408,11 +404,50 @@
         renderList();
     }
 
+    // دالة الحذف الشامل مع تنزيل نسخة احتياطية وتطهير الكاش والجداول المرتبطة بالشركة
     function deleteComp(index) {
-        if(confirm('⚠️ هل أنت متأكد من رغبتك في حذف هذه الشركة نهائياً من النظام؟')) {
-            let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        let targetComp = list[index];
+        let companyId = targetComp.id;
+
+        // 1. تجميع كافة البيانات المرتبطة بالشركة من مختلف الجداول لأخذ نسخة احتياطية
+        const fullCompanyBackup = {
+            companyInfo: targetComp,
+            employees: JSON.parse(localStorage.getItem(`company_employees_${companyId}`)) || [],
+            requests: JSON.parse(localStorage.getItem(`company_requests_${companyId}`)) || [],
+            attendance: JSON.parse(localStorage.getItem(`company_attendance_${companyId}`)) || [],
+            settings: JSON.parse(localStorage.getItem(`company_settings_${companyId}`)) || {}
+        };
+
+        // 2. التوصية وتنزيل ملف النسخة الاحتياطية على اللابتوب (Desktop)
+        if (confirm(`⚠️ تحذير خطير: أنت على وشك حذف الشركة (${targetComp.nameAr}) والمعرف (${companyId}) نهائياً!\n\nسيتم حذف جميع الموظفين، السجلات، والطلبات من كافة الجداول.\n\nهل تريد تنزيل "نسخة احتياطية" على جهازك (Desktop) قبل الحذف؟`)) {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullCompanyBackup, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Backup_Company_${companyId}_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // تأكيد أخير قبل التنفيذ الشامل
+        if (confirm(`🛑 تأكيد نهائي: هل أنت متأكد تماماً من حذف كافة جداول وبيانات الشركة (${companyId}) الآن؟`)) {
+            // 3. التنفيذ الشامل للحذف من كافة الجداول ومسح التخزين المؤقت (Cache)
+            const keysToRemove = [
+                `company_employees_${companyId}`,
+                `company_requests_${companyId}`,
+                `company_attendance_${companyId}`,
+                `company_settings_${companyId}`,
+                `company_${companyId}`
+            ];
+
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+
+            // حذف الشركة من القائمة الرئيسية المسجلة
             list.splice(index, 1);
             localStorage.setItem('registeredCompanies', JSON.stringify(list));
+
+            alert(`✅ تم حذف الشركة (${companyId}) وكافة موظفيها وجداولها وتنظيف الكاش بنجاح تام.`);
             renderList();
         }
     }
