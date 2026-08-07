@@ -275,17 +275,17 @@
         </form>
 
         <!-- قسم طلبات السلف الجديدة المقدمة -->
-        <div class="section-title">📥 طلبات السلف الجديدة الواردة من الموظفين:</div>
+        <div class="section-title">📥 طلبات السلف والطلبات الجديدة الواردة من الموظفين:</div>
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
                         <th>ت</th>
                         <th>اسم الطالب</th>
-                        <th>العنوان الوظيفي</th>
-                        <th>موقع العمل</th>
-                        <th>المبلغ المطلوب</th>
-                        <th>عدد مرات الحصول على سلفة سابقة</th>
+                        <th>نوع الطلب</th>
+                        <th>التفاصيل / المبلغ</th>
+                        <th>ملاحظات الموظف</th>
+                        <th>الوقت / التاريخ</th>
                         <th>الإجراء</th>
                     </tr>
                 </thead>
@@ -322,18 +322,20 @@
     </div>
 
     <script>
+        const currentCompany = localStorage.getItem('activeCompanyId') || 'default_company';
+
         let initialLoans = [
             { name: "أحمد محمد علي", jobTitle: "مطور أنظمة", workplace: "المقر الرئيسي", total: 300000, paid: 100000, deduct: 50000, count: 2, date: "2026-06-01", status: "نشطة ومستمرة" },
             { name: "محمد عبد علي", jobTitle: "مختص شبكات", workplace: "فرع البصرة", total: 200000, paid: 50000, deduct: 30000, count: 1, date: "2026-07-01", status: "نشطة ومستمرة" }
         ];
 
-        let initialRequests = [
-            { name: "علي الزيدي", jobTitle: "مشرف أمن", workplace: "المخزن الرئيسي", amount: 250000, count: 3 }
-        ];
-
         function loadData() {
             let loans = JSON.parse(localStorage.getItem('companyLoans')) || initialLoans;
-            let requests = JSON.parse(localStorage.getItem('companyLoanRequests')) || initialRequests;
+            // جلب الطلبات الواردة من الموظفين الحقيقيين عبر مفتاح الشركة المشترك
+            let requests = JSON.parse(localStorage.getItem(`manager_requests_${currentCompany}`)) || [];
+            
+            // فلترة الطلبات المعلقة فقط التي لم يتم البت فيها
+            let pendingRequests = requests.filter(r => r.status === 'pending');
 
             const loansTable = document.getElementById('loansTableBody');
             const requestsTable = document.getElementById('requestsTableBody');
@@ -374,22 +376,22 @@
             document.getElementById('totalPaidVal').innerText = sumPaid.toLocaleString() + ' د.ع';
             document.getElementById('totalRemainingVal').innerText = sumRemaining.toLocaleString() + ' د.ع';
 
-            // عرض الطلبات الجديدة
-            if (requests.length === 0) {
-                requestsTable.innerHTML = `<tr><td colspan="7" style="padding: 20px; color: #64748b;">لا توجد طلبات سلف جديدة معلقة</td></tr>`;
+            // عرض الطلبات الجديدة الواردة من الموظفين
+            if (pendingRequests.length === 0) {
+                requestsTable.innerHTML = `<tr><td colspan="7" style="padding: 20px; color: #64748b;">لا توجد طلبات سلف أو إجازات جديدة معلقة من الموظفين</td></tr>`;
             } else {
-                requests.forEach((req, index) => {
+                pendingRequests.forEach((req) => {
                     requestsTable.innerHTML += `
                         <tr>
-                            <td><b>${index + 1}</b></td>
-                            <td style="font-weight: 700; color: #0f172a;">${req.name}</td>
-                            <td>${req.jobTitle}</td>
-                            <td>${req.workplace}</td>
-                            <td style="color: #0284c7; font-weight: bold;">${Number(req.amount).toLocaleString()} د.ع</td>
-                            <td><span class="badge-request">${req.count} مرات</span></td>
+                            <td><b>#</b></td>
+                            <td style="font-weight: 700; color: #0f172a;">${req.employeeName}</td>
+                            <td><span class="badge-request">${req.type}</span></td>
+                            <td style="color: #0284c7; font-weight: bold;">${req.details}</td>
+                            <td>${req.notes || 'لا توجد ملاحظات'}</td>
+                            <td style="font-size: 12px; color: #64748b;">${req.timestamp}</td>
                             <td>
-                                <button class="btn-action btn-approve" onclick="approveRequest(${index})">✔ موافقة وصرف</button>
-                                <button class="btn-action btn-reject" onclick="rejectRequest(${index})">✖ رفض</button>
+                                <button class="btn-action btn-approve" onclick="approveRequest('${req.id}')">✔ موافقة وصرف</button>
+                                <button class="btn-action btn-reject" onclick="rejectRequest('${req.id}')">✖ رفض</button>
                             </td>
                         </tr>
                     `;
@@ -417,36 +419,55 @@
             loadData();
         });
 
-        function approveRequest(index) {
-            let requests = JSON.parse(localStorage.getItem('companyLoanRequests')) || initialRequests;
-            let loans = JSON.parse(localStorage.getItem('companyLoans')) || initialLoans;
+        // دالة الموافقة على الطلب ونقله للسلف إذا كان سلفة وتحديث إشعار الموظف
+        function approveRequest(reqId) {
+            let allRequests = JSON.parse(localStorage.getItem(`manager_requests_${currentCompany}`)) || [];
+            let reqIndex = allRequests.findIndex(r => r.id === reqId);
             
-            let req = requests[index];
-            loans.push({
-                name: req.name,
-                jobTitle: req.jobTitle,
-                workplace: req.workplace,
-                total: req.amount,
-                paid: 0,
-                deduct: Math.round(req.amount / 6), // قسط افتراضي على 6 أشهر
-                count: req.count + 1,
-                date: new Date().toISOString().split('T')[0],
-                status: "نشطة ومستمرة"
-            });
+            if (reqIndex === -1) return;
+            let req = allRequests[reqIndex];
 
-            requests.splice(index, 1);
-            localStorage.setItem('companyLoans', JSON.stringify(loans));
-            localStorage.setItem('companyLoanRequests', JSON.stringify(requests));
-            alert('تمت الموافقة على الطلب ونقله إلى سجل السلف النشطة بنجاح.');
+            // تحديث حالة الطلب إلى approved
+            req.status = 'approved';
+
+            // إذا كان الطلب عبارة عن سلفة مالية، يتم إضافته تلقائياً إلى جدول السلف النشطة
+            if (req.type.includes('سلفة')) {
+                let loans = JSON.parse(localStorage.getItem('companyLoans')) || initialLoans;
+                let loanAmount = parseFloat(req.details) || 100000;
+                
+                loans.push({
+                    name: req.employeeName,
+                    jobTitle: "موظف ميداني / إداري",
+                    workplace: "المقر الرئيسي",
+                    total: loanAmount,
+                    paid: 0,
+                    deduct: Math.round(loanAmount / 6),
+                    count: 1,
+                    date: new Date().toISOString().split('T')[0],
+                    status: "نشطة ومستمرة (بانتظار الاستلام)"
+                });
+                localStorage.setItem('companyLoans', JSON.stringify(loans));
+            }
+
+            // حفظ التحديثات في قائمة الطلبات المشتركة ليراها الموظف فوراً
+            localStorage.setItem(`manager_requests_${currentCompany}`, JSON.stringify(allRequests));
+
+            alert('✅ تمت الموافقة على الطلب بنجاح وتم إرسال الإشعار الفوري للموظف.');
             loadData();
         }
 
-        function rejectRequest(index) {
-            if (confirm('هل أنت متأكد من رفض طلب السلفة؟')) {
-                let requests = JSON.parse(localStorage.getItem('companyLoanRequests')) || initialRequests;
-                requests.splice(index, 1);
-                localStorage.setItem('companyLoanRequests', JSON.stringify(requests));
-                loadData();
+        // دالة رفض الطلب وتحديث إشعار الموظف
+        function rejectRequest(reqId) {
+            if (confirm('هل أنت متأكد من رفض هذا الطلب؟')) {
+                let allRequests = JSON.parse(localStorage.getItem(`manager_requests_${currentCompany}`)) || [];
+                let req = allRequests.find(r => r.id === reqId);
+                
+                if (req) {
+                    req.status = 'rejected';
+                    localStorage.setItem(`manager_requests_${currentCompany}`, JSON.stringify(allRequests));
+                    alert('❌ تم رفض الطلب وإرسال إشعار الرفض للموظف.');
+                    loadData();
+                }
             }
         }
 
@@ -462,9 +483,6 @@
         window.onload = () => {
             if (!localStorage.getItem('companyLoans')) {
                 localStorage.setItem('companyLoans', JSON.stringify(initialLoans));
-            }
-            if (!localStorage.getItem('companyLoanRequests')) {
-                localStorage.setItem('companyLoanRequests', JSON.stringify(initialRequests));
             }
             loadData();
         };

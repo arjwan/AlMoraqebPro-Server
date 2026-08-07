@@ -225,7 +225,7 @@
                         <th>اسم الموظف</th>
                         <th>موقع العمل</th>
                         <th>الشفت المُضاف إليه</th>
-                        <th>حالة البصمة</th>
+                        <th>حالة البصمة والـ GPS</th>
                         <th>التاريخ</th>
                         <th>وقت الحضور</th>
                         <th>وقت الانصراف</th>
@@ -244,13 +244,15 @@
     </div>
 
     <script>
+        const currentCompany = localStorage.getItem('activeCompanyId') || 'default_company';
+
         const sampleAttendance = [
             {
                 id: "att_1",
                 name: "أحمد محمد علي",
                 workplace: "المقر الرئيسي",
                 shiftName: "الشفت الصباحي الأساسي",
-                faceStatus: "مطابق 100%",
+                faceStatus: "مقبول (في النطاق)",
                 date: "2026-08-02",
                 attTime: "08:00 ص",
                 depTime: "04:15 م",
@@ -264,7 +266,7 @@
                 name: "محمد عبد علي",
                 workplace: "فرع البصرة",
                 shiftName: "الشفت المسائي",
-                faceStatus: "مطابق 98%",
+                faceStatus: "مقبول (في النطاق)",
                 date: "2026-08-02",
                 attTime: "03:00 م",
                 depTime: "11:00 م",
@@ -278,7 +280,7 @@
                 name: "علي الزيدي",
                 workplace: "المخزن الرئيسي",
                 shiftName: "شفت استثنائي/خاص",
-                faceStatus: "مطابق 99%",
+                faceStatus: "مرفوض (خارج النطاق)",
                 date: "2026-08-02",
                 attTime: "06:30 ص",
                 depTime: "01:00 م",
@@ -294,12 +296,11 @@
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
             const dateVal = document.getElementById('dateFilter').value;
 
-            let records = JSON.parse(localStorage.getItem('companyAttendanceLogs'));
+            let records = JSON.parse(localStorage.getItem(`companyAttendanceLogs_${currentCompany}`));
             
-            // إذا كانت البيانات فارغة تماماً (أي تم حذف آخر شخص)، يتم إرجاع البيانات الافتراضية بالكامل
             if (!records || !Array.isArray(records) || records.length === 0) {
                 records = JSON.parse(JSON.stringify(sampleAttendance));
-                localStorage.setItem('companyAttendanceLogs', JSON.stringify(records));
+                localStorage.setItem(`companyAttendanceLogs_${currentCompany}`, JSON.stringify(records));
             }
 
             tableBody.innerHTML = '';
@@ -318,13 +319,15 @@
             }
 
             filtered.forEach((rec, index) => {
+                let badgeClass = rec.faceStatus.includes('مرفوض') ? 'background: #fee2e2; color: #dc2626;' : 'background: #dcfce7; color: #16a34a;';
+                
                 tableBody.innerHTML += `
                     <tr>
                         <td><b>${index + 1}</b></td>
                         <td style="font-weight: 700; color: #0f172a;">${rec.name}</td>
                         <td>${rec.workplace}</td>
                         <td><span class="badge-shift">${rec.shiftName || 'شفت قياسي عام'}</span></td>
-                        <td><span class="badge-match">${rec.faceStatus}</span></td>
+                        <td><span class="badge-match" style="${badgeClass}">${rec.faceStatus}</span></td>
                         <td dir="ltr" style="font-weight: bold;">${rec.date}</td>
                         <td dir="ltr" style="color: #0284c7; font-weight: bold;">${rec.attTime}</td>
                         <td dir="ltr" style="color: #0369a1; font-weight: bold;">${rec.depTime || '-- : --'}</td>
@@ -340,23 +343,138 @@
             });
         }
 
+        // دالة التحقق الذكي الحقيقي من الـ GPS، الشفت، وتحديث الرواتب آلياً اليومي
+        function verifyAndProcessEmployeeAttendance(employeeId, employeeName, workplaceLat, workplaceLng, allowedRadiusMeters = 100) {
+            if (!navigator.geolocation) {
+                alert("⚠️ خدمة تحديد الموقع غير متوفرة.");
+                return;
+            }
+
+            // 1. التحقق من ربط الموظف بشفت مخصص لهذا اليوم
+            const employeeShifts = JSON.parse(localStorage.getItem(`employee_shifts_${employeeId}`)) || [];
+            const todayDateStr = new Date().toISOString().split('T')[0];
+            const assignedShift = employeeShifts.find(s => s.date === todayDateStr);
+
+            if (!assignedShift) {
+                alert(`⚠️ تنبيه: الموظف (${employeeName}) غير مضاف إلى شفت مخصص لهذا اليوم. يرجى إضافته عبر لوحة الشفتات.`);
+                sendNotificationToEmployee(employeeName, "عذراً، لم يتم إضافتك إلى شفت عمل فعال اليوم. يراجى مراجعة المدير.");
+                return;
+            }
+
+            // 2. التحقق من إحداثيات الموقع الفعلي للموظف عبر GPS
+            navigator.geolocation.getCurrentPosition((position) => {
+                const empLat = position.coords.latitude;
+                const empLng = position.coords.longitude;
+                const distance = calculateDistanceMeters(empLat, empLng, workplaceLat, workplaceLng);
+                const isOutOfBounds = distance > allowedRadiusMeters;
+
+                let records = JSON.parse(localStorage.getItem(`companyAttendanceLogs_${currentCompany}`)) || [];
+                const newRecordId = 'att_' + Date.now();
+                const currentTimeStr = new Date().toLocaleTimeString();
+
+                if (isOutOfBounds) {
+                    // رفض البصمة وتأشير الرفض في النظام
+                    alert(`❌ تم رفض البصمة لـ (${employeeName}) - خارج النطاق بمسافة ${Math.round(distance)} متر.`);
+                    
+                    records.unshift({
+                        id: newRecordId,
+                        name: employeeName,
+                        workplace: assignedShift.workplace || "المقر الرئيسي",
+                        shiftName: assignedShift.shiftName || "الشفت المخصص",
+                        faceStatus: `مرفوض (خارج النطاق ${Math.round(distance)}م)`,
+                        date: todayDateStr,
+                        attTime: currentTimeStr,
+                        depTime: "-- : --",
+                        overtime: "لا يوجد",
+                        completeDays: 0,
+                        missingDays: 1,
+                        depStatus: "مرفوض بصمة"
+                    });
+
+                    sendNotificationToEmployee(employeeName, "❌ تم رفض بصمة الحضور لوجودك خارج النطاق الجغرافي المسموح.");
+                } else {
+                    // قبول البصمة وتأشير النجاح وتحديث الرواتب اليومية آلياً
+                    alert(`✅ تم قبول بصمة الحضور بنجاح للموظف (${employeeName}).`);
+
+                    records.unshift({
+                        id: newRecordId,
+                        name: employeeName,
+                        workplace: assignedShift.workplace || "المقر الرئيسي",
+                        shiftName: assignedShift.shiftName || "الشفت المخصص",
+                        faceStatus: "مقبول (في النطاق)",
+                        date: todayDateStr,
+                        attTime: currentTimeStr,
+                        depTime: "قيد العمل",
+                        overtime: "قيد الاحتساب",
+                        completeDays: 1,
+                        missingDays: 0,
+                        depStatus: "حضور نظامي"
+                    });
+
+                    sendNotificationToEmployee(employeeName, "✅ تم قبول تسجيل حضورك بنجاح اليوم ضمن النطاق الجغرافي والشفت المخصص.");
+                    
+                    // تحديث صفحة و جدول الرواتب اليومي آلياً
+                    updatePayrollAutomatically(employeeName);
+                }
+
+                localStorage.setItem(`companyAttendanceLogs_${currentCompany}`, JSON.stringify(records));
+                loadAttendanceRecords();
+
+            }, (error) => {
+                alert("❌ تعذر الوصول إلى بيانات الـ GPS الخاصة بجهازك.");
+            }, { enableHighAccuracy: true, timeout: 10000 });
+        }
+
+        // حساب المسافة بالأمتار
+        function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        }
+
+        // إرسال الإشعارات التفاعلية للموظف
+        function sendNotificationToEmployee(empName, message) {
+            let notifs = JSON.parse(localStorage.getItem(`employee_notifications_${empName}`)) || [];
+            notifs.unshift({
+                id: 'NOTIF_' + Date.now(),
+                text: message,
+                time: new Date().toLocaleString(),
+                read: false
+            });
+            localStorage.setItem(`employee_notifications_${empName}`, JSON.stringify(notifs));
+        }
+
+        // تحديث الرواتب اليومية تلقائياً
+        function updatePayrollAutomatically(empName) {
+            let payrollData = JSON.parse(localStorage.getItem(`company_payroll_${currentCompany}`)) || [];
+            let empRecord = payrollData.find(p => p.name === empName);
+            if (empRecord) {
+                empRecord.daysPresent = (empRecord.daysPresent || 0) + 1;
+            } else {
+                payrollData.push({
+                    name: empName,
+                    daysPresent: 1,
+                    daysAbsent: 0,
+                    baseSalary: 600000
+                });
+            }
+            localStorage.setItem(`company_payroll_${currentCompany}`, JSON.stringify(payrollData));
+        }
+
         function deleteAttendanceRecord(recordId) {
             if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف سجل الحضور هذا نهائياً؟')) {
-                let records = JSON.parse(localStorage.getItem('companyAttendanceLogs')) || [];
-                
-                // استبعاد العنصر المراد حذفه
+                let records = JSON.parse(localStorage.getItem(`companyAttendanceLogs_${currentCompany}`)) || [];
                 const updatedRecords = records.filter(item => String(item.id) !== String(recordId));
                 
-                // إذا تم حذف آخر شخص، سيصبح الطول 0، وهنا نقوم بإعادة تعبئة القائمة بالكامل تلقائياً
                 if (updatedRecords.length === 0) {
-                    localStorage.setItem('companyAttendanceLogs', JSON.stringify(sampleAttendance));
-                    alert('✅ تم حذف السجل الأخير بنجاح. نظراً لفرغة القائمة، تم إعادة تحميل جميع السجلات الأساسية تلقائياً.');
+                    localStorage.setItem(`companyAttendanceLogs_${currentCompany}`, JSON.stringify(sampleAttendance));
                 } else {
-                    localStorage.setItem('companyAttendanceLogs', JSON.stringify(updatedRecords));
-                    alert('✅ تم حذف سجل الحضور بنجاح.');
+                    localStorage.setItem(`companyAttendanceLogs_${currentCompany}`, JSON.stringify(updatedRecords));
                 }
-                
-                // إعادة تحميل الجدول فوراً لتحديث العرض
                 loadAttendanceRecords();
             }
         }
@@ -368,14 +486,11 @@
         }
 
         window.onload = () => {
-            if (!localStorage.getItem('companyAttendanceLogs')) {
-                localStorage.setItem('companyAttendanceLogs', JSON.stringify(sampleAttendance));
+            if (!localStorage.getItem(`companyAttendanceLogs_${currentCompany}`)) {
+                localStorage.setItem(`companyAttendanceLogs_${currentCompany}`, JSON.stringify(sampleAttendance));
             }
             loadAttendanceRecords();
         };
     </script>
-
-    <!-- ملف المزامنة والربط الموحد -->
-    <script src="/employees-sync.js"></script>
 </body>
 </html>
