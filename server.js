@@ -2,22 +2,30 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-
-// السماح بقراءة البيانات القادمة بصيغة JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// تقديم الملفات الثابتة من المجلد الرئيسي والمجلدات الفرعية
+// تفعيل خدمة الملفات الثابتة من المجلد الرئيسي أو public
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/app', express.static(path.join(__dirname, 'app')));
+app.use(express.static(__dirname));
 
-// توجيه الصفحة الرئيسية مباشرة إلى شاشة الترحيب في مجلد app
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'app', 'welcome.html'));
+// قاعدة بيانات مؤقتة لتخزين الطلبات (يمكن استبدالها بـ PostgreSQL أو MongoDB)
+let databaseRequests = [];
+
+// API استقبال الطلبات من الهاتف أو اللابتوب
+app.post('/api/requests', (req, res) => {
+    const newRequest = req.body;
+    databaseRequests.unshift(newRequest);
+    console.log(`📥 تم استلام طلب جديد من الموظف: ${newRequest.username}`);
+    res.status(200).json({ success: true, message: "تم حفظ الطلب في قاعدة البيانات بنجاح", data: newRequest });
 });
 
-// تشغيل السيرفر
+// API جلب الطلبات للمدير
+app.get('/api/requests', (req, res) => {
+    res.status(200).json(databaseRequests);
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`🚀 Server is running on port ${PORT}`);
 });
