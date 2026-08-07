@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل دخول الموظف</title>
+    <title>المراقب برو - تسجيل الدخول</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,31 +13,33 @@
         }
 
         body {
-            background: linear-gradient(135deg, #1e1b4b 0%, #31103f 50%, #0f172a 100%);
+            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
             color: #1e293b;
             min-height: 100vh;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
         }
 
         .login-card {
             width: 100%;
             max-width: 420px;
             background: #ffffff;
-            padding: 30px 25px;
+            padding: 35px 30px;
             border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
 
         .header-title {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
         }
 
         .header-title h2 {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 800;
             color: #0284c7;
             margin-bottom: 5px;
@@ -51,21 +53,22 @@
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
             color: #475569;
         }
 
         .form-group input {
-            padding: 12px 14px;
+            padding: 14px 16px;
             border: 2px solid #cbd5e1;
             border-radius: 12px;
-            font-size: 14px;
+            font-size: 15px;
+            background: #fff;
             outline: none;
             transition: 0.2s;
             width: 100%;
@@ -80,7 +83,7 @@
             background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
             color: #fff;
             border: none;
-            padding: 13px;
+            padding: 15px;
             border-radius: 12px;
             font-size: 16px;
             font-weight: bold;
@@ -95,21 +98,19 @@
             opacity: 0.95;
         }
 
-        .links-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .footer-links {
+            text-align: center;
             margin-top: 20px;
             font-size: 13px;
         }
 
-        .links-container a {
+        .footer-links a {
             color: #0284c7;
             text-decoration: none;
-            font-weight: 600;
+            font-weight: bold;
         }
 
-        .links-container a:hover {
+        .footer-links a:hover {
             text-decoration: underline;
         }
     </style>
@@ -118,13 +119,18 @@
 
     <div class="login-card">
         <div class="header-title">
-            <h2>🔐 تسـجيل دخول الموظف</h2>
-            <p>المراقب برو - تطبيق الهاتف المحلي</p>
+            <h2>🔐 تسجيل دخول الموظف</h2>
+            <p>أدخل بيانات الحساب للانتقال لبصمة الحضور</p>
         </div>
 
-        <form id="loginForm" onsubmit="handleEmployeeLogin(event)">
+        <form id="loginForm">
             <div class="form-group">
-                <label>اسم المستخدم أو رقم الهاتف:</label>
+                <label>رمز الشركة (المعرف الفريد):</label>
+                <input type="text" id="loginCompanyId" required placeholder="مثال: B-2026">
+            </div>
+
+            <div class="form-group">
+                <label>اسم المستخدم:</label>
                 <input type="text" id="loginUsername" required placeholder="أدخل اسم المستخدم...">
             </div>
 
@@ -133,52 +139,43 @@
                 <input type="password" id="loginPassword" required placeholder="••••••••">
             </div>
 
-            <button type="submit" class="btn-submit">تسجيل الدخول</button>
-
-            <div class="links-container">
-                <a href="register.html">إنشاء حساب جديد</a>
-                <a href="#" onclick="alert('يرجى مراجعة مدير النظام لإعادة تعيين كلمة المرور.')">نسيت كلمة المرور؟</a>
-            </div>
+            <button type="submit" class="btn-submit">دخول إلى لوحة البصمة</button>
         </form>
+
+        <div class="footer-links">
+            ليس لديك حساب؟ <a href="register_2.html">تسجيل موظف جديد</a>
+        </div>
     </div>
 
-    <!-- ربط ملف المزامنة والبيانات المشتركة -->
-    <script src="employees-sync.js"></script>
-
     <script>
-        function handleEmployeeLogin(e) {
-            e.preventDefault(); // منع إعادة تحميل الصفحة الافتراضي
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
 
-            const usernameInput = document.getElementById('loginUsername').value.trim();
-            const passwordInput = document.getElementById('loginPassword').value;
+            const compId = document.getElementById('loginCompanyId').value.trim();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
 
-            // استدعاء دالة جلب الموظفين من ملف المزامنة المشترك
-            const employees = getAllEmployees();
+            // جلب موظفي الشركة المحددة من ذاكرة الهاتف
+            const storageKey = `company_employees_${compId}`;
+            const employees = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
-            if (employees.length === 0) {
-                alert('⚠️ لا توجد أي حسابات مسجلة محلياً في النظام حتى الآن. يرجى إنشاء حساب جديد أولاً.');
-                return;
-            }
+            // البحث عن الموظف بالاعتماد على اسم المستخدم وكلمة المرور
+            const employee = employees.find(emp => emp.username === username && emp.password === password);
 
-            // البحث عن الموظف بالمطابقة (اسم المستخدم أو رقم الهاتف + كلمة المرور)
-            const matchedEmployee = employees.find(emp => 
-                (emp.username === usernameInput || emp.phone === usernameInput) && emp.password === passwordInput
-            );
+            if (employee) {
+                // حفظ معرف الشركة ومعرف الموظف النشط حالياً في الجلسة
+                localStorage.setItem('activeCompanyId', compId);
+                localStorage.setItem('activeEmployeeUsername', username);
 
-            if (matchedEmployee) {
-                // حفظ الجلسة الحالية للموظف
-                localStorage.setItem('activeEmployee', JSON.stringify(matchedEmployee));
-                localStorage.setItem('isEmployeeLoggedIn', 'true');
-
-                alert(`🎉 أهلاً بك يا ${matchedEmployee.name}، تم تسجيل الدخول بنجاح!`);
+                alert(`مرحباً بك يا ${employee.name}! تم التحقق بنجاح.`);
                 
-                // الانتقال إلى واجهة الموظف الرئيسية أو صفحة البصمة
-                // (يمكنك تغيير اسم الصفحة المستهدفة حسب اسم ملف الواجهة لديك، مثل employee-dashboard.html)
-                window.location.href = 'employee-dashboard.html'; 
+                // الانتقال المباشر إلى صفحة بصمة الحضور والانصراف
+                // (تأكد من تسمية صفحة البصمة لديك، أو استبدل attendance.html باسم صفحتك الحالية)
+                window.location.href = 'attendance.html';
             } else {
-                alert('❌ اسم المستخدم أو كلمة المرور غير صحيحة! تأكد من البيانات المدعومة محلياً.');
+                alert('⚠️ خطأ: رمز الشركة، اسم المستخدم، أو كلمة المرور غير صحيحة!');
             }
-        }
+        });
     </script>
 </body>
 </html>
