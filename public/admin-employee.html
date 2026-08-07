@@ -195,7 +195,7 @@
             <!-- 1. رمز الشركة -->
             <div class="form-group">
                 <label>رمز الشركة:</label>
-                <input type="text" id="companyId" placeholder="مثال: B-2060" required oninput="saveActiveCompany()">
+                <input type="text" id="companyId" placeholder="مثال: B-2026" required oninput="saveActiveCompany()">
             </div>
 
             <!-- 2. اسم الشركة -->
@@ -303,9 +303,9 @@
         function goToDashboard() {
             const compId = document.getElementById('companyId').value.trim();
             if (compId) {
-                window.location.href = `admin-employee.html?company=${encodeURIComponent(compId)}`;
+                window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
             } else {
-                window.location.href = 'admin-employee.html';
+                window.location.href = 'admin.html';
             }
         }
 
@@ -434,7 +434,7 @@
 
                 alert('🎉 تم حفظ وتخزين وترحيل بيانات الموظف بنجاح إلى كافة الجداول واللوحات المرتبطة!');
 
-                // تفريغ الحقول وإعادة التهيئة لتكون جاهزة لإضافة موظف جديد
+                // تفريغ الحقول وإعادة التهيئة لإضافة موظف جديد
                 document.getElementById('employeeName').value = '';
                 document.getElementById('employeeSpecialty').value = '';
                 document.getElementById('employeeWorkplace').value = '';
