@@ -21,7 +21,7 @@ app.post('/api/developer/register-company', async (req, res) => {
     try {
         const compId = companyId.trim().toUpperCase();
         await pool.query('INSERT INTO companies (company_id, company_name) VALUES ($1, $2) ON CONFLICT (company_id) DO NOTHING', [compId, companyName]);
-        await pool.query('INSERT INTO employees (company_id, name, username, phone, password, pass, role, photo) VALUES ($1, $2, $3, $4, $5, $5, $6, $7)',
+        await pool.query('INSERT INTO employees (company_id, name, username, phone, password, role, photo) VALUES ($1, $2, $3, $4, $5, $6, $7)',
             [compId, manager, username, phone, password, 'admin', photo]);
         res.json({ success: true, message: 'تم تسجيل الشركة بنجاح!', companyCode: compId });
     } catch (err) {
@@ -33,7 +33,7 @@ app.post('/api/developer/register-company', async (req, res) => {
 app.post('/api/employees/register', async (req, res) => {
     const { companyCode, name, username, phone, password, photo } = req.body;
     try {
-        await pool.query('INSERT INTO employees (company_id, name, username, phone, password, pass, role, photo) VALUES ($1, $2, $3, $4, $5, $5, $6, $7)', 
+        await pool.query('INSERT INTO employees (company_id, name, username, phone, password, role, photo) VALUES ($1, $2, $3, $4, $5, $6, $7)', 
             [companyCode, name, username, phone, password, 'employee', photo]);
         res.json({ success: true, message: 'تم تسجيل الموظف بنجاح!' });
     } catch (err) {
@@ -41,7 +41,35 @@ app.post('/api/employees/register', async (req, res) => {
     }
 });
 
-// 3. تسجيل الدخول المطابق لرمز الشركة واسم المستخدم وكلمة المرور
+// 3. مسار الدخول السريع للمدير (رمز الشركة + رقم الهاتف)
+app.post('/api/auth/quick-login', async (req, res) => {
+    const { companyCode, phone } = req.body;
+    try {
+        const cleanCompanyId = companyCode.trim().toUpperCase();
+        const cleanPhone = phone.trim();
+
+        const result = await pool.query(
+            'SELECT * FROM employees WHERE company_id = $1 AND phone = $2', 
+            [cleanCompanyId, cleanPhone]
+        );
+        
+        if (result.rows.length > 0) {
+            const user = result.rows[0];
+            res.json({ 
+                success: true, 
+                message: 'تم تسجيل الدخول السريع بنجاح', 
+                companyCode: user.company_id, 
+                role: user.role 
+            });
+        } else {
+            res.json({ success: false, message: 'رمز الشركة أو رقم الهاتف غير مطابق في النظام' });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 4. تسجيل الدخول الاعتيادي
 app.post('/api/auth/login', async (req, res) => {
     const { companyCode, username, password } = req.body;
     try {
@@ -57,52 +85,22 @@ app.post('/api/auth/login', async (req, res) => {
                 role: result.rows[0].role 
             });
         } else {
-            res.json({ success: false, message: 'رمز الشركة أو اسم المستخدم أو كلمة المرور غير صحيحة' });
+            res.json({ success: false, message: 'بيانات الدخول غير صحيحة' });
         }
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// 4. الدخول المباشر السريع (بالصورة أو الفيس)
-app.post('/api/auth/face-login', async (req, res) => {
-    const { username } = req.body;
+// 5. جلب معلومات الشركة لعرضها في لوحة التحكم
+app.get('/api/companies/info', async (req, res) => {
+    const companyId = req.query.company;
     try {
-        const result = await pool.query('SELECT * FROM employees WHERE username = $1 LIMIT 1', [username]);
+        const result = await pool.query('SELECT * FROM companies WHERE company_id = $1', [companyId]);
         if (result.rows.length > 0) {
-            const user = result.rows[0];
-            res.json({ 
-                success: true, 
-                message: 'تم الدخول بنجاح!', 
-                companyCode: user.company_id,
-                role: user.role
-            });
+            res.json({ success: true, company: result.rows[0] });
         } else {
-            const fallback = await pool.query('SELECT * FROM employees LIMIT 1');
-            if (fallback.rows.length > 0) {
-                res.json({ 
-                    success: true, 
-                    message: 'تم الدخول السريع بنجاح!', 
-                    companyCode: fallback.rows[0].company_id,
-                    role: fallback.rows[0].role
-                });
-            } else {
-                res.json({ success: false, message: 'لا توجد حسابات مسجلة في النظام بعد' });
-            }
-        }
-    } catch (err) {
-        res.status(500).json({ success: false, error: 'حدث خطأ في الخادم' });
-    }
-});
-
-// 5. مسار الدخول الفوري للابتوب (بدون تحقق)
-app.post('/api/auth/qr-login', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM employees LIMIT 1');
-        if (result.rows.length > 0) {
-            res.json({ success: true, message: 'تم الدخول السريع', companyCode: result.rows[0].company_id, role: result.rows[0].role });
-        } else {
-            res.json({ success: false, message: 'لا توجد بيانات مسجلة' });
+            res.json({ success: false, message: 'الشركة غير موجودة' });
         }
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
