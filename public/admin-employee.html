@@ -358,7 +358,7 @@
         }
 
         function getLocation() {
-            const statusEl = document.getElementById('locationStatus'); مفصل
+            const statusEl = document.getElementById('locationStatus');
             const locationInput = document.getElementById('employeeLocation');
 
             if (navigator.geolocation) {
@@ -406,35 +406,35 @@
             };
 
             try {
-                // 1. الحفظ في تخزين الشركة المخصص (جداول الموظفين الخاصة بالشركة)
+                // 1. التخزين المخصص للشركة
                 const storageKey = `company_employees_${compId}`;
                 let existingEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
                 existingEmployees.push(newEmployee);
                 localStorage.setItem(storageKey, JSON.stringify(existingEmployees));
 
-                // 2. الترحيل العام للقائمة العامة للموظفين
+                // 2. الترحيل العام للقائمة
                 let generalEmployees = JSON.parse(localStorage.getItem('company_employees') || '[]');
                 generalEmployees.push(newEmployee);
                 localStorage.setItem('company_employees', JSON.stringify(generalEmployees));
 
-                // 3. ترحيل بيانات الرواتب لجدول الرواتب
+                // 3. ترحيل بيانات الرواتب
                 let salariesList = JSON.parse(localStorage.getItem(`salaries_${compId}`) || '[]');
                 salariesList.push({ username: newEmployee.username, name: newEmployee.name, salary: newEmployee.salary, allowances: newEmployee.allowances });
                 localStorage.setItem(`salaries_${compId}`, JSON.stringify(salariesList));
 
-                // 4. ترحيل بيانات الشفتات لجدول الشفتات
+                // 4. ترحيل الشفتات
                 let shiftsList = JSON.parse(localStorage.getItem(`shifts_${compId}`) || '[]');
                 shiftsList.push({ username: newEmployee.username, name: newEmployee.name, workplace: newEmployee.workplace, status: 'نشط' });
                 localStorage.setItem(`shifts_${compId}`, JSON.stringify(shiftsList));
 
-                // 5. ترحيل بيانات التوثيق الأمني لجدول الأمان
+                // 5. ترحيل التوثيق الأمني
                 let securityList = JSON.parse(localStorage.getItem(`security_${compId}`) || '[]');
                 securityList.push({ username: newEmployee.username, name: newEmployee.name, verified: true, date: newEmployee.startDate });
                 localStorage.setItem(`security_${compId}`, JSON.stringify(securityList));
 
                 alert('🎉 تم حفظ وتخزين وترحيل بيانات الموظف بنجاح إلى كافة الجداول واللوحات المرتبطة!');
 
-                // تفريغ حقول إدخال بيانات الموظف الجديدة وتجهيز النموذج لعملية إدخال تالية
+                // تفريغ الحقول وإعادة التهيئة لتكون جاهزة لإضافة موظف جديد
                 document.getElementById('employeeName').value = '';
                 document.getElementById('employeeSpecialty').value = '';
                 document.getElementById('employeeWorkplace').value = '';
@@ -449,7 +449,7 @@
                 capturedPhotoData = '';
 
             } catch (error) {
-                alert('حدث خطأ أثناء حفظ البيانات في التخزين المحلي (LocalStorage): ' + error.message);
+                alert('حدث خطأ أثناء حفظ البيانات: ' + error.message);
             }
         }
     </script>
