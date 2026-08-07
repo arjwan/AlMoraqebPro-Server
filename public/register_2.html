@@ -62,7 +62,6 @@
     <div class="card">
         <h2>🛡️ تسجيل موظف (نظام منع التكرار الذكي)</h2>
         
-        <!-- حقل رمز الشركة (قابل للتعديل أو التعبئة التلقائية) -->
         <div class="form-group">
             <label>رمز الشركة المرتبط (معرّف الشركة):</label>
             <input type="text" id="companyIdInput" placeholder="أدخل رمز الشركة هنا" style="color: #38bdf8; font-weight: bold;">
@@ -138,11 +137,16 @@
             const video = document.getElementById('videoElement');
             const canvas = document.getElementById('canvasElement');
             const preview = document.getElementById('snapshotPreview');
-            canvas.width = 150;
-            canvas.height = 150;
+            
+            // تصغير الأبعاد القصوى للصورة لتوفير المساحة وتجنب امتلاء التخزين المحلي
+            canvas.width = 100;
+            canvas.height = 100;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, 150, 150);
-            compressedPhotoData = canvas.toDataURL('image/jpeg', 0.7);
+            ctx.drawImage(video, 0, 0, 100, 100);
+            
+            // ضغط جودة الصورة بنسبة عالية (0.5) لتوليد حجم صغير جداً يناسب متصفحات الهاتف
+            compressedPhotoData = canvas.toDataURL('image/jpeg', 0.5);
+            
             preview.src = compressedPhotoData;
             preview.style.display = 'block';
             let stream = video.srcObject;
@@ -201,7 +205,6 @@
                 employees = [];
             }
 
-            // فحص التكرار (للبريد أو اسم المستخدم أو الجهاز)
             const deviceExists = employees.some(emp => emp.deviceId === deviceUniqueId);
             if (deviceExists) {
                 alert("❌ عذراً، هذا الهاتف مسجل مسبقاً في النظام لهذه الشركة ولا يمكن تسجيل موظف آخر بنفس الجهاز.");
@@ -235,13 +238,12 @@
                 localStorage.setItem('company_employees', JSON.stringify(employees));
                 localStorage.setItem(`active_session_${username}`, JSON.stringify(newEmp));
             } catch (err) {
-                alert("⚠️ خطأ في مساحة التخزين المحلية (LocalStorage Full)، يرجى تصغير حجم الصورة.");
+                alert("⚠️ ذاكرة المتصفح ممتلئة تماماً. يرجى مسح بيانات المتصفح المؤقتة (Clear Cache) وإعادة المحاولة.");
                 return;
             }
 
             document.getElementById('successMsg').style.display = 'block';
 
-            // الانتقال الفوري والمؤكد إلى صفحة تسجيل الدخول مع تمرير رمز الشركة في الرابط
             setTimeout(() => {
                 window.location.href = `login.html?company=${encodeURIComponent(companyId)}`;
             }, 1000);
