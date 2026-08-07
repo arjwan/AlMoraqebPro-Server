@@ -76,11 +76,6 @@
             gap: 8px;
         }
 
-        .form-group.full-width {
-            grid-column: span 3;
-        }
-
-        /* تنسيق مخصص للحقول الصغيرة (المحلة، الزقاق، الدار) */
         .small-inputs-row {
             grid-column: span 3;
             display: grid;
@@ -270,7 +265,6 @@
                 <input type="text" id="empDistrict" placeholder="الحي...">
             </div>
 
-            <!-- مجموعة الحقول الصغيرة للمحلة والزقاق ورقم الدار -->
             <div class="small-inputs-row">
                 <div class="form-group">
                     <label>المحلة:</label>
@@ -319,6 +313,9 @@
         </table>
     </div>
 
+    <!-- ملف المزامنة والربط الشامل -->
+    <script src="employees-sync.js"></script>
+
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
@@ -341,23 +338,25 @@
 
         function loadEmployees() {
             const tableBody = document.getElementById('employeesTableBody');
-            const employees = JSON.parse(localStorage.getItem('employeesList')) || [];
+            const employees = getAllEmployees(); // دالة الجلب الموحدة من employees-sync.js
+            
             tableBody.innerHTML = '';
             if (employees.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="8" style="color: #64748b; padding: 25px;">لا يوجد موظفون مسجلون حالياً</td></tr>`;
                 return;
             }
+            
             employees.forEach((emp, index) => {
                 const fullAddress = `${emp.province || '-'} / ${emp.city || '-'} / ${emp.district || '-'} / محلة ${emp.mahalla || '-'} / زقاق ${emp.alley || '-'} / دار ${emp.houseNo || '-'}`;
                 tableBody.innerHTML += `
                     <tr>
-                        <td><img src="${emp.photo || 'https://via.placeholder.com/45'}" alt="صورة"></td>
+                        <td><img src="${emp.photo || emp.faceImage || 'https://via.placeholder.com/45'}" alt="صورة"></td>
                         <td><b>${emp.name}</b></td>
-                        <td>${emp.specialty}</td>
-                        <td>${emp.workplace}</td>
+                        <td>${emp.specialty || '-'}</td>
+                        <td>${emp.workplace || '-'}</td>
                         <td style="color: #0d9488; font-weight: 800;">${emp.salary || '0'} د.ع</td>
-                        <td>${fullAddress}</td>
-                        <td>${emp.startDate}</td>
+                        <td>${emp.address || fullAddress}</td>
+                        <td>${emp.startDate || '-'}</td>
                         <td><button class="btn-delete" onclick="deleteEmployee(${index})">حذف</button></td>
                     </tr>
                 `;
@@ -367,6 +366,7 @@
         document.getElementById('addEmployeeForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const newEmployee = {
+                id: 'emp_' + Date.now(),
                 name: document.getElementById('empName').value,
                 specialty: document.getElementById('empSpecialty').value,
                 workplace: document.getElementById('empWorkplace').value,
@@ -378,23 +378,28 @@
                 mahalla: document.getElementById('empMahalla').value,
                 alley: document.getElementById('empAlley').value,
                 houseNo: document.getElementById('empHouseNo').value,
-                photo: capturedImageData
+                photo: capturedImageData,
+                username: "admin_added_" + Date.now()
             };
-            let employees = JSON.parse(localStorage.getItem('employeesList')) || [];
-            employees.push(newEmployee);
-            localStorage.setItem('employeesList', JSON.stringify(employees));
-            alert('تمت إضافة الموظف بنجاح!');
-            document.getElementById('addEmployeeForm').reset();
-            capturedImageData = "";
-            captureStatus.style.display = 'none';
-            loadEmployees();
+
+            const result = saveEmployee(newEmployee); // دالة الحفظ الموحدة من employees-sync.js
+            if (result.success) {
+                alert('تمت إضافة الموظف بنجاح!');
+                document.getElementById('addEmployeeForm').reset();
+                capturedImageData = "";
+                captureStatus.style.display = 'none';
+                loadEmployees();
+            } else {
+                alert('⚠️ ' + result.message);
+            }
         });
 
         function deleteEmployee(index) {
             if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
-                let employees = JSON.parse(localStorage.getItem('employeesList')) || [];
+                const compKey = getCompanyKey();
+                let employees = getAllEmployees();
                 employees.splice(index, 1);
-                localStorage.setItem('employeesList', JSON.stringify(employees));
+                localStorage.setItem(compKey, JSON.stringify(employees));
                 loadEmployees();
             }
         }
