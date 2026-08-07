@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل الموظف (بصمة الوجه والموقع)</title>
+    <title>المراقب برو - تسجيل الموظف (سريع ومحدث)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
@@ -24,7 +24,7 @@
         }
         video, canvas {
             width: 100%;
-            max-height: 200px;
+            max-height: 180px;
             border-radius: 8px;
             background: #000;
             object-fit: cover;
@@ -32,8 +32,8 @@
             margin-top: 10px;
         }
         .snapshot-preview {
-            width: 80px;
-            height: 80px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid #38bdf8;
@@ -68,7 +68,7 @@
 <body>
 
     <div class="card">
-        <h2>📸 تسجيل موظف (بصمة الوجه والموقع)</h2>
+        <h2>📸 تسجيل موظف (سريع وخفيف)</h2>
         
         <div class="form-group">
             <label>الاسم الكامل:</label>
@@ -94,37 +94,37 @@
         </div>
 
         <div class="capture-section">
-            <label style="margin-bottom: 8px;">التحقق البيومتري (صورة الوجه) وموقع الـ GPS:</label>
+            <label style="margin-bottom: 8px;">صورة الوجه (بصمة خفيفة) والموقع:</label>
             <button type="button" class="btn-cam" onclick="startCamera()">📷 فتح الكاميرا لالتقاط الصورة</button>
             
             <video id="videoElement" autoplay playsinline></video>
-            <button type="button" id="snapBtn" class="btn-cam" style="background: #10b981; display: none;" onclick="takeSnapshot()">📸 التقاط الصورة الآن</button>
+            <button type="button" id="snapBtn" class="btn-cam" style="background: #10b981; display: none;" onclick="takeSnapshot()">📸 التقاط الصورة</button>
             <canvas id="canvasElement"></canvas>
             
             <img id="snapshotPreview" class="snapshot-preview" alt="صورة الموظف">
-            <div id="gpsStatus" class="gps-status">📍 جاري جلب الإحداثيات الجغرافية (GPS)...</div>
+            <div id="gpsStatus" class="gps-status">📍 جاري جلب الإحداثيات...</div>
         </div>
 
-        <button class="btn" onclick="registerWithBiometricsAndGPS()">💾 إتمام وحفظ التسجيل والانتقال لتسجيل الدخول</button>
-        <div id="successMsg">✅ تم التسجيل بنجاح! جاري تحويلك إلى صفحة تسجيل الدخول...</div>
+        <button class="btn" onclick="fastRegisterAndRedirect()">💾 حفظ والانتقال الفوري لدخول النظام</button>
+        <div id="successMsg">✅ تم التسجيل بنجاح! جاري التوجيه...</div>
     </div>
 
     <script>
-        let capturedPhotoData = "";
+        let compressedPhotoData = "";
         let currentGPSLocation = "غير متوفر";
 
         function startCamera() {
             const video = document.getElementById('videoElement');
             const snapBtn = document.getElementById('snapBtn');
             
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+            navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false })
                 .then(stream => {
                     video.style.display = 'block';
                     video.srcObject = stream;
                     snapBtn.style.display = 'inline-block';
                 })
                 .catch(err => {
-                    alert("⚠️ تعذر الوصول للكاميرا. يرجى السماح للمتصفح باستخدام الكاميرا.");
+                    alert("⚠️ تعذر الوصول للكاميرا.");
                 });
         }
 
@@ -133,13 +133,15 @@
             const canvas = document.getElementById('canvasElement');
             const preview = document.getElementById('snapshotPreview');
             
-            canvas.width = video.videoWidth || 300;
-            canvas.height = video.videoHeight || 300;
+            // تصغير أبعاد الصورة لضمان خفة وسرعة النظام وعدم الثقل
+            canvas.width = 150;
+            canvas.height = 150;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, 150, 150);
             
-            capturedPhotoData = canvas.toDataURL('image/png');
-            preview.src = capturedPhotoData;
+            // ضغط جودة الصورة إلى 70% بصيغة JPEG الخفيفة
+            compressedPhotoData = canvas.toDataURL('image/jpeg', 0.7);
+            preview.src = compressedPhotoData;
             preview.style.display = 'block';
             
             let stream = video.srcObject;
@@ -148,7 +150,6 @@
             }
             video.style.display = 'none';
             document.getElementById('snapBtn').style.display = 'none';
-            alert("✅ تم التقاط صورة الوجه بنجاح!");
         }
 
         window.onload = function() {
@@ -158,18 +159,18 @@
                         const lat = position.coords.latitude.toFixed(4);
                         const lng = position.coords.longitude.toFixed(4);
                         currentGPSLocation = `${lat}, ${lng} (دقيق)`;
-                        document.getElementById('gpsStatus').innerText = `📍 تم رصد الموقع بنجاح: ${currentGPSLocation}`;
+                        document.getElementById('gpsStatus').innerText = `📍 الموقع: ${currentGPSLocation}`;
                     },
                     (error) => {
-                        currentGPSLocation = "33.3152, 44.3661 (افتراضي بغداد)";
-                        document.getElementById('gpsStatus').innerText = "⚠️ تعذر جلب الـ GPS، تم اعتماد الموقع الافتراضي.";
+                        currentGPSLocation = "33.3152, 44.3661 (بغداد)";
+                        document.getElementById('gpsStatus').innerText = "📍 الموقع الافتراضي مفعل.";
                     },
-                    { timeout: 10000 }
+                    { timeout: 5000 }
                 );
             }
         };
 
-        function registerWithBiometricsAndGPS() {
+        function fastRegisterAndRedirect() {
             const name = document.getElementById('empName').value.trim();
             const specialty = document.getElementById('empSpecialty').value.trim();
             const workplace = document.getElementById('empWorkplace').value.trim();
@@ -177,12 +178,12 @@
             const password = document.getElementById('empPassword').value.trim();
 
             if (!name || !specialty || !workplace || !username || !password) {
-                alert("⚠️ يرجى تعبئة كافة الحقول المطلوبة.");
+                alert("⚠️ يرجى ملء كافة الحقول.");
                 return;
             }
 
-            if (!capturedPhotoData) {
-                alert("⚠️ يرجى التقاط صورة الوجه أولاً قبل الحفظ.");
+            if (!compressedPhotoData) {
+                alert("⚠️ يرجى التقاط الصورة أولاً.");
                 return;
             }
 
@@ -200,20 +201,22 @@
                 password: password,
                 location: currentGPSLocation,
                 startDate: new Date().toLocaleDateString('ar-EG'),
-                photo: capturedPhotoData,
+                photo: compressedPhotoData,
                 companyId: companyId
             };
 
             employees.unshift(newEmp);
+            
+            // التخزين السريع
             localStorage.setItem(storageKey, JSON.stringify(employees));
             localStorage.setItem('company_employees', JSON.stringify(employees));
 
             document.getElementById('successMsg').style.display = 'block';
 
-            // التوجيه التلقائي المباشر إلى صفحة تسجيل الدخول (login.html) مع تمرير معرف الشركة
+            // التحويل الفوري والمباشر لصفحة تسجيل الدخول دون تأخير
             setTimeout(() => {
                 window.location.href = `login.html?company=${companyId}`;
-            }, 2000);
+            }, 1000);
         }
     </script>
 </body>
