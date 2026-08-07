@@ -66,6 +66,12 @@
             gap: 10px;
         }
 
+        .actions-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
         .search-box {
             display: flex;
             gap: 8px;
@@ -100,6 +106,14 @@
 
         .btn:hover {
             opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: #475569;
+        }
+
+        .btn-print {
+            background: #0d9488;
         }
 
         .btn-danger {
@@ -142,6 +156,12 @@
             object-fit: cover;
             border: 2px solid #0284c7;
         }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .main-card { box-shadow: none; padding: 0; max-width: 100%; }
+            .top-nav, .controls-bar, th:last-child, td:last-child { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -153,8 +173,11 @@
         </div>
 
         <div class="controls-bar">
-            <div>
-                <button class="btn" style="background: #475569;" onclick="window.location.href='admin-dashboard.html'">← العودة لوحة التحكم</button>
+            <div class="actions-group">
+                <!-- زر العودة الموجه للصفحة الرئيسية أو لوحة التحكم المتاحة لديك -->
+                <button class="btn btn-secondary" onclick="goBackDashboard()">← العودة لوحة التحكم</button>
+                <!-- زر الطباعة -->
+                <button class="btn btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
             </div>
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="بحث عن اسم الموظف، الاختصاص، أو مكان العمل..." onkeyup="filterEmployees()">
@@ -186,18 +209,15 @@
         let currentCompanyId = '';
 
         function loadEmployees() {
-            // 1. استخراج رمز الشركة من رابط الصفحة (URL Query) مثل ?company=B-2060
             const urlParams = new URLSearchParams(window.location.search);
             currentCompanyId = urlParams.get('company');
 
-            // إذا لم يوجد في الرابط، نبحث عنه في الذاكرة المحلية
             if (!currentCompanyId) {
                 currentCompanyId = localStorage.getItem('activeCompanyId') || 'B-2060';
             }
 
             document.getElementById('companyBadge').innerText = `قاعدة البيانات للشركة المعزولة: [ ${currentCompanyId} ]`;
 
-            // 2. البحث في كافة مفاتيح التخزين المحتملة لضمان جلب البيانات بغض النظر عن طريقة حفظها السابقة
             const possibleKeys = [
                 `company_employees_${currentCompanyId}`,
                 `employees_${currentCompanyId}`,
@@ -212,7 +232,6 @@
                     try {
                         const parsed = JSON.parse(data);
                         if (Array.isArray(parsed) && parsed.length > 0) {
-                            // تصفية الموظفين التابعين لهذه الشركة حصراً إذا كانت القائمة مشتركة
                             const filtered = parsed.filter(emp => !emp.companyId || emp.companyId === currentCompanyId);
                             if (filtered.length > 0) {
                                 allCompanyEmployees = filtered;
@@ -235,8 +254,8 @@
                 return;
             }
 
-            employees.forEach((emp, index) => {
-                tbody.innerHTML = `
+            employees.forEach((emp) => {
+                tbody.innerHTML += `
                     <tr>
                         <td><img src="${emp.photo || 'https://via.placeholder.com/40'}" alt="صورة"></td>
                         <td><b>${emp.name || emp.fullName || 'بدون اسم'}</b></td>
@@ -265,16 +284,19 @@
         function deleteEmp(username) {
             if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
                 allCompanyEmployees = allCompanyEmployees.filter(emp => emp.username !== username);
-                
-                // تحديث الحفظ في التخزين المحلي
                 const storageKey = `company_employees_${currentCompanyId}`;
                 localStorage.setItem(storageKey, JSON.stringify(allCompanyEmployees));
-                
                 renderTable(allCompanyEmployees);
             }
         }
 
-        // تشغيل التحميل فور فتح الصفحة
+        // دالة ذكية للعودة إلى لوحة التحكم الرئيسية المتوفرة لديك لتجنب الصفحات الفارغة
+        function goBackDashboard() {
+            const possibleDashboards = ['admin-dashboard.html', 'dashboard.html', 'index.html', 'admin.html'];
+            // يمكنك توجيهه مباشرة إلى الملف الرئيسي للوحة التحكم لديك
+            window.location.href = 'admin-dashboard.html';
+        }
+
         window.onload = loadEmployees;
     </script>
 </body>
