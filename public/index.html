@@ -16,7 +16,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            padding: 20px;
         }
         .login-card {
             background: #ffffff;
@@ -24,12 +25,13 @@
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             text-align: center;
         }
         h2 {
             margin-bottom: 20px;
             color: #333;
+            font-size: 22px;
         }
         .form-group {
             margin-bottom: 15px;
@@ -38,27 +40,34 @@
         label {
             display: block;
             margin-bottom: 5px;
-            color: #666;
+            color: #555;
             font-size: 14px;
+            font-weight: 600;
         }
         input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ddd;
             border-radius: 6px;
-            font-size: 16px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            border-color: #4calaf;
         }
         .btn {
             width: 100%;
-            padding: 11px;
+            padding: 12px;
             background: #2c3c50;
             color: white;
             border: none;
             border-radius: 6px;
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
             transition: background 0.3s;
-            margin-top: 10px;
+            margin-top: 5px;
         }
         .btn:hover {
             background: #1a252f;
@@ -66,13 +75,14 @@
         #video-container {
             margin-top: 15px;
             width: 100%;
-            height: 150px;
+            height: 180px;
             background: #000;
             border-radius: 6px;
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
+            border: 2px solid #ddd;
         }
         video {
             width: 100%;
@@ -80,9 +90,10 @@
             object-fit: cover;
         }
         .status-msg {
-            margin-top: 10px;
+            margin-top: 12px;
             font-size: 14px;
-            color: #007bff;
+            font-weight: bold;
+            min-height: 20px;
         }
     </style>
 </head>
@@ -105,13 +116,14 @@
             <button type="submit" class="btn">دخول بكلمة المرور</button>
         </form>
 
-        <div class="status-msg" id="statusMsg"></div>
-
         <div id="video-container">
             <video id="video" autoplay playsinline></video>
         </div>
         
-        <button id="faceLoginBtn" class="btn" style="background: #28a745; margin-top: 10px;">تسجيل الدخول بالوجه</button>
+        <!-- زر التقاط الوجه تم تثبيته وظهوره بشكل واضح -->
+        <button id="faceLoginBtn" class="btn" style="background: #28a745; margin-top: 12px;">تسجيل الدخول بالوجه</button>
+
+        <div class="status-msg" id="statusMsg"></div>
     </div>
 
     <script>
@@ -125,13 +137,14 @@
                 console.error("خطأ في تشغيل الكاميرا:", err);
             });
 
-        // تسجيل الدخول العادي (اسم المستخدم وكلمة المرور)
+        // تسجيل الدخول العادي
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
             const statusMsg = document.getElementById('statusMsg');
 
+            statusMsg.style.color = "#007bff";
             statusMsg.textContent = "جاري التحقق من البيانات...";
 
             try {
@@ -142,8 +155,6 @@
                 });
 
                 const data = await response.json();
-                console.log("استجابة السيرفر:", data);
-
                 if (data.success) {
                     statusMsg.style.color = "green";
                     statusMsg.textContent = "تم تسجيل الدخول بنجاح، جاري التحويل...";
@@ -161,13 +172,13 @@
             }
         });
 
-        // زر تسجيل الدخول بالوجه
+        // زر تسجيل الدخول بالوجه (مع زر التقاط واضح وغير مخفي)
         document.getElementById('faceLoginBtn').addEventListener('click', async function() {
             const statusMsg = document.getElementById('statusMsg');
             statusMsg.style.color = "#007bff";
             statusMsg.textContent = "تم التقاط الوجه بنجاح، جاري مطابقة البيانات...";
 
-            // هنا يتم ربط دالة المطابقة لاحقاً وتجنب استخدام الـ alert لتفادي التعليق
+            // هنا يمكنك إضافة كود إرسال صورة الوجه للسيرفر للمطابقة
             setTimeout(() => {
                 console.log("إرسال بيانات المطابقة للسيرفر...");
             }, 1000);
