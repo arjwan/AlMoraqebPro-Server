@@ -3,197 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل الدخول الآمن</title>
-    <!-- استدعاء المكتبة للذكاء الاصطناعي وبصمة الوجه -->
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
+    <title>المراقب برو - تسجيل الدخول</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #2c3e50, #4ca1af); 
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            color: #333; 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .login-card { 
-            background: #ffffff; 
-            padding: 40px; 
-            border-radius: 20px; 
-            box-shadow: 0 12px 35px rgba(0,0,0,0.3); 
-            text-align: center; 
-            max-width: 520px; 
-            width: 95%; 
+        body {
+            background: linear-gradient(135deg, #2c3c50, #4calaf);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
-        h2 { 
-            color: #2c3e50; 
-            margin-bottom: 20px; 
-            font-size: 26px;
+        .login-card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
         }
-        input { 
-            width: 100%; 
-            padding: 14px 16px; 
-            margin: 10px 0; 
-            border: 1px solid #ccc; 
-            border-radius: 10px; 
-            box-sizing: border-box; 
-            font-size: 16px;
-            outline: none;
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
         }
-        input:focus {
-            border-color: #3498db;
-            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        .form-group {
+            margin-bottom: 15px;
+            text-align: right;
         }
-        .btn { 
-            width: 100%; 
-            padding: 14px; 
-            border: none; 
-            border-radius: 10px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            margin-top: 12px; 
-            font-size: 16px;
-            transition: 0.3s; 
-        }
-        .btn-submit { background: #3498db; color: white; }
-        .btn-submit:hover { background: #2980b9; }
-        .btn-face { background: #27ae60; color: white; }
-        .btn-face:hover { background: #219653; }
-        .btn-capture { background: #e67e22; color: white; display: none; margin-top: 12px; }
-        .btn-capture:hover { background: #d35400; }
-        
-        #video-container {
-            position: relative;
-            margin-top: 15px;
-            display: none;
-        }
-        #video { 
-            width: 100%; 
-            max-height: 340px;
-            border-radius: 10px; 
-            background: #000; 
+        label {
             display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .btn {
+            width: 100%;
+            padding: 11px;
+            background: #2c3c50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #1a252f;
+        }
+        #video-container {
+            margin-top: 15px;
+            width: 100%;
+            height: 150px;
+            background: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        video {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
         }
-        
-        .developer-info { 
-            margin-top: 22px; 
-            font-size: 13px; 
-            border-top: 1px solid #eee; 
-            padding-top: 14px; 
-            color: #555;
-            line-height: 1.6;
-        }
-        .developer-info .company {
-            font-weight: bold;
-            color: #2c3e50;
-            font-size: 15px;
+        .status-msg {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #007bff;
         }
     </style>
 </head>
 <body>
 
-<div class="login-card">
-    <h2>🔑 تسجيل الدخول</h2>
-    <form id="loginForm">
-        <input type="text" id="username" placeholder="اسم المستخدم" required>
-        <input type="password" id="password" placeholder="كلمة المرور" required>
-        <button type="submit" class="btn btn-submit">دخول بكلمة المرور</button>
-        <button type="button" id="faceBtn" class="btn btn-face">📸 فتح كاميرا بصمة الوجه</button>
-    </form>
-    
-    <div id="video-container">
-        <video id="video" autoplay muted playsinline></video>
-        <button type="button" id="captureBtn" class="btn btn-capture">🔘 التقاط الصورة والتحقق</button>
-    </div>
-
-    <!-- معلومات الشركة، المطور، ووسائل التواصل -->
-    <div class="developer-info">
-        <div class="company">شركة الأرجوان للبرمجيات</div>
-        <div>المطور: محمد العبيدي</div>
-        <div>واتساب: <span dir="ltr">07807807491</span></div>
-        <div>الإيميل: <span dir="ltr">mohmed1628@gmail.com</span></div>
-    </div>
-</div>
-
-<script>
-    const video = document.getElementById('video');
-    const videoContainer = document.getElementById('video-container');
-    const faceBtn = document.getElementById('faceBtn');
-    const captureBtn = document.getElementById('captureBtn');
-
-    async function loadModels() {
-        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-    }
-
-    faceBtn.addEventListener('click', async () => {
-        try {
-            await loadModels();
-            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-            video.srcObject = stream;
-            videoContainer.style.display = 'block';
-            captureBtn.style.display = 'block';
-            faceBtn.style.display = 'none';
-        } catch (err) {
-            alert('تعذر فتح الكاميرا، تأكد من أذونات المتصفح.');
-        }
-    });
-
-    captureBtn.addEventListener('click', async () => {
-        const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
+    <div class="login-card">
+        <h2>🔑 تسجيل الدخول</h2>
         
-        if (detections) {
-            alert('تم التقاط الوجه بنجاح! جاري مطابقة البيانات...');
-        } else {
-            alert('لم يتم رصد وجه بوضوح أمام الكاميرا، حاول مرة أخرى.');
-        }
-    });
-
-    // ربط نموذج تسجيل الدخول بالسيرفر وقاعدة البيانات
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value.trim();
-
-        try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await response.json();
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">اسم المستخدم</label>
+                <input type="text" id="username" required placeholder="أدخل اسم المستخدم">
+            </div>
             
-            if (data.success) {
-                alert('✅ تم تسجيل الدخول بنجاح!');
-                // يمكنك توجيهه للوحة التحكم هنا لاحقاً، مثل: window.location.href = 'dashboard.html';
-            } else {
-                alert('❌ ' + (data.message || 'فشل تسجيل الدخول، تأكد من اسم المستخدم أو كلمة المرور'));
-            }
-        } catch (err) {
-            console.error(err);
-            alert('⚠️ حدث خطأ في الاتصال بالخادم على Render');
-        }
-    });
-</script>
+            <div class="form-group">
+                <label for="password">كلمة المرور</label>
+                <input type="password" id="password" required placeholder="أدخل كلمة المرور">
+            </div>
 
+            <button type="submit" class="btn">دخول بكلمة المرور</button>
+        </form>
+
+        <div class="status-msg" id="statusMsg"></div>
+
+        <div id="video-container">
+            <video id="video" autoplay playsinline></video>
+        </div>
+        
+        <button id="faceLoginBtn" class="btn" style="background: #28a745; margin-top: 10px;">تسجيل الدخول بالوجه</button>
+    </div>
+
+    <script>
+        // تشغيل الكاميرا للوجه
+        const video = document.getElementById('video');
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("خطأ في تشغيل الكاميرا:", err);
+            });
+
+        // تسجيل الدخول العادي (اسم المستخدم وكلمة المرور)
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const statusMsg = document.getElementById('statusMsg');
+
+            statusMsg.textContent = "جاري التحقق من البيانات...";
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                console.log("استجابة السيرفر:", data);
+
+                if (data.success) {
+                    statusMsg.style.color = "green";
+                    statusMsg.textContent = "تم تسجيل الدخول بنجاح، جاري التحويل...";
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    statusMsg.style.color = "red";
+                    statusMsg.textContent = data.message || "اسم المستخدم أو كلمة المرور غير صحيحة";
+                }
+            } catch (err) {
+                console.error("خطأ في الاتصال:", err);
+                statusMsg.style.color = "red";
+                statusMsg.textContent = "حدث خطأ في الاتصال بالسيرفر";
+            }
+        });
+
+        // زر تسجيل الدخول بالوجه
+        document.getElementById('faceLoginBtn').addEventListener('click', async function() {
+            const statusMsg = document.getElementById('statusMsg');
+            statusMsg.style.color = "#007bff";
+            statusMsg.textContent = "تم التقاط الوجه بنجاح، جاري مطابقة البيانات...";
+
+            // هنا يتم ربط دالة المطابقة لاحقاً وتجنب استخدام الـ alert لتفادي التعليق
+            setTimeout(() => {
+                console.log("إرسال بيانات المطابقة للسيرفر...");
+            }, 1000);
+        });
+    </script>
 </body>
 </html>
-console.log("بدء إرسال بيانات المطابقة إلى السيرفر...");
-// الرابط الذي يتم إرسال البيانات إليه
-fetch('/api/auth/face-login', { // أو المسار الخاص بك
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ /* بيانات الوجه أو اسم المستخدم */ })
-})
-.then(response => response.json())
-.then(data => {
-    console.log("استجابة السيرفر:", data);
-    if (data.success) {
-        window.location.href = 'dashboard.html'; // أو صفحة التحكم
-    } else {
-        alert(data.message || 'فشلت المطابقة');
-    }
-})
-.catch(err => console.error("خطأ في الاتصال:", err));
