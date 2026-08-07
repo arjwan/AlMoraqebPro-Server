@@ -1,103 +1,117 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// إعدادات Middleware لتشغيل الطلبات والبيانات الكبيرة (مثل صور بصمة الوجه)
+// إعدادات Middleware
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 app.use(cors());
 
-// 1. الاتصال بقاعدة البيانات على الهارد دسك
-const db = new sqlite3.Database('./almoraqeb_pro.db', (err) => {
-    if (err) {
-        console.error('❌ خطأ في الاتصال بقاعدة البيانات على الهارد دسك:', err.message);
-    } else {
-        console.log('✅ تم الاتصال بقاعدة بيانات الهارد دسك (SQLite) بنجاح.');
+// الاتصال بقاعدة بيانات PostgreSQL (سواء عبر رابط سحابي في Render أو محلي)
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL, // سيعمل تلقائياً مع رابط Render أو متغيرات البيئة
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false // مطلوب أحياناً للسيرفرات السحابية
+});
+
+// اختبار الاتصال بـ PostgreSQL وتنشيط الجداول تلقائياً
+async function initDB() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS employees (
+                id SERIAL PRIMARY KEY,
+                device_id TEXT,
+                company_id TEXT,
+                name TEXT,
+                email TEXT,
+                specialty TEXT,
+                workplace TEXT,
+                username TEXT UNIQUE,
+                password TEXT,
+                location TEXT,
+                photo TEXT,
+                start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS loans (
+                id SERIAL PRIMARY KEY,
+                company_id TEXT,
+                username TEXT,
+                amount NUMERIC,
+                reason TEXT,
+                status TEXT DEFAULT 'معلق',
+                request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log('✅ تم الاتصال بقاعدة بيانات PostgreSQL وإنشاء الجداول بنجاح.');
+    } catch (err) {
+        console.error('❌ خطأ في تهيئة قاعدة بيانات PostgreSQL:', err.message);
     }
-});
+}
 
-// 2. إنشاء الجداول تلقائياً (الموظفين + السلف) إذا لم تكن موجودة
-db.serialize(() => {
-    // جدول الموظفين
-    db.run(`CREATE TABLE IF NOT EXISTS employees (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        device_id TEXT,
-        company_id TEXT,
-        name TEXT,
-        email TEXT,
-        specialty TEXT,
-        workplace TEXT,
-        username TEXT UNIQUE,
-        password TEXT,
-        location TEXT,
-        photo TEXT,
-        start_date TEXT
-    )`);
+initDB();
 
-    // جدول طلبات السلف
-    db.run(`CREATE TABLE IF NOT EXISTS loans (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        company_id TEXT,
-        username TEXT,
-        amount REAL,
-        reason TEXT,
-        status TEXT DEFAULT 'معلق',
-        request_date TEXT
-    )`);
-});
-
-// 3. مسار (API) تسجيل الموظف وحفظه على الهارد دسك
-app.post('/api/v1/employees', (req, res) => {
+// 1. مسار (API) تسجيل الموظف وحفظه في PostgreSQL
+app.post('/api/v1/employees', async (req, res) => {
     const { deviceId, companyId, name, email, specialty, workplace, username, password, location, photo } = req.body;
 
     if (!companyId || !name || !username || !password) {
         return res.status(400).json({ success: false, message: 'يرجى إدخال الحقول الأساسية المطلوبة.' });
     }
 
-    const query = `INSERT INTO employees (device_id, company_id, name, email, specialty, workplace, username, password, location, photo, start_date) 
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`;
-
-    db.run(query, [deviceId, companyId, name, email, specialty, workplace, username, password, location, photo], function(err) {
-        if (err) {
-            console.error("DB Insert Error:", err.message);
-            return res.status(400).json({ success: false, message: "اسم المستخدم موجود مسبقاً أو حدث خطأ في قاعدة البيانات." });
-        }
+    try {
+        const query = `
+            INSERT INTO employees (device_id, company_id, name, email, specialty, workplace, username, password, location, photo) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+            RETURNING id;
+        `;
+        const values = [deviceId, companyId, name, email, specialty, workplace, username, password, location, photo];
+        
+        const result = await pool.query(query, values);
+        
         res.status(201).json({ 
             success: true, 
-            message: "تم حفظ بيانات الموظف على الهارد دسك بنجاح.",
-            employeeId: this.lastID 
+            message: "تم حفظ بيانات الموظف في قاعدة البيانات بنجاح.",
+            employeeId: result.rows[0].id 
         });
-    });
+    } catch (err) {
+        console.error("DB Insert Error:", err.message);
+        res.status(400).json({ success: false, message: "اسم المستخدم موجود مسبقاً أو حدث خطأ في قاعدة البيانات." });
+    }
 });
 
-// 4. مسار (API) تقديم طلب سلفة جديد وحفظه على الهارد دسك
-app.post('/api/v1/loans', (req, res) => {
+// 2. مسار (API) تقديم طلب سلفة جديد وحفظه في PostgreSQL
+app.post('/api/v1/loans', async (req, res) => {
     const { companyId, username, amount, reason } = req.body;
 
     if (!companyId || !username || !amount) {
         return res.status(400).json({ success: false, message: 'بيانات الطلب غير مكتملة.' });
     }
 
-    const query = `INSERT INTO loans (company_id, username, amount, reason, request_date) 
-                   VALUES (?, ?, ?, ?, datetime('now'))`;
-
-    db.run(query, [companyId, username, amount, reason], function(err) {
-        if (err) {
-            console.error("Loan Insert Error:", err.message);
-            return res.status(500).json({ success: false, message: "فشل حفظ طلب السلفة." });
-        }
+    try {
+        const query = `
+            INSERT INTO loans (company_id, username, amount, reason) 
+            VALUES ($1, $2, $3, $4) 
+            RETURNING id;
+        `;
+        const values = [companyId, username, amount, reason];
+        
+        const result = await pool.query(query, values);
+        
         res.status(201).json({ 
             success: true, 
-            message: "تم تقديم طلب السلفة وحفظه على الهارد دسك بنجاح.",
-            loanId: this.lastID 
+            message: "تم تقديم طلب السلفة وحفظه بنجاح.",
+            loanId: result.rows[0].id 
         });
-    });
+    } catch (err) {
+        console.error("Loan Insert Error:", err.message);
+        res.status(500).json({ success: false, message: "فشل حفظ طلب السلفة." });
+    }
 });
 
 // تشغيل السيرفر
 app.listen(PORT, () => {
-    console.log(`🚀 سيرفر المراقب برو يعمل بكفاءة على المنفذ ${PORT} والبيانات تُحفظ مباشرة على الهارد دسك.`);
+    console.log(`🚀 سيرفر المراقب برو يعمل بكفاءة على المنفذ ${PORT} باستخدام PostgreSQL.`);
 });
