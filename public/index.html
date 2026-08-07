@@ -6,82 +6,142 @@
     <title>المراقب برو - تسجيل الدخول</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #1e293b, #0f172a); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .login-container { background: #ffffff; padding: 35px; border-radius: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3); width: 100%; max-width: 450px; }
-        h2 { margin-bottom: 20px; color: #1e293b; font-size: 24px; text-align: center; }
-        .form-group { margin-bottom: 15px; text-align: right; }
-        label { display: block; margin-bottom: 6px; color: #334155; font-size: 15px; font-weight: 600; }
-        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; outline: none; transition: border-color 0.3s; }
-        input:focus { border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
-        .btn { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; margin-top: 8px; }
+        body { background: linear-gradient(135deg, #1e293b, #0f172a); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; color: #1e293b; }
+        
+        .login-container { background: #ffffff; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); width: 100%; max-width: 450px; text-align: center; position: relative; }
+        h2 { margin-bottom: 8px; color: #1e293b; font-size: 24px; }
+        .subtitle { font-size: 14px; color: #64748b; margin-bottom: 25px; }
+        
+        .form-group { margin-bottom: 18px; text-align: right; }
+        label { display: block; margin-bottom: 6px; color: #334155; font-size: 14px; font-weight: 600; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 15px; outline: none; transition: all 0.3s; }
+        input:focus { border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); }
+        
+        .btn { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; margin-top: 5px; }
         .btn:hover { background: #1e293b; }
-        .status-msg { margin-top: 12px; font-size: 15px; font-weight: bold; text-align: center; min-height: 22px; width: 100%; }
+
+        /* زر الدخول السريع السفلي */
+        .quick-access-footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+        .quick-access-btn { background: linear-gradient(135deg, #0284c7, #0369a1); color: white; border: none; padding: 10px 20px; border-radius: 30px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+        .quick-access-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(2, 132, 199, 0.4); }
+
+        /* نافذة منبثقة (Modal) للدخول السريع */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-card { background: #ffffff; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: right; box-shadow: 0 20px 40px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal-overlay.active .modal-card { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { color: #0284c7; font-size: 18px; }
+        .close-modal { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; }
+        
+        .status-msg { margin-top: 12px; font-size: 14px; font-weight: bold; text-align: center; min-height: 20px; }
     </style>
 </head>
 <body>
 
+    <!-- الواجهة الأصلية في المنتصف -->
     <div class="login-container">
-        <h2>🔑 تسجيل الدخول للشركة</h2>
+        <h2>🔐 تسجيل الدخول</h2>
+        <p class="subtitle">أدخل بيانات الحساب أو استخدم بصمة الوجه</p>
         
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="companyCode">رمز أو معرف الشركة (مثال: company_123)</label>
-                <input type="text" id="companyCode" required placeholder="أدخل رمز الشركة الخاص بك[cite: 1]">
-            </div>
-
+        <form id="standardLoginForm" onsubmit="handleStandardLogin(event)">
             <div class="form-group">
                 <label for="username">اسم المستخدم</label>
-                <input type="text" id="username" required placeholder="أدخل اسم المستخدم">
+                <input type="text" id="username" placeholder="أدخل اسم المستخدم">
             </div>
             
             <div class="form-group">
                 <label for="password">كلمة المرور</label>
-                <input type="password" id="password" required placeholder="أدخل كلمة المرور">
+                <input type="password" id="password" placeholder="أدخل كلمة المرور">
             </div>
 
-            <button type="submit" class="btn">دخول لوحة التحكم</button>
+            <div class="form-group">
+                <label>بصمة الوجه</label>
+                <button type="button" class="btn" style="background: #0284c7;" onclick="alert('خاصية بصمة الوجه قيد التفعيل لاحقاً')">📷 تفعيل الكاميرا / بصمة الوجه</button>
+            </div>
+
+            <button type="submit" class="btn">دخول</button>
         </form>
 
-        <div class="status-msg" id="statusMsg"></div>
+        <!-- أيقونة / زر الدخول السريع في الأسفل -->
+        <div class="quick-access-footer">
+            <button class="quick-access-btn" onclick="openQuickModal()">
+                ⚡ الدخول السريع (برمز الشركة ورقم الهاتف)
+            </button>
+        </div>
+    </div>
+
+    <!-- نافذة الدخول السريع المنبثقة -->
+    <div class="modal-overlay" id="quickModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>⚡ الدخول الفوري للمدير</h3>
+                <button class="close-modal" onclick="closeQuickModal()">&times;</button>
+            </div>
+            <form id="quickLoginForm" onsubmit="handleQuickLogin(event)">
+                <div class="form-group">
+                    <label for="quickCompanyCode">رمز الشركة</label>
+                    <input type="text" id="quickCompanyCode" required placeholder="أدخل رمز الشركة">
+                </div>
+                <div class="form-group">
+                    <label for="quickPhone">رقم هاتف المدير</label>
+                    <input type="text" id="quickPhone" required placeholder="أدخل رقم الهاتف المسجل">
+                </div>
+                <button type="submit" class="btn" style="background: #0284c7;">تسجيل الدخول الفوري</button>
+            </form>
+            <div class="status-msg" id="quickStatusMsg"></div>
+        </div>
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        // التحكم بالنافذة المنبثقة
+        function openQuickModal() {
+            document.getElementById('quickModal').classList.add('active');
+        }
+        function closeQuickModal() {
+            document.getElementById('quickModal').classList.remove('active');
+        }
+
+        // معالجة تسجيل الدخول الاعتيادي (لاحقاً)
+        function handleStandardLogin(e) {
             e.preventDefault();
-            const companyCode = document.getElementById('companyCode').value.trim();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const statusMsg = document.getElementById('statusMsg');
+            alert('الواجهة الاصلية قيد التطوير والإصلاح لاحقاً، يمكنك استخدام زر الدخول السريع في الأسفل الآن.');
+        }
+
+        // معالجة الدخول السريع (رمز الشركة + رقم الهاتف)
+        async function handleQuickLogin(e) {
+            e.preventDefault();
+            const companyCode = document.getElementById('quickCompanyCode').value.trim();
+            const phone = document.getElementById('quickPhone').value.trim();
+            const statusMsg = document.getElementById('quickStatusMsg');
 
             statusMsg.style.color = "#0284c7";
-            statusMsg.textContent = "جاري التحقق من بيانات الشركة...";
+            statusMsg.textContent = "جاري التحقق الفوري...";
 
             try {
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch('/api/auth/quick-login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ companyCode, username, password })
+                    body: JSON.stringify({ companyCode, phone })
                 });
 
                 const data = await response.json();
                 if (data.success) {
                     statusMsg.style.color = "#16a34a";
-                    statusMsg.textContent = "تم تسجيل الدخول بنجاح، جاري التحويل...";
-                    
-                    // تخزين معرف الشركة في المتصفح والتحويل المباشر لصفحة الأدمن الخاصة بالشركة
+                    statusMsg.textContent = "تم التحقق بنجاح، جاري التحويل...";
                     localStorage.setItem('activeCompanyId', data.companyCode);
                     setTimeout(() => { 
                         window.location.href = `admin.html?company=${encodeURIComponent(data.companyCode)}`; 
-                    }, 1000);
+                    }, 800);
                 } else {
                     statusMsg.style.color = "#dc2626";
-                    statusMsg.textContent = data.message || "بيانات الدخول أو رمز الشركة غير صحيح";
+                    statusMsg.textContent = data.message || "بيانات الدخول السريع غير صحيحة";
                 }
             } catch (err) {
                 statusMsg.style.color = "#dc2626";
-                statusMsg.textContent = "حدث خطأ في الاتصال بالخادم";
+                statusMsg.textContent = "تعذر الاتصال بالخادم";
             }
-        });
+        }
     </script>
 </body>
 </html>
