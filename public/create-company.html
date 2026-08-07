@@ -2,149 +2,387 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم المطور - إدارة الشركات المسجلة</title>
+    <title>المراقب برو - الإدارة المركزية الفاخرة</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0f172a; color: #f8fafc; min-height: 100vh; padding: 40px; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .header { background: #1e293b; padding: 25px; border-radius: 16px; margin-bottom: 25px; border: 1px solid #334155; }
-        .header h2 { color: #38bdf8; font-size: 24px; margin-bottom: 8px; }
-        .header p { color: #94a3b8; font-size: 14px; }
-        
-        .search-box { margin-bottom: 25px; }
-        .search-box input { width: 100%; padding: 15px 20px; font-size: 16px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; color: #fff; outline: none; }
-        .search-box input:focus { border-color: #38bdf8; }
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 
-        .card { background: #1e293b; border: 1px solid #334155; padding: 25px; border-radius: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .info p { margin-bottom: 6px; font-size: 14px; color: #cbd5e1; }
-        .info p span { color: #38bdf8; font-weight: bold; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
         
-        .actions { display: flex; flex-direction: column; gap: 10px; min-width: 140px; }
-        .btn { padding: 10px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; color: white; text-align: center; font-size: 13px; }
-        .btn-pause { background: #f59e0b; }
-        .btn-pause:hover { background: #d97706; }
-        .btn-play { background: #10b981; }
-        .btn-play:hover { background: #059669; }
-        .btn-delete { background: #ef4444; }
-        .btn-delete:hover { background: #dc2626; }
-        
-        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-bottom: 8px; }
-        .status-active { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-        .status-stopped { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        body {
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a, #020617);
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 50px 20px;
+            background-attachment: fixed;
+        }
 
-        .empty-msg { text-align: center; color: #64748b; font-size: 18px; margin-top: 60px; background: #1e293b; padding: 40px; border-radius: 16px; border: 1px solid #334155; }
-        .dev-footer { margin-top: 40px; text-align: center; color: #64748b; font-size: 13px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .header-section h1 {
+            font-size: 42px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+            margin-bottom: 10px;
+        }
+        .header-section p {
+            color: #94a3b8;
+            font-size: 17px;
+        }
+
+        /* كارد النموذج الفاخر */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 45px;
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin-bottom: 50px;
+        }
+        .glass-card h2 {
+            font-size: 28px;
+            color: #38bdf8;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 2px solid rgba(56, 189, 248, 0.2);
+            padding-bottom: 15px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+        .input-group { display: flex; flex-direction: column; }
+        .full-width { grid-column: span 2; }
+
+        label {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #cbd5e1;
+            font-weight: 700;
+        }
+        input {
+            padding: 18px 20px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            color: white;
+            font-size: 17px;
+            transition: all 0.3s ease;
+        }
+        input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+            outline: none;
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .btn-main {
+            grid-column: span 2;
+            padding: 20px;
+            background: linear-gradient(135deg, #0284c7, #6366f1);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 20px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(2, 132, 199, 0.4);
+            margin-top: 10px;
+        }
+        .btn-main:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(99, 102, 241, 0.5);
+        }
+
+        /* بطاقات الشركات المحفوظة */
+        .section-title {
+            font-size: 26px;
+            color: #f1f5f9;
+            margin-bottom: 25px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .company-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 30px;
+            border-radius: 24px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+        .company-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .comp-info {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            flex: 1;
+        }
+        .comp-photo {
+            width: 95px;
+            height: 95px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #38bdf8;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+        }
+        .text-data h3 {
+            font-size: 22px;
+            margin-bottom: 8px;
+            color: #f8fafc;
+        }
+        .text-data p {
+            color: #94a3b8;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 150px;
+        }
+        .btn-action {
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+            color: white;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .btn-edit { background: #0284c7; }
+        .btn-edit:hover { background: #0369a1; }
+        .btn-save { background: #10b981; display: none; }
+        .btn-save:hover { background: #059669; }
+        .btn-status-stop { background: #f59e0b; color: #000; font-weight: 900; }
+        .btn-status-play { background: #10b981; }
+        .btn-del { background: #ef4444; }
+        .btn-del:hover { background: #dc2626; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .status-active { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .status-stopped { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+        input.edit-input {
+            padding: 8px 12px;
+            font-size: 15px;
+            background: #0b0f19;
+            border: 1px solid #38bdf8;
+            border-radius: 8px;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="header">
-            <h2>🛡️ لوحة المطور - إدارة الشركات المسجلة</h2>
-            <p>شركة الأرجوان للبرمجيات | التحكم الكامل بالشركات المفعلة (إيقاف، تشغيل، حذف، وبحث)</p>
-        </div>
-
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="🔍 ابحث عن شركة (بالاسم، المعرف، أو اسم المستخدم)..." oninput="filterCompanies()">
-        </div>
-
-        <div id="companiesContainer">
-            <!-- يتم تحميل الشركات هنا ديناميكياً -->
-        </div>
-
-        <div class="dev-footer">
-            الدعم الفني: 07807807491 (واتساب) | البريد: mohmed1628@gmail.com
-        </div>
+<div class="container">
+    <div class="header-section">
+        <h1>🛡️ المراقب برو</h1>
+        <p>نظام الإدارة والسيطرة المركزية للشركات</p>
     </div>
 
-    <script>
-        function loadCompanies() {
-            const container = document.getElementById('companiesContainer');
-            const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+    <!-- نموذج التسجيل -->
+    <div class="glass-card">
+        <h2>✨ تسجيل وتأسيس شركة جديدة</h2>
+        <form id="regForm" class="form-grid">
+            <div class="input-group full-width">
+                <label>رمز الشركة (المعرف الأساسي - بالأعلى)</label>
+                <input type="text" id="cId" required placeholder="مثال: COMP-01">
+            </div>
+            <div class="input-group">
+                <label>اسم الشركة بالعربي</label>
+                <input type="text" id="cNameAr" required placeholder="مثال: شركة الأرجوان للبرمجيات">
+            </div>
+            <div class="input-group">
+                <label>اسم الشركة بالإنجليزي (English Name)</label>
+                <input type="text" id="cNameEn" required placeholder="Example: Al-Argouan Software">
+            </div>
+            <div class="input-group">
+                <label>اسم المدير المسؤول</label>
+                <input type="text" id="mName" required placeholder="الاسم الكامل للمدير">
+            </div>
+            <div class="input-group">
+                <label>رقم الهاتف</label>
+                <input type="text" id="mPhone" required placeholder="رقم الهاتف للتواصل والدخول السريع">
+            </div>
+            <div class="input-group">
+                <label>اسم المستخدم</label>
+                <input type="text" id="mUser" required placeholder="اسم المستخدم للنظام">
+            </div>
+            <div class="input-group">
+                <label>كلمة المرور</label>
+                <input type="password" id="mPass" required placeholder="كلمة المرور السرية">
+            </div>
+            <div class="input-group">
+                <label>إيميل الشركة (البريد الإلكتروني)</label>
+                <input type="email" id="cEmail" required placeholder="company@domain.com">
+            </div>
+            <div class="input-group">
+                <label>رابط صورة المدير الشخصية (URL)</label>
+                <input type="text" id="mPhoto" required placeholder="ضع رابط الصورة هنا">
+            </div>
+            <button type="submit" class="btn-main">حفظ وتنشيط الشركة في النظام 🚀</button>
+        </form>
+    </div>
 
-            if (companiesList.length === 0) {
-                container.innerHTML = '<div class="empty-msg">📭 لا توجد أي شركات مسجلة في النظام حالياً.</div>';
-                return;
-            }
+    <!-- قائمة الشركات -->
+    <div class="section-title">📋 الشركات المسجلة والمدرجة حالياً</div>
+    <div id="compList"></div>
+</div>
 
-            renderCompanies(companiesList);
+<script>
+    document.getElementById('regForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const newComp = {
+            id: document.getElementById('cId').value.trim(),
+            nameAr: document.getElementById('cNameAr').value.trim(),
+            nameEn: document.getElementById('cNameEn').value.trim(),
+            manager: document.getElementById('mName').value.trim(),
+            phone: document.getElementById('mPhone').value.trim(),
+            username: document.getElementById('mUser').value.trim(),
+            password: document.getElementById('mPass').value.trim(),
+            email: document.getElementById('cEmail').value.trim(),
+            photo: document.getElementById('mPhoto').value.trim(),
+            status: 'active'
+        };
+
+        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        list.push(newComp);
+        localStorage.setItem('registeredCompanies', JSON.stringify(list));
+        renderList();
+        this.reset();
+    });
+
+    function renderList() {
+        const list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        const container = document.getElementById('compList');
+        container.innerHTML = '';
+
+        if (list.length === 0) {
+            container.innerHTML = '<div style="background: rgba(30,41,59,0.4); padding: 30px; text-align: center; border-radius: 20px; color: #94a3b8; font-size: 18px;">📭 لا توجد شركات مسجلة في النظام حتى الآن.</div>';
+            return;
         }
 
-        function renderCompanies(list) {
-            const container = document.getElementById('companiesContainer');
-            if (list.length === 0) {
-                container.innerHTML = '<div class="empty-msg">🔍 لم يتم العثور على أي شركة تطابق بحثك.</div>';
-                return;
-            }
+        list.forEach((c, index) => {
+            const isActive = c.status !== 'stopped';
+            const statusClass = isActive ? 'status-active' : 'status-stopped';
+            const statusText = isActive ? '🟢 مفعل (يعمل بكفاءة)' : '🟡 متوقف مؤقتاً';
 
-            container.innerHTML = '';
-            list.forEach((comp) => {
-                const isActive = comp.status !== 'stopped';
-                const statusClass = isActive ? 'status-active' : 'status-stopped';
-                const statusText = isActive ? '🟢 مفعل (يعمل)' : '🟡 متوقف مؤقتاً';
-
-                container.innerHTML += `
-                    <div class="card">
-                        <div class="info">
+            container.innerHTML += `
+                <div class="company-card" id="card-${index}">
+                    <div class="comp-info">
+                        <img src="${c.photo}" class="comp-photo">
+                        <div class="text-data" style="width: 100%;">
                             <span class="status-badge ${statusClass}">${statusText}</span>
-                            <p>معرف الشركة (ID): <span>${comp.id || comp.company_id || 'غير متوفر'}</span></p>
-                            <p>اسم الشركة العربي: <span>${comp.name || comp.company_name || 'غير متوفر'}</span></p>
-                            <p>اسم المدير: <span>${comp.manager || 'غير متوفر'}</span></p>
-                            <p>رقم الهاتف: <span>${comp.phone || 'غير متوفر'}</span></p>
-                            <p>اسم المستخدم: <span>${comp.username || 'غير متوفر'}</span></p>
-                        </div>
-                        <div class="actions">
-                            ${isActive ? 
-                                `<button class="btn btn-pause" onclick="toggleStatus('${comp.id || comp.company_id}', 'stop')">⏸️ إيقاف مؤقت</button>` : 
-                                `<button class="btn btn-play" onclick="toggleStatus('${comp.id || comp.company_id}', 'start')">▶️ تشغيل النظام</button>`
-                            }
-                            <button class="btn btn-delete" onclick="deleteCompany('${comp.id || comp.company_id}')">🗑️ حذف الشركة</button>
+                            <h3>
+                                <span id="nameAr-text-${index}">${c.nameAr}</span> / 
+                                <span id="nameEn-text-${index}">${c.nameEn}</span> 
+                                <small style="color:#38bdf8">(${c.id})</small>
+                            </h3>
+                            <p>المدير المسؤول: <b id="manager-text-${index}">${c.manager}</b> | الهاتف: <b id="phone-text-${index}">${c.phone}</b></p>
+                            <p>البريد الإلكتروني: <b id="email-text-${index}">${c.email}</b></p>
+                            <p>اسم المستخدم: ${c.username} | كلمة المرور: <span id="pass-text-${index}">${c.password}</span></p>
+                            <p id="photo-p-${index}" style="display:none; margin-top:8px;">رابط الصورة الجديد: <input type="text" class="edit-input" id="photo-input-${index}" value="${c.photo}" style="width:75%;"></p>
                         </div>
                     </div>
-                `;
-            });
+                    <div class="actions">
+                        <button class="btn-action ${isActive ? 'btn-status-stop' : 'btn-status-play'}" onclick="toggleStatus(${index})">
+                            ${isActive ? '⏸️ إيقاف النظام' : '▶️ تشغيل النظام'}
+                        </button>
+                        <button class="btn-action btn-edit" id="edit-btn-${index}" onclick="enableEdit(${index})">✏️ تعديل البيانات</button>
+                        <button class="btn-action btn-save" id="save-btn-${index}" onclick="saveEdit(${index})">💾 حفظ التعديلات</button>
+                        <button class="btn-action btn-del" onclick="deleteComp(${index})">🗑️ حذف الشركة</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function enableEdit(index) {
+        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        let c = list[index];
+
+        document.getElementById(`nameAr-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameAr-${index}" value="${c.nameAr}" style="width: 130px;">`;
+        document.getElementById(`nameEn-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameEn-${index}" value="${c.nameEn}" style="width: 130px;">`;
+        document.getElementById(`manager-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-manager-${index}" value="${c.manager}" style="width: 110px;">`;
+        document.getElementById(`phone-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-phone-${index}" value="${c.phone}" style="width: 110px;">`;
+        document.getElementById(`email-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-email-${index}" value="${c.email}" style="width: 180px;">`;
+        document.getElementById(`pass-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-pass-${index}" value="${c.password}" style="width: 100px;">`;
+        
+        document.getElementById(`photo-p-${index}`).style.display = 'block';
+
+        document.getElementById(`edit-btn-${index}`).style.display = 'none';
+        document.getElementById(`save-btn-${index}`).style.display = 'block';
+    }
+
+    function saveEdit(index) {
+        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        
+        list[index].nameAr = document.getElementById(`edit-nameAr-${index}`).value;
+        list[index].nameEn = document.getElementById(`edit-nameEn-${index}`).value;
+        list[index].manager = document.getElementById(`edit-manager-${index}`).value;
+        list[index].phone = document.getElementById(`edit-phone-${index}`).value;
+        list[index].email = document.getElementById(`edit-email-${index}`).value;
+        list[index].password = document.getElementById(`edit-pass-${index}`).value;
+        list[index].photo = document.getElementById(`photo-input-${index}`).value;
+
+        localStorage.setItem('registeredCompanies', JSON.stringify(list));
+        alert('✨ تم حفظ التعديلات وتحديث بيانات الشركة بنجاح!');
+        renderList();
+    }
+
+    function toggleStatus(index) {
+        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        list[index].status = (list[index].status === 'stopped') ? 'active' : 'stopped';
+        localStorage.setItem('registeredCompanies', JSON.stringify(list));
+        renderList();
+    }
+
+    function deleteComp(index) {
+        if(confirm('⚠️ هل أنت متأكد من رغبتك في حذف هذه الشركة نهائياً من النظام؟')) {
+            let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+            list.splice(index, 1);
+            localStorage.setItem('registeredCompanies', JSON.stringify(list));
+            renderList();
         }
+    }
 
-        function filterCompanies() {
-            const query = document.getElementById('searchInput').value.trim().toLowerCase();
-            const companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-
-            const filtered = companiesList.filter(c => {
-                const id = (c.id || c.company_id || '').toLowerCase();
-                const name = (c.name || c.company_name || '').toLowerCase();
-                const username = (c.username || '').toLowerCase();
-                const manager = (c.manager || '').toLowerCase();
-
-                return id.includes(query) || name.includes(query) || username.includes(query) || manager.includes(query);
-            });
-
-            renderCompanies(filtered);
-        }
-
-        function toggleStatus(companyId, action) {
-            let companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            companiesList = companiesList.map(c => {
-                const currentId = c.id || c.company_id;
-                if (currentId === companyId) {
-                    c.status = (action === 'stop') ? 'stopped' : 'active';
-                }
-                return c;
-            });
-            localStorage.setItem('registeredCompanies', JSON.stringify(companiesList));
-            filterCompanies();
-        }
-
-        function deleteCompany(companyId) {
-            if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف هذه الشركة نهائياً من النظام؟')) {
-                let companiesList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-                companiesList = companiesList.filter(c => (c.id || c.company_id) !== companyId);
-                localStorage.setItem('registeredCompanies', JSON.stringify(companiesList));
-                filterCompanies();
-            }
-        }
-
-        window.onload = loadCompanies;
-    </script>
+    window.onload = renderList;
+</script>
 </body>
 </html>
