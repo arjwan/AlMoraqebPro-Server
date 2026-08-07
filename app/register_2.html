@@ -290,7 +290,7 @@
             }
         }
 
-        // إرسال وحفظ البيانات
+        // إرسال وحفظ البيانات والانتقال التلقائي لصفحة تسجيل الدخول
         document.getElementById('registerForm').addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -318,7 +318,7 @@
                 username: document.getElementById('username').value,
                 password: document.getElementById('password').value,
                 photo: capturedImageData,
-                location: locationVal, // الإحداثيات الأساسية للتحقق من البصمة لاحقاً
+                location: locationVal,
                 startDate: new Date().toLocaleDateString(),
                 status: "نشط"
             };
@@ -326,8 +326,9 @@
             const result = saveEmployee(newEmployee);
 
             if (result.success) {
-                alert('🎉 تم تسجيل حسابك بنجاح واعتماد موقعك وصورتك للربط بلوحة تحكم المدير!');
-                window.location.href = 'index.html';
+                alert('🎉 تم تسجيل حسابك بنجاح! سيتم تحويلك الآن إلى صفحة تسجيل الدخول.');
+                // التوجيه الإجباري والمباشر إلى صفحة login.html
+                window.location.href = 'login.html';
             } else {
                 alert('⚠️ ' + result.message);
             }
