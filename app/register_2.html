@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل الموظف (سريع ومحدث)</title>
+    <title>المراقب برو - التسجيل الآمن والذكي</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
@@ -51,15 +51,7 @@
             font-weight: bold;
             margin-top: 5px;
         }
-        .btn-cam:hover { opacity: 0.9; }
-
-        .gps-status {
-            font-size: 12px;
-            color: #34d399;
-            margin-top: 5px;
-            font-weight: bold;
-        }
-
+        .gps-status { font-size: 12px; color: #34d399; margin-top: 5px; font-weight: bold; }
         .btn { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.2s; }
         .btn:hover { background: #059669; }
         #successMsg { display: none; margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; }
@@ -68,21 +60,24 @@
 <body>
 
     <div class="card">
-        <h2>📸 تسجيل موظف (سريع وخفيف)</h2>
+        <h2>🛡️ تسجيل موظف (نظام منع التكرار الذكي)</h2>
         
         <div class="form-group">
-            <label>الاسم الكامل:</label>
-            <input type="text" id="empName" placeholder="أدخل اسمك الثلاثي">
+            <label>الاسم الكامل (الثلاثي):</label>
+            <input type="text" id="empName" placeholder="أدخل الاسم الكامل">
         </div>
         
         <div class="form-group">
-            <label>العنوان الوظيفي / الاختصاص:</label>
-            <input type="text" id="empSpecialty" placeholder="مثال: مبرمج نظم، إداري">
+            <label>البريد الإلكتروني:</label>
+            <input type="email" id="empEmail" placeholder="name@company.com">
         </div>
 
         <div class="form-group">
-            <label>مكان العمل / الفرع:</label>
-            <input type="text" id="empWorkplace" placeholder="مثال: المقر الرئيسي - بغداد">
+            <label>العنوان الوظيفي ومكان العمل:</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="empSpecialty" placeholder="الاختصاص" style="flex:1;">
+                <input type="text" id="empWorkplace" placeholder="مكان العمل" style="flex:1;">
+            </div>
         </div>
 
         <div class="form-group">
@@ -94,96 +89,89 @@
         </div>
 
         <div class="capture-section">
-            <label style="margin-bottom: 8px;">صورة الوجه (بصمة خفيفة) والموقع:</label>
-            <button type="button" class="btn-cam" onclick="startCamera()">📷 فتح الكاميرا لالتقاط الصورة</button>
-            
+            <label style="margin-bottom: 8px;">بصمة الوجه والموقع الجغرافي (GPS):</label>
+            <button type="button" class="btn-cam" onclick="startCamera()">📷 فتح الكاميرا للصورة</button>
             <video id="videoElement" autoplay playsinline></video>
-            <button type="button" id="snapBtn" class="btn-cam" style="background: #10b981; display: none;" onclick="takeSnapshot()">📸 التقاط الصورة</button>
+            <button type="button" id="snapBtn" class="btn-cam" style="background: #10b981; display: none;" onclick="takeSnapshot()">📸 التقاط</button>
             <canvas id="canvasElement"></canvas>
-            
-            <img id="snapshotPreview" class="snapshot-preview" alt="صورة الموظف">
-            <div id="gpsStatus" class="gps-status">📍 جاري جلب الإحداثيات...</div>
+            <img id="snapshotPreview" class="snapshot-preview" alt="صورة">
+            <div id="gpsStatus" class="gps-status">📍 جاري رصد الـ GPS والمعرف الفريد للجهاز...</div>
         </div>
 
-        <button class="btn" onclick="fastRegisterAndRedirect()">💾 حفظ والانتقال الفوري لدخول النظام</button>
-        <div id="successMsg">✅ تم التسجيل بنجاح! جاري التوجيه...</div>
+        <button class="btn" onclick="registerWithStrictValidation()">💾 حفظ نهائي ومزامنة مع النظام</button>
+        <div id="successMsg">✅ تم التحقق والتسجيل بنجاح! جاري تحويلك...</div>
     </div>
 
     <script>
         let compressedPhotoData = "";
         let currentGPSLocation = "غير متوفر";
+        let deviceUniqueId = "";
+
+        // توليد أو جلب معرف فريد وثابت لهذا الهاتف/المتصفح لمنع التكرار من نفس الجهاز
+        function getOrCreateDeviceID() {
+            let id = localStorage.getItem('system_device_fingerprint');
+            if (!id) {
+                id = 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase() + '-' + Date.now();
+                localStorage.setItem('system_device_fingerprint', id);
+            }
+            return id;
+        }
 
         function startCamera() {
             const video = document.getElementById('videoElement');
             const snapBtn = document.getElementById('snapBtn');
-            
             navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false })
                 .then(stream => {
                     video.style.display = 'block';
                     video.srcObject = stream;
                     snapBtn.style.display = 'inline-block';
                 })
-                .catch(err => {
-                    alert("⚠️ تعذر الوصول للكاميرا.");
-                });
+                .catch(err => alert("⚠️ تعذر تشغيل الكاميرا."));
         }
 
         function takeSnapshot() {
             const video = document.getElementById('videoElement');
             const canvas = document.getElementById('canvasElement');
             const preview = document.getElementById('snapshotPreview');
-            
-            // تصغير أبعاد الصورة لضمان خفة وسرعة النظام وعدم الثقل
             canvas.width = 150;
             canvas.height = 150;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, 150, 150);
-            
-            // ضغط جودة الصورة إلى 70% بصيغة JPEG الخفيفة
             compressedPhotoData = canvas.toDataURL('image/jpeg', 0.7);
             preview.src = compressedPhotoData;
             preview.style.display = 'block';
-            
             let stream = video.srcObject;
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
+            if (stream) stream.getTracks().forEach(track => track.stop());
             video.style.display = 'none';
             document.getElementById('snapBtn').style.display = 'none';
         }
 
         window.onload = function() {
+            deviceUniqueId = getOrCreateDeviceID();
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude.toFixed(4);
-                        const lng = position.coords.longitude.toFixed(4);
-                        currentGPSLocation = `${lat}, ${lng} (دقيق)`;
-                        document.getElementById('gpsStatus').innerText = `📍 الموقع: ${currentGPSLocation}`;
-                    },
-                    (error) => {
-                        currentGPSLocation = "33.3152, 44.3661 (بغداد)";
-                        document.getElementById('gpsStatus').innerText = "📍 الموقع الافتراضي مفعل.";
-                    },
+                    (pos) => { currentGPSLocation = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`; document.getElementById('gpsStatus').innerText = `📍 الجهاز محمي والموقع جاهز.`; },
+                    (err) => { currentGPSLocation = "33.3152, 44.3661 (بغداد افتراضي)"; document.getElementById('gpsStatus').innerText = `📍 المعرف الفريد جاهز وموقع افتراضي نشط.`; },
                     { timeout: 5000 }
                 );
             }
         };
 
-        function fastRegisterAndRedirect() {
+        function registerWithStrictValidation() {
             const name = document.getElementById('empName').value.trim();
+            const email = document.getElementById('empEmail').value.trim();
             const specialty = document.getElementById('empSpecialty').value.trim();
             const workplace = document.getElementById('empWorkplace').value.trim();
             const username = document.getElementById('empUsername').value.trim();
             const password = document.getElementById('empPassword').value.trim();
 
-            if (!name || !specialty || !workplace || !username || !password) {
-                alert("⚠️ يرجى ملء كافة الحقول.");
+            if (!name || !email || !specialty || !workplace || !username || !password) {
+                alert("⚠️ يرجى تعبئة كافة الحقول المطلوبة بدقة.");
                 return;
             }
 
             if (!compressedPhotoData) {
-                alert("⚠️ يرجى التقاط الصورة أولاً.");
+                alert("⚠️ يرجى التقاط صورة الوجه أولاً.");
                 return;
             }
 
@@ -191,32 +179,50 @@
             let companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'B-2060';
             const storageKey = `company_employees_${companyId}`;
             
-            let employees = JSON.parse(localStorage.getItem(storageKey)) || [];
+            // جلب البيانات مع ضمان استمرارية الحفظ
+            let employees = JSON.parse(localStorage.getItem(storageKey)) || JSON.parse(localStorage.getItem('company_employees')) || [];
 
+            // 1. فحص تكرار المعرف الفريد للجهاز (منع تسجيل نفس الهاتف أكثر من مرة)
+            const deviceExists = employees.some(emp => emp.deviceId === deviceUniqueId);
+            if (deviceExists) {
+                alert("❌ عذراً، هذا الهاتف مسجل مسبقاً في النظام ولا يمكن تسجيل موظف آخر من نفس الجهاز.");
+                return;
+            }
+
+            // 2. فحص تكرار البريد الإلكتروني أو اسم المستخدم
+            const conflictExists = employees.some(emp => emp.email === email || emp.username === username || emp.name === name);
+            if (conflictExists) {
+                alert("❌ خطأ: اسم المستخدم، البريد الإلكتروني، أو الاسم الكامل موجود مسبقاً في قاعدة بيانات الشركة!");
+                return;
+            }
+
+            // بناء كائن الموظف الحقيقي والكامل
             const newEmp = {
+                deviceId: deviceUniqueId,
                 name: name,
+                email: email,
                 specialty: specialty,
                 workplace: workplace,
                 username: username,
                 password: password,
                 location: currentGPSLocation,
-                startDate: new Date().toLocaleDateString('ar-EG'),
+                startDate: new Date().toLocaleString('ar-EG'),
                 photo: compressedPhotoData,
                 companyId: companyId
             };
 
+            // إدراج البيانات في الصدارة وحفظها في عدة مسارات لضمان عدم ضياعها نهائياً
             employees.unshift(newEmp);
-            
-            // التخزين السريع
             localStorage.setItem(storageKey, JSON.stringify(employees));
             localStorage.setItem('company_employees', JSON.stringify(employees));
+            localStorage.setItem(`active_session_${username}`, JSON.stringify(newEmp));
 
             document.getElementById('successMsg').style.display = 'block';
 
-            // التحويل الفوري والمباشر لصفحة تسجيل الدخول دون تأخير
+            // الانتقال السلس والمؤكد لصفحة تسجيل الدخول
             setTimeout(() => {
                 window.location.href = `login.html?company=${companyId}`;
-            }, 1000);
+            }, 1200);
         }
     </script>
 </body>

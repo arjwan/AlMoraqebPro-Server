@@ -3,214 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - أرشيف وملف الموظف (المستندات والوثائق السرية)</title>
+    <title>المراقب برو - أرشيف وملف الموظف</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #1e1b4b 0%, #31103f 50%, #0f0c1b 100%); color: #1e293b; min-height: 100vh; padding: 25px; }
-        .main-container { max-width: 1700px; margin: 0 auto; background: #ffffff; padding: 35px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
-        h2 { font-size: 24px; font-weight: 800; color: #4f46e5; }
-        .back-btn { background: #eef2ff; color: #4f46e5; padding: 10px 20px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 14px; border: 1px solid #c7d2fe; transition: 0.2s; }
-        .back-btn:hover { background: #4f46e5; color: #fff; }
-        .selector-section { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; margin-bottom: 25px; display: flex; gap: 20px; align-items: center; }
-        .selector-group { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        label { font-size: 14px; font-weight: 700; color: #334155; }
-        select, input { background: #fff; border: 2px solid #cbd5e1; padding: 12px 15px; border-radius: 12px; font-size: 15px; outline: none; transition: 0.3s; }
-        select:focus, input:focus { border-color: #4f46e5; box-shadow: 0 0 8px rgba(79, 70, 229, 0.2); }
-        
-        /* تنسيق بطاقة الموظف المتناسقة */
-        .employee-profile-card { display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 30px; border-radius: 20px; margin-bottom: 25px; }
-        .profile-header-flex { display: flex; align-items: center; gap: 25px; border-bottom: 2px dashed #bbf7d0; padding-bottom: 20px; margin-bottom: 20px; }
-        .employee-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid #166534; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: #e2e8f0; }
-        .profile-info h3 { color: #166534; font-size: 22px; margin-bottom: 8px; }
-        .profile-info p { font-size: 14px; color: #15803d; margin-bottom: 5px; font-weight: 600; }
-        
-        .upload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; background: #fafaf9; padding: 20px; border-radius: 14px; border: 1px solid #e7e5e4; margin-top: 15px; }
-        .upload-box { display: flex; flex-direction: column; gap: 6px; }
-        .upload-box input[type="file"] { padding: 6px; font-size: 13px; background: #fff; border: 2px dashed #a8a29e; }
-        .required-tag { color: #dc2626; font-size: 12px; font-weight: bold; }
-        .optional-tag { color: #059669; font-size: 12px; font-weight: bold; }
-        .btn-save-doc { grid-column: 1 / -1; background: #4f46e5; color: #fff; padding: 14px; font-size: 15px; font-weight: 800; border-radius: 12px; border: none; cursor: pointer; transition: 0.3s; }
-        .btn-save-doc:hover { background: #4338ca; }
-        
-        .archive-table-container { width: 100%; overflow-x: auto; border-radius: 14px; border: 1px solid #e2e8f0; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; background: #fff; white-space: nowrap; }
-        th, td { padding: 12px 15px; text-align: center; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
-        th { background: #eef2ff; color: #4f46e5; font-weight: 800; }
-        .badge-file { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px; }
-        .btn-action { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 13px; }
-        .btn-preview { background: #0284c7; color: #fff; margin-left: 5px; }
-        .empty-notice { text-align: center; padding: 40px; color: #64748b; font-weight: 600; font-size: 16px; background: #f8fafc; border-radius: 16px; border: 2px dashed #cbd5e1; }
+        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; padding: 25px; display: flex; justify-content: center; align-items: center; }
+        .main-card { width: 100%; max-width: 1200px; background: #ffffff; padding: 30px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+        h2 { font-size: 22px; font-weight: 800; color: #0284c7; }
+        .btn { background: #0284c7; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .btn:hover { opacity: 0.9; }
+        .form-section { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 14px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #334155; }
+        select, input[type="file"] { width: 100%; padding: 10px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: #fff; outline: none; }
+        .files-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .file-card { background: #fff; border: 1px dashed #94a3b8; padding: 12px; border-radius: 10px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; background: #f8fafc; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; margin-top: 15px; }
+        th, td { padding: 12px; text-align: center; font-size: 13px; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; color: #334155; font-weight: 700; }
+        .success-msg { display: none; background: #d1fae5; color: #065f46; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div class="main-container">
-        <div class="top-bar">
-            <h2>🗂️ أرشيف وملف الموظف (المستندات والوثائق السرية + الصورة الشخصية)</h2>
-            <a href="admin.html" class="back-btn">← العودة إلى لوحة التحكم</a>
+    <div class="main-card">
+        <div class="top-nav">
+            <h2>📁 أرشيف وملف الموظف (المستندات والوثائق الرسمية)</h2>
+            <button class="btn" onclick="window.location.href='admin.html'">← العودة لوحة التحكم</button>
         </div>
 
-        <div class="selector-section">
-            <div class="selector-group">
-                <label>اختر الموظف لعرض أرشيفه المستندي والصورة الشخصية:</label>
+        <div id="successMsg" class="success-msg">✅ تم حفظ وثائق الموظف ومزامنتها بنجاح محلياً!</div>
+
+        <div class="form-section">
+            <div class="form-group">
+                <label>اختر الموظف لعرض أو رفع أوراقه الشخصية:</label>
                 <select id="employeeSelect" onchange="loadEmployeeArchive()">
-                    <option value="">-- اختر موظفاً من القائمة --</option>
-                    <option value="1">أحمد محمد علي (مطور نظماً)</option>
-                    <option value="2">محمد عبد علي (مسؤول بصمة)</option>
-                    <option value="3">علي الزيدي (مشرف إداري)</option>
+                    <!-- يتم تعبئتها تلقائياً -->
                 </select>
             </div>
-        </div>
 
-        <div id="noticeBox" class="empty-notice">
-            ⚠️ يرجى اختيار موظف من القائمة أعلاه لاستعراض مستنداته وأرشيفه وصورته الشخصية الحديثة.
-        </div>
-
-        <div id="profileSection" class="employee-profile-card">
-            <!-- رأس البطاقة المتناسق (الصورة بجانب البيانات) -->
-            <div class="profile-header-flex">
-                <img id="empAvatarImg" src="" alt="الصورة الشخصية" class="employee-avatar">
-                <div class="profile-info">
-                    <h3 id="empNameTitle">اسم الموظف</h3>
-                    <p>📌 الحالة الوظيفية: نشط ومستمر</p>
-                    <p>🔒 حالة الأرشيف: <span id="archiveStatusBadge" class="badge-file">مكتمل الوثائق</span></p>
+            <div class="files-grid">
+                <div class="file-card">
+                    <label>الصورة الشخصية:</label>
+                    <input type="file" id="personalPhoto" accept="image/*">
+                </div>
+                <div class="file-card">
+                    <label>البطاقة التعريفية:</label>
+                    <input type="file" id="idCard" accept="image/*,.pdf">
+                </div>
+                <div class="file-card">
+                    <label>العقد الوظيفي:</label>
+                    <input type="file" id="workContract" accept="image/*,.pdf">
+                </div>
+                <div class="file-card">
+                    <label>الشهادات:</label>
+                    <input type="file" id="certificates" accept="image/*,.pdf">
                 </div>
             </div>
 
-            <div>
-                <h4 style="color: #166534; margin-bottom: 10px; font-size: 15px;">📥 رفع وتحديث الملفات والصورة على السيرفر:</h4>
-                <form id="docUploadForm" onsubmit="uploadDocumentToSever(event)" class="upload-grid">
-                    <div class="upload-box">
-                        <label>الصورة الشخصية <span class="optional-tag">حديثة</span></label>
-                        <input type="file" name="empPhotoFile" accept=".jpg, .png">
-                    </div>
-                    <div class="upload-box">
-                        <label>البطاقة التعريفية <span class="required-tag">*إجباري</span></label>
-                        <input type="file" name="reqIdCard" accept=".pdf, .jpg, .png">
-                    </div>
-                    <div class="upload-box">
-                        <label>العقد الوظيفي <span class="optional-tag">اختياري</span></label>
-                        <input type="file" name="optContract" accept=".pdf, .jpg, .png">
-                    </div>
-                    <div class="upload-box">
-                        <label>الشهادات <span class="optional-tag">اختياري</span></label>
-                        <input type="file" name="optCert" accept=".pdf, .jpg, .png">
-                    </div>
-                    <button type="submit" class="btn-save-doc">💾 حفظ ومزامنة الملفات مع قاعدة بيانات السيرفر</button>
-                </form>
-            </div>
+            <button class="btn" style="background: #10b981; width: 100%; padding: 12px; font-size: 15px;" onclick="saveArchiveLocally()">💾 حفظ ومزامنة الملفات مع قاعدة بيانات النظام</button>
         </div>
 
-        <div id="tableWrapper" style="display: none;">
-            <h3 style="font-size: 16px; color: #4f46e5; margin-bottom: 10px;">📋 المستندات المؤرشفة الفعالة:</h3>
-            <div class="archive-table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ت</th>
-                            <th>نوع المستند</th>
-                            <th>اسم الملف في السيرفر</th>
-                            <th>التصنيف</th>
-                            <th>تاريخ الرفع</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="archiveTableBody"></tbody>
-                </table>
-            </div>
+        <div>
+            <h3 style="font-size: 16px; color: #334155; margin-bottom: 10px;">📋 المستندات المؤرشفة الفعالة:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>نوع المستند</th>
+                        <th>اسم الملف</th>
+                        <th>التصنيف</th>
+                        <th>تاريخ الرفع</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="archiveTableBody">
+                    <tr><td colspan="5" style="color: #64748b; padding: 20px;">اختر موظفاً لعرض مستنداته المؤرشفة.</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script>
-        async function loadEmployeeArchive() {
-            let empId = document.getElementById('employeeSelect').value;
-            let noticeBox = document.getElementById('noticeBox');
-            let profileSection = document.getElementById('profileSection');
-            let tableWrapper = document.getElementById('tableWrapper');
+        let currentCompanyId = '';
+        let employeesList = [];
 
-            if (!empId) {
-                noticeBox.style.display = 'block';
-                profileSection.style.display = 'none';
-                tableWrapper.style.display = 'none';
-                return;
-            }
+        function initArchive() {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentCompanyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'B-2060';
 
-            noticeBox.style.display = 'none';
-            profileSection.style.display = 'block';
-            tableWrapper.style.display = 'block';
+            const storageKey = `company_employees_${currentCompanyId}`;
+            employeesList = JSON.parse(localStorage.getItem(storageKey)) || JSON.parse(localStorage.getItem('company_employees')) || [];
 
-            let names = { "1": "أحمد محمد علي", "2": "محمد عبد علي", "3": "علي الزيدي" };
-            document.getElementById('empNameTitle').innerText = names[empId];
+            const select = document.getElementById('employeeSelect');
+            select.innerHTML = '<option value="">-- اختر موظفاً من القائمة --</option>';
 
-            try {
-                let res = await fetch(`/api/employee/${empId}/archive`);
-                let data = await res.json();
-                if(data.success) {
-                    renderTable(data.documents);
-                    if(data.avatarUrl) {
-                        document.getElementById('empAvatarImg').src = data.avatarUrl;
-                    } else {
-                        document.getElementById('empAvatarImg').src = "https://via.placeholder.com/120/cbd5e1/475569?text=No+Photo";
-                    }
-                }
-            } catch (e) {
-                console.error("خطأ في جلب البيانات من السيرفر", e);
-            }
+            employeesList.forEach((emp, index) => {
+                select.innerHTML += `<option value="${emp.username || index}">${emp.name || emp.fullName || 'موظف بدون اسم'}</option>`;
+            });
         }
 
-        function renderTable(docs) {
-            let tbody = document.getElementById('archiveTableBody');
+        function loadEmployeeArchive() {
+            const selectVal = document.getElementById('employeeSelect').value;
+            if (!selectVal) return;
+
+            const emp = employeesList.find(e => (e.username || '') === selectVal || employeesList.indexOf(e).toString() === selectVal);
+            if (!emp) return;
+
+            const archiveKey = `archive_${currentCompanyId}_${emp.username || selectVal}`;
+            const savedFiles = JSON.parse(localStorage.getItem(archiveKey)) || [];
+
+            renderArchiveTable(savedFiles);
+        }
+
+        function renderArchiveTable(files) {
+            const tbody = document.getElementById('archiveTableBody');
             tbody.innerHTML = '';
-            if(!docs || docs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="color: #dc2626; font-weight: bold; padding: 20px;">⚠️ لا توجد مستندات! (يرجى رفع البطاقة التعريفية كشرط إجباري).</td></tr>`;
-                document.getElementById('archiveStatusBadge').innerText = "غير مكتمل (ناقصة الهوية)";
-                document.getElementById('archiveStatusBadge').style.background = "#fee2e2";
-                document.getElementById('archiveStatusBadge').style.color = "#991b1b";
+
+            if (!files || files.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="color: #64748b; padding: 20px;">لا توجد مستندات مرفوعة لهذا الموظف حالياً.</td></tr>`;
                 return;
             }
 
-            document.getElementById('archiveStatusBadge').innerText = "مكتمل الوثائق الرسمية";
-            document.getElementById('archiveStatusBadge').style.background = "#dcfce7";
-            document.getElementById('archiveStatusBadge').style.color = "#166534";
-
-            docs.forEach((doc, idx) => {
+            files.forEach((file, index) => {
                 tbody.innerHTML += `
                     <tr>
-                        <td><b>${idx + 1}</b></td>
-                        <td style="font-weight: 700;">${doc.type}</td>
-                        <td style="color: #4f46e5;" dir="ltr">${doc.fileName}</td>
-                        <td><span class="badge-file">${doc.status}</span></td>
-                        <td dir="ltr">${doc.date}</td>
-                        <td><button class="btn-action btn-preview" onclick="alert('معاينة الملف: ${doc.fileName}')">معاينة</button></td>
+                        <td><b>${file.type}</b></td>
+                        <td>${file.name}</td>
+                        <td>مستند رسمي معتمد</td>
+                        <td>${file.date}</td>
+                        <td><button style="background:#ef4444; color:#fff; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;" onclick="deleteArchiveFile(${index})">حذف</button></td>
                     </tr>
                 `;
             });
         }
 
-        async function uploadDocumentToSever(event) {
-            event.preventDefault();
-            let empId = document.getElementById('employeeSelect').value;
-            let form = document.getElementById('docUploadForm');
-            let formData = new FormData(form);
-
-            try {
-                let response = await fetch(`/api/employee/${empId}/archive`, {
-                    method: 'POST',
-                    body: formData
-                });
-                let result = await response.json();
-                if (result.success) {
-                    alert('✅ ' + result.message);
-                    loadEmployeeArchive();
-                    form.reset();
-                } else {
-                    alert('❌ خطأ: ' + result.error);
-                }
-            } catch (err) {
-                alert('⚠️ تعذر الاتصال بالسيرفر.');
+        function saveArchiveLocally() {
+            const selectVal = document.getElementById('employeeSelect').value;
+            if (!selectVal) {
+                alert("⚠️ يرجى اختيار موظف أولاً.");
+                return;
             }
+
+            const emp = employeesList.find(e => (e.username || '') === selectVal || employeesList.indexOf(e).toString() === selectVal);
+            const archiveKey = `archive_${currentCompanyId}_${emp.username || selectVal}`;
+            let existingFiles = JSON.parse(localStorage.getItem(archiveKey)) || [];
+
+            const fileInputs = [
+                { id: 'personalPhoto', label: 'الصورة الشخصية' },
+                { id: 'idCard', label: 'البطاقة التعريفية' },
+                { id: 'workContract', label: 'العقد الوظيفي' },
+                { id: 'certificates', label: 'الشهادات' }
+            ];
+
+            let addedCount = 0;
+            fileInputs.forEach(item => {
+                const input = document.getElementById(item.id);
+                if (input.files && input.files[0]) {
+                    existingFiles.push({
+                        type: item.label,
+                        name: input.files[0].name,
+                        date: new Date().toLocaleDateString('ar-EG')
+                    });
+                    addedCount++;
+                }
+            });
+
+            if (addedCount === 0) {
+                alert("⚠️ يرجى اختيار ملف واحد على الأقل للرفع.");
+                return;
+            }
+
+            localStorage.setItem(archiveKey, JSON.stringify(existingFiles));
+            
+            const msg = document.getElementById('successMsg');
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 3000);
+
+            loadEmployeeArchive();
         }
+
+        function deleteArchiveFile(index) {
+            const selectVal = document.getElementById('employeeSelect').value;
+            const archiveKey = `archive_${currentCompanyId}_${selectVal}`;
+            let existingFiles = JSON.parse(localStorage.getItem(archiveKey)) || [];
+            
+            existingFiles.splice(index, 1);
+            localStorage.setItem(archiveKey, JSON.stringify(existingFiles));
+            renderArchiveTable(existingFiles);
+        }
+
+        window.onload = initArchive;
     </script>
 </body>
 </html>
