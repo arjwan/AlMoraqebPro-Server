@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل الموظف (بصمة الوجه و GPS)</title>
+    <title>المراقب برو - تسجيل الموظف (بصمة الوجه والموقع)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
@@ -14,7 +14,6 @@
         input { width: 100%; padding: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; border-radius: 10px; font-size: 14px; outline: none; }
         input:focus { border-color: #38bdf8; }
         
-        /* قسم الكاميرا والـ GPS */
         .capture-section {
             background: #0f172a;
             border: 2px dashed #475569;
@@ -52,7 +51,7 @@
             font-weight: bold;
             margin-top: 5px;
         }
-        .btn-cam:hover { background: #0284c7; opacity: 0.9; }
+        .btn-cam:hover { opacity: 0.9; }
 
         .gps-status {
             font-size: 12px;
@@ -94,7 +93,6 @@
             </div>
         </div>
 
-        <!-- التقاط الصورة والـ GPS -->
         <div class="capture-section">
             <label style="margin-bottom: 8px;">التحقق البيومتري (صورة الوجه) وموقع الـ GPS:</label>
             <button type="button" class="btn-cam" onclick="startCamera()">📷 فتح الكاميرا لالتقاط الصورة</button>
@@ -107,15 +105,14 @@
             <div id="gpsStatus" class="gps-status">📍 جاري جلب الإحداثيات الجغرافية (GPS)...</div>
         </div>
 
-        <button class="btn" onclick="registerWithBiometricsAndGPS()">💾 إتمام وحفظ التسجيل نهائياً</button>
-        <div id="successMsg">✅ تم تسجيل الموظف وصورته وموقعه الجغرافي بنجاح!</div>
+        <button class="btn" onclick="registerWithBiometricsAndGPS()">💾 إتمام وحفظ التسجيل والانتقال لتسجيل الدخول</button>
+        <div id="successMsg">✅ تم التسجيل بنجاح! جاري تحويلك إلى صفحة تسجيل الدخول...</div>
     </div>
 
     <script>
         let capturedPhotoData = "";
         let currentGPSLocation = "غير متوفر";
 
-        // تشغيل الكاميرا المباشرة
         function startCamera() {
             const video = document.getElementById('videoElement');
             const snapBtn = document.getElementById('snapBtn');
@@ -131,7 +128,6 @@
                 });
         }
 
-        // التقاط الصورة من الفيديو وتحويلها إلى Base64
         function takeSnapshot() {
             const video = document.getElementById('videoElement');
             const canvas = document.getElementById('canvasElement');
@@ -146,7 +142,6 @@
             preview.src = capturedPhotoData;
             preview.style.display = 'block';
             
-            // ايقاف بث الكاميرا بعد الالتقاط
             let stream = video.srcObject;
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
@@ -156,7 +151,6 @@
             alert("✅ تم التقاط صورة الوجه بنجاح!");
         }
 
-        // جلب إحداثيات الـ GPS الفعلية تلقائياً عند فتح الصفحة
         window.onload = function() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -188,7 +182,7 @@
             }
 
             if (!capturedPhotoData) {
-                alert("⚠️ يرجى التقاط صورة الوجه (البصمة البيومترية) أولاً قبل الحفظ.");
+                alert("⚠️ يرجى التقاط صورة الوجه أولاً قبل الحفظ.");
                 return;
             }
 
@@ -206,7 +200,7 @@
                 password: password,
                 location: currentGPSLocation,
                 startDate: new Date().toLocaleDateString('ar-EG'),
-                photo: capturedPhotoData, // حفظ الصورة الحقيقية الملتقطة
+                photo: capturedPhotoData,
                 companyId: companyId
             };
 
@@ -216,8 +210,9 @@
 
             document.getElementById('successMsg').style.display = 'block';
 
+            // التوجيه التلقائي المباشر إلى صفحة تسجيل الدخول (login.html) مع تمرير معرف الشركة
             setTimeout(() => {
-                window.location.href = `admin-manage-emp.html?company=${companyId}`;
+                window.location.href = `login.html?company=${companyId}`;
             }, 2000);
         }
     </script>
