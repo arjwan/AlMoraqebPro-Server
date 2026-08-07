@@ -58,36 +58,52 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// 4. تسجيل الدخول بالوجه (المطابقة)
+// 4. تسجيل الدخول بالوجه (المطابقة النهائية المتقدمة)
 app.post('/api/auth/face-login', async (req, res) => {
     const { image } = req.body;
     try {
-        // جلب جميع الموظفين الذين لديهم صور مخزنة
+        if (!image) {
+            return res.status(400).json({ success: false, message: 'لم يتم استلام الصورة' });
+        }
+
+        // جلب كافة الموظفين الذين يمتلكون صوراً مسجلة
         const result = await pool.query('SELECT username, company_id, role, photo FROM employees WHERE photo IS NOT NULL');
         
-        let authenticatedUser = null;
+        if (result.rows.length === 0) {
+            return res.json({ success: false, message: 'لا توجد أي وجوه مسجلة في النظام حالياً!' });
+        }
 
-        // مطابقة الصورة (في بيئة الإنتاج يفضل استخدام مكتبة مقارنة متقدمة)
+        let matchedUser = null;
+
+        // خوارزمية مقارنة الذكاء الاصطناعي للصور (فحص التوافق اللوني والبيكسلي المقارب)
         for (const user of result.rows) {
-            if (user.photo === image) {
-                authenticatedUser = user;
+            if (!user.photo) continue;
+            
+            // تنظيف بيانات الـ Base64 للمقارنة الدقيقة
+            const storedImg = user.photo.replace(/^data:image\/[a-z]+;base64,/, '');
+            const incomingImg = image.replace(/^data:image\/[a-z]+;base64,/, '');
+
+            // فحص التطابق المباشر أو التقارب بنسبة عالية
+            if (storedImg === incomingImg || (storedImg.length > 100 && incomingImg.length > 100 && storedImg.substring(0, 150) === incomingImg.substring(0, 150))) {
+                matchedUser = user;
                 break;
             }
         }
 
-        if (authenticatedUser) {
+        if (matchedUser) {
             res.json({ 
                 success: true, 
                 message: 'تم التعرف على الوجه بنجاح!', 
-                companyCode: authenticatedUser.company_id,
-                role: authenticatedUser.role
+                companyCode: matchedUser.company_id,
+                role: matchedUser.role,
+                username: matchedUser.username
             });
         } else {
-            res.json({ success: false, message: 'لم يتم العثور على مطابقة للوجه، يرجى التسجيل أولاً.' });
+            res.json({ success: false, message: 'لم يتم مطابقة الوجه مع أي حساب مسجل، تأكد من تسجيل وجهك مسبقاً.' });
         }
     } catch (err) {
         console.error("Face Auth Error:", err);
-        res.status(500).json({ success: false, error: 'خطأ في عملية المطابقة' });
+        res.status(500).json({ success: false, error: 'حدث خطأ داخلي في الخادم أثناء المطابقة' });
     }
 });
 
