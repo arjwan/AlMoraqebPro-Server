@@ -239,22 +239,20 @@
         </form>
     </div>
 
-    <!-- ملف المزامنة والربط التلقائي -->
-    <script src="employees-sync.js"></script>
-
     <script>
         const video = document.getElementById('webcam');
         let capturedImageData = "";
 
-        // تشغيل الكاميرا المباشرة
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
-            .then(stream => {
-                video.srcObject = stream;
-            })
-            .catch(err => {
-                console.log("تعذر الوصول للكاميرا: ", err);
-                alert("يرجى السماح بالمتصفح بالوصول إلى الكاميرا.");
-            });
+        // تشغيل الكاميرا للهواتف المحمولة
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    console.log("تعذر الوصول للكاميرا: ", err);
+                });
+        }
 
         // التقاط صورة الوجه
         function captureFace() {
@@ -279,18 +277,18 @@
                     document.getElementById('empLocation').value = coordsString;
                     document.getElementById('locationDisplay').innerHTML = `
                         <strong>📍 تم رصد الاحداثيات بنجاح:</strong><br>
-                        خط العرض (Latitude): ${lat}<br>
-                        خط الطول (Longitude): ${lon}
+                        خط العرض: ${lat}<br>
+                        خط الطول: ${lon}
                     `;
                 }, err => {
-                    alert("⚠️ تعذر جلب الموقع. يرجى تفعيل إذن الموقع الجغرافي (GPS) في هاتفك.");
-                });
+                    alert("⚠️ تعذر جلب الموقع. تأكد من تفعيل إذن الموقع (GPS) في هاتفك.");
+                }, { enableHighAccuracy: true });
             } else {
-                alert("⚠️ متصفحك لا يدعم خاصية تحديد الموقع الجغرافي.");
+                alert("⚠️ متصفح هاتفك لا يدعم خاصية تحديد الموقع.");
             }
         }
 
-        // إرسال وحفظ البيانات والانتقال التلقائي لصفحة تسجيل الدخول
+        // إرسال وحفظ البيانات بشكل مباشر وآمن بدون الاعتماد على ملفات خارجية قد تفشل
         document.getElementById('registerForm').addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -305,17 +303,17 @@
                 return;
             }
 
-            const compId = document.getElementById('companyId').value;
+            const compId = document.getElementById('companyId').value.trim();
             localStorage.setItem('activeCompanyId', compId);
 
             const newEmployee = {
                 id: 'emp_' + Date.now(),
                 companyId: compId,
-                companyName: document.getElementById('companyName').value,
-                name: document.getElementById('fullName').value,
-                specialty: document.getElementById('specialty').value,
-                workplace: document.getElementById('workplace').value,
-                username: document.getElementById('username').value,
+                companyName: document.getElementById('companyName').value.trim(),
+                name: document.getElementById('fullName').value.trim(),
+                specialty: document.getElementById('specialty').value.trim(),
+                workplace: document.getElementById('workplace').value.trim(),
+                username: document.getElementById('username').value.trim(),
                 password: document.getElementById('password').value,
                 photo: capturedImageData,
                 location: locationVal,
@@ -323,14 +321,31 @@
                 status: "نشط"
             };
 
-            const result = saveEmployee(newEmployee);
+            try {
+                // حفظ البيانات مباشرة في LocalStorage للشركة المحددة
+                const storageKey = `company_employees_${compId}`;
+                let employees = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                
+                // التحقق من تكرار اسم المستخدم
+                if (employees.find(e => e.username === newEmployee.username)) {
+                    alert('⚠️ اسم المستخدم موجود مسبقاً، يختار اسماً آخر!');
+                    return;
+                }
 
-            if (result.success) {
+                employees.push(newEmployee);
+                localStorage.setItem(storageKey, JSON.stringify(employees));
+
+                // إضافة إشعار للمدير
+                let notifications = JSON.parse(localStorage.getItem('companyNotifications') || '[]');
+                notifications.unshift({ text: `موظف جديد: ${newEmployee.name}`, time: new Date().toLocaleString() });
+                localStorage.setItem('companyNotifications', JSON.stringify(notifications));
+
+                // رسالة النجاح والتوجيه الإجباري لصفحة تسجيل الدخول
                 alert('🎉 تم تسجيل حسابك بنجاح! سيتم تحويلك الآن إلى صفحة تسجيل الدخول.');
-                // التوجيه الإجباري والمباشر إلى صفحة login.html
                 window.location.href = 'login.html';
-            } else {
-                alert('⚠️ ' + result.message);
+
+            } catch (error) {
+                alert('⚠️ حدث خطأ أثناء الحفظ في ذاكرة الهاتف: ' + error.message);
             }
         });
     </script>
