@@ -174,23 +174,16 @@
             setTimeout(() => { toast.className = ''; }, 4000);
         }
 
-        // دالة تحديث وعرض بيانات الموظفين والطلبات والاشعارات تلقائياً في صفحة المدير
         function loadAdminDashboardData() {
-            const employees = getAllEmployees();
-            const requests = JSON.parse(localStorage.getItem('companyRequests')) || [];
-            const notifications = JSON.parse(localStorage.getItem('companyNotifications')) || [];
-
-            console.log("عدد الموظفين المرتبطين حالياً:", employees.length);
-            console.log("الطلبات المعلقة:", requests.length);
-            console.log("الإشعارات الجديدة:", notifications.length);
-            
-            // يمكنك هنا ربط العناصر بعناصر الـ HTML الخاصة بجدول المدير لتحديثها فوراً
+            if (typeof getAllEmployees === 'function') {
+                const employees = getAllEmployees();
+                console.log("عدد الموظفين المرتبطين حالياً:", employees.length);
+            }
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
             const titleSpan = document.getElementById('company-title-display');
 
-            // تشغيل دالة جلب بيانات الموظفين والإشعارات والطلبات
             loadAdminDashboardData();
 
             if (companyId) {
@@ -222,7 +215,6 @@
             }
         });
 
-        // زر مزامنة السيرفر فقط
         async function syncSystemData() {
             const syncBtn = document.getElementById('syncBtn');
             syncBtn.disabled = true;
@@ -259,7 +251,6 @@
             }
         }
 
-        // زر مستقل لإنشاء وحفظ النسخة الاحتياطية
         function takeSystemBackup() {
             try {
                 const currentCompId = companyId || 'default_company';
@@ -286,7 +277,6 @@
             }
         }
 
-        // زر استعادة البيانات
         function restoreSystemData(event) {
             const file = event.target.files[0];
             if (!file) return;

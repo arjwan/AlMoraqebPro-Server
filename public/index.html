@@ -4,262 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المراقب برو - تسجيل الدخول</title>
-    <!-- مكتبة لإنشاء الـ QR Code تلقائياً -->
-    <script src="https://cdnjs.cloudflare.com/ajax5/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .login-container {
-            background: #ffffff;
-            padding: 35px;
-            border-radius: 16px;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 25px;
-            align-items: center;
-        }
-        .form-section {
-            flex: 1;
-            min-width: 280px;
-        }
-        .camera-section {
-            flex: 1;
-            min-width: 280px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        h2 {
-            margin-bottom: 20px;
-            color: #1e293b;
-            font-size: 24px;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 15px;
-            text-align: right;
-        }
-        label {
-            display: block;
-            margin-bottom: 6px;
-            color: #334155;
-            font-size: 15px;
-            font-weight: 600;
-        }
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-        input:focus {
-            border-color: #0284c7;
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
-        }
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background: #0f172a;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-top: 8px;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #1e293b, #0f172a); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .login-container { background: #ffffff; padding: 35px; border-radius: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3); width: 100%; max-width: 450px; }
+        h2 { margin-bottom: 20px; color: #1e293b; font-size: 24px; text-align: center; }
+        .form-group { margin-bottom: 15px; text-align: right; }
+        label { display: block; margin-bottom: 6px; color: #334155; font-size: 15px; font-weight: 600; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; outline: none; transition: border-color 0.3s; }
+        input:focus { border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
+        .btn { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; margin-top: 8px; }
         .btn:hover { background: #1e293b; }
-        .btn-face { background: #16a34a; margin-top: 12px; }
-        .btn-face:hover { background: #15803d; }
-        
-        #video-container {
-            width: 100%;
-            height: 220px;
-            background: #000;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 3px solid #cbd5e1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        
-        .qr-box {
-            margin-top: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: #f8fafc;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px dashed #cbd5e1;
-            width: 100%;
-        }
-        #qrcode { margin: 8px 0; }
-        
-        .status-msg {
-            margin-top: 12px;
-            font-size: 15px;
-            font-weight: bold;
-            text-align: center;
-            min-height: 22px;
-            width: 100%;
-        }
+        .status-msg { margin-top: 12px; font-size: 15px; font-weight: bold; text-align: center; min-height: 22px; width: 100%; }
     </style>
 </head>
 <body>
 
     <div class="login-container">
-        <!-- قسم إدخال بيانات النص وتسجيل الدخول -->
-        <div class="form-section">
-            <h2>🔑 تسجيل الدخول</h2>
-            
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="username">اسم المستخدم (للمطابقة البصرية)</label>
-                    <input type="text" id="username" required placeholder="أدخل اسم المستخدم الخاص بك">
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">كلمة المرور</label>
-                    <input type="password" id="password" required placeholder="أدخل كلمة المرور">
-                </div>
-
-                <button type="submit" class="btn">دخول بكلمة المرور</button>
-            </form>
-
-            <!-- قسم الـ QR Code الخاص بمدير الشركة -->
-            <div class="qr-box">
-                <label style="font-size: 13px; color: #475569;">امسح الـ QR بهاتفك لتسجيل دخول المدير السريع:</label>
-                <div id="qrcode"></div>
+        <h2>🔑 تسجيل الدخول للشركة</h2>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="companyCode">رمز أو معرف الشركة (مثال: company_123)</label>
+                <input type="text" id="companyCode" required placeholder="أدخل رمز الشركة الخاص بك[cite: 1]">
             </div>
-        </div>
 
-        <!-- قسم الكاميرا والمطابقة مع الصورة المثبتة -->
-        <div class="camera-section">
-            <h2 style="font-size: 18px; margin-bottom: 12px;">📷 مطابقة الصورة المثبتة</h2>
-            <div id="video-container">
-                <video id="video" autoplay playsinline></video>
+            <div class="form-group">
+                <label for="username">اسم المستخدم</label>
+                <input type="text" id="username" required placeholder="أدخل اسم المستخدم">
             </div>
             
-            <button id="faceLoginBtn" class="btn btn-face">التقاط ومطابقة مع الصورة المثبتة</button>
-        </div>
+            <div class="form-group">
+                <label for="password">كلمة المرور</label>
+                <input type="password" id="password" required placeholder="أدخل كلمة المرور">
+            </div>
 
-        <!-- رسائل الحالة -->
+            <button type="submit" class="btn">دخول لوحة التحكم</button>
+        </form>
+
         <div class="status-msg" id="statusMsg"></div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
-        // توليد QR Code افتراضي لرابط الدخول السريع عبر الهاتف
-        document.addEventListener("DOMContentLoaded", function() {
-            const qrContainer = document.getElementById("qrcode");
-            qrContainer.innerHTML = "";
-            new QRCode(qrContainer, {
-                text: window.location.origin + "/dashboard.html?quick_auth=admin",
-                width: 90,
-                height: 90
-            });
-        });
-
-        // تشغيل الكاميرا
-        const video = document.getElementById('video');
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => { video.srcObject = stream; })
-            .catch(err => { console.error("خطأ في تشغيل الكاميرا:", err); });
-
-        // تسجيل الدخول العادي
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            const companyCode = document.getElementById('companyCode').value.trim();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
             const statusMsg = document.getElementById('statusMsg');
 
             statusMsg.style.color = "#0284c7";
-            statusMsg.textContent = "جاري التحقق من بيانات الدخول...";
+            statusMsg.textContent = "جاري التحقق من بيانات الشركة...";
 
             try {
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ companyCode, username, password })
                 });
 
                 const data = await response.json();
                 if (data.success) {
                     statusMsg.style.color = "#16a34a";
                     statusMsg.textContent = "تم تسجيل الدخول بنجاح، جاري التحويل...";
-                    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+                    
+                    // تخزين معرف الشركة في المتصفح والتحويل المباشر لصفحة الأدمن الخاصة بالشركة
+                    localStorage.setItem('activeCompanyId', data.companyCode);
+                    setTimeout(() => { 
+                        window.location.href = `admin.html?company=${encodeURIComponent(data.companyCode)}`; 
+                    }, 1000);
                 } else {
                     statusMsg.style.color = "#dc2626";
-                    statusMsg.textContent = data.message || "بيانات الدخول غير صحيحة";
+                    statusMsg.textContent = data.message || "بيانات الدخول أو رمز الشركة غير صحيح";
                 }
             } catch (err) {
                 statusMsg.style.color = "#dc2626";
                 statusMsg.textContent = "حدث خطأ في الاتصال بالخادم";
-            }
-        });
-
-        // التقاط الصورة ومطابقتها مع الصورة المثبتة في قاعدة البيانات
-        document.getElementById('faceLoginBtn').addEventListener('click', async function() {
-            const username = document.getElementById('username').value.trim();
-            const statusMsg = document.getElementById('statusMsg');
-
-            if (!username) {
-                statusMsg.style.color = "#dc2626";
-                statusMsg.textContent = "يرجى كتابة اسم المستخدم أولاً لإتمام المطابقة البصرية";
-                return;
-            }
-
-            statusMsg.style.color = "#0284c7";
-            statusMsg.textContent = "جاري التقاط الصورة ومطابقتها مع الصورة المثبتة...";
-
-            try {
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth || 640;
-                canvas.height = video.videoHeight || 480;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageBase64 = canvas.toDataURL('image/jpeg');
-
-                const response = await fetch('/api/auth/face-login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: username, image: imageBase64 })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    statusMsg.style.color = "#16a34a";
-                    statusMsg.textContent = "تمت المطابقة بنجاح، جاري التحويل...";
-                    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
-                } else {
-                    statusMsg.style.color = "#dc2626";
-                    statusMsg.textContent = data.message || "لم تتم المطابقة مع الصورة المثبتة للحساب";
-                }
-            } catch (err) {
-                statusMsg.style.color = "#dc2626";
-                statusMsg.textContent = "حدث خطأ في الاتصال أثناء مطابقة الوجه";
             }
         });
     </script>
