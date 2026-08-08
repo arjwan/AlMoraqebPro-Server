@@ -371,7 +371,7 @@
             }
         }
 
-        function saveEmployee(event) {
+        async function saveEmployee(event) {
             event.preventDefault();
 
             const compId = document.getElementById('companyId').value.trim();
@@ -396,6 +396,20 @@
             };
 
             try {
+                // إرسال البيانات إلى السيرفر لقاعدة البيانات الحقيقية
+                const response = await fetch('/api/employee/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newEmployee)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'فشل الحفظ في السيرفر');
+                }
+
+                // الحفظ الاحتياطي المحلي لتحديث الجداول التلقائية في المتصفح
                 const storageKey = `company_employees_${compId}`;
                 let existingEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
                 existingEmployees.push(newEmployee);
@@ -417,8 +431,9 @@
                 securityList.push({ username: newEmployee.username, name: newEmployee.name, verified: true, date: newEmployee.startDate });
                 localStorage.setItem(`security_${compId}`, JSON.stringify(securityList));
 
-                alert('🎉 تم حفظ وتخزين وترحيل بيانات الموظف بنجاح إلى كافة الجداول واللوحات المرتبطة!');
+                alert('🎉 تم حفظ وتخزين وترحيل بيانات الموظف بنجاح إلى قاعدة البيانات والجداول المرتبطة!');
 
+                // تفريغ الحقول بعد الحفظ الناجح
                 document.getElementById('employeeName').value = '';
                 document.getElementById('employeeSpecialty').value = '';
                 document.getElementById('employeeWorkplace').value = '';
