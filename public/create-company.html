@@ -101,7 +101,7 @@
         }
 
         .comp-info { display: flex; align-items: center; gap: 20px; flex: 1; }
-        .comp-photo { width: 85px; height: 85px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; }
+        .comp-photo { width: 85px; height: 85px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; flex-shrink: 0; }
         
         .text-data { width: 100%; display: flex; flex-direction: column; gap: 6px; }
         .text-data h3 { font-size: 20px; color: #f8fafc; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -240,8 +240,16 @@
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById(`card-photo-val-${index}`).value = e.target.result;
-                document.getElementById(`card-preview-img-${index}`).src = e.target.result;
+                const base64Result = e.target.result;
+                document.getElementById(`card-photo-val-${index}`).value = base64Result;
+                document.getElementById(`card-preview-img-${index}`).src = base64Result;
+                
+                // تحديث الصورة في التخزين المحلي مباشرة لضمان عدم فقدانها
+                let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+                if(list[index]) {
+                    list[index].photo = base64Result;
+                    localStorage.setItem('registeredCompanies', JSON.stringify(list));
+                }
             };
             reader.readAsDataURL(file);
         }
@@ -319,11 +327,12 @@
             const isActive = c.status !== 'stopped';
             const statusClass = isActive ? 'status-active' : 'status-stopped';
             const statusText = isActive ? '🟢 مفعل' : '🟡 متوقف';
+            const photoSrc = c.photo || 'https://via.placeholder.com/85';
 
             container.innerHTML += `
                 <div class="company-card" id="card-${index}">
                     <div class="comp-info">
-                        <img src="${c.photo || 'https://via.placeholder.com/85'}" class="comp-photo" id="card-preview-img-${index}">
+                        <img src="${photoSrc}" class="comp-photo" id="card-preview-img-${index}">
                         <div class="text-data">
                             <span class="status-badge ${statusClass}">${statusText}</span>
                             <h3>
@@ -345,12 +354,12 @@
                     </div>
 
                     <div class="actions">
-                        <button class="btn-action ${isActive ? 'btn-status-stop' : 'btn-status-play'}" onclick="toggleStatus(${index})">
+                        <button type="button" class="btn-action ${isActive ? 'btn-status-stop' : 'btn-status-play'}" onclick="toggleStatus(${index})">
                             ${isActive ? '⏸️ إيقاف' : '▶️ تشغيل'}
                         </button>
-                        <button class="btn-action btn-edit" id="edit-btn-${index}" onclick="enableEdit(${index})">✏️ تعديل</button>
-                        <button class="btn-action btn-save" id="save-btn-${index}" onclick="saveEdit(${index}, '${compId}')">💾 حفظ</button>
-                        <button class="btn-action btn-del" onclick="deleteComp(${index}, '${compId}')">🗑️ حذف</button>
+                        <button type="button" class="btn-action btn-edit" id="edit-btn-${index}" onclick="enableEdit(${index})">✏️ تعديل</button>
+                        <button type="button" class="btn-action btn-save" id="save-btn-${index}" onclick="saveEdit(${index}, '${compId}')">💾 حفظ</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteComp(${index}, '${compId}')">🗑️ حذف</button>
                     </div>
                 </div>
             `;
@@ -396,13 +405,11 @@
         };
 
         try {
-            const response = async () => await fetch('/api/developer/company/create', {
+            await fetch('/api/developer/company/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedData)
             });
-            // محاولة الحفظ عبر السيرفر
-            await response();
         } catch (e) {}
 
         list[index] = updatedData;
