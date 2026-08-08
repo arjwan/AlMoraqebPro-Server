@@ -1,90 +1,55 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+const mongoose = require('mongoose');
+
 const app = express();
+app.use(cors());
+app.use(express.json());
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+// الرابط الخاص بك مع بيانات الاتصال المدمجة
+const MONGO_URI = "mongodb+srv://mohmmed1628:0780moh780@cluster0.oomto7r.mongodb.net/AlMoraqebPro?retryWrites=true&w=majority&appName=Cluster0";
 
-// مسارات الهارد دسك
-const DATA_DIR = path.join(__dirname, 'data');
+// الاتصال بقاعدة البيانات
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('✅ تم الاتصال بقاعدة البيانات السحابية بنجاح'))
+  .catch(err => console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err));
 
-// --- خطوة التنظيف الجذري بناءً على رغبتك (حذف القديم بالكامل لبيئة نظيفة) ---
-if (fs.existsSync(DATA_DIR)) {
+// هيكل بيانات الشركات
+const CompanySchema = new mongoose.Schema({
+    companyId: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    phone: String,
+    address: String
+}, { timestamps: true });
+
+const Company = mongoose.model('Company', CompanySchema);
+
+// مسار جلب الشركات
+app.get('/api/developer/companies', async (req, res) => {
     try {
-        fs.rmSync(DATA_DIR, { recursive: true, force: true });
-        console.log("🧹 تم مسح جميع البيانات والمجلدات القديمة بالكامل بنجاح.");
-    } catch (err) {
-        console.error("خطأ أثناء تنظيف الملفات القديمة:", err);
+        const companies = await Company.find();
+        res.json(companies);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch data" });
     }
-}
-
-// إعادة إنشاء مجلد data نظيف وخالٍ من أي مخلفات
-fs.mkdirSync(DATA_DIR, { recursive: true });
-
-// --- دالة إنشاء قاعدة بيانات حقيقية ومستقلة لكل شركة جديدة ---
-function createCompanyDatabase(companyId) {
-    const compDir = path.join(DATA_DIR, companyId);
-    if (!fs.existsSync(compDir)) fs.mkdirSync(compDir, { recursive: true });
-    
-    const dbPath = path.join(compDir, 'company.db');
-    const db = new sqlite3.Database(dbPath);
-    
-    db.serialize(() => {
-        db.run("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, password TEXT, role TEXT)");
-        db.run("INSERT OR IGNORE INTO users (username, password, role) VALUES ('admin', 'admin123', 'admin')");
-    });
-    db.close();
-    return dbPath;
-}
-
-// مسار تسجيل شركة جديدة وحفظها حقيقياً على الهارد دسك
-app.post('/api/developer/company/create', (req, res) => {
-    const { companyId, companyName, manager, phone, email, username, password } = req.body;
-    
-    if (!companyId) return res.status(400).json({ success: false, message: "رمز الشركة مطلوب" });
-
-    // 1. إنشاء المجلد وقاعدة البيانات SQLite
-    createCompanyDatabase(companyId);
-    
-    // 2. حفظ ملف المعلومات الثابت info.json داخل مجلد الشركة
-    const infoPath = path.join(DATA_DIR, companyId, 'info.json');
-    fs.writeFileSync(infoPath, JSON.stringify({ companyId, companyName, manager, phone, email, username, password }, null, 2));
-
-    res.json({ success: true, message: "تم بناء كيان الشركة وقاعدتها ومجلدها على الهارد دسك بنجاح." });
 });
 
-// مسار جلب الشركات الحقيقية من الهارد دسك فقط
-app.get('/api/developer/companies', (req, res) => {
-    const companies = [];
-    if (!fs.existsSync(DATA_DIR)) return res.json({ success: true, companies: [] });
-
-    const dirs = fs.readdirSync(DATA_DIR);
-    
-    dirs.forEach(dir => {
-        const infoPath = path.join(DATA_DIR, dir, 'info.json');
-        if (fs.existsSync(infoPath)) {
-            try {
-                companies.push(JSON.parse(fs.readFileSync(infoPath, 'utf8')));
-            } catch (e) {
-                // تجاهل الملفات التالفة إن وجدت
-            }
-        }
-    });
-    
-    res.json({ success: true, companies });
-});
-
-// المسارات الأساسية للواجهات
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/developer', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'create-company.html'));
+// مسار حفظ وتحديث الشركات
+app.post('/api/developer/company/create', async (req, res) => {
+    const newCompany = req.body;
+    try {
+        await Company.findOneAndUpdate(
+            { companyId: newCompany.companyId },
+            newCompany,
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        res.json({ success: true, message: "تم الحفظ بشكل دائم في السحابة" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to save data" });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 السيرفر يعمل بقواعد بيانات حقيقية على المنفذ ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
