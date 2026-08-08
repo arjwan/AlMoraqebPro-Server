@@ -1,0 +1,82 @@
+{
+  "developer": "Mohammed Al-Obeidi",
+  "companies": [
+    {
+      "companyId": "ARJ-307",
+      "companyName": "شركة الأرجوان",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.798Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/ARJ-307/database.json"
+    },
+    {
+      "companyId": "COMP-001",
+      "companyName": "الشركة الفرعية الأولى",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.798Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/COMP-001/database.json"
+    },
+    {
+      "companyId": "COMP-002",
+      "companyName": "الشركة الفرعية الثانية",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.799Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/COMP-002/database.json"
+    },
+    {
+      "companyId": "COMP-003",
+      "companyName": "الشركة الفرعية الثالثة",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.799Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/COMP-003/database.json"
+    },
+    {
+      "companyId": "COMP-004",
+      "companyName": "الشركة الفرعية الرابعة",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.799Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/COMP-004/database.json"
+    },
+    {
+      "companyId": "COMP-005",
+      "companyName": "الشركة الفرعية الخامسة",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.799Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/COMP-005/database.json"
+    },
+    {
+      "companyId": "COMP-006",
+      "companyName": "الشركة الفرعية السادسة",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.800Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/COMP-006/database.json"
+    },
+    {
+      "companyId": "COMP-007",
+      "companyName": "الشركة الفرعية السابعة",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.800Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/COMP-007/database.json"
+    },
+    {
+      "companyId": "COMP-008",
+      "companyName": "الشركة الفرعية الثامنة",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.800Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/COMP-008/database.json"
+    },
+    {
+      "companyId": "COMP-009",
+      "companyName": "الشركة الفرعية التاسعة",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.800Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/COMP-009/database.json"
+    },
+    {
+      "companyId": "COMP-010",
+      "companyName": "الشركة الفرعية العاشرة",
+      "status": "active",
+      "createdAt": "2026-08-08T15:45:58.800Z",
+      "dbPath": "/home/mohmmedali/AlMoraqebPro-Server/data/companies/COMP-010/database.json"
+    }
+  ]
+}

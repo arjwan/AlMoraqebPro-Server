@@ -296,11 +296,13 @@
         }
     }
 
-    document.getElementById('regForm').addEventListener('submit', function(e) {
+    // تعديل عملية الحفظ لتتصل بالهارد دسك عبر السيرفر الفعلي
+    document.getElementById('regForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const newComp = {
-            id: document.getElementById('cId').value.trim(),
-            nameAr: document.getElementById('cNameAr').value.trim(),
+        
+        const companyData = {
+            companyId: document.getElementById('cId').value.trim(),
+            companyName: document.getElementById('cNameAr').value.trim(),
             nameEn: document.getElementById('cNameEn').value.trim(),
             manager: document.getElementById('mName').value.trim(),
             phone: document.getElementById('mPhone').value.trim(),
@@ -311,25 +313,60 @@
             status: 'active'
         };
 
-        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        list.push(newComp);
-        localStorage.setItem('registeredCompanies', JSON.stringify(list));
-        renderList();
-        this.reset();
-        document.getElementById('previewThumb').style.display = 'none';
+        try {
+            const response = await fetch('/api/developer/company/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(companyData)
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message || '✨ تم حفظ وتنشيط الشركة على الهارد دسك بنجاح!');
+                renderList();
+                this.reset();
+                document.getElementById('previewThumb').style.display = 'none';
+            } else {
+                alert('خطأ: ' + result.message);
+            }
+        } catch (error) {
+            console.error('فشل الاتصال بالسيرفر:', error);
+            // حل بديل احتياطي في حال لم يكن السيرفر يعمل محلياً للتجربة المباشرة
+            let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+            list.push(companyData);
+            localStorage.setItem('registeredCompanies', JSON.stringify(list));
+            renderList();
+            this.reset();
+            document.getElementById('previewThumb').style.display = 'none';
+            alert('⚠️ تنبيه: تعذر الاتصال بالسيرفر المباشر، وتم الحفظ مؤقتاً عبر التخزين المحلي (LocalStorage).');
+        }
     });
 
-    function renderList() {
-        const list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+    async function renderList() {
+        let list = [];
+        try {
+            const response = await fetch('/api/developer/companies');
+            if (response.ok) {
+                const data = await response.json();
+                list = data.companies || data;
+            } else {
+                throw new Error('فشل جلب الشركات من السيرفر');
+            }
+        } catch (err) {
+            list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        }
+
         const container = document.getElementById('compList');
         container.innerHTML = '';
 
-        if (list.length === 0) {
+        if (!list || list.length === 0) {
             container.innerHTML = '<div style="background: rgba(30,41,59,0.4); padding: 30px; text-align: center; border-radius: 20px; color: #94a3b8; font-size: 18px;">📭 لا توجد شركات مسجلة في النظام حتى الآن.</div>';
             return;
         }
 
         list.forEach((c, index) => {
+            const compId = c.id || c.companyId;
+            const compNameAr = c.nameAr || c.companyName;
             const isActive = c.status !== 'stopped';
             const statusClass = isActive ? 'status-active' : 'status-stopped';
             const statusText = isActive ? '🟢 مفعل (يعمل بكفاءة)' : '🟡 متوقف مؤقتاً';
@@ -337,18 +374,18 @@
             container.innerHTML += `
                 <div class="company-card" id="card-${index}">
                     <div class="comp-info">
-                        <img src="${c.photo}" class="comp-photo">
+                        <img src="${c.photo || 'https://via.placeholder.com/95'}" class="comp-photo">
                         <div class="text-data" style="width: 100%;">
                             <span class="status-badge ${statusClass}">${statusText}</span>
                             <h3>
-                                <span id="nameAr-text-${index}">${c.nameAr}</span> / 
-                                <span id="nameEn-text-${index}">${c.nameEn}</span> 
-                                <small style="color:#38bdf8">(${c.id})</small>
+                                <span id="nameAr-text-${index}">${compNameAr}</span> / 
+                                <span id="nameEn-text-${index}">${c.nameEn || ''}</span> 
+                                <small style="color:#38bdf8">(${compId})</small>
                             </h3>
-                            <p>المدير المسؤول: <b id="manager-text-${index}">${c.manager}</b> | الهاتف: <b id="phone-text-${index}">${c.phone}</b></p>
-                            <p>البريد الإلكتروني: <b id="email-text-${index}">${c.email}</b></p>
-                            <p>اسم المستخدم: ${c.username} | كلمة المرور: <span id="pass-text-${index}">${c.password}</span></p>
-                            <p id="photo-p-${index}" style="display:none; margin-top:8px;">رابط الصورة الجديد: <input type="text" class="edit-input" id="photo-input-${index}" value="${c.photo}" style="width:75%;"></p>
+                            <p>المدير المسؤول: <b id="manager-text-${index}">${c.manager || 'غير متوفر'}</b> | الهاتف: <b id="phone-text-${index}">${c.phone || ''}</b></p>
+                            <p>البريد الإلكتروني: <b id="email-text-${index}">${c.email || ''}</b></p>
+                            <p>اسم المستخدم: ${c.username || ''} | كلمة المرور: <span id="pass-text-${index}">${c.password || ''}</span></p>
+                            <p id="photo-p-${index}" style="display:none; margin-top:8px;">رابط الصورة الجديد: <input type="text" class="edit-input" id="photo-input-${index}" value="${c.photo || ''}" style="width:75%;"></p>
                         </div>
                     </div>
                     <div class="actions">
@@ -367,13 +404,14 @@
     function enableEdit(index) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
         let c = list[index];
+        if (!c) return;
 
-        document.getElementById(`nameAr-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameAr-${index}" value="${c.nameAr}" style="width: 130px;">`;
-        document.getElementById(`nameEn-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameEn-${index}" value="${c.nameEn}" style="width: 130px;">`;
-        document.getElementById(`manager-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-manager-${index}" value="${c.manager}" style="width: 110px;">`;
-        document.getElementById(`phone-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-phone-${index}" value="${c.phone}" style="width: 110px;">`;
-        document.getElementById(`email-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-email-${index}" value="${c.email}" style="width: 180px;">`;
-        document.getElementById(`pass-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-pass-${index}" value="${c.password}" style="width: 100px;">`;
+        document.getElementById(`nameAr-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameAr-${index}" value="${c.nameAr || c.companyName || ''}" style="width: 130px;">`;
+        document.getElementById(`nameEn-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameEn-${index}" value="${c.nameEn || ''}" style="width: 130px;">`;
+        document.getElementById(`manager-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-manager-${index}" value="${c.manager || ''}" style="width: 110px;">`;
+        document.getElementById(`phone-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-phone-${index}" value="${c.phone || ''}" style="width: 110px;">`;
+        document.getElementById(`email-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-email-${index}" value="${c.email || ''}" style="width: 180px;">`;
+        document.getElementById(`pass-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-pass-${index}" value="${c.password || ''}" style="width: 100px;">`;
         
         document.getElementById(`photo-p-${index}`).style.display = 'block';
 
@@ -383,8 +421,10 @@
 
     function saveEdit(index) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        if (!list[index]) return;
         
         list[index].nameAr = document.getElementById(`edit-nameAr-${index}`).value;
+        list[index].companyName = list[index].nameAr;
         list[index].nameEn = document.getElementById(`edit-nameEn-${index}`).value;
         list[index].manager = document.getElementById(`edit-manager-${index}`).value;
         list[index].phone = document.getElementById(`edit-phone-${index}`).value;
@@ -399,18 +439,18 @@
 
     function toggleStatus(index) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        if (!list[index]) return;
         list[index].status = (list[index].status === 'stopped') ? 'active' : 'stopped';
         localStorage.setItem('registeredCompanies', JSON.stringify(list));
         renderList();
     }
 
-    // دالة الحذف الشامل مع تنزيل نسخة احتياطية وتطهير الكاش والجداول المرتبطة بالشركة
     function deleteComp(index) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
         let targetComp = list[index];
-        let companyId = targetComp.id;
+        if (!targetComp) return;
+        let companyId = targetComp.id || targetComp.companyId;
 
-        // 1. تجميع كافة البيانات المرتبطة بالشركة من مختلف الجداول لأخذ نسخة احتياطية
         const fullCompanyBackup = {
             companyInfo: targetComp,
             employees: JSON.parse(localStorage.getItem(`company_employees_${companyId}`)) || [],
@@ -419,8 +459,7 @@
             settings: JSON.parse(localStorage.getItem(`company_settings_${companyId}`)) || {}
         };
 
-        // 2. التوصية وتنزيل ملف النسخة الاحتياطية على اللابتوب (Desktop)
-        if (confirm(`⚠️ تحذير خطير: أنت على وشك حذف الشركة (${targetComp.nameAr}) والمعرف (${companyId}) نهائياً!\n\nسيتم حذف جميع الموظفين، السجلات، والطلبات من كافة الجداول.\n\nهل تريد تنزيل "نسخة احتياطية" على جهازك (Desktop) قبل الحذف؟`)) {
+        if (confirm(`⚠️ تحذير خطير: أنت على وشك حذف الشركة (${targetComp.nameAr || targetComp.companyName}) والمعرف (${companyId}) نهائياً!\n\nسيتم حذف جميع الموظفين، السجلات، والطلبات من كافة الجداول.\n\nهل تريد تنزيل "نسخة احتياطية" على جهازك (Desktop) قبل الحذف؟`)) {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullCompanyBackup, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
@@ -430,9 +469,7 @@
             downloadAnchor.remove();
         }
 
-        // تأكيد أخير قبل التنفيذ الشامل
         if (confirm(`🛑 تأكيد نهائي: هل أنت متأكد تماماً من حذف كافة جداول وبيانات الشركة (${companyId}) الآن؟`)) {
-            // 3. التنفيذ الشامل للحذف من كافة الجداول ومسح التخزين المؤقت (Cache)
             const keysToRemove = [
                 `company_employees_${companyId}`,
                 `company_requests_${companyId}`,
@@ -443,7 +480,6 @@
 
             keysToRemove.forEach(key => localStorage.removeItem(key));
 
-            // حذف الشركة من القائمة الرئيسية المسجلة
             list.splice(index, 1);
             localStorage.setItem('registeredCompanies', JSON.stringify(list));
 
