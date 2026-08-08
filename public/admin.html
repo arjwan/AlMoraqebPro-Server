@@ -310,8 +310,53 @@
                 });
         }
 
+        async function backupDatabase() {
+            try {
+                const compId = currentCompanyId || 'general';
+                
+                // محاولة جلب النسخة الاحتياطية مباشرة من السيرفر
+                const response = await fetch(`/api/backup?company=${encodeURIComponent(compId)}`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `AlMoraqebPro_Backup_${compId}_${new Date().toISOString().slice(0,10)}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                    alert('✅ تم إنشاء وتحميل النسخة الاحتياطية بنجاح إلى جهازك!');
+                    return;
+                }
+                throw new Error();
+            } catch (error) {
+                // طريقة بديلة للتحميل المباشر من المتصفح في حال عدم توفر نقطة السيرفر
+                const compId = currentCompanyId || 'general';
+                const backupData = {
+                    companyId: compId,
+                    date: new Date().toISOString(),
+                    employees: JSON.parse(localStorage.getItem(`company_employees_${compId}`) || '[]'),
+                    salaries: JSON.parse(localStorage.getItem(`salaries_${compId}`) || '[]'),
+                    shifts: JSON.parse(localStorage.getItem(`shifts_${compId}`) || '[]')
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `AlMoraqebPro_Backup_${compId}_local.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+
+                alert('✅ تم إنشاء وتحميل النسخة الاحتياطية محلياً بنجاح.');
+            }
+        }
+
+        // ربط الزر بالدالة المعدلة مباشرة
         function backupData() {
-            alert('تم إنشاء نسخة احتياطية من قاعدة البيانات بنجاح.');
+            backupDatabase();
         }
 
         function restoreData() {
