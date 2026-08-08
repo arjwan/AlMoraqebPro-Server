@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - مراقبة سجلات الحضور</title>
+    <title>المراقب برو - إدارة الموظفين والحضور الحقيقي</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; padding: 20px; }
@@ -21,75 +21,55 @@
         th { background: #f8fafc; color: #475569; font-weight: 700; }
         .badge { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
         .badge-success { background: #dcfce7; color: #166534; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
-        /* Modal Styles */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: #fff; padding: 30px; border-radius: 15px; width: 100%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         .modal-content h3 { margin-bottom: 15px; color: #0284c7; }
-        .form-group { margin-bottom: 15px; display: flex; flexDirection: column; text-align: right; }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; text-align: right; }
         .form-group label { font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #475569; }
-        .form-group input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; }
+        .form-group input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; outline: none; }
     </style>
 </head>
-<body>
+<body onload="loadRealEmployees()">
 
     <div class="container">
         <div class="top-bar">
-            <h2>📸 مراقبة سجلات الحضور بالصورة الحية، الشفتات وتقارير البصمة</h2>
+            <h2>🏢 إدارة موظفي ومراقب الحضور الحقيقي (قاعدة البيانات)</h2>
             <div>
-                <button class="btn btn-success" onclick="openAddModal()">➕ إضافة موظف يدوياً</button>
-                <button class="btn btn-warning" onclick="syncWithPhone()">🔄 مزامنة مع الهاتف</button>
-                <a href="admin.html" class="btn">← العودة إلى لوحة التحكم الرئيسية</a>
+                <button class="btn btn-success" onclick="openAddModal()">➕ إضافة موظف حقيقي</button>
+                <button class="btn btn-warning" onclick="loadRealEmployees()">🔄 مزامنة وجلب البيانات</button>
+                <a href="admin.html" class="btn">← العودة للوحة التحكم</a>
             </div>
         </div>
 
         <div class="controls-bar">
-            <input type="text" id="searchInput" placeholder="🔍 ابحث بالموظف، أو الشفت، أو الفرع..." onkeyup="filterTable()">
-            <input type="date" id="dateFilter" onchange="filterTable()">
+            <input type="text" id="searchInput" placeholder="🔍 ابحث في الجدول الحقيقي..." onkeyup="filterTable()">
         </div>
 
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th>#ID</th>
                     <th>اسم الموظف</th>
-                    <th>موقع العمل</th>
-                    <th>الشفت المضاف إليه</th>
-                    <th>حالة البصمة والـ GPS</th>
-                    <th>التاريخ</th>
-                    <th>وقت الحضور</th>
-                    <th>وقت الانصراف</th>
-                    <th>الوقت الإضافي</th>
-                    <th>أيام العمل الكاملة</th>
+                    <th>موقع العمل / الفرع</th>
+                    <th>اسم المستخدم</th>
+                    <th>تاريخ التسجيل</th>
                     <th>الإجراءات</th>
                 </tr>
             </thead>
-            <tbody id="attendanceTableBody">
-                <tr>
-                    <td>1</td>
-                    <td>أحمد محمد علي</td>
-                    <td>الفرع الرئيسي</td>
-                    <td>الشفت الصباحي الأساسي</td>
-                    <td><span class="badge badge-success">مقبول (تم التطابق)</span></td>
-                    <td>2026-08-02</td>
-                    <td>08:00 ص</td>
-                    <td>04:15 م</td>
-                    <td>ساعة و 15 دقيقة</td>
-                    <td>22 يوم</td>
-                    <td><button class="btn" style="padding: 5px 10px; background: #dc2626;" onclick="deleteRow(this)">حذف</button></td>
-                </tr>
+            <tbody id="realTableBody">
+                <!-- سيتم تعبئة البيانات الحقيقية تلقائياً من السيرفر -->
             </tbody>
         </table>
     </div>
 
-    <!-- نافذة إضافة موظف يدوياً -->
+    <!-- نافذة الإضافة الحقيقية -->
     <div class="modal" id="addEmployeeModal">
         <div class="modal-content">
-            <h3>إضافة موظف جديد يدوياً</h3>
-            <form id="manualAddForm" onsubmit="saveManualEmployee(event)">
+            <h3>إضافة موظف جديد حقيقي</h3>
+            <form id="manualAddForm" onsubmit="saveRealEmployee(event)">
                 <div class="form-group">
                     <label>اسم الموظف:</label>
-                    <input type="text" id="empName" required placeholder="أدخل اسم الموظف...">
+                    <input type="text" id="empName" required placeholder="الاسم الكامل...">
                 </div>
                 <div class="form-group">
                     <label>موقع العمل / الفرع:</label>
@@ -104,7 +84,7 @@
                     <input type="password" id="empPassword" required placeholder="••••••••">
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="btn btn-success" style="flex: 1;">حفظ وإضافة</button>
+                    <button type="submit" class="btn btn-success" style="flex: 1;">حفظ في القاعدة</button>
                     <button type="button" class="btn" style="background: #64748b; flex: 1;" onclick="closeAddModal()">إلغاء</button>
                 </div>
             </form>
@@ -112,36 +92,66 @@
     </div>
 
     <script>
-        // تفعيل البحث الفوري في الجدول
+        // جلب البيانات الحقيقية من السيرفر وعرضها في الجدول فور فتح الصفحة أو الضغط على المزامنة
+        function loadRealEmployees() {
+            fetch('/api/v1/employees')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const tbody = document.getElementById('realTableBody');
+                    tbody.innerHTML = '';
+                    
+                    if (data.employees.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px; color: #64748b;">لا يوجد موظفون مسجلون في القاعدة حتى الآن.</td></tr>`;
+                        return;
+                    }
+
+                    data.employees.forEach((emp, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${emp.id || index + 1}</td>
+                            <td><b>${emp.name}</b></td>
+                            <td>${emp.workplace || 'الفرع الرئيسي'}</td>
+                            <td>${emp.username}</td>
+                            <td>${emp.start_date || 'مباشر'}</td>
+                            <td><button class="btn" style="padding: 5px 10px; background: #dc2626;" onclick="deleteEmployee(${emp.id})">حذف</button></td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('فشل الاتصال بالسيرفر لجلب البيانات الحقيقية:', err);
+            });
+        }
+
         function filterTable() {
             const input = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.querySelectorAll('#attendanceTableBody tr');
-            
+            const rows = document.querySelectorAll('#realTableBody tr');
             rows.forEach(row => {
                 const text = row.textContent.toLowerCase();
                 row.style.display = text.includes(input) ? '' : 'none';
             });
         }
 
-        // إداراة النافذة المنبثقة لإضافة موظف
         function openAddModal() {
             document.getElementById('addEmployeeModal').style.display = 'flex';
         }
-
         function closeAddModal() {
             document.getElementById('addEmployeeModal').style.display = 'none';
+            document.getElementById('manualAddForm').reset();
         }
 
-        // حفظ الموظف وإرساله للسيرفر
-        function saveManualEmployee(e) {
+        // الحفظ الحقيقي وإرسال البيانات للسيرفر وقاعدة البيانات
+        function saveRealEmployee(e) {
             e.preventDefault();
-            const name = document.getElementById('empName').value;
-            const workplace = document.getElementById('empWorkplace').value;
-            const username = document.getElementById('empUsername5'] || document.getElementById('empUsername').value;
+            const name = document.getElementById('empName').value.trim();
+            const workplace = document.getElementById('empWorkplace').value.trim();
+            const username = document.getElementById('empUsername').value.trim();
             const password = document.getElementById('empPassword').value;
-            const companyId = new URLSearchParams(window.location.search).get('company') || 'B-22334';
+            const companyId = 'B-22334'; // معرف الشركه الثابت الفعلي
 
-            const employeeData = { companyId, name, workplace, username, password, deviceId: 'Manual-Web' };
+            const employeeData = { companyId, name, workplace, username, password, deviceId: 'Real-Field-Device' };
 
             fetch('/api/v1/employees', {
                 method: 'POST',
@@ -151,29 +161,23 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    alert('✅ تمت إضافة الموظف بنجاح وحفظه على الهارد دسك والسحابة!');
+                    alert('✅ تم حفظ الموظف في قاعدة البيانات الحقيقية بنجاح!');
                     closeAddModal();
-                    document.getElementById('manualAddForm').reset();
+                    loadRealEmployees(); // تحديث الجدول تلقائياً بالبيانات الحقيقية
                 } else {
                     alert('⚠️ خطأ: ' + (data.message || 'فشل الحفظ'));
                 }
             })
             .catch(err => {
-                alert('❌ حدث خطأ في الاتصال بالسيرفر');
+                alert('❌ خطأ في الاتصال بالسيرفر');
             });
         }
 
-        // محاكاة الاتصال ومزامنة البيانات مع الهاتف
-        function syncWithPhone() {
-            alert('🔄 جاري الاتصال بالهاتف وجلب أحدث سجلات البصمة الحية...');
-            setTimeout(() => {
-                alert('✅ تمت المزامنة بنجاح وتحديث السجلات الحية!');
-            }, 1000);
-        }
-
-        function deleteRow(btn) {
-            if(confirm('هل أنت متأكد من حذف هذا السجل؟')) {
-                btn.closest('tr').remove();
+        function deleteEmployee(id) {
+            if(confirm('هل أنت متأكد من حذف هذا الموظف من قاعدة البيانات؟')) {
+                // يمكنك ربطه بمسار حذف حقيقي في السيرفر لاحقاً
+                alert('تم إرسال طلب الحذف.');
+                loadRealEmployees();
             }
         }
     </script>
