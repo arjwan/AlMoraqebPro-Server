@@ -1,113 +1,69 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// قراءة الملفات الثابتة من مجلد public حيث توجد جميع صفحات الواجهة
-app.use(express.static(path.join(__dirname, 'public')));
-
+// مسار تخزين قاعدة البيانات والمجلدات
 const DATA_DIR = path.join(__dirname, 'data');
 const COMPANIES_DIR = path.join(DATA_DIR, 'companies');
-const MAIN_DB_PATH = path.join(DATA_DIR, 'almaqeb_pro.db');
+const DB_PATH = path.join(DATA_DIR, 'almaqeb_pro.db');
 
+// التأكد من وجود مجلدات التخزين عند بدء التشغيل
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(COMPANIES_DIR)) fs.mkdirSync(COMPANIES_DIR, { recursive: true });
-if (!fs.existsSync(MAIN_DB_PATH)) {
-    fs.writeFileSync(MAIN_DB_PATH, JSON.stringify({ companies: [] }, null, 2));
+if (!fs.existsSync(DB_PATH)) {
+    fs.writeFileSync(DB_PATH, JSON.stringify({ companies: [] }, null, 2));
 }
-// كود تنظيف مؤقت يعمل مرة واحدة عند تشغيل السيرفر لحذف البيانات القديمة
-const resetOldDataOnce = () => {
-    try {
-        const COMPANIES_DIR = path.join(__dirname, 'data', 'companies');
-        const MAIN_DB_PATH = path.join(__dirname, 'data', 'almaqeb_pro.db');
 
-        // تفريغ قاعدة البيانات الرئيسية
-        if (fs.existsSync(MAIN_DB_PATH)) {
-            fs.writeFileSync(MAIN_DB_PATH, JSON.stringify({ companies: [] }, null, 2));
-            console.log('🧹 تم تفريغ قاعدة البيانات الرئيسية بنجاح.');
-        }
-
-        // حذف مجلدات الشركات القديمة
-        if (fs.existsSync(COMPANIES_DIR)) {
-            const companies = fs.readdirSync(COMPANIES_DIR);
-            companies.forEach(folder => {
-                fs.rmSync(path.join(COMPANIES_DIR, folder), { recursive: true, force: true });
-                console.log(`🗑️ تم حذف الشركة القديمة: ${folder}`);
-            });
-        }
-    } catch (e) {
-        console.log('خطأ في التنظيف المؤقت:', e);
-    }
-};
-
-// تنفيذ الدالة عند بدء التشغيل
-resetOldDataOnce();
-// 1. مسار جلب الشركات
+// 1. مسار جلب قائمة الشركات المسجلة
 app.get('/api/developer/companies', (req, res) => {
     try {
-        const dbData = JSON.parse(fs.readFileSync(MAIN_DB_PATH, 'utf8'));
+        const dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         res.json({ success: true, companies: dbData.companies || [] });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'خطأ في قراءة قاعدة البيانات الرئيسية' });
+        res.status(500).json({ success: false, message: 'خطأ في قراءة قاعدة البيانات: ' + error.message });
     }
 });
 
-// 2. مسار إنشاء وحفظ الشركة على الهارد دسك
+// 2. مسار إنشاء وتسجيل شركة جديدة وربطها برمز القاعدة والمجلدات
 app.post('/api/developer/company/create', (req, res) => {
     try {
-        const companyData = req.body;
-        const companyId = companyData.companyId || companyData.id;
+        const newComp = req.body;
+        const compId = newComp.companyId || newComp.id;
 
-        if (!companyId) {
-            return res.status(400).json({ success: false, message: 'معرف الشركة (ID) مطلوب!' });
+        if (!compId) {
+            return.status(400).json({ success: false, message: 'رمز الشركة (المعرف) مطلوب!' });
         }
 
-        let dbData = JSON.parse(fs.readFileSync(MAIN_DB_PATH, 'utf8'));
+        let dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         
-        const existingIndex = dbData.companies.findIndex(c => (c.id === companyId || c.companyId === companyId));
+        // التحقق من عدم تكرار المعرف
+        const existingIndex = dbData.companies.findIndex(c => (c.companyId || c.id) === compId);
         if (existingIndex !== -1) {
-            dbData.companies[existingIndex] = companyData;
-        } else {
-            dbData.companies.push(companyData);
+            return.status(400).json({ success: false, message: 'رمز الشركة موجود مسبقاً في النظام!' });
         }
 
-        fs.writeFileSync(MAIN_DB_PATH, JSON.stringify(dbData, null, 2));
-
-        const specificCompanyDir = path.join(COMPANIES_DIR, companyId);
-        if (!fs.existsSync(specificCompanyDir)) {
-            fs.mkdirSync(specificCompanyDir, { recursive: true });
+        // إنشاء مجلد خاص بالشركة على الهارد دسك باستخدام رمز القاعدة الخاص بها
+        const compFolder = path.join(COMPANIES_DIR, compId);
+        if (!fs.existsSync(compFolder)) {
+            fs.mkdirSync(compFolder, { recursive: true });
         }
-        
-        const companyDbPath = path.join(specificCompanyDir, 'database.json');
-        fs.writeFileSync(companyDbPath, JSON.stringify({
-            info: companyData,
-            employees: [],
-            requests: [],
-            attendance: [],
-            settings: {}
-        }, null, 2));
 
-        res.json({ success: true, message: `تم تأسيس وحفظ شركة (${companyId}) وقاعدة بياناتها على الهارد دسك بنجاح!` });
+        // إضافة الشركة للقاعدة
+        dbData.companies.push(newComp);
+        fs.writeFileSync(DB_PATH, JSON.stringify(dbData, null, 2));
+
+        res.json({ success: true, message: '✨ تم تأسيس الشركة وربطها بالهارد دسك بنجاح!' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'حدث خطأ داخلي أثناء حفظ الشركة' });
+        res.status(500).json({ success: false, message: 'خطأ في السيرفر أثناء إنشاء الشركة: ' + error.message });
     }
 });
 
-// توجيه الصفحة الرئيسية والجذر لفتح admin.html من داخل مجلد public مباشرة
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-app.get('/admin.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
+// تشغيل السيرفر
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 السيرفر يعمل الآن بكفاءة على البورت: ${PORT}`);
+    console.log(`🚀 السيرفر يعمل بكفاءة على المنفذ: ${PORT}`);
 });
