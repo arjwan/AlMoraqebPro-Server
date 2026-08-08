@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
-app.use(express.static(__dirname)); // لقراءة ملفات الـ HTML والـ CSS بجانب السيرفر
+app.use(express.static(path.join(__dirname, 'public'))); // لقراءة ملفات الـ HTML والـ CSS بجانب السيرفر
 
 // الاتصال بقاعدة البيانات المحلية على الهارد دسك
 const db = new sqlite3.Database('./almoraqeb_pro.db', (err) => {
