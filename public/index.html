@@ -98,6 +98,8 @@
         .divider {
             margin: 25px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #64748b;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -110,7 +112,7 @@
         <form id="loginForm" onsubmit="handleLoginMatch(event)">
             <div class="form-group">
                 <label>رمز الشركة (ID)</label>
-                <input type="text" id="companyCode" placeholder="مثال: COMP-01">
+                <input type="text" id="companyCode" placeholder="مثال: B-2080" required>
             </div>
 
             <div class="form-group">
@@ -135,33 +137,34 @@
     </div>
 
     <script>
-        function handleLoginMatch(e) {
+        async function handleLoginMatch(e) {
             e.preventDefault();
             
-            const inputCompanyCode = document.getElementById('companyCode').value.trim();
-            const inputPhone = document.getElementById('phone').value.trim();
-            const inputUsername = document.getElementById('username').value.trim();
-            const inputPassword = document.getElementById('password').value.trim();
+            const companyId = document.getElementById('companyCode').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
 
-            const registeredCompanies = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ companyId, phone, username, password })
+                });
 
-            const matchedCompany = registeredCompanies.find(comp => {
-                const isActive = comp.status !== 'stopped';
-                const isPhoneMatch = inputCompanyCode && inputPhone && (comp.id === inputCompanyCode) && (comp.phone === inputPhone);
-                const isCredentialMatch = inputUsername && inputPassword && (comp.username === inputUsername) && (comp.password === inputPassword);
+                const data = await response.json();
 
-                return isActive && (isPhoneMatch || isCredentialMatch);
-            });
+                if (data.success) {
+                    localStorage.setItem('activeCompanyId', data.company.companyId);
+                    localStorage.setItem('activeCompanyName', data.company.name);
 
-            if (matchedCompany) {
-                const companyCode = matchedCompany.id;
-                localStorage.setItem('activeCompanyId', companyCode);
-                localStorage.setItem('activeCompanyName', matchedCompany.nameAr);
-
-                alert(`✨ مرحباً بك ${matchedCompany.manager} في نظام ${matchedCompany.nameAr}`);
-                window.location.href = `admin.html?company=${encodeURIComponent(companyCode)}`;
-            } else {
-                alert('❌ البيانات المدخلة غير صحيحة، أو أن حساب الشركة متوقف مؤقتاً من قبل المطور.');
+                    alert(`✨ مرحباً بك في نظام ${data.company.name}`);
+                    window.location.href = `admin.html?company=${encodeURIComponent(data.company.companyId)}`;
+                } else {
+                    alert(`❌ ${data.message || 'البيانات المدخلة غير صحيحة'}`);
+                }
+            } catch (error) {
+                alert('❌ حدث خطأ في الاتصال بالخادم، تأكد من تشغيل السيرفر.');
             }
         }
     </script>
