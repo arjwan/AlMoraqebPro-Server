@@ -35,7 +35,7 @@ app.post('/api/developer/company/create', (req, res) => {
         const compId = newComp.companyId || newComp.id;
 
         if (!compId) {
-            return.status(400).json({ success: false, message: 'رمز الشركة (المعرف) مطلوب!' });
+            return res.status(400).json({ success: false, message: 'رمز الشركة (المعرف) مطلوب!' });
         }
 
         let dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
@@ -43,7 +43,7 @@ app.post('/api/developer/company/create', (req, res) => {
         // التحقق من عدم تكرار المعرف
         const existingIndex = dbData.companies.findIndex(c => (c.companyId || c.id) === compId);
         if (existingIndex !== -1) {
-            return.status(400).json({ success: false, message: 'رمز الشركة موجود مسبقاً في النظام!' });
+            return res.status(400).json({ success: false, message: 'رمز الشركة موجود مسبقاً في النظام!' });
         }
 
         // إنشاء مجلد خاص بالشركة على الهارد دسك باستخدام رمز القاعدة الخاص بها
