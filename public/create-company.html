@@ -83,7 +83,13 @@
         }
         .btn-main:hover { transform: translateY(-3px); }
 
-        .section-title { font-size: 26px; color: #f1f5f9; margin-bottom: 25px; font-weight: 800; }
+        .section-title { font-size: 26px; color: #f1f5f9; margin-bottom: 25px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
+        
+        .btn-restore {
+            background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 10px;
+            font-size: 14px; font-weight: bold; cursor: pointer;
+        }
+        .btn-restore:hover { background: #059669; }
 
         /* تصميم بطاقة الشركة المطور والمنسق */
         .company-card {
@@ -214,11 +220,20 @@
     </div>
 
     <!-- قائمة الشركات -->
-    <div class="section-title">📋 الشركات المسجلة والمدرجة حالياً</div>
+    <div class="section-title">
+        <span>📋 الشركات المسجلة والمدرجة حالياً</span>
+        <button type="button" class="btn-restore" onclick="restoreDefaultCompanies()">🔄 استعادة الشركات الافتراضية</button>
+    </div>
     <div id="compList"></div>
 </div>
 
 <script>
+    const defaultCompanies = [
+        { companyId: 'arjwan', companyName: 'الأرجوان للبرمجيات', manager: 'محمد الأوبيدي', phone: '07700000000', email: 'arjwan@domain.com', username: 'admin', password: '123', photo: '', status: 'active' },
+        { companyId: 'albaghdadi', companyName: 'البغدادي للخدمات التقنية', manager: 'أحمد البغدادي', phone: '07800000000', email: 'baghdadi@domain.com', username: 'admin', password: '123', photo: '', status: 'active' },
+        { companyId: 'afaqpro', companyName: 'آفاق للتجارة العامة', manager: 'علي التميمي', phone: '07900000000', email: 'afaq@domain.com', username: 'admin', password: '123', photo: '', status: 'active' }
+    ];
+
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (file) {
@@ -234,7 +249,6 @@
         }
     }
 
-    // رفع الشعار المباشر من بطاقة الشركة في القائمة
     function handleCardLogoUpload(index, event) {
         const file = event.target.files[0];
         if (file) {
@@ -247,7 +261,13 @@
         }
     }
 
-    document.getElementById('regForm').addEventListener('submit', async function(e) {
+    function restoreDefaultCompanies() {
+        localStorage.setItem('registeredCompanies', JSON.stringify(defaultCompanies));
+        renderList();
+        alert('✨ تم استعادة الشركات الافتراضية بنجاح!');
+    }
+
+    document.getElementById('regForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
         const companyData = {
@@ -274,12 +294,17 @@
     });
 
     function renderList() {
-        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        let list = JSON.parse(localStorage.getItem('registeredCompanies'));
+        if (!list) {
+            list = defaultCompanies;
+            localStorage.setItem('registeredCompanies', JSON.stringify(list));
+        }
+
         const container = document.getElementById('compList');
         container.innerHTML = '';
 
         if (!list || list.length === 0) {
-            container.innerHTML = '<div style="background: rgba(30,41,59,0.4); padding: 30px; text-align: center; border-radius: 20px; color: #94a3b8; font-size: 18px;">📭 لا توجد شركات مسجلة في النظام حتى الآن.</div>';
+            container.innerHTML = '<div style="background: rgba(30,41,59,0.4); padding: 30px; text-align: center; border-radius: 20px; color: #94a3b8; font-size: 18px;">📭 لا توجد شركات مسجلة في النظام حتى الآن. يمكنك النقر على زر "استعادة الشركات الافتراضية" بالأعلى.</div>';
             return;
         }
 
