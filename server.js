@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. جعل مجلد public متاحاً للمتصفح (يحتوي على index.html والصور وملفات CSS)
+// 1. جعل مجلد public متاحاً للمتصفح
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 2. الاتصال بقاعدة البيانات باستخدام المتغير الآمن من Render
@@ -19,22 +19,25 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ تم الاتصال بقاعدة البيانات بنجاح'))
   .catch(err => console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err));
 
-// 3. تعريف نموذج بيانات الشركات
+// 3. تعريف نموذج بيانات الشركات بمرونة كاملة
 const CompanySchema = new mongoose.Schema({
     companyId: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     phone: String,
-    address: String
+    address: String,
+    username: String,
+    password: String,
+    status: { type: String, default: 'active' }
 }, { timestamps: true });
 
 const Company = mongoose.model('Company', CompanySchema);
 
-// 4. مسار الصفحة الرئيسية (يفتح index.html تلقائياً)
+// 4. مسار الصفحة الرئيسية
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 5. مسار الـ API لجلب الشركات
+// 5. مسار جلب الشركات
 app.get('/api/developer/companies', async (req, res) => {
     try {
         const companies = await Company.find();
@@ -44,7 +47,7 @@ app.get('/api/developer/companies', async (req, res) => {
     }
 });
 
-// 6. مسار الـ API لحفظ البيانات
+// 6. مسار حفظ أو تحديث الشركة بحرية تامة
 app.post('/api/developer/company/create', async (req, res) => {
     const newCompany = req.body;
     try {
@@ -59,7 +62,28 @@ app.post('/api/developer/company/create', async (req, res) => {
     }
 });
 
-// 7. تشغيل السيرفر
+// 7. مسار تسجيل الدخول المباشر (يتحقق من البيانات المخزنة في قاعدة البيانات فقط دون أي شروط مسبقة)
+app.post('/api/auth/login', async (req, res) => {
+    const { companyId, username, password } = req.body;
+    try {
+        const company = await Company.findOne({ companyId });
+        
+        if (!company) {
+            return res.status(404).json({ success: false, message: "رمز الشركة غير موجود" });
+        }
+
+        // مطابقة مرنة للبيانات التي أدخلتها أنت يدوياً
+        if (company.username === username && company.password === password) {
+            return res.json({ success: true, message: "تم تسجيل الدخول بنجاح", company });
+        } else {
+            return res.status(401).json({ success: false, message: "بيانات الدخول غير صحيحة" });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: "Server error" });
+    }
+});
+
+// 8. تشغيل السيرفر
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
