@@ -24,7 +24,12 @@ const CompanySchema = new mongoose.Schema({
 
 const Company = mongoose.model('Company', CompanySchema);
 
-// مسار جلب الشركات
+// 1. مسار الصفحة الرئيسية للتأكد أن السيرفر يعمل
+app.get('/', (req, res) => {
+    res.send('🚀 AlMoraqebPro Server is Running and Connected to MongoDB Atlas successfully!');
+});
+
+// 2. مسار جلب الشركات
 app.get('/api/developer/companies', async (req, res) => {
     try {
         const companies = await Company.find();
@@ -34,7 +39,7 @@ app.get('/api/developer/companies', async (req, res) => {
     }
 });
 
-// مسار حفظ وتحديث الشركات
+// 3. مسار حفظ وتحديث الشركات
 app.post('/api/developer/company/create', async (req, res) => {
     const newCompany = req.body;
     try {
