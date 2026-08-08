@@ -20,7 +20,33 @@ if (!fs.existsSync(COMPANIES_DIR)) fs.mkdirSync(COMPANIES_DIR, { recursive: true
 if (!fs.existsSync(MAIN_DB_PATH)) {
     fs.writeFileSync(MAIN_DB_PATH, JSON.stringify({ companies: [] }, null, 2));
 }
+// كود تنظيف مؤقت يعمل مرة واحدة عند تشغيل السيرفر لحذف البيانات القديمة
+const resetOldDataOnce = () => {
+    try {
+        const COMPANIES_DIR = path.join(__dirname, 'data', 'companies');
+        const MAIN_DB_PATH = path.join(__dirname, 'data', 'almaqeb_pro.db');
 
+        // تفريغ قاعدة البيانات الرئيسية
+        if (fs.existsSync(MAIN_DB_PATH)) {
+            fs.writeFileSync(MAIN_DB_PATH, JSON.stringify({ companies: [] }, null, 2));
+            console.log('🧹 تم تفريغ قاعدة البيانات الرئيسية بنجاح.');
+        }
+
+        // حذف مجلدات الشركات القديمة
+        if (fs.existsSync(COMPANIES_DIR)) {
+            const companies = fs.readdirSync(COMPANIES_DIR);
+            companies.forEach(folder => {
+                fs.rmSync(path.join(COMPANIES_DIR, folder), { recursive: true, force: true });
+                console.log(`🗑️ تم حذف الشركة القديمة: ${folder}`);
+            });
+        }
+    } catch (e) {
+        console.log('خطأ في التنظيف المؤقت:', e);
+    }
+};
+
+// تنفيذ الدالة عند بدء التشغيل
+resetOldDataOnce();
 // 1. مسار جلب الشركات
 app.get('/api/developer/companies', (req, res) => {
     try {
