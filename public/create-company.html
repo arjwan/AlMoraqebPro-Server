@@ -83,13 +83,7 @@
         }
         .btn-main:hover { transform: translateY(-3px); }
 
-        .section-title { font-size: 26px; color: #f1f5f9; margin-bottom: 25px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
-        
-        .btn-restore {
-            background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 10px;
-            font-size: 14px; font-weight: bold; cursor: pointer;
-        }
-        .btn-restore:hover { background: #059669; }
+        .section-title { font-size: 26px; color: #f1f5f9; margin-bottom: 25px; font-weight: 800; }
 
         /* تصميم بطاقة الشركة المطور والمنسق */
         .company-card {
@@ -220,20 +214,11 @@
     </div>
 
     <!-- قائمة الشركات -->
-    <div class="section-title">
-        <span>📋 الشركات المسجلة والمدرجة حالياً</span>
-        <button type="button" class="btn-restore" onclick="restoreDefaultCompanies()">🔄 استعادة الشركات الافتراضية</button>
-    </div>
+    <div class="section-title">📋 الشركات المسجلة والمدرجة حالياً</div>
     <div id="compList"></div>
 </div>
 
 <script>
-    const defaultCompanies = [
-        { companyId: 'arjwan', companyName: 'الأرجوان للبرمجيات', manager: 'محمد الأوبيدي', phone: '07700000000', email: 'arjwan@domain.com', username: 'admin', password: '123', photo: '', status: 'active' },
-        { companyId: 'albaghdadi', companyName: 'البغدادي للخدمات التقنية', manager: 'أحمد البغدادي', phone: '07800000000', email: 'baghdadi@domain.com', username: 'admin', password: '123', photo: '', status: 'active' },
-        { companyId: 'afaqpro', companyName: 'آفاق للتجارة العامة', manager: 'علي التميمي', phone: '07900000000', email: 'afaq@domain.com', username: 'admin', password: '123', photo: '', status: 'active' }
-    ];
-
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (file) {
@@ -249,6 +234,7 @@
         }
     }
 
+    // رفع الشعار المباشر من بطاقة الشركة في القائمة
     function handleCardLogoUpload(index, event) {
         const file = event.target.files[0];
         if (file) {
@@ -261,13 +247,7 @@
         }
     }
 
-    function restoreDefaultCompanies() {
-        localStorage.setItem('registeredCompanies', JSON.stringify(defaultCompanies));
-        renderList();
-        alert('✨ تم استعادة الشركات الافتراضية بنجاح!');
-    }
-
-    document.getElementById('regForm').addEventListener('submit', function(e) {
+    document.getElementById('regForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const companyData = {
@@ -284,27 +264,52 @@
             status: 'active'
         };
 
-        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        list.push(companyData);
-        localStorage.setItem('registeredCompanies', JSON.stringify(list));
-        renderList();
-        this.reset();
-        document.getElementById('previewThumb').style.display = 'none';
-        alert('✨ تم حفظ وتنشيط الشركة بنجاح!');
+        try {
+            const response = await fetch('/api/developer/company/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(companyData)
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message || '✨ تم حفظ وتنشيط الشركة بنجاح!');
+                renderList();
+                this.reset();
+                document.getElementById('previewThumb').style.display = 'none';
+            } else {
+                alert('خطأ: ' + result.message);
+            }
+        } catch (error) {
+            let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+            list.push(companyData);
+            localStorage.setItem('registeredCompanies', JSON.stringify(list));
+            renderList();
+            this.reset();
+            document.getElementById('previewThumb').style.display = 'none';
+            alert('⚠️ تم الحفظ محلياً لتعذر الاتصال بالسيرفر.');
+        }
     });
 
-    function renderList() {
-        let list = JSON.parse(localStorage.getItem('registeredCompanies'));
-        if (!list) {
-            list = defaultCompanies;
-            localStorage.setItem('registeredCompanies', JSON.stringify(list));
+    async function renderList() {
+        let list = [];
+        try {
+            const response = await fetch('/api/developer/companies');
+            if (response.ok) {
+                const data = await response.json();
+                list = data.companies || data;
+            } else {
+                throw new Error();
+            }
+        } catch (err) {
+            list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
         }
 
         const container = document.getElementById('compList');
         container.innerHTML = '';
 
         if (!list || list.length === 0) {
-            container.innerHTML = '<div style="background: rgba(30,41,59,0.4); padding: 30px; text-align: center; border-radius: 20px; color: #94a3b8; font-size: 18px;">📭 لا توجد شركات مسجلة في النظام حتى الآن. يمكنك النقر على زر "استعادة الشركات الافتراضية" بالأعلى.</div>';
+            container.innerHTML = '<div style="background: rgba(30,41,59,0.4); padding: 30px; text-align: center; border-radius: 20px; color: #94a3b8; font-size: 18px;">📭 لا توجد شركات مسجلة في النظام حتى الآن.</div>';
             return;
         }
 
@@ -340,12 +345,12 @@
                     </div>
 
                     <div class="actions">
-                        <button type="button" class="btn-action ${isActive ? 'btn-status-stop' : 'btn-status-play'}" onclick="toggleStatus(${index})">
+                        <button class="btn-action ${isActive ? 'btn-status-stop' : 'btn-status-play'}" onclick="toggleStatus(${index})">
                             ${isActive ? '⏸️ إيقاف' : '▶️ تشغيل'}
                         </button>
-                        <button type="button" class="btn-action btn-edit" id="edit-btn-${index}" onclick="enableEdit(${index})">✏️ تعديل</button>
-                        <button type="button" class="btn-action btn-save" id="save-btn-${index}" onclick="saveEdit(${index})">💾 حفظ</button>
-                        <button type="button" class="btn-action btn-del" onclick="deleteComp(${index}, '${compId}')">🗑️ حذف</button>
+                        <button class="btn-action btn-edit" id="edit-btn-${index}" onclick="enableEdit(${index})">✏️ تعديل</button>
+                        <button class="btn-action btn-save" id="save-btn-${index}" onclick="saveEdit(${index}, '${compId}')">💾 حفظ</button>
+                        <button class="btn-action btn-del" onclick="deleteComp(${index}, '${compId}')">🗑️ حذف</button>
                     </div>
                 </div>
             `;
@@ -372,12 +377,12 @@
         document.getElementById(`save-btn-${index}`).style.display = 'block';
     }
 
-    function saveEdit(index) {
+    async function saveEdit(index, oldId) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
         if (!list[index]) return;
 
-        list[index] = {
-            ...list[index],
+        const updatedData = {
+            oldCompanyId: oldId,
             companyId: document.getElementById(`edit-id-${index}`).value.trim(),
             companyName: document.getElementById(`edit-name-${index}`).value.trim(),
             name: document.getElementById(`edit-name-${index}`).value.trim(),
@@ -386,9 +391,21 @@
             email: document.getElementById(`edit-email-${index}`).value.trim(),
             username: document.getElementById(`edit-user-${index}`).value.trim(),
             password: document.getElementById(`edit-pass-${index}`).value.trim(),
-            photo: document.getElementById(`card-photo-val-${index}`).value
+            photo: document.getElementById(`card-photo-val-${index}`).value,
+            status: list[index].status || 'active'
         };
 
+        try {
+            const response = async () => await fetch('/api/developer/company/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedData)
+            });
+            // محاولة الحفظ عبر السيرفر
+            await response();
+        } catch (e) {}
+
+        list[index] = updatedData;
         localStorage.setItem('registeredCompanies', JSON.stringify(list));
         alert('✨ تم حفظ التعديلات بنجاح!');
         renderList();
