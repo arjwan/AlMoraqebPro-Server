@@ -7,7 +7,9 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(express.static(__dirname));
+
+// قراءة الملفات الثابتة من مجلد public حيث توجد جميع صفحات الواجهة
+app.use(express.static(path.join(__dirname, 'public')));
 
 const DATA_DIR = path.join(__dirname, 'data');
 const COMPANIES_DIR = path.join(DATA_DIR, 'companies');
@@ -71,13 +73,13 @@ app.post('/api/developer/company/create', (req, res) => {
     }
 });
 
-// توجيه الصفحة الرئيسية والجذر لتفتح لوحة التحكم تلقائياً
+// توجيه الصفحة الرئيسية والجذر لفتح admin.html من داخل مجلد public مباشرة
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.get('/admin.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.listen(PORT, () => {
