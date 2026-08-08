@@ -43,7 +43,7 @@ function initializeSystem() {
     }
 
     initialCompanies.forEach(comp => {
-        // التأكد من وجود مجلد خاص بكل شركة داخل مجلد companies
+        // التأكد من وجود مجلد خاص بكل شركة داخل مجلد companies على الهارد دسك
         const dir = path.join(COMPANIES_DIR, comp.companyId);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
@@ -64,7 +64,7 @@ function initializeSystem() {
     });
 
     fs.writeFileSync(DB_PATH, JSON.stringify(dbData, null, 2));
-    console.log("✅ تم التحقق من سلامة قاعدة البيانات وتحديث الشركات العشر.");
+    console.log("✅ تم التحقق من سلامة قاعدة البيانات وتحديث الشركات العشر ومجلداتها على الهارد دسك.");
 }
 
 // تشغيل النظام
@@ -80,9 +80,12 @@ app.get('/developer', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'create-company.html'));
 });
 
-// مسار جلب قائمة الشركات المسجلة
+// مسار جلب قائمة الشركات المسجلة من الهارد دسك
 app.get('/api/developer/companies', (req, res) => {
     try {
+        if (!fs.existsSync(DB_PATH)) {
+            return res.json({ success: true, companies: [] });
+        }
         const dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         res.json({ success: true, companies: dbData.companies || [] });
     } catch (error) {
@@ -90,7 +93,7 @@ app.get('/api/developer/companies', (req, res) => {
     }
 });
 
-// مسار إنشاء وتسجيل شركة جديدة وتحديث بياناتها
+// مسار إنشاء وتسجيل شركة جديدة وتحديث بياناتها وحفظها على الهارد دسك
 app.post('/api/developer/company/create', (req, res) => {
     try {
         const newComp = req.body;
@@ -100,11 +103,27 @@ app.post('/api/developer/company/create', (req, res) => {
             return res.status(400).json({ success: false, message: 'رمز الشركة (المعرف) مطلوب!' });
         }
 
-        let dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+        let dbData = { companies: [] };
+        if (fs.existsSync(DB_PATH)) {
+            try {
+                dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+            } catch (e) {
+                dbData = { companies: [] };
+            }
+        }
         
+        // التعامل في حال تم تغيير رمز الشركة (ID) القديم برمز جديد
+        if (newComp.oldCompanyId && newComp.oldCompanyId !== compId) {
+            dbData.companies = dbData.companies.filter(c => (c.companyId || c.id) !== newComp.oldCompanyId);
+            const oldFolder = path.join(COMPANIES_DIR, newComp.oldCompanyId);
+            if (fs.existsSync(oldFolder)) {
+                // نقل أو ترك المجلد القديم، وإنشاء الجديد
+            }
+        }
+
         const existingIndex = dbData.companies.findIndex(c => (c.companyId || c.id) === compId);
         
-        // إنشاء مجلد خاص بالشركة على الهارد دسك
+        // إنشاء مجلد خاص بالشركة على الهارد دسك ضمن مسار companies
         const compFolder = path.join(COMPANIES_DIR, compId);
         if (!fs.existsSync(compFolder)) {
             fs.mkdirSync(compFolder, { recursive: true });
@@ -118,11 +137,12 @@ app.post('/api/developer/company/create', (req, res) => {
             dbData.companies.push(newComp);
         }
 
+        // حفظ البيانات نهائياً في ملف قاعدة البيانات المركزي على الهارد دسك
         fs.writeFileSync(DB_PATH, JSON.stringify(dbData, null, 2));
 
-        res.json({ success: true, message: '✨ تم حفظ وتحديث بيانات الشركة بنجاح!' });
+        res.json({ success: true, message: '✨ تم حفظ وتحديث بيانات الشركة ومجلداتها على الهارد دسك بنجاح!' });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'خطأ في السيرفر أثناء معالجة الطلب: ' + error.message });
+        res.status(500).json({ success: false, message: 'خطأ في السيرفر أثناء الحفظ على الهارد دسك: ' + error.message });
     }
 });
 
