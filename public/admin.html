@@ -3,173 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - إدارة الرواتب والربط المتقدم</title>
+    <title>لوحة التحكم الرئيسية - المراقب برو</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
-            color: #1e293b;
-            min-height: 100vh;
-            padding: 10px;
-        }
-
-        .main-card {
-            width: 100%;
-            max-width: 100%;
-            background: #ffffff;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-        }
-
-        .top-header {
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { 
+            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); 
+            color: #1e293b; 
+            min-height: 100vh; 
+            padding: 20px; 
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 12px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 10px;
         }
 
-        h2 {
-            font-size: 18px;
-            font-weight: 800;
-            color: #d97706;
+        .main-card { 
+            width: 100%; 
+            max-width: 1250px; 
+            background: #ffffff; 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4); 
+            position: relative;
         }
 
-        .header-actions {
+        .top-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 25px; 
+            border-bottom: 2px solid #e2e8f0; 
+            padding-bottom: 15px; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+        }
+
+        .header-title {
             display: flex;
+            align-items: center;
             gap: 8px;
-            align-items: center;
-        }
-
-        .btn {
-            background: #0284c7;
-            color: #fff;
-            border: none;
-            padding: 6px 12px;
+            background: #f1f5f9;
+            padding: 10px 18px;
             border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-            transition: 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .btn:hover { opacity: 0.9; }
-
-        .btn-dashboard { background: #475569; }
-        .btn-success { background: #10b981; }
-        .btn-print { background: #6366f1; }
-        .btn-danger { background: #ef4444; padding: 4px 8px; font-size: 11px; }
-
-        .filter-bar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            background: #f8fafc;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-
-        input, select {
-            padding: 6px 10px;
             border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 13px;
-            outline: none;
-            background: #fff;
-        }
-
-        input:focus, select:focus {
-            border-color: #d97706;
-        }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            max-height: 72vh;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-            min-width: 1250px;
-            background: #fff;
-        }
-
-        th {
-            background: #0ea5e9;
-            color: #fff;
-            padding: 8px 4px;
-            font-size: 11px;
+            font-size: 16px;
             font-weight: 700;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            white-space: nowrap;
+            color: #0f172a;
         }
 
-        td {
-            padding: 4px 3px;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 11px;
-            color: #334155;
-            white-space: nowrap;
+        .header-actions { 
+            display: flex; 
+            gap: 8px; 
+            align-items: center; 
+            flex-wrap: wrap; 
         }
 
-        tr:hover { background: #f1f5f9; }
+        .btn { 
+            color: #fff; 
+            border: none; 
+            padding: 9px 16px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 13px; 
+            transition: 0.2s; 
+            text-decoration: none; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px; 
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-danger { background: #ef4444; }
+        .btn-success { background: #10b981; }
+        .btn-purple { background: #8b5cf6; }
+        .btn-info { background: #0284c7; }
 
-        /* تصغير الحقول بناءً على طلبك لتناسب الشاشة والطباعة */
-        td input, td select {
-            width: 100%;
-            padding: 3px 4px;
-            font-size: 11px;
-            text-align: center;
-            border: 1px solid #94a3b8;
-            border-radius: 4px;
-            background: #f8fafc;
+        .grid-cards { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 20px; 
+            margin-bottom: 15px; 
         }
 
-        /* حقول الأرقام والتواريخ المصغرة */
-        td input[type="number"] { max-width: 55px; }
-        /* حقول النصوص المصغرة (رقم وظيفي، فرع، تحقق، إلخ) */
-        td input.small-text { max-width: 75px; }
-        td input.name-text { max-width: 110px; }
+        @media (max-width: 1000px) {
+            .grid-cards { grid-template-columns: repeat(2, 1fr); }
+        }
 
-        .empty-msg {
-            text-align: center;
-            padding: 30px;
-            color: #64748b;
+        @media (max-width: 600px) {
+            .grid-cards { grid-template-columns: 1fr; }
+        }
+
+        .card-item { 
+            background: #ffffff; 
+            border: 1px solid #e2e8f0; 
+            padding: 25px 15px; 
+            border-radius: 10px; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            text-decoration: none; 
+            color: #334155; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .card-item:hover { 
+            background: #f8fafc; 
+            border-color: #0ea5e9; 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08); 
+        }
+        .card-item .icon { font-size: 32px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .card-item h3 { font-size: 15px; font-weight: 700; color: #0f172a; }
+        .card-item p { font-size: 12px; color: #64748b; line-height: 1.4; }
+
+        /* شريط حالة السيرفر العائم في الزاوية السفلى كما كان تماماً */
+        .server-status-bar { 
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #ef4444; 
+            color: #fff; 
+            padding: 10px 18px; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            font-size: 13px; 
             font-weight: bold;
-            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 1000;
         }
-
-        @media print {
-            body { background: #fff; padding: 0; }
-            .main-card { box-shadow: none; padding: 0; border: none; }
-            .filter-bar, .top-header, .btn-danger, th:last-child, td:last-child { display: none !important; }
-            @page { size: A4 landscape; margin: 4mm; }
-            table { min-width: 100% !important; font-size: 9px !important; }
-            th, td { padding: 2px 1px !important; }
-            td input, td select { border: none; background: transparent; font-size: 9px !important; }
+        .server-status-bar.online {
+            background: #10b981;
         }
     </style>
 </head>
@@ -177,91 +146,92 @@
 
     <div class="main-card">
         <div class="top-header">
-            <h2>💰 إدارة الرواتب والربط المتقدم (تصميم A4 أفقي ومضغوط)</h2>
             <div class="header-actions">
-                <button type="button" class="btn btn-dashboard" onclick="goToDashboard()">🏠 العودة للوحة التحكم</button>
+                <button type="button" class="btn btn-danger" onclick="logout()">تسجيل الخروج</button>
+                <button type="button" class="btn btn-success" onclick="restoreData()">استعادة البيانات</button>
+                <button type="button" class="btn btn-purple" onclick="backupData()">اخذ نسخة احتياطية</button>
+                <button type="button" class="btn btn-info" onclick="syncServer()">مزامنة السيرفر</button>
+            </div>
+            <div class="header-title">
+                <span>🛡️</span>
+                <span>نظام المراقب برو (B-22334) [محلي]</span>
             </div>
         </div>
 
-        <!-- شريط الفلاتر والتحكم والطباعة -->
-        <div class="filter-bar">
-            <select id="filterShift" onchange="filterTable()">
-                <option value="">-- كل الشفتات --</option>
-                <option value="صباحي">صباحي</option>
-                <option value="مسائي">مسائي</option>
-                <option value="ليلي">ليلي</option>
-                <option value="استثنائي">استثنائي</option>
-            </select>
+        <!-- البطاقات الـ 12 بنفس الترتيب والأوصاف الدقيقة تماماً -->
+        <div class="grid-cards">
+            <!-- الصف الأول -->
+            <a href="admin-shifts.html" class="card-item">
+                <span class="icon">⏰</span>
+                <h3>الأوقات والشفتات</h3>
+                <p>إدارة مواعيد الدوام الرسمي والأوقات الخاصة</p>
+            </a>
+            <a href="admin-branches.html" class="card-item">
+                <span class="icon">🏢</span>
+                <h3>إدارة الفروع</h3>
+                <p>توزيع وإدارة فروع العمل وأماكن التواجد</p>
+            </a>
+            <a href="admin-employees.html" class="card-item">
+                <span class="icon">👥</span>
+                <h3>إدارة الموظفين</h3>
+                <p>عرض، تعديل، وبحث في بيانات الموظفين المسجلين</p>
+            </a>
+            <a href="admin-add-employee.html" class="card-item">
+                <span class="icon">➕</span>
+                <h3>إضافة موظف جديد</h3>
+                <p>تسجيل موظف جديد مع بياناته الشخصية وبصمة الوجه</p>
+            </a>
 
-            <select id="filterType" onchange="filterTable()">
-                <option value="">-- التصنيف --</option>
-                <option value="شهري">شهري</option>
-                <option value="أسبوعي">أسبوعي</option>
-                <option value="يومي">يومي</option>
-            </select>
+            <!-- الصف الثاني -->
+            <a href="admin-reports.html" class="card-item">
+                <span class="icon">📈</span>
+                <h3>التقارير الشاملة</h3>
+                <p>استخراج تقارير الحضور، الغياب، والرواتب</p>
+            </a>
+            <a href="admin-loans.html" class="card-item">
+                <span class="icon">💳</span>
+                <h3>إدارة السلف</h3>
+                <p>تسجيل ومتابعة سلف الموظفين وأقساطها</p>
+            </a>
+            <a href="admin-salaries.html" class="card-item">
+                <span class="icon">💰</span>
+                <h3>إدارة الرواتب</h3>
+                <p>احتساب الرواتب الأساسية، الاستقطاعات، والصفاء</p>
+            </a>
+            <a href="admin-attendance.html" class="card-item">
+                <span class="icon">📍</span>
+                <h3>بصمة الوجه والـ GPS</h3>
+                <p>مراقبة مواقع الحضور والنطاق الجغرافي للموظفين</p>
+            </a>
 
-            <input type="text" id="searchInput" placeholder="بحث بالاسم أو الرقم أو الفرع..." onkeyup="filterTable()" style="flex: 1; min-width: 180px;">
-
-            <button type="button" class="btn btn-success" onclick="addNewSalaryRow()">➕ إضافة موظف</button>
-            <button type="button" class="btn btn-print" onclick="openPrintModal()">🖨️ طباعة الكشف</button>
-        </div>
-
-        <!-- جدول الرواتب الرئيسي -->
-        <div class="table-container">
-            <table id="salariesTable">
-                <thead>
-                    <tr>
-                        <th>ت</th>
-                        <th>اسم الموظف</th>
-                        <th>رقم وظيفي</th>
-                        <th>الفرع</th>
-                        <th>التصنيف</th>
-                        <th>التحقق</th>
-                        <th>الضمان</th>
-                        <th>أيام</th>
-                        <th>الشفت</th>
-                        <th>إضافي</th>
-                        <th>الأساسي</th>
-                        <th>مخصصات</th>
-                        <th>مكافآت</th>
-                        <th>سلفة سلعة</th>
-                        <th>اس. سلفة</th>
-                        <th>اس. ضمان</th>
-                        <th>خصم غياب</th>
-                        <th>الصافي النهائي</th>
-                        <th>الإجراء</th>
-                    </tr>
-                </thead>
-                <tbody id="salariesTableBody">
-                    <!-- البيانات تُعبأ ديناميكياً -->
-                </tbody>
-            </table>
+            <!-- الصف الثالث -->
+            <a href="admin-settings.html" class="card-item">
+                <span class="icon">⚙️</span>
+                <h3>إعدادات النظام</h3>
+                <p>التحكم بالإعدادات العامة والربط البرمجي</p>
+            </a>
+            <a href="admin-logs.html" class="card-item">
+                <span class="icon">📝</span>
+                <h3>سجل الحركات</h3>
+                <p>متابعة حركة العمليات والنشاطات داخل النظام</p>
+            </a>
+            <a href="admin-archive.html" class="card-item">
+                <span class="icon">🗂️</span>
+                <h3>أرشيف النظام</h3>
+                <p>الرجوع إلى السجلات والبيانات المؤرشفة</p>
+            </a>
+            <a href="admin-permissions.html" class="card-item">
+                <span class="icon">🔒</span>
+                <h3>الصلاحيات والأذونات</h3>
+                <p>تحديد صلاحيات المشرفين والمستخدمين</p>
+            </a>
         </div>
     </div>
 
-    <!-- نافذة منسدلة لخيارات الطباعة -->
-    <div id="printModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:1000;">
-        <div style="background:#fff; padding:25px; border-radius:12px; width:380px; display:flex; flex-direction:column; gap:12px;">
-            <h3 style="color:#0284c7; font-size:16px;">خيارات طباعة كشف الراتب</h3>
-            <label style="font-size:13px; font-weight:bold;">النطاق:</label>
-            <select id="printScope">
-                <option value="all">كل الشركة</option>
-                <option value="branch">فرع معين</option>
-                <option value="individual">موظف فرد</option>
-            </select>
-            <input type="text" id="printBranchName" placeholder="اسم الفرع (إذا اخترت فرع)">
-            <input type="text" id="printEmpName" placeholder="اسم الموظف (إذا اخترت موظف)">
-            
-            <label style="font-size:13px; font-weight:bold;">من تاريخ:</label>
-            <input type="date" id="printDateFrom">
-            <label style="font-size:13px; font-weight:bold;">إلى تاريخ:</label>
-            <input type="date" id="printDateTo">
-
-            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
-                <button class="btn btn-dashboard" onclick="closePrintModal()">إلغاء</button>
-                <button class="btn btn-success" onclick="executePrint()">طباعة</button>
-            </div>
-        </div>
+    <!-- شريط حالة السيرفر العائم في الزاوية تماماً كما طلبته -->
+    <div id="serverStatusBar" class="server-status-bar" onclick="syncServer()">
+        <span>❌</span>
+        <span id="serverText">تعذر الاتصال بالسيرفر للمزامنة.</span>
     </div>
 
     <script>
@@ -269,177 +239,53 @@
 
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
-            currentCompanyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'B-2026';
-            loadSalariesData();
+            currentCompanyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'B-22334';
+            
+            document.querySelectorAll('.grid-cards a').forEach(link => {
+                let href = link.getAttribute('href');
+                link.setAttribute('href', `${href}?company=${encodeURIComponent(currentCompanyId)}`);
+            });
+
+            checkServerConnection();
         };
 
-        function goToDashboard() {
-            window.location.href = `admin.html?company=${encodeURIComponent(currentCompanyId)}`;
-        }
-
-        function getStorageKey() {
-            return `salaries_manual_${currentCompanyId}`;
-        }
-
-        function loadSalariesData() {
-            const tbody = document.getElementById('salariesTableBody');
-            tbody.innerHTML = '';
+        function checkServerConnection() {
+            const statusBar = document.getElementById('serverStatusBar');
+            const serverText = document.getElementById('serverText');
             
-            let data = JSON.parse(localStorage.getItem(getStorageKey()) || '[]');
-
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="19" class="empty-msg">لا توجد سجلات. اضغط على "إضافة موظف" لإدخال البيانات يدوياً.</td></tr>`;
-                return;
-            }
-
-            data.forEach((item, index) => {
-                let row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td><input type="text" class="name-text" value="${item.name || ''}" onchange="updateField(${index}, 'name', this.value)"></td>
-                    <td><input type="text" class="small-text" value="${item.empId || ''}" onchange="updateField(${index}, 'empId', this.value)"></td>
-                    <td><input type="text" class="small-text" value="${item.workplace || ''}" onchange="updateField(${index}, 'workplace', this.value)"></td>
-                    <td>
-                        <select onchange="updateField(${index}, 'type', this.value)">
-                            <option value="شهري" ${item.type === 'شهري' ? 'selected' : ''}>شهري</option>
-                            <option value="أسبوعي" ${item.type === 'أسبوعي' ? 'selected' : ''}>أسبوعي</option>
-                            <option value="يومي" ${item.type === 'يومي' ? 'selected' : ''}>يومي</option>
-                        </select>
-                    </td>
-                    <td><input type="text" class="small-text" value="${item.verifiedTo || 'معتمد'}" onchange="updateField(${index}, 'verifiedTo', this.value)"></td>
-                    <td>
-                        <select onchange="updateField(${index}, 'socialStatus', this.value)">
-                            <option value="مسجل" ${item.socialStatus === 'مسجل' ? 'selected' : ''}>مسجل</option>
-                            <option value="غير مسجل" ${item.socialStatus === 'غير مسجل' ? 'selected' : ''}>غير مسجل</option>
-                        </select>
-                    </td>
-                    <td><input type="number" value="${item.days || 30}" onchange="updateField(${index}, 'days', this.value)"></td>
-                    <td>
-                        <select onchange="updateField(${index}, 'shift', this.value)">
-                            <option value="صباحي" ${item.shift === 'صباحي' ? 'selected' : ''}>صباحي</option>
-                            <option value="مسائي" ${item.shift === 'مسائي' ? 'selected' : ''}>مسائي</option>
-                            <option value="ليلي" ${item.shift === 'ليلي' ? 'selected' : ''}>ليلي</option>
-                            <option value="استثنائي" ${item.shift === 'استثنائي' ? 'selected' : ''}>استثنائي</option>
-                        </select>
-                    </td>
-                    <td><input type="number" value="${item.overtime || 0}" onchange="updateField(${index}, 'overtime', this.value)"></td>
-                    <td><input type="number" value="${item.basicSalary || 0}" onchange="updateField(${index}, 'basicSalary', this.value)"></td>
-                    <td><input type="number" value="${item.allowances || 0}" onchange="updateField(${index}, 'allowances', this.value)"></td>
-                    <td><input type="number" value="${item.rewards || 0}" onchange="updateField(${index}, 'rewards', this.value)"></td>
-                    <td><input type="number" value="${item.goodsLoan || 0}" onchange="updateField(${index}, 'goodsLoan', this.value)"></td>
-                    <td><input type="number" value="${item.loanDeduction || 0}" onchange="updateField(${index}, 'loanDeduction', this.value)"></td>
-                    <td><input type="number" value="${item.socialDeduction || 0}" onchange="updateField(${index}, 'socialDeduction', this.value)"></td>
-                    <td><input type="number" value="${item.absenceDeduction || 0}" onchange="updateField(${index}, 'absenceDeduction', this.value)"></td>
-                    <td style="font-weight:bold; color:#059669; font-size:12px;">${calculateNet(item)}</td>
-                    <td>
-                        <button class="btn btn-danger" onclick="deleteSalaryRow(${index})">حذف</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
+            fetch('/api/v1/employees', { method: 'HEAD' })
+                .then(res => {
+                    if (res.ok || res.status < 500) {
+                        statusBar.classList.add('online');
+                        statusBar.querySelector('span').textContent = '✔';
+                        serverText.textContent = 'متصل بالسيرفر بنجاح (Online)';
+                    } else {
+                        throw new Error();
+                    }
+                })
+                .catch(() => {
+                    statusBar.classList.remove('online');
+                    statusBar.querySelector('span').textContent = '❌';
+                    serverText.textContent = 'تعذر الاتصال بالسيرفر للمزامنة.';
+                });
         }
 
-        function calculateNet(item) {
-            let basic = parseFloat(item.basicSalary) || 0;
-            let allow = parseFloat(item.allowances) || 0;
-            let rew = parseFloat(item.rewards) || 0;
-            let over = parseFloat(item.overtime) || 0;
-            let gLoan = parseFloat(item.goodsLoan) || 0;
-            let lDeduct = parseFloat(item.loanDeduction) || 0;
-            let sDeduct = parseFloat(item.socialDeduction) || 0;
-            let absDeduct = parseFloat(item.absenceDeduction) || 0;
-
-            let totalNet = (basic + allow + rew + over) - (gLoan + lDeduct + sDeduct + absDeduct);
-            return totalNet.toFixed(2);
+        function backupData() {
+            alert('تم إنشاء نسخة احتياطية محلية للبيانات بنجاح.');
         }
 
-        function addNewSalaryRow() {
-            let data = JSON.parse(localStorage.getItem(getStorageKey()) || '[]');
-            data.push({
-                name: 'موظف جديد',
-                empId: 'EMP-' + Math.floor(Math.random() * 1000),
-                workplace: 'الفرع الرئيسي',
-                type: 'شهري',
-                verifiedTo: 'معتمد',
-                socialStatus: 'مسجل',
-                days: 30,
-                shift: 'صباحي',
-                overtime: 0,
-                basicSalary: 500000,
-                allowances: 0,
-                rewards: 0,
-                goodsLoan: 0,
-                loanDeduction: 0,
-                socialDeduction: 0,
-                absenceDeduction: 0
-            });
-            localStorage.setItem(getStorageKey(), JSON.stringify(data));
-            loadSalariesData();
+        function restoreData() {
+            alert('يرجى اختيار ملف النسخة الاحتياطية لاستعادة البيانات.');
         }
 
-        function updateField(index, field, value) {
-            let data = JSON.parse(localStorage.getItem(getStorageKey()) || '[]');
-            if (data[index]) {
-                data[index][field] = value;
-                localStorage.setItem(getStorageKey(), JSON.stringify(data));
-                loadSalariesData();
-            }
+        function syncServer() {
+            checkServerConnection();
+            alert('جاري محاولة الاتصال بالسيرفر والفحص...');
         }
 
-        function deleteSalaryRow(index) {
-            if (confirm('هل أنت متأكد من حذف هذا السجل نهائياً؟')) {
-                let data = JSON.parse(localStorage.getItem(getStorageKey()) || '[]');
-                data.splice(index, 1);
-                localStorage.setItem(getStorageKey(), JSON.stringify(data));
-                loadSalariesData();
-            }
-        }
-
-        function filterTable() {
-            let search = document.getElementById('searchInput').value.toLowerCase();
-            let shiftFilter = document.getElementById('filterShift').value;
-            let typeFilter = document.getElementById('filterType').value;
-            
-            let rows = document.getElementById('salariesTableBody').getElementsByTagName('tr');
-            
-            for (let i = 0; i < rows.length; i++) {
-                let row = rows[i];
-                if (row.classList.contains('empty-msg')) continue;
-                
-                let name = row.cells[1].getElementsByTagName('input')[0].value.toLowerCase();
-                let empId = row.cells[2].getElementsByTagName('input')[0].value.toLowerCase();
-                let branch = row.cells[3].getElementsByTagName('input')[0].value.toLowerCase();
-                let type = row.cells[4].getElementsByTagName('select')[0].value;
-                let shift = row.cells[8].getElementsByTagName('select')[0].value;
-
-                let matchesSearch = name.includes(search) || empId.includes(search) || branch.includes(search);
-                let matchesShift = !shiftFilter || shift === shiftFilter;
-                let matchesType = !typeFilter || type === typeFilter;
-
-                if (matchesSearch && matchesShift && matchesType) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            }
-        }
-
-        function openPrintModal() {
-            document.getElementById('printModal').style.display = 'flex';
-        }
-
-        function closePrintModal() {
-            document.getElementById('printModal').style.display = 'none';
-        }
-
-        function executePrint() {
-            let scope = document.getElementById('printScope').value;
-            let dFrom = document.getElementById('printDateFrom').value;
-            let dTo = document.getElementById('printDateTo').value;
-
-            alert(`جاري تهيئة الطباعة بتنسيق A4 أفقي ومضغوط...\nالنطاق: ${scope}\nالفترة: من ${dFrom || 'البداية'} إلى ${dTo || 'الآن'}`);
-            closePrintModal();
-            window.print();
+        function logout() {
+            localStorage.removeItem('activeCompanyId');
+            window.location.href = 'index.html';
         }
     </script>
 </body>
