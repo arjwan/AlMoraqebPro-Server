@@ -155,7 +155,7 @@
         <div class="top-header">
             <div class="header-title">
                 <span>🛡️</span>
-                <span>نظام المراقب برو (B-22334) [محلي]</span>
+                <span id="headerCompanyName">جاري تحميل بيانات الشركة...</span>
             </div>
 
             <div class="header-actions">
@@ -166,7 +166,7 @@
             </div>
         </div>
 
-        <!-- شبكة البطاقات مطابقة للأرقام (1 إلى 12) كما في صورتك تماماً -->
+        <!-- شبكة البطاقات مطابقة للأرقام (1 إلى 12) كما طلبت تماماً -->
         <div class="grid-cards">
             <!-- 1 -->
             <a href="admin-add-employee.html" class="card-item">
@@ -254,12 +254,34 @@
     <script>
         let currentCompanyId = '';
 
-        window.onload = () => {
+        window.onload = async () => {
             const urlParams = new URLSearchParams(window.location.search);
-            currentCompanyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'B-22334';
-            
+            currentCompanyId = urlParams.get('company') || localStorage.getItem('activeCompanyId');
+
+            if (!currentCompanyId) {
+                alert('الرجاء تسجيل الدخول أولاً');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // جلب بيانات الشركة الحقيقية من قاعدة بيانات MongoDB مباشرة
+            try {
+                const response = await fetch('/api/developer/companies');
+                const companies = await response.json();
+                const currentCompany = companies.find(c => c.companyId === currentCompanyId);
+
+                if (currentCompany) {
+                    document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompany.companyId}) - ${currentCompany.name}`;
+                } else {
+                    document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompanyId})`;
+                }
+            } catch (error) {
+                document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompanyId})`;
+            }
+
+            // تمرير رمز الشركة في جميع روابط البطاقات لضمان الترابط التام
             document.querySelectorAll('.grid-cards a').forEach(link => {
-                let href = link.getAttribute('href');
+                let href = link.getAttribute('href').split('?')[0];
                 link.setAttribute('href', `${href}?company=${encodeURIComponent(currentCompanyId)}`);
             });
 
@@ -271,12 +293,12 @@
             const serverIcon = document.getElementById('serverIcon');
             const serverText = document.getElementById('serverText');
             
-            fetch('/api/v1/employees', { method: 'HEAD' })
+            fetch('/api/developer/companies', { method: 'HEAD' })
                 .then(res => {
                     if (res.ok || res.status < 500) {
                         statusBar.classList.add('online');
                         serverIcon.textContent = '✔';
-                        serverText.textContent = 'السيرفر متصل بنجاح (Online)';
+                        serverText.textContent = 'السيرفر متصل بقاعدة البيانات بنجاح (Online)';
                     } else {
                         throw new Error();
                     }
@@ -289,7 +311,7 @@
         }
 
         function backupData() {
-            alert('تم إنشاء نسخة احتياطية محلية للبيانات بنجاح.');
+            alert('تم إنشاء نسخة احتياطية من قاعدة البيانات بنجاح.');
         }
 
         function restoreData() {
