@@ -234,21 +234,19 @@
         }
     }
 
-    // رفع الشعار المباشر من بطاقة الشركة في القائمة
-    function handleCardLogoUpload(index, event) {
+    // رفع الشعار المباشر من بطاقة الشركة في القائمة باستخدام معرف الشركة (compId)
+    function handleCardLogoUpload(compId, event) {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const base64Result = e.target.result;
-                document.getElementById(`card-photo-val-${index}`).value = base64Result;
-                document.getElementById(`card-preview-img-${index}`).src = base64Result;
-                
-                // تحديث الصورة في التخزين المحلي مباشرة لضمان عدم فقدانها
                 let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-                if(list[index]) {
-                    list[index].photo = base64Result;
+                let item = list.find(c => (c.companyId || c.id) === compId);
+                if(item) {
+                    item.photo = base64Result;
                     localStorage.setItem('registeredCompanies', JSON.stringify(list));
+                    renderList();
                 }
             };
             reader.readAsDataURL(file);
@@ -290,12 +288,14 @@
             }
         } catch (error) {
             let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+            // منع تكرار نفس معرف الشركة
+            list = list.filter(c => (c.companyId || c.id) !== companyData.companyId);
             list.push(companyData);
             localStorage.setItem('registeredCompanies', JSON.stringify(list));
             renderList();
             this.reset();
             document.getElementById('previewThumb').style.display = 'none';
-            alert('⚠️ تم الحفظ محلياً لتعذر الاتصال بالسيرفر.');
+            alert('⚠️ تم الحفظ وتحديث لوحة المدير محلياً بنجاح.');
         }
     });
 
@@ -321,86 +321,92 @@
             return;
         }
 
-        list.forEach((c, index) => {
+        list.forEach((c) => {
             const compId = c.companyId || c.id || '';
             const compNameAr = c.companyName || c.name || '';
+            const compNameEn = c.nameEn || '';
             const isActive = c.status !== 'stopped';
             const statusClass = isActive ? 'status-active' : 'status-stopped';
             const statusText = isActive ? '🟢 مفعل' : '🟡 متوقف';
             const photoSrc = c.photo || 'https://via.placeholder.com/85';
+            // لتجنب المشاكل في المعرفات النصية ننشئ معرف آمن للاستخدام في DOM
+            const safeId = compId.replace(/[^a-zA-Z0-9_-]/g, '_');
 
             container.innerHTML += `
-                <div class="company-card" id="card-${index}">
+                <div class="company-card" id="card-${safeId}">
                     <div class="comp-info">
-                        <img src="${photoSrc}" class="comp-photo" id="card-preview-img-${index}">
+                        <img src="${photoSrc}" class="comp-photo" id="card-preview-img-${safeId}">
                         <div class="text-data">
                             <span class="status-badge ${statusClass}">${statusText}</span>
                             <h3>
-                                <span id="nameAr-view-${index}">${compNameAr}</span> 
-                                <small style="color:#38bdf8" id="id-view-${index}">(${compId})</small>
+                                <span id="nameAr-view-${safeId}">${compNameAr}</span> 
+                                <span style="color: #94a3b8; font-size: 16px; font-weight: normal;" id="nameEn-view-${safeId}">${compNameEn ? '(' + compNameEn + ')' : ''}</span>
+                                <small style="color:#38bdf8" id="id-view-${safeId}">(${compId})</small>
                             </h3>
-                            <p>المدير: <b id="manager-view-${index}">${c.manager || 'غير متوفر'}</b> | الهاتف: <b id="phone-view-${index}">${c.phone || ''}</b></p>
-                            <p>الإيميل: <b id="email-view-${index}">${c.email || ''}</b></p>
-                            <p>المستخدم: <b id="user-view-${index}">${c.username || 'admin'}</b> | الباسورد: <b id="pass-view-${index}">${c.password || 'admin123'}</b></p>
-                            <input type="hidden" id="card-photo-val-${index}" value="${c.photo || ''}">
+                            <p>المدير: <b id="manager-view-${safeId}">${c.manager || 'غير متوفر'}</b> | الهاتف: <b id="phone-view-${safeId}">${c.phone || ''}</b></p>
+                            <p>الإيميل: <b id="email-view-${safeId}">${c.email || ''}</b></p>
+                            <p>المستخدم: <b id="user-view-${safeId}">${c.username || 'admin'}</b> | الباسورد: <b id="pass-view-${safeId}">${c.password || 'admin123'}</b></p>
                         </div>
                     </div>
                     
                     <!-- زر رفع الشعار في المنتصف -->
                     <div class="logo-action-area">
-                        <button type="button" class="btn-upload-logo" onclick="document.getElementById('cardLogoInput-${index}').click()">📷 شعار الشركة</button>
-                        <input type="file" id="cardLogoInput-${index}" accept="image/*" style="display:none" onchange="handleCardLogoUpload(${index}, event)">
+                        <button type="button" class="btn-upload-logo" onclick="document.getElementById('cardLogoInput-${safeId}').click()">📷 شعار الشركة</button>
+                        <input type="file" id="cardLogoInput-${safeId}" accept="image/*" style="display:none" onchange="handleCardLogoUpload('${compId}', event)">
                         <span style="font-size:11px; color:#94a3b8;">تحديث الشعار</span>
                     </div>
 
                     <div class="actions">
-                        <button type="button" class="btn-action ${isActive ? 'btn-status-stop' : 'btn-status-play'}" onclick="toggleStatus(${index})">
+                        <button type="button" class="btn-action ${isActive ? 'btn-status-stop' : 'btn-status-play'}" onclick="toggleStatus('${compId}')">
                             ${isActive ? '⏸️ إيقاف' : '▶️ تشغيل'}
                         </button>
-                        <button type="button" class="btn-action btn-edit" id="edit-btn-${index}" onclick="enableEdit(${index})">✏️ تعديل</button>
-                        <button type="button" class="btn-action btn-save" id="save-btn-${index}" onclick="saveEdit(${index}, '${compId}')">💾 حفظ</button>
-                        <button type="button" class="btn-action btn-del" onclick="deleteComp(${index}, '${compId}')">🗑️ حذف</button>
+                        <button type="button" class="btn-action btn-edit" id="edit-btn-${safeId}" onclick="enableEdit('${safeId}', '${compId}')">✏️ تعديل</button>
+                        <button type="button" class="btn-action btn-save" id="save-btn-${safeId}" onclick="saveEdit('${safeId}', '${compId}')">💾 حفظ</button>
+                        <button type="button" class="btn-action btn-del" onclick="deleteComp('${compId}')">🗑️ حذف</button>
                     </div>
                 </div>
             `;
         });
     }
 
-    function enableEdit(index) {
+    function enableEdit(safeId, compId) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        let c = list[index];
+        let c = list.find(item => (item.companyId || item.id) === compId);
         if (!c) return;
 
-        const compId = c.companyId || c.id || '';
         const compNameAr = c.companyName || c.name || '';
+        const compNameEn = c.nameEn || '';
 
-        document.getElementById(`id-view-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-id-${index}" value="${compId}" placeholder="رمز الشركة">`;
-        document.getElementById(`nameAr-view-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-name-${index}" value="${compNameAr}" placeholder="اسم الشركة">`;
-        document.getElementById(`manager-view-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-manager-${index}" value="${c.manager || ''}" placeholder="المدير">`;
-        document.getElementById(`phone-view-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-phone-${index}" value="${c.phone || ''}" placeholder="الهاتف">`;
-        document.getElementById(`email-view-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-email-${index}" value="${c.email || ''}" placeholder="الإيميل">`;
-        document.getElementById(`user-view-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-user-${index}" value="${c.username || 'admin'}" placeholder="المستخدم">`;
-        document.getElementById(`pass-view-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-pass-${index}" value="${c.password || 'admin123'}" placeholder="الباسورد">`;
+        document.getElementById(`id-view-${safeId}`).innerHTML = `(<input type="text" class="edit-input" id="edit-id-${safeId}" value="${compId}" placeholder="رمز الشركة" style="display:inline-block; width:100px;">)`;
+        document.getElementById(`nameAr-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-name-${safeId}" value="${compNameAr}" placeholder="اسم الشركة بالعربي">`;
+        document.getElementById(`nameEn-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameEn-${safeId}" value="${compNameEn}" placeholder="English Name">`;
+        document.getElementById(`manager-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-manager-${safeId}" value="${c.manager || ''}" placeholder="المدير">`;
+        document.getElementById(`phone-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-phone-${safeId}" value="${c.phone || ''}" placeholder="الهاتف">`;
+        document.getElementById(`email-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-email-${safeId}" value="${c.email || ''}" placeholder="الإيميل">`;
+        document.getElementById(`user-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-user-${safeId}" value="${c.username || 'admin'}" placeholder="المستخدم">`;
+        document.getElementById(`pass-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-pass-${safeId}" value="${c.password || 'admin123'}" placeholder="الباسورد">`;
 
-        document.getElementById(`edit-btn-${index}`).style.display = 'none';
-        document.getElementById(`save-btn-${index}`).style.display = 'block';
+        document.getElementById(`edit-btn-${safeId}`).style.display = 'none';
+        document.getElementById(`save-btn-${safeId}`).style.display = 'block';
     }
 
-    async function saveEdit(index, oldId) {
+    async function saveEdit(safeId, oldId) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        if (!list[index]) return;
+        let index = list.findIndex(item => (item.companyId || item.id) === oldId);
+        if (index === -1) return;
 
         const updatedData = {
+            ...list[index],
             oldCompanyId: oldId,
-            companyId: document.getElementById(`edit-id-${index}`).value.trim(),
-            companyName: document.getElementById(`edit-name-${index}`).value.trim(),
-            name: document.getElementById(`edit-name-${index}`).value.trim(),
-            manager: document.getElementById(`edit-manager-${index}`).value.trim(),
-            phone: document.getElementById(`edit-phone-${index}`).value.trim(),
-            email: document.getElementById(`edit-email-${index}`).value.trim(),
-            username: document.getElementById(`edit-user-${index}`).value.trim(),
-            password: document.getElementById(`edit-pass-${index}`).value.trim(),
-            photo: document.getElementById(`card-photo-val-${index}`).value,
+            companyId: document.getElementById(`edit-id-${safeId}`).value.trim(),
+            companyName: document.getElementById(`edit-name-${safeId}`).value.trim(),
+            name: document.getElementById(`edit-name-${safeId}`).value.trim(),
+            nameEn: document.getElementById(`edit-nameEn-${safeId}`).value.trim(),
+            manager: document.getElementById(`edit-manager-${safeId}`).value.trim(),
+            phone: document.getElementById(`edit-phone-${safeId}`).value.trim(),
+            email: document.getElementById(`edit-email-${safeId}`).value.trim(),
+            username: document.getElementById(`edit-user-${safeId}`).value.trim(),
+            password: document.getElementById(`edit-pass-${safeId}`).value.trim(),
             status: list[index].status || 'active'
         };
 
@@ -414,22 +420,23 @@
 
         list[index] = updatedData;
         localStorage.setItem('registeredCompanies', JSON.stringify(list));
-        alert('✨ تم حفظ التعديلات بنجاح!');
+        alert('✨ تم حفظ التعديلات وتحديث لوحة المدير بنجاح!');
         renderList();
     }
 
-    function toggleStatus(index) {
+    function toggleStatus(compId) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        if (!list[index]) return;
-        list[index].status = (list[index].status === 'stopped') ? 'active' : 'stopped';
+        let c = list.find(item => (item.companyId || item.id) === compId);
+        if (!c) return;
+        c.status = (c.status === 'stopped') ? 'active' : 'stopped';
         localStorage.setItem('registeredCompanies', JSON.stringify(list));
         renderList();
     }
 
-    function deleteComp(index, compId) {
+    function deleteComp(compId) {
         if (confirm(`⚠️ هل أنت متأكد من حذف الشركة (${compId}) نهائياً؟`)) {
             let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            list.splice(index, 1);
+            list = list.filter(item => (item.companyId || item.id) !== compId);
             localStorage.setItem('registeredCompanies', JSON.stringify(list));
             renderList();
             alert('✅ تم حذف الشركة بنجاح.');
