@@ -8,8 +8,9 @@
     "build": "echo 'Build skipped successfully'"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "axios": "^1.6.8",
     "cors": "^2.8.5",
-    "axios": "^1.6.8"
+    "express": "^4.19.2",
+    "sqlite3": "^6.0.1"
   }
 }
