@@ -6,77 +6,68 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// توجيه مسار الملفات الثابتة لمجلد public الأساسي
 app.use(express.static(path.join(__dirname, 'public')));
 
-// مسار تخزين قاعدة البيانات والمجلدات
 const DATA_DIR = path.join(__dirname, 'data');
 const COMPANIES_DIR = path.join(DATA_DIR, 'companies');
 const DB_PATH = path.join(DATA_DIR, 'almaqeb_pro.db');
 
-// التأكد من وجود مجلدات التخزين عند بدء التشغيل
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(COMPANIES_DIR)) fs.mkdirSync(COMPANIES_DIR, { recursive: true });
-if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify({ companies: [] }, null, 2));
+// --- دالة التأسيس التلقائي للشركات العشر ---
+function initializeSystem() {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(COMPANIES_DIR)) fs.mkdirSync(COMPANIES_DIR, { recursive: true });
+
+    const initialCompanies = [
+        { name: 'الأرجوان للبرمجيات', companyId: 'arjwan' },
+        { name: 'البغدادي للخدمات التقنية', companyId: 'albaghdadi' },
+        { name: 'آفاق للتجارة العامة', companyId: 'afaqpro' },
+        { name: 'النخبة للحلول الذكية', companyId: 'nukhbapros' },
+        { name: 'مسارات للنقل واللوجستيك', companyId: 'masaratlog' },
+        { name: 'البناء الحديث للهندسة', companyId: 'modernbuild' },
+        { name: 'المشرق للاستشارات', companyId: 'almashreq' },
+        { name: 'رويال للخدمات العقارية', companyId: 'royalreal' },
+        { name: 'القمة للأنظمة الأمنية', companyId: 'alqimasec' },
+        { name: 'الوفاق للصناعات الغذائية', companyId: 'alwifaqfood' }
+    ];
+
+    let dbData = { companies: [] };
+
+    // إذا كانت القاعدة موجودة، نقرأها، وإلا نبدأ من الصفر
+    if (fs.existsSync(DB_PATH)) {
+        dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+    }
+
+    initialCompanies.forEach(comp => {
+        // إنشاء المجلد إذا لم يكن موجوداً
+        const dir = path.join(COMPANIES_DIR, comp.companyId);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+        // إضافة الشركة للقاعدة إذا لم تكن موجودة مسبقاً
+        if (!dbData.companies.find(c => c.companyId === comp.companyId)) {
+            dbData.companies.push({
+                ...comp,
+                username: 'admin',
+                password: 'admin123',
+                createdAt: new Date().toISOString()
+            });
+        }
+    });
+
+    fs.writeFileSync(DB_PATH, JSON.stringify(dbData, null, 2));
+    console.log("✅ تم التحقق من سلامة قاعدة البيانات وتأسيس الشركات العشر.");
 }
 
-// 1. الصفحة الرئيسية للعملاء (توجيه العميل دائماً إلى صفحة index)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// تشغيل عملية التأسيس
+initializeSystem();
 
-// 2. صفحة لوحة تحكم المطور (توجيه المطور إلى create-company)
-app.get('/developer', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'create-company.html'));
-});
+// المسارات
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/developer', (req, res) => res.sendFile(path.join(__dirname, 'public', 'create-company.html')));
 
-// 3. مسار جلب قائمة الشركات المسجلة
 app.get('/api/developer/companies', (req, res) => {
-    try {
-        const dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-        res.json({ success: true, companies: dbData.companies || [] });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'خطأ في قراءة قاعدة البيانات: ' + error.message });
-    }
+    const dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+    res.json({ success: true, companies: dbData.companies });
 });
 
-// 4. مسار إنشاء وتسجيل شركة جديدة وربطها برمز القاعدة والمجلدات
-app.post('/api/developer/company/create', (req, res) => {
-    try {
-        const newComp = req.body;
-        const compId = newComp.companyId || newComp.id;
-
-        if (!compId) {
-            return res.status(400).json({ success: false, message: 'رمز الشركة (المعرف) مطلوب!' });
-        }
-
-        let dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-        
-        // التحقق من عدم تكرار المعرف
-        const existingIndex = dbData.companies.findIndex(c => (c.companyId || c.id) === compId);
-        if (existingIndex !== -1) {
-            return res.status(400).json({ success: false, message: 'رمز الشركة موجود مسبقاً في النظام!' });
-        }
-
-        // إنشاء مجلد خاص بالشركة على الهارد دسك باستخدام رمز القاعدة الخاص بها داخل مجلد data/companies
-        const compFolder = path.join(COMPANIES_DIR, compId);
-        if (!fs.existsSync(compFolder)) {
-            fs.mkdirSync(compFolder, { recursive: true });
-        }
-
-        // إضافة الشركة للقاعدة
-        dbData.companies.push(newComp);
-        fs.writeFileSync(DB_PATH, JSON.stringify(dbData, null, 2));
-
-        res.json({ success: true, message: '✨ تم تأسيس الشركة وربطها بالهارد دسك بنجاح!' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'خطأ في السيرفر أثناء إنشاء الشركة: ' + error.message });
-    }
-});
-
-// تشغيل السيرفر
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 السيرفر يعمل بكفاءة على المنفذ: ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 السيرفر يعمل بكفاءة على المنفذ: ${PORT}`));
