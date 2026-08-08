@@ -1,110 +1,150 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const axios = require('axios');
-const cors = require('cors');
+const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+app.use(express.json());
 
-app.use(cors());
-app.use(express.json({ limit: '15mb' }));
-app.use(express.urlencoded({ extended: true, limit: '15mb' }));
-app.use(express.static(path.join(__dirname, 'public'))); // قراءة الملفات من مجلد public
+// المسارات الأساسية على الهارد دسك
+const ROOT_DATA_DIR = path.join(__dirname, 'data');
+const COMPANIES_DIR = path.join(ROOT_DATA_DIR, 'companies');
+const MASTER_DB_PATH = path.join(__dirname, 'almaqeb_pro.db'); // القاعدة الأم الحالية
 
-// الاتصال بقاعدة البيانات المحلية (الهارد دسك)
-const db = new sqlite3.Database('./almoraqeb_pro.db', (err) => {
-    if (err) {
-        console.error('❌ خطأ في الاتصال بقاعدة البيانات المحلية:', err.message);
-    } else {
-        console.log('✅ متصل بقاعدة بيانات الهارد دسك (SQLite) محلياً.');
-        // إنشاء جدول الموظفين تلقائياً إن لم يكن موجوداً
-        db.run(`CREATE TABLE IF NOT EXISTS employees (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            device_id TEXT,
-            company_id TEXT,
-            name TEXT,
-            email TEXT,
-            specialty TEXT,
-            workplace TEXT,
-            username TEXT UNIQUE,
-            password TEXT,
-            location TEXT,
-            photo TEXT,
-            start_date DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
-    }
-});
+// تهيئة القاعدة الأم وقواعد الـ 10 شركات الفرعية
+function initSystemWithTenDatabases() {
+    if (!fs.existsSync(ROOT_DATA_DIR)) fs.mkdirSync(ROOT_DATA_DIR, { recursive: true });
+    if (!fs.existsSync(COMPANIES_DIR)) fs.mkdirSync(COMPANIES_DIR, { recursive: true });
 
-// رابط السيرفر السحابي على Render (للمزامنة)
-const CLOUD_API_URL = 'https://your-app-name.onrender.com/api/v1/employees';
-
-// 1. فتح الصفحة الرئيسية تلقائياً
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// 2. مسار تسجيل الدخول والتحقق الفعلي
-app.post('/api/v1/login', (req, res) => {
-    const { companyId, username, password } = req.body;
-    
-    const query = `SELECT * FROM employees WHERE company_id = ? AND username = ? AND password = ?`;
-    db.get(query, [companyId, username, password], (err, row) => {
-        if (err || !row) {
-            return res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
-        }
-        res.json({ success: true, user: row });
-    });
-});
-
-// 3. مسار جلب جميع الموظفين الحقيقيين (مهم جداً لإدارة الحضور)
-app.get('/api/v1/employees', (req, res) => {
-    const query = `SELECT * FROM employees`;
-    db.all(query, [], (err, rows) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: 'خطأ في جلب بيانات الموظفين' });
-        }
-        res.json({ success: true, employees: rows });
-    });
-});
-
-// 4. مسار حفظ موظف جديد حقيقي محلياً مع محاولة المزامنة للسحابة
-app.post('/api/v1/employees', (req, res) => {
-    const employeeData = req.body;
-    const { deviceId, companyId, name, email, specialty, workplace, username, password, location, photo } = employeeData;
-
-    if (!companyId || !name || !username || !password) {
-        return res.status(400).json({ success: false, message: 'يرجى إدخال الحقول الأساسية المطلوبة.' });
-    }
-
-    const query = `INSERT INTO employees (device_id, company_id, name, email, specialty, workplace, username, password, location, photo) 
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-    db.run(query, [deviceId, companyId, name, email, specialty, workplace, username, password, location, photo], async function(err) {
-        if (err) {
-            console.error("Local DB Error:", err.message);
-            return res.status(400).json({ success: false, message: "اسم المستخدم موجود مسبقاً في قاعدة البيانات." });
-        }
-
-        const localId = this.lastID;
-        console.log('✅ تم الحفظ في قاعدة البيانات المحلية برقم:', localId);
-
-        // محاولة الرفع والمزامنة للسحابة
+    // 1. تهيئة القاعدة الأم إذا لم تكن موجودة
+    let masterData;
+    if (fs.existsSync(MASTER_DB_PATH)) {
         try {
-            await axios.post(CLOUD_API_URL, employeeData);
-            console.log('☁️ تمت مزامنة الموظف مع السحابة بنجاح.');
-        } catch (cloudErr) {
-            console.log('⚠️ انترنت غير متصل بالسحابة: تم الحفظ محلياً بانتظام.');
+            masterData = JSON.parse(fs.readFileSync(MASTER_DB_PATH, 'utf8'));
+        } catch (e) {
+            masterData = { developer: "Mohammed Al-Obeidi", companies: [] };
+        }
+    } else {
+        masterData = { developer: "Mohammed Al-Obeidi", companies: [] };
+    }
+
+    // 2. إنشاء 10 قواعد بيانات فرعية برموز قابلة للتغيير إذا لم تكن موجودة
+    const defaultCompanies = [
+        { id: "ARJ-307", name: "شركة الأرجوان" },
+        { id: "COMP-001", name: "الشركة الفرعية الأولى" },
+        { id: "COMP-002", name: "الشركة الفرعية الثانية" },
+        { id: "COMP-003", name: "الشركة الفرعية الثالثة" },
+        { id: "COMP-004", name: "الشركة الفرعية الرابعة" },
+        { id: "COMP-005", name: "الشركة الفرعية الخامسة" },
+        { id: "COMP-006", name: "الشركة الفرعية السادسة" },
+        { id: "COMP-007", name: "الشركة الفرعية السابعة" },
+        { id: "COMP-008", name: "الشركة الفرعية الثامنة" },
+        { id: "COMP-009", name: "الشركة الفرعية التاسعة" },
+        { id: "COMP-010", name: "الشركة الفرعية العاشرة" }
+    ];
+
+    defaultCompanies.forEach(comp => {
+        const compDir = path.join(COMPANIES_DIR, comp.id);
+        const compDbFile = path.join(compDir, 'database.json');
+
+        if (!fs.existsSync(compDir)) {
+            fs.mkdirSync(compDir, { recursive: true });
+            fs.mkdirSync(path.join(compDir, 'uploads'), { recursive: true });
         }
 
-        res.status(201).json({ 
-            success: true, 
-            message: "تم حفظ الموظف حقيقياً بنجاح.",
-            employeeId: localId 
-        });
+        if (!fs.existsSync(compDbFile)) {
+            const initialData = {
+                companyId: comp.id,
+                companyName: comp.name,
+                employees: [],
+                branches: [],
+                shifts: [],
+                settings: {}
+            };
+            fs.writeFileSync(compDbFile, JSON.stringify(initialData, null, 2), 'utf8');
+        }
+
+        // تسجيلها في القاعدة الأم إن لم تكن مسجلة
+        if (!masterData.companies.some(c => c.companyId === comp.id)) {
+            masterData.companies.push({
+                companyId: comp.id,
+                companyName: comp.name,
+                status: "active",
+                createdAt: new Date().toISOString(),
+                dbPath: compDbFile
+            });
+        }
     });
+
+    // حفظ القاعدة الأم
+    fs.writeFileSync(MASTER_DB_PATH, JSON.stringify(masterData, null, 2), 'utf8');
+    console.log("تم اعتماد القاعدة الأم وإنشاء الـ 10 قواعد الفرعية بنجاح على الهارد دسك.");
+}
+
+// تشغيل التهيئة عند بدء السيرفر
+initSystemWithTenDatabases();
+
+// --- مسارات الـ API لإدارة الشركات والقواعد من لوحة المطور ---
+
+// جلب كافة الشركات وقواعدها
+app.get('/api/developer/companies', (req, res) => {
+    try {
+        const masterData = JSON.parse(fs.readFileSync(MASTER_DB_PATH, 'utf8'));
+        res.json({ success: true, companies: masterData.companies });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
+// تعديل رمز أو اسم الشركة (قابل للتغيير)
+app.put('/api/developer/company/update', (req, res) => {
+    const { oldCompanyId, newCompanyId, newCompanyName } = req.body;
+    try {
+        const masterData = JSON.parse(fs.readFileSync(MASTER_DB_PATH, 'utf8'));
+        const company = masterData.companies.find(c => c.companyId === oldCompanyId);
+
+        if (!company) {
+            return res.status(404).json({ success: false, message: "الشركة غير موجودة." });
+        }
+
+        // تحديث البيانات والرمز على الهارد دسك إذا تم تغييره
+        if (newCompanyId && newCompanyId !== oldCompanyId) {
+            const oldDir = path.join(COMPANIES_DIR, oldCompanyId);
+            const newDir = path.join(COMPANIES_DIR, newCompanyId);
+            if (fs.existsSync(oldDir)) {
+                fs.renameSync(oldDir, newDir);
+            }
+            company.companyId = newCompanyId;
+            company.dbPath = path.join(newDir, 'database.json');
+        }
+
+        if (newCompanyName) {
+            company.companyName = newCompanyName;
+        }
+
+        fs.writeFileSync(MASTER_DB_PATH, JSON.stringify(masterData, null, 2), 'utf8');
+        res.json({ success: true, message: "تم تحديث بيانات الشركة والرمز بنجاح." });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// تشغيل أو إيقاف شركة
+app.put('/api/developer/company/status', (req, res) => {
+    const { companyId, status } = req.body; // 'active' أو 'suspended'
+    try {
+        const masterData = JSON.parse(fs.readFileSync(MASTER_DB_PATH, 'utf8'));
+        const company = masterData.companies.find(c => c.companyId === companyId);
+        if (!company) return res.status(404).json({ success: false, message: "الشركة غير موجودة." });
+
+        company.status = status;
+        fs.writeFileSync(MASTER_DB_PATH, JSON.stringify(masterData, null, 2), 'utf8');
+        res.json({ success: true, message: `تم تغيير حالة الشركة ${companyId} إلى (${status}).` });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 السيرفر الحقيقي يعمل على المنفذ ${PORT}`);
+    console.log(`الخادم يعمل على المنفذ: ${PORT}`);
 });
