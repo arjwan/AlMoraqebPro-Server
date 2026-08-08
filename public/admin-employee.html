@@ -16,19 +16,21 @@
             background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
             color: #1e293b;
             min-height: 100vh;
-            padding: 30px;
+            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 30px;
         }
 
         .main-card {
             width: 100%;
-            max-width: 900px;
+            max-width: 1100px;
             background: #ffffff;
             padding: 40px;
             border-radius: 28px;
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+            margin: auto;
         }
 
         .top-header {
@@ -192,61 +194,51 @@
 
         <form id="addEmployeeForm" class="form-grid" onsubmit="saveEmployee(event)">
             
-            <!-- 1. رمز الشركة -->
             <div class="form-group">
                 <label>رمز الشركة:</label>
                 <input type="text" id="companyId" placeholder="مثال: B-2026" required oninput="saveActiveCompany()">
             </div>
 
-            <!-- 2. اسم الشركة -->
             <div class="form-group">
                 <label>اسم الشركة:</label>
                 <input type="text" id="companyName" placeholder="أدخل اسم الشركة" required>
             </div>
 
-            <!-- 3. اسم الموظف -->
             <div class="form-group full-width">
                 <label>اسم الموظف الكامل:</label>
                 <input type="text" id="employeeName" placeholder="الاسم ثلاثي" required>
             </div>
 
-            <!-- 4. العنوان الوظيفي -->
             <div class="form-group">
                 <label>العنوان الوظيفي:</label>
                 <input type="text" id="employeeSpecialty" placeholder="مثال: مهندس برمجيات، محاسب..." required>
             </div>
 
-            <!-- 5. مكان العمل -->
             <div class="form-group">
                 <label>مكان العمل:</label>
                 <input type="text" id="employeeWorkplace" placeholder="الفرع أو القسم الرئيسي" required>
             </div>
 
-            <!-- 6. مقدار الراتب -->
             <div class="form-group">
                 <label>مقدار الراتب:</label>
                 <input type="number" id="employeeSalary" placeholder="قيمة الراتب الأساسي" required>
             </div>
 
-            <!-- 7. المخصصات -->
             <div class="form-group">
                 <label>المخصصات:</label>
                 <input type="number" id="employeeAllowances" placeholder="مخصصات النقل أو السكن (اختياري)">
             </div>
 
-            <!-- 8. اسم المستخدم -->
             <div class="form-group">
                 <label>اسم المستخدم (للدخول):</label>
                 <input type="text" id="employeeUsername" placeholder="اسم المستخدم الفريد" required>
             </div>
 
-            <!-- 9. كلمة المرور -->
             <div class="form-group">
                 <label>كلمة المرور:</label>
                 <input type="password" id="employeePassword" placeholder="كلمة المرور الخاصة بالموظف" required>
             </div>
 
-            <!-- 10. التقاط صورة أو تحميل صورة -->
             <div class="form-group full-width">
                 <label>صورة الموظف (التقاط بالكاميرا أو تحميل ملف):</label>
                 <div class="media-section">
@@ -259,7 +251,6 @@
                 <input type="hidden" id="employeePhoto" value="">
             </div>
 
-            <!-- 11. جلب الموقع والإحداثيات -->
             <div class="form-group full-width">
                 <label>الموقع الجغرافي (الإحداثيات):</label>
                 <div style="display: flex; gap: 10px; align-items: center;">
@@ -269,7 +260,6 @@
                 <input type="hidden" id="employeeLocation" value="غير متوفر">
             </div>
 
-            <!-- 12. الحفظ والتسجيل -->
             <button type="submit" class="btn btn-success">💾 الحفظ والتسجيل وترحيل البيانات</button>
 
         </form>
@@ -406,35 +396,29 @@
             };
 
             try {
-                // 1. التخزين المخصص للشركة
                 const storageKey = `company_employees_${compId}`;
                 let existingEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
                 existingEmployees.push(newEmployee);
                 localStorage.setItem(storageKey, JSON.stringify(existingEmployees));
 
-                // 2. الترحيل العام للقائمة
                 let generalEmployees = JSON.parse(localStorage.getItem('company_employees') || '[]');
                 generalEmployees.push(newEmployee);
                 localStorage.setItem('company_employees', JSON.stringify(generalEmployees));
 
-                // 3. ترحيل بيانات الرواتب
                 let salariesList = JSON.parse(localStorage.getItem(`salaries_${compId}`) || '[]');
                 salariesList.push({ username: newEmployee.username, name: newEmployee.name, salary: newEmployee.salary, allowances: newEmployee.allowances });
                 localStorage.setItem(`salaries_${compId}`, JSON.stringify(salariesList));
 
-                // 4. ترحيل الشفتات
                 let shiftsList = JSON.parse(localStorage.getItem(`shifts_${compId}`) || '[]');
                 shiftsList.push({ username: newEmployee.username, name: newEmployee.name, workplace: newEmployee.workplace, status: 'نشط' });
                 localStorage.setItem(`shifts_${compId}`, JSON.stringify(shiftsList));
 
-                // 5. ترحيل التوثيق الأمني
                 let securityList = JSON.parse(localStorage.getItem(`security_${compId}`) || '[]');
                 securityList.push({ username: newEmployee.username, name: newEmployee.name, verified: true, date: newEmployee.startDate });
                 localStorage.setItem(`security_${compId}`, JSON.stringify(securityList));
 
                 alert('🎉 تم حفظ وتخزين وترحيل بيانات الموظف بنجاح إلى كافة الجداول واللوحات المرتبطة!');
 
-                // تفريغ الحقول وإعادة التهيئة لإضافة موظف جديد
                 document.getElementById('employeeName').value = '';
                 document.getElementById('employeeSpecialty').value = '';
                 document.getElementById('employeeWorkplace').value = '';
