@@ -6,6 +6,9 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// توجيه مسار الملفات الثابتة لمجلد public الأساسي
+app.use(express.static(path.join(__dirname, 'public')));
+
 // مسار تخزين قاعدة البيانات والمجلدات
 const DATA_DIR = path.join(__dirname, 'data');
 const COMPANIES_DIR = path.join(DATA_DIR, 'companies');
@@ -18,7 +21,17 @@ if (!fs.existsSync(DB_PATH)) {
     fs.writeFileSync(DB_PATH, JSON.stringify({ companies: [] }, null, 2));
 }
 
-// 1. مسار جلب قائمة الشركات المسجلة
+// 1. الصفحة الرئيسية للعملاء (توجيه العميل دائماً إلى صفحة index)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 2. صفحة لوحة تحكم المطور (توجيه المطور إلى create-company)
+app.get('/developer', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'create-company.html'));
+});
+
+// 3. مسار جلب قائمة الشركات المسجلة
 app.get('/api/developer/companies', (req, res) => {
     try {
         const dbData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
@@ -28,7 +41,7 @@ app.get('/api/developer/companies', (req, res) => {
     }
 });
 
-// 2. مسار إنشاء وتسجيل شركة جديدة وربطها برمز القاعدة والمجلدات
+// 4. مسار إنشاء وتسجيل شركة جديدة وربطها برمز القاعدة والمجلدات
 app.post('/api/developer/company/create', (req, res) => {
     try {
         const newComp = req.body;
@@ -46,7 +59,7 @@ app.post('/api/developer/company/create', (req, res) => {
             return res.status(400).json({ success: false, message: 'رمز الشركة موجود مسبقاً في النظام!' });
         }
 
-        // إنشاء مجلد خاص بالشركة على الهارد دسك باستخدام رمز القاعدة الخاص بها
+        // إنشاء مجلد خاص بالشركة على الهارد دسك باستخدام رمز القاعدة الخاص بها داخل مجلد data/companies
         const compFolder = path.join(COMPANIES_DIR, compId);
         if (!fs.existsSync(compFolder)) {
             fs.mkdirSync(compFolder, { recursive: true });
