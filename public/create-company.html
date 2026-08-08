@@ -2,493 +2,65 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>المراقب برو - الإدارة المركزية الفاخرة</title>
+    <title>المراقب برو - الإدارة المركزية</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
-
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        
-        body {
-            background: radial-gradient(circle at top right, #1e1b4b, #0f172a, #020617);
-            color: #f8fafc;
-            min-height: 100vh;
-            padding: 50px 20px;
-            background-attachment: fixed;
-        }
-
+        body { background: radial-gradient(circle at top right, #1e1b4b, #0f172a, #020617); color: #f8fafc; min-height: 100vh; padding: 50px 20px; }
         .container { max-width: 1100px; margin: 0 auto; }
-
-        .header-section {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-        .header-section h1 {
-            font-size: 42px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
-            margin-bottom: 10px;
-        }
-        .header-section p {
-            color: #94a3b8;
-            font-size: 17px;
-        }
-
-        .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 45px;
-            border-radius: 28px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            margin-bottom: 50px;
-        }
-        .glass-card h2 {
-            font-size: 28px;
-            color: #38bdf8;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 2px solid rgba(56, 189, 248, 0.2);
-            padding-bottom: 15px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 25px;
-        }
-        .input-group { display: flex; flex-direction: column; }
-        .full-width { grid-column: span 2; }
-
-        label {
-            font-size: 16px;
-            margin-bottom: 10px;
-            color: #cbd5e1;
-            font-weight: 700;
-        }
-        input {
-            padding: 16px 20px;
-            background: rgba(15, 23, 42, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            color: white;
-            font-size: 17px;
-            transition: all 0.3s ease;
-        }
-        input:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
-            outline: none;
-            background: rgba(15, 23, 42, 0.95);
-        }
-
-        .photo-buttons-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 10px;
-        }
-        .btn-upload-option {
-            flex: 1;
-            padding: 12px;
-            background: #334155;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            color: #f8fafc;
-            font-weight: bold;
-            cursor: pointer;
-            text-align: center;
-            transition: 0.2s;
-            font-size: 14px;
-        }
-        .btn-upload-option:hover {
-            background: #475569;
-            border-color: #38bdf8;
-        }
-        
-        #previewThumb {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #38bdf8;
-            display: none;
-            margin-top: 10px;
-        }
-
-        .btn-main {
-            grid-column: span 2;
-            padding: 20px;
-            background: linear-gradient(135deg, #0284c7, #6366f1);
-            border: none;
-            border-radius: 14px;
-            color: white;
-            font-size: 20px;
-            font-weight: 900;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 25px rgba(2, 132, 199, 0.4);
-            margin-top: 10px;
-        }
-        .btn-main:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(99, 102, 241, 0.5);
-        }
-
-        .section-title {
-            font-size: 26px;
-            color: #f1f5f9;
-            margin-bottom: 25px;
-            font-weight: 800;
-        }
-
-        .company-card {
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 30px;
-            border-radius: 24px;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 25px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-        }
-
-        .comp-info { display: flex; align-items: center; gap: 25px; flex: 1; }
-        .comp-photo {
-            width: 95px;
-            height: 95px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #38bdf8;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
-        }
-        .text-data h3 { font-size: 22px; margin-bottom: 8px; color: #f8fafc; }
-        .text-data p { color: #94a3b8; font-size: 16px; margin-bottom: 4px; }
-
-        .actions { display: flex; flex-direction: column; gap: 10px; min-width: 150px; }
-        .btn-action {
-            padding: 12px;
-            border: none;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 14px;
-            color: white;
-            text-align: center;
-            transition: 0.2s;
-        }
+        .header-section { text-align: center; margin-bottom: 50px; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 45px; border-radius: 28px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
+        input { padding: 16px; background: rgba(15, 23, 42, 0.8); border: 1px solid #38bdf8; border-radius: 12px; color: white; }
+        .company-card { background: rgba(30, 41, 59, 0.6); padding: 25px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .comp-info { display: flex; align-items: center; gap: 20px; }
+        .comp-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; }
+        .logo-action-area { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .btn-upload { background: #6366f1; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+        .actions { display: flex; flex-direction: column; gap: 8px; }
+        .btn-action { padding: 10px; border: none; border-radius: 8px; cursor: pointer; color: white; }
         .btn-edit { background: #0284c7; }
-        .btn-save { background: #10b981; display: none; }
-        .btn-status-stop { background: #f59e0b; color: #000; font-weight: 900; }
-        .btn-status-play { background: #10b981; }
         .btn-del { background: #ef4444; }
-
-        .status-badge {
-            display: inline-block;
-            padding: 5px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 800;
-            margin-bottom: 8px;
-        }
-        .status-active { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .status-stopped { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-
-        input.edit-input {
-            padding: 8px 12px;
-            font-size: 15px;
-            background: #0b0f19;
-            border: 1px solid #38bdf8;
-            border-radius: 8px;
-            color: #fff;
-        }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <div class="header-section">
-        <h1>🛡️ المراقب برو</h1>
-        <p>نظام الإدارة والسيطرة المركزية للشركات</p>
-    </div>
-
-    <!-- نموذج التسجيل -->
+    <div class="header-section"><h1>🛡️ لوحة المطورين - المراقب برو</h1></div>
     <div class="glass-card">
-        <h2>✨ تسجيل وتأسيس شركة جديدة</h2>
         <form id="regForm" class="form-grid">
-            <div class="input-group full-width">
-                <label>رمز الشركة (المعرف الأساسي - بالأعلى)</label>
-                <input type="text" id="cId" required placeholder="مثال: COMP-01">
-            </div>
-            <div class="input-group">
-                <label>اسم الشركة بالعربي</label>
-                <input type="text" id="cNameAr" required placeholder="مثال: شركة الأرجوان للبرمجيات">
-            </div>
-            <div class="input-group">
-                <label>اسم الشركة بالإنجليزي (English Name)</label>
-                <input type="text" id="cNameEn" required placeholder="Example: Al-Argouan Software">
-            </div>
-            <div class="input-group">
-                <label>اسم المدير المسؤول</label>
-                <input type="text" id="mName" required placeholder="الاسم الكامل للمدير">
-            </div>
-            <div class="input-group">
-                <label>رقم الهاتف</label>
-                <input type="text" id="mPhone" required placeholder="رقم الهاتف للتواصل والدخول السريع">
-            </div>
-            <div class="input-group">
-                <label>اسم المستخدم</label>
-                <input type="text" id="mUser" required placeholder="اسم المستخدم للنظام">
-            </div>
-            <div class="input-group">
-                <label>كلمة المرور</label>
-                <input type="password" id="mPass" required placeholder="كلمة المرور السرية">
-            </div>
-            <div class="input-group">
-                <label>إيميل الشركة (البريد الإلكتروني)</label>
-                <input type="email" id="cEmail" required placeholder="company@domain.com">
-            </div>
-            
-            <div class="input-group full-width">
-                <label>صورة المدير (اختر ملف أو التقط بالكاميرا أو ضع رابط)</label>
-                <input type="text" id="mPhoto" required placeholder="رابط الصورة أو يتم تعبئته تلقائياً عند الرفع/الالتقاط">
-                
-                <div class="photo-buttons-group">
-                    <button type="button" class="btn-upload-option" onclick="document.getElementById('fileInput').click()">📁 استعراض الملفات (بحث عن صورة)</button>
-                    <button type="button" class="btn-upload-option" onclick="document.getElementById('cameraInput').click()">📸 التقاط صورة بالكاميرا</button>
-                </div>
-
-                <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
-                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleImageUpload(event)">
-
-                <img id="previewThumb" alt="معاينة الصورة">
-            </div>
-
-            <button type="submit" class="btn-main">حفظ وتنشيط الشركة في النظام 🚀</button>
+            <input type="text" id="cId" placeholder="رمز الشركة (ID)" required>
+            <input type="text" id="cName" placeholder="اسم الشركة" required>
+            <button type="submit" style="grid-column: span 2; background: #38bdf8; color: #000; font-weight: bold; padding: 15px; border: none; border-radius: 12px; cursor: pointer;">إضافة شركة</button>
         </form>
     </div>
-
-    <!-- قائمة الشركات -->
-    <div class="section-title">📋 الشركات المسجلة والمدرجة حالياً</div>
     <div id="compList"></div>
 </div>
 
 <script>
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64String = e.target.result;
-                document.getElementById('mPhoto').value = base64String;
-                
-                const thumb = document.getElementById('previewThumb');
-                thumb.src = base64String;
-                thumb.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    // تعديل عملية الحفظ لتتصل بالهارد دسك عبر السيرفر الفعلي
-    document.getElementById('regForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const companyData = {
-            companyId: document.getElementById('cId').value.trim(),
-            companyName: document.getElementById('cNameAr').value.trim(),
-            nameEn: document.getElementById('cNameEn').value.trim(),
-            manager: document.getElementById('mName').value.trim(),
-            phone: document.getElementById('mPhone').value.trim(),
-            username: document.getElementById('mUser').value.trim(),
-            password: document.getElementById('mPass').value.trim(),
-            email: document.getElementById('cEmail').value.trim(),
-            photo: document.getElementById('mPhoto').value.trim(),
-            status: 'active'
-        };
-
-        try {
-            const response = await fetch('/api/developer/company/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(companyData)
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                alert(result.message || '✨ تم حفظ وتنشيط الشركة على الهارد دسك بنجاح!');
-                renderList();
-                this.reset();
-                document.getElementById('previewThumb').style.display = 'none';
-            } else {
-                alert('خطأ: ' + result.message);
-            }
-        } catch (error) {
-            console.error('فشل الاتصال بالسيرفر:', error);
-            // حل بديل احتياطي في حال لم يكن السيرفر يعمل محلياً للتجربة المباشرة
-            let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            list.push(companyData);
-            localStorage.setItem('registeredCompanies', JSON.stringify(list));
-            renderList();
-            this.reset();
-            document.getElementById('previewThumb').style.display = 'none';
-            alert('⚠️ تنبيه: تعذر الاتصال بالسيرفر المباشر، وتم الحفظ مؤقتاً عبر التخزين المحلي (LocalStorage).');
-        }
-    });
-
     async function renderList() {
-        let list = [];
-        try {
-            const response = await fetch('/api/developer/companies');
-            if (response.ok) {
-                const data = await response.json();
-                list = data.companies || data;
-            } else {
-                throw new Error('فشل جلب الشركات من السيرفر');
-            }
-        } catch (err) {
-            list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        }
-
+        const res = await fetch('/api/developer/companies');
+        const data = await res.json();
         const container = document.getElementById('compList');
-        container.innerHTML = '';
-
-        if (!list || list.length === 0) {
-            container.innerHTML = '<div style="background: rgba(30,41,59,0.4); padding: 30px; text-align: center; border-radius: 20px; color: #94a3b8; font-size: 18px;">📭 لا توجد شركات مسجلة في النظام حتى الآن.</div>';
-            return;
-        }
-
-        list.forEach((c, index) => {
-            const compId = c.id || c.companyId;
-            const compNameAr = c.nameAr || c.companyName;
-            const isActive = c.status !== 'stopped';
-            const statusClass = isActive ? 'status-active' : 'status-stopped';
-            const statusText = isActive ? '🟢 مفعل (يعمل بكفاءة)' : '🟡 متوقف مؤقتاً';
-
-            container.innerHTML += `
-                <div class="company-card" id="card-${index}">
-                    <div class="comp-info">
-                        <img src="${c.photo || 'https://via.placeholder.com/95'}" class="comp-photo">
-                        <div class="text-data" style="width: 100%;">
-                            <span class="status-badge ${statusClass}">${statusText}</span>
-                            <h3>
-                                <span id="nameAr-text-${index}">${compNameAr}</span> / 
-                                <span id="nameEn-text-${index}">${c.nameEn || ''}</span> 
-                                <small style="color:#38bdf8">(${compId})</small>
-                            </h3>
-                            <p>المدير المسؤول: <b id="manager-text-${index}">${c.manager || 'غير متوفر'}</b> | الهاتف: <b id="phone-text-${index}">${c.phone || ''}</b></p>
-                            <p>البريد الإلكتروني: <b id="email-text-${index}">${c.email || ''}</b></p>
-                            <p>اسم المستخدم: ${c.username || ''} | كلمة المرور: <span id="pass-text-${index}">${c.password || ''}</span></p>
-                            <p id="photo-p-${index}" style="display:none; margin-top:8px;">رابط الصورة الجديد: <input type="text" class="edit-input" id="photo-input-${index}" value="${c.photo || ''}" style="width:75%;"></p>
-                        </div>
-                    </div>
-                    <div class="actions">
-                        <button class="btn-action ${isActive ? 'btn-status-stop' : 'btn-status-play'}" onclick="toggleStatus(${index})">
-                            ${isActive ? '⏸️ إيقاف النظام' : '▶️ تشغيل النظام'}
-                        </button>
-                        <button class="btn-action btn-edit" id="edit-btn-${index}" onclick="enableEdit(${index})">✏️ تعديل البيانات</button>
-                        <button class="btn-action btn-save" id="save-btn-${index}" onclick="saveEdit(${index})">💾 حفظ التعديلات</button>
-                        <button class="btn-action btn-del" onclick="deleteComp(${index})">🗑️ حذف الشركة</button>
+        container.innerHTML = data.companies.map((c, index) => `
+            <div class="company-card">
+                <div class="comp-info">
+                    <img src="${c.photo || 'https://via.placeholder.com/80'}" class="comp-photo">
+                    <div>
+                        <h3>${c.companyName || c.name}</h3>
+                        <p>ID: ${c.companyId || c.id}</p>
                     </div>
                 </div>
-            `;
-        });
+                <div class="logo-action-area">
+                    <button class="btn-upload" onclick="alert('تفعيل ميزة الرفع قريباً!')">📷 الشعار</button>
+                </div>
+                <div class="actions">
+                    <button class="btn-action btn-edit">✏️ تعديل</button>
+                    <button class="btn-action btn-del">🗑️ حذف</button>
+                </div>
+            </div>
+        `).join('');
     }
-
-    function enableEdit(index) {
-        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        let c = list[index];
-        if (!c) return;
-
-        document.getElementById(`nameAr-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameAr-${index}" value="${c.nameAr || c.companyName || ''}" style="width: 130px;">`;
-        document.getElementById(`nameEn-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameEn-${index}" value="${c.nameEn || ''}" style="width: 130px;">`;
-        document.getElementById(`manager-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-manager-${index}" value="${c.manager || ''}" style="width: 110px;">`;
-        document.getElementById(`phone-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-phone-${index}" value="${c.phone || ''}" style="width: 110px;">`;
-        document.getElementById(`email-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-email-${index}" value="${c.email || ''}" style="width: 180px;">`;
-        document.getElementById(`pass-text-${index}`).innerHTML = `<input type="text" class="edit-input" id="edit-pass-${index}" value="${c.password || ''}" style="width: 100px;">`;
-        
-        document.getElementById(`photo-p-${index}`).style.display = 'block';
-
-        document.getElementById(`edit-btn-${index}`).style.display = 'none';
-        document.getElementById(`save-btn-${index}`).style.display = 'block';
-    }
-
-    function saveEdit(index) {
-        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        if (!list[index]) return;
-        
-        list[index].nameAr = document.getElementById(`edit-nameAr-${index}`).value;
-        list[index].companyName = list[index].nameAr;
-        list[index].nameEn = document.getElementById(`edit-nameEn-${index}`).value;
-        list[index].manager = document.getElementById(`edit-manager-${index}`).value;
-        list[index].phone = document.getElementById(`edit-phone-${index}`).value;
-        list[index].email = document.getElementById(`edit-email-${index}`).value;
-        list[index].password = document.getElementById(`edit-pass-${index}`).value;
-        list[index].photo = document.getElementById(`photo-input-${index}`).value;
-
-        localStorage.setItem('registeredCompanies', JSON.stringify(list));
-        alert('✨ تم حفظ التعديلات وتحديث بيانات الشركة بنجاح!');
-        renderList();
-    }
-
-    function toggleStatus(index) {
-        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        if (!list[index]) return;
-        list[index].status = (list[index].status === 'stopped') ? 'active' : 'stopped';
-        localStorage.setItem('registeredCompanies', JSON.stringify(list));
-        renderList();
-    }
-
-    function deleteComp(index) {
-        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        let targetComp = list[index];
-        if (!targetComp) return;
-        let companyId = targetComp.id || targetComp.companyId;
-
-        const fullCompanyBackup = {
-            companyInfo: targetComp,
-            employees: JSON.parse(localStorage.getItem(`company_employees_${companyId}`)) || [],
-            requests: JSON.parse(localStorage.getItem(`company_requests_${companyId}`)) || [],
-            attendance: JSON.parse(localStorage.getItem(`company_attendance_${companyId}`)) || [],
-            settings: JSON.parse(localStorage.getItem(`company_settings_${companyId}`)) || {}
-        };
-
-        if (confirm(`⚠️ تحذير خطير: أنت على وشك حذف الشركة (${targetComp.nameAr || targetComp.companyName}) والمعرف (${companyId}) نهائياً!\n\nسيتم حذف جميع الموظفين، السجلات، والطلبات من كافة الجداول.\n\nهل تريد تنزيل "نسخة احتياطية" على جهازك (Desktop) قبل الحذف؟`)) {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullCompanyBackup, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `Backup_Company_${companyId}_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
-
-        if (confirm(`🛑 تأكيد نهائي: هل أنت متأكد تماماً من حذف كافة جداول وبيانات الشركة (${companyId}) الآن؟`)) {
-            const keysToRemove = [
-                `company_employees_${companyId}`,
-                `company_requests_${companyId}`,
-                `company_attendance_${companyId}`,
-                `company_settings_${companyId}`,
-                `company_${companyId}`
-            ];
-
-            keysToRemove.forEach(key => localStorage.removeItem(key));
-
-            list.splice(index, 1);
-            localStorage.setItem('registeredCompanies', JSON.stringify(list));
-
-            alert(`✅ تم حذف الشركة (${companyId}) وكافة موظفيها وجداولها وتنظيف الكاش بنجاح تام.`);
-            renderList();
-        }
-    }
-
-    window.onload = renderList;
+    renderList();
 </script>
 </body>
 </html>
