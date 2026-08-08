@@ -148,32 +148,38 @@
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const compId = document.getElementById('loginCompanyId').value.trim();
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
 
-            // جلب موظفي الشركة المحددة من ذاكرة الهاتف
-            const storageKey = `company_employees_${compId}`;
-            const employees = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            try {
+                // إرسال البيانات للتحقق عبر السيرفر وقاعدة بيانات MongoDB
+                const response = await fetch('/api/employee/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ companyId: compId, username, password })
+                });
 
-            // البحث عن الموظف بالاعتماد على اسم المستخدم وكلمة المرور
-            const employee = employees.find(emp => emp.username === username && emp.password === password);
+                const result = await response.json();
 
-            if (employee) {
-                // حفظ معرف الشركة ومعرف الموظف النشط حالياً في الجلسة
-                localStorage.setItem('activeCompanyId', compId);
-                localStorage.setItem('activeEmployeeUsername', username);
+                if (response.ok && result.success) {
+                    // حفظ معلومات الجلسة وتمرير معرف الشركة عبر الرابط
+                    localStorage.setItem('activeCompanyId', compId);
+                    localStorage.setItem('activeEmployee', result.employeeName || username);
 
-                alert(`مرحباً بك يا ${employee.name}! تم التحقق بنجاح.`);
-                
-                // الانتقال المباشر إلى صفحة بصمة الحضور والانصراف
-                // (تأكد من تسمية صفحة البصمة لديك، أو استبدل attendance.html باسم صفحتك الحالية)
-                window.location.href = 'attendance.html';
-            } else {
-                alert('⚠️ خطأ: رمز الشركة، اسم المستخدم، أو كلمة المرور غير صحيحة!');
+                    alert(`مرحباً بك يا ${result.employeeName || username}! تم التحقق بنجاح.`);
+                    
+                    // الانتقال إلى صفحة البصمة مع تمرير رمز الشركة في الـ URL
+                    window.location.href = `attendance.html?company=${encodeURIComponent(compId)}`;
+                } else {
+                    alert(result.message || '⚠️ خطأ: رمز الشركة، اسم المستخدم، أو كلمة المرور غير صحيحة!');
+                }
+            } catch (error) {
+                console.error("خطأ في الاتصال بالسيرفر:", error);
+                alert('⚠️ تعذر الاتصال بالسيرفر. تأكد من عمل السيرفر وقاعدة البيانات.');
             }
         });
     </script>

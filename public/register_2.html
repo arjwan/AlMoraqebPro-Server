@@ -109,7 +109,7 @@
 
     <script>
         let compressedPhotoData = "";
-        let currentGPSLocation = "غير متوفر";
+        let currentGPSLocation = { latitude: 33.3152, longitude: 44.3661 };
         let deviceUniqueId = "";
 
         function getOrCreateDeviceID() {
@@ -138,13 +138,11 @@
             const canvas = document.getElementById('canvasElement');
             const preview = document.getElementById('snapshotPreview');
             
-            // تصغير الأبعاد القصوى للصورة لتوفير المساحة وتجنب امتلاء التخزين المحلي
             canvas.width = 100;
             canvas.height = 100;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, 100, 100);
             
-            // ضغط جودة الصورة بنسبة عالية (0.5) لتوليد حجم صغير جداً يناسب متصفحات الهاتف
             compressedPhotoData = canvas.toDataURL('image/jpeg', 0.5);
             
             preview.src = compressedPhotoData;
@@ -164,14 +162,19 @@
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => { currentGPSLocation = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`; document.getElementById('gpsStatus').innerText = `📍 الجهاز محمي والموقع جاهز.`; },
-                    (err) => { currentGPSLocation = "33.3152, 44.3661 (بغداد افتراضي)"; document.getElementById('gpsStatus').innerText = `📍 المعرف الفريد جاهز وموقع افتراضي نشط.`; },
+                    (pos) => {
+                        currentGPSLocation = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+                        document.getElementById('gpsStatus').innerText = `📍 الجهاز محمي والموقع جاهز.`;
+                    },
+                    (err) => {
+                        document.getElementById('gpsStatus').innerText = `📍 المعرف الفريد جاهز وموقع افتراضي نشط.`;
+                    },
                     { timeout: 5000 }
                 );
             }
         };
 
-        function registerWithStrictValidation() {
+        async function registerWithStrictValidation() {
             const companyId = document.getElementById('companyIdInput').value.trim();
             const name = document.getElementById('empName').value.trim();
             const email = document.getElementById('empEmail').value.trim();
@@ -195,58 +198,45 @@
                 return;
             }
 
-            localStorage.setItem('activeCompanyId', companyId);
-            const storageKey = `company_employees_${companyId}`;
-            
-            let employees = [];
-            try {
-                employees = JSON.parse(localStorage.getItem(storageKey)) || [];
-            } catch (e) {
-                employees = [];
-            }
-
-            const deviceExists = employees.some(emp => emp.deviceId === deviceUniqueId);
-            if (deviceExists) {
-                alert("❌ عذراً، هذا الهاتف مسجل مسبقاً في النظام لهذه الشركة ولا يمكن تسجيل موظف آخر بنفس الجهاز.");
-                return;
-            }
-
-            const conflictExists = employees.some(emp => emp.email === email || emp.username === username);
-            if (conflictExists) {
-                alert("❌ خطأ: اسم المستخدم أو البريد الإلكتروني مستخدم مسبقاً في قاعدة بيانات هذه الشركة!");
-                return;
-            }
-
-            const newEmp = {
+            // تجهيز البيانات لإرسالها للسيرفر وحفظها في قاعدة بيانات MongoDB
+            const payload = {
+                companyId,
+                name,
+                email,
+                specialty,
+                workplace,
+                username,
+                password,
                 deviceId: deviceUniqueId,
-                name: name,
-                email: email,
-                specialty: specialty,
-                workplace: workplace,
-                username: username,
-                password: password,
                 location: currentGPSLocation,
-                startDate: new Date().toLocaleString('ar-EG'),
-                photo: compressedPhotoData,
-                companyId: companyId
+                photo: compressedPhotoData
             };
 
-            employees.unshift(newEmp);
-            
             try {
-                localStorage.setItem(storageKey, JSON.stringify(employees));
-                localStorage.setItem('company_employees', JSON.stringify(employees));
-                localStorage.setItem(`active_session_${username}`, JSON.stringify(newEmp));
-            } catch (err) {
-                alert("⚠️ ذاكرة المتصفح ممتلئة تماماً. يرجى مسح بيانات المتصفح المؤقتة (Clear Cache) وإعادة المحاولة.");
-                return;
+                const response = await fetch('/api/employee/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    localStorage.setItem('activeCompanyId', companyId);
+                    localStorage.setItem('activeEmployee', name);
+
+                    document.getElementById('successMsg').style.display = 'block';
+
+                    setTimeout(() => {
+                        window.location.href = `login.html?company=${encodeURIComponent(companyId)}`;
+                    }, 1000);
+                } else {
+                    alert(result.message || "❌ حدث خطأ أثناء التسجيل. يرجى المحاولة لاحقاً.");
+                }
+            } catch (error) {
+                console.error("خطأ في الاتصال بالخادم:", error);
+                alert("⚠️ تعذر الاتصال بالسيرفر. تأكد من تشغيل الخادم وقاعدة البيانات.");
             }
-
-            document.getElementById('successMsg').style.display = 'block';
-
-            setTimeout(() => {
-                window.location.href = `login.html?company=${encodeURIComponent(companyId)}`;
-            }, 1000);
         }
     </script>
 </body>

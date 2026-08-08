@@ -44,8 +44,8 @@
             🔴 تسجيل انصراف (مع التحقق الجغرافي)
         </button>
 
-        <!-- زر الانتقال المباشر لصفحة الخدمات والطلبات -->
-        <a href="services.html" class="btn btn-services">
+        <!-- زر الانتقال المباشر لصفحة الخدمات والطلبات مع تمرير بيانات الشركة -->
+        <a href="services.html" id="servicesLink" class="btn btn-services">
             🗂️ الانتقال إلى صفحة الخدمات والطلبات
         </a>
 
@@ -59,10 +59,17 @@
             document.getElementById('liveClock').textContent = now.toLocaleTimeString();
         }, 1000);
 
+        // جلب معرف الشركة واسم الموظف من الرابط أو التخزين المحلي المؤقت
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentCompany = urlParams.get('company') || localStorage.getItem('activeCompanyId') || '';
         const currentEmployee = localStorage.getItem('activeEmployee') || 'موظف تجريبي';
-        const currentCompany = localStorage.getItem('activeCompanyId') || 'default_company';
 
-        document.getElementById('companySubtitle').textContent = `الموظف: ${currentEmployee} | الشركة المرتبطة`;
+        document.getElementById('companySubtitle').textContent = `الموظف: ${currentEmployee} | الشركة: ${currentCompany || 'غير مسجل'}`;
+
+        // ربط زر الخدمات بمعرف الشركة الحالي لضمان الاستمرارية
+        if (currentCompany) {
+            document.getElementById('servicesLink').href = `services.html?company=${encodeURIComponent(currentCompany)}`;
+        }
 
         // دالة مساعدة لحساب المسافة بالأمتار بين إحداثيات الموظف وإحداثيات مقر العمل
         function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
@@ -75,97 +82,54 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        // دالة التحقق الذكي الحقيقي من الـ GPS، الشفت، وتحديث السجلات والرواتب آلياً
-        function verifyAndRegisterAttendance(type) {
-            const alertBox = document.getElementById('alertBox');
-            
+        // دالة التحقق الذكي الحقيقي من الـ GPS وإرسال السجلات للسيرفر وقاعدة البيانات
+        async function verifyAndRegisterAttendance(type) {
+            if (!currentCompany) {
+                showAlert("⚠️ خطأ: لم يتم تحديد الشركة المرتبطة. يرجى تسجيل الدخول من جديد.", "danger");
+                return;
+            }
+
             if (!navigator.geolocation) {
                 showAlert("⚠️ خدمة تحديد الموقع الجغرافي (GPS) غير متوفرة في هذا المتصفح أو الجهاز.", "danger");
                 return;
             }
 
-            // 1. التحقق من وجود الموظف ضمن شفت مخصص لهذا اليوم
-            const employeeShifts = JSON.parse(localStorage.getItem(`employee_shifts_${currentEmployee}`)) || [];
-            const todayDateStr = new Date().toISOString().split('T')[0];
-            const assignedShift = employeeShifts.find(s => s.date === todayDateStr);
-
-            // افتراض إحداثيات مركز العمل (يمكن جلبها من إعدادات الشركة أو تعيين افتراضي للمقر الرئيسي)
-            // المقر الافتراضي (مثلاً بغداد)
-            const workplaceLat = 33.3152;
-            const workplaceLng = 44.3661;
-            const allowedRadiusMeters = 150; // النطاق المسموح 150 متر
-
-            if (!assignedShift) {
-                showAlert(`⚠️ عذراً (${currentEmployee})، أنت غير مضاف إلى شفت عمل مخصص لهذا اليوم. يرجى مراجعة الإدارة لإضافتك للشفت.`, "danger");
-                logSystemAction(type, `رفض (${type}): غير مضاف لشفت اليوم`, "danger");
-                return;
-            }
-
             showAlert("⏳ جاري تحديد موقعك الجغرافي والتحقق من النطاق...", "success");
 
-            navigator.geolocation.getCurrentPosition((position) => {
+            navigator.geolocation.getCurrentPosition(async (position) => {
                 const empLat = position.coords.latitude;
                 const empLng = position.coords.longitude;
                 
+                // المقر الافتراضي (مثلاً بغداد أو يتم سحبه من إعدادات الشركة في السيرفر)
+                const workplaceLat = 33.3152;
+                const workplaceLng = 44.3661;
+                const allowedRadiusMeters = 150; // النطاق المسموح 150 متر
+
                 const distance = calculateDistanceMeters(empLat, empLng, workplaceLat, workplaceLng);
                 const isOutOfBounds = distance > allowedRadiusMeters;
-                const nowTimeStr = new Date().toLocaleTimeString('ar-EG');
-                const fullDateTimeStr = new Date().toLocaleString('ar-EG');
-
-                let logs = JSON.parse(localStorage.getItem(`companyAttendanceLogs_${currentCompany}`)) || [];
-                const recordId = 'ATT_' + Date.now();
 
                 if (isOutOfBounds) {
-                    // رفض البصمة لكون الموظف خارج النطاق الجغرافي
-                    const errorMsg = `❌ تم رفض (${type})! أنت خارج النطاق الجغرافي للعمل بمسافة ${Math.round(distance)} متر (المسموح ${allowedRadiusMeters}م).`;
-                    showAlert(errorMsg, "danger");
-
-                    // تسجيل حالة الرفض في سجلات المدير العامة والتقارير المتقدمة
-                    logs.unshift({
-                        id: recordId,
-                        name: currentEmployee,
-                        workplace: assignedShift.workplace || "المقر الرئيسي",
-                        shiftName: assignedShift.shiftName || "الشفت المخصص",
-                        faceStatus: `مرفوض (خارج النطاق ${Math.round(distance)}م)`,
-                        date: todayDateStr,
-                        attTime: type === 'تسجيل حضور' ? nowTimeStr : '-- : --',
-                        depTime: type === 'تسجيل انصراف' ? nowTimeStr : '-- : --',
-                        overtime: "لا يوجد",
-                        completeDays: 0,
-                        missingDays: 1,
-                        depStatus: "مرفوض بصمة"
-                    });
-                    
-                    logSystemAction(type, `رفض الموظف (${currentEmployee}) بسبب وجوده خارج النطاق بمسافة ${Math.round(distance)}م`, "danger");
+                    showAlert(`❌ تم رفض (${type})! أنت خارج النطاق الجغرافي للعمل بمسافة ${Math.round(distance)} متر (المسموح ${allowedRadiusMeters}م).`, "danger");
                 } else {
-                    // قبول البصمة وتسجيل الحضور والانصراف بنجاح وتحديث الرواتب آلياً
-                    const successMsg = `✅ تم قبول (${type}) بنجاح ضمن النطاق الجغرافي (${Math.round(distance)} متر) والشفت المخصص!`;
-                    showAlert(successMsg, "success");
+                    showAlert(`✅ تم قبول (${type}) بنجاح ضمن النطاق الجغرافي (${Math.round(distance)} متر)!`, "success");
 
-                    logs.unshift({
-                        id: recordId,
-                        name: currentEmployee,
-                        workplace: assignedShift.workplace || "المقر الرئيسي",
-                        shiftName: assignedShift.shiftName || "الشفت المخصص",
-                        faceStatus: "مقبول (في النطاق)",
-                        date: todayDateStr,
-                        attTime: type === 'تسجيل حضور' ? nowTimeStr : '08:00 ص',
-                        depTime: type === 'تسجيل انصراف' ? nowTimeStr : 'قيد العمل',
-                        overtime: "لا يوجد",
-                        completeDays: 1,
-                        missingDays: 0,
-                        depStatus: type === 'تسجيل انصراف' ? "منصرف نظامي" : "حضور نظامي"
-                    });
-
-                    logSystemAction(type, `قام الموظف (${currentEmployee}) بعملية ${type} بنجاح داخل النطاق الجغرافي`, "success");
-
-                    // تحديث صفحة الرواتب آلياً عند تسجيل الحضور
-                    if (type === 'تسجيل حضور') {
-                        updateDailyPayroll(currentEmployee);
+                    // إرسال البيانات مباشرة إلى السيرفر لتخزينها في قاعدة بيانات MongoDB
+                    try {
+                        await fetch('/api/attendance/record', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                companyId: currentCompany,
+                                employeeName: currentEmployee,
+                                type: type,
+                                distance: Math.round(distance),
+                                status: 'مقبول (في النطاق)'
+                            })
+                        });
+                    } catch (e) {
+                        console.error("فشل إرسال البصمة للسيرفر:", e);
                     }
                 }
-
-                localStorage.setItem(`companyAttendanceLogs_${currentCompany}`, JSON.stringify(logs));
 
             }, (error) => {
                 showAlert("❌ تعذر الوصول إلى الـ GPS. تأكد من إذن الموقع في المتصفح وجهازك.", "danger");
@@ -174,35 +138,6 @@
                 timeout: 10000,
                 maximumAge: 0
             });
-        }
-
-        // تسجيل الحركات في نظام المدير
-        function logSystemAction(type, details, statusType) {
-            const systemLogs = JSON.parse(localStorage.getItem(`system_logs_${currentCompany}`)) || [];
-            systemLogs.unshift({
-                type: type,
-                details: details,
-                user: currentEmployee,
-                timestamp: new Date().toLocaleString('ar-EG')
-            });
-            localStorage.setItem(`system_logs_${currentCompany}`, JSON.stringify(systemLogs));
-        }
-
-        // تحديث الرواتب اليومية آلياً
-        function updateDailyPayroll(empName) {
-            let payrollData = JSON.parse(localStorage.getItem(`company_payroll_${currentCompany}`)) || [];
-            let empRecord = payrollData.find(p => p.name === empName);
-            if (empRecord) {
-                empRecord.daysPresent = (empRecord.daysPresent || 0) + 1;
-            } else {
-                payrollData.push({
-                    name: empName,
-                    daysPresent: 1,
-                    daysAbsent: 0,
-                    baseSalary: 600000
-                });
-            }
-            localStorage.setItem(`company_payroll_${currentCompany}`, JSON.stringify(payrollData));
         }
 
         function showAlert(message, type) {
