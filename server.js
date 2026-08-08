@@ -1,20 +1,25 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const app = express();
+
+// إعدادات Middleware
 app.use(cors());
 app.use(express.json());
 
-// الرابط الخاص بك مع بيانات الاتصال المدمجة
-const MONGO_URI = "mongodb+srv://mohmmed1628:0780moh780@cluster0.oomto7r.mongodb.net/AlMoraqebPro?retryWrites=true&w=majority&appName=Cluster0";
+// 1. جعل مجلد public متاحاً للمتصفح (يحتوي على index.html والصور وملفات CSS)
+app.use(express.static(path.join(__dirname, 'public')));
 
-// الاتصال بقاعدة البيانات
+// 2. الاتصال بقاعدة البيانات باستخدام المتغير الآمن من Render
+const MONGO_URI = process.env.MONGO_URI;
+
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ تم الاتصال بقاعدة البيانات السحابية بنجاح'))
+  .then(() => console.log('✅ تم الاتصال بقاعدة البيانات بنجاح'))
   .catch(err => console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err));
 
-// هيكل بيانات الشركات
+// 3. تعريف نموذج بيانات الشركات
 const CompanySchema = new mongoose.Schema({
     companyId: { type: String, required: true, unique: true },
     name: { type: String, required: true },
@@ -24,12 +29,12 @@ const CompanySchema = new mongoose.Schema({
 
 const Company = mongoose.model('Company', CompanySchema);
 
-// 1. مسار الصفحة الرئيسية للتأكد أن السيرفر يعمل
+// 4. مسار الصفحة الرئيسية (يفتح index.html تلقائياً)
 app.get('/', (req, res) => {
-    res.send('🚀 AlMoraqebPro Server is Running and Connected to MongoDB Atlas successfully!');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 2. مسار جلب الشركات
+// 5. مسار الـ API لجلب الشركات
 app.get('/api/developer/companies', async (req, res) => {
     try {
         const companies = await Company.find();
@@ -39,7 +44,7 @@ app.get('/api/developer/companies', async (req, res) => {
     }
 });
 
-// 3. مسار حفظ وتحديث الشركات
+// 6. مسار الـ API لحفظ البيانات
 app.post('/api/developer/company/create', async (req, res) => {
     const newCompany = req.body;
     try {
@@ -48,13 +53,14 @@ app.post('/api/developer/company/create', async (req, res) => {
             newCompany,
             { upsert: true, new: true, setDefaultsOnInsert: true }
         );
-        res.json({ success: true, message: "تم الحفظ بشكل دائم في السحابة" });
+        res.json({ success: true, message: "تم الحفظ بنجاح" });
     } catch (error) {
         res.status(500).json({ error: "Failed to save data" });
     }
 });
 
+// 7. تشغيل السيرفر
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`🚀 Server is running on port ${PORT}`);
 });
