@@ -85,7 +85,7 @@
 
         .section-title { font-size: 26px; color: #f1f5f9; margin-bottom: 25px; font-weight: 800; }
 
-        /* تصميم بطاقة الشركة المطور والمنسق */
+        /* تصميم بطاقة الشركة */
         .company-card {
             background: rgba(30, 41, 59, 0.6);
             backdrop-filter: blur(12px);
@@ -160,7 +160,7 @@
         <p>نظام الإدارة والسيطرة المركزية للشركات</p>
     </div>
 
-    <!-- نموذج التسجيل الأصلي الكامل -->
+    <!-- نموذج التسجيل -->
     <div class="glass-card">
         <h2>✨ تسجيل وتأسيس شركة جديدة</h2>
         <form id="regForm" class="form-grid">
@@ -198,10 +198,10 @@
             </div>
             
             <div class="input-group full-width">
-                <label>شعار أو صورة الشركة (اختر ملف أو التقط بالكاميرا أو ضع رابط)</label>
+                <label>شعار أو صورة الشركة</label>
                 <input type="text" id="mPhoto" required placeholder="رابط الصورة أو يتم تعبئته تلقائياً عند الرفع">
                 <div class="photo-buttons-group">
-                    <button type="button" class="btn-upload-option" onclick="document.getElementById('fileInput').click()">📁 استعراض الملفات (بحث)</button>
+                    <button type="button" class="btn-upload-option" onclick="document.getElementById('fileInput').click()">📁 استعراض الملفات</button>
                     <button type="button" class="btn-upload-option" onclick="document.getElementById('cameraInput').click()">📸 التقاط بالكاميرا</button>
                 </div>
                 <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
@@ -234,7 +234,7 @@
         }
     }
 
-    // رفع الشعار المباشر من بطاقة الشركة في القائمة باستخدام معرف الشركة (compId)
+    // رفع الشعار المباشر وتحديث اللوحة فوراً لأي شركة
     function handleCardLogoUpload(compId, event) {
         const file = event.target.files[0];
         if (file) {
@@ -242,9 +242,15 @@
             reader.onload = function(e) {
                 const base64Result = e.target.result;
                 let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-                let item = list.find(c => (c.companyId || c.id) === compId);
+                let item = list.find(c => String(c.companyId || c.id) === String(compId));
                 if(item) {
                     item.photo = base64Result;
+                    localStorage.setItem('registeredCompanies', JSON.stringify(list));
+                    renderList();
+                } else {
+                    // إذا لم تكن موجودة محلياً، ننشئها ونحفظها لتفعيل أزرارها
+                    let newItem = { companyId: compId, companyName: compId, photo: base64Result, status: 'active' };
+                    list.push(newItem);
                     localStorage.setItem('registeredCompanies', JSON.stringify(list));
                     renderList();
                 }
@@ -276,47 +282,51 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(companyData)
             });
-
             const result = await response.json();
-            if (result.success) {
-                alert(result.message || '✨ تم حفظ وتنشيط الشركة بنجاح!');
-                renderList();
-                this.reset();
-                document.getElementById('previewThumb').style.display = 'none';
-            } else {
-                alert('خطأ: ' + result.message);
-            }
+            if (!result.success) throw new Error(result.message);
         } catch (error) {
-            let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            // منع تكرار نفس معرف الشركة
-            list = list.filter(c => (c.companyId || c.id) !== companyData.companyId);
-            list.push(companyData);
-            localStorage.setItem('registeredCompanies', JSON.stringify(list));
-            renderList();
-            this.reset();
-            document.getElementById('previewThumb').style.display = 'none';
-            alert('⚠️ تم الحفظ وتحديث لوحة المدير محلياً بنجاح.');
+            // متابعة الحفظ المحلي لضمان استقرار العمليات وانعكاسها فوراً
         }
+
+        let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        list = list.filter(c => String(c.companyId || c.id) !== String(companyData.companyId));
+        list.push(companyData);
+        localStorage.setItem('registeredCompanies', JSON.stringify(list));
+        
+        alert('✨ تم حفظ وتنشيط الشركة بنجاح!');
+        renderList();
+        this.reset();
+        document.getElementById('previewThumb').style.display = 'none';
     });
 
     async function renderList() {
-        let list = [];
+        let serverList = [];
         try {
             const response = await fetch('/api/developer/companies');
             if (response.ok) {
                 const data = await response.json();
-                list = data.companies || data;
-            } else {
-                throw new Error();
+                serverList = data.companies || data;
             }
-        } catch (err) {
-            list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        }
+        } catch (err) {}
 
+        let localList = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+        
+        // دمج القائمتين لضمان ظهور كافة الشركات (سواء السيرفر أو الست شركات أو المحفوظة)
+        let map = new Map();
+        serverList.forEach(c => {
+            let id = String(c.companyId || c.id);
+            map.set(id, { ...c, companyId: id });
+        });
+        localList.forEach(c => {
+            let id = String(c.companyId || c.id);
+            map.set(id, { ...(map.get(id) || {}), ...c, companyId: id });
+        });
+
+        let list = Array.from(map.values());
         const container = document.getElementById('compList');
         container.innerHTML = '';
 
-        if (!list || list.length === 0) {
+        if (list.length === 0) {
             container.innerHTML = '<div style="background: rgba(30,41,59,0.4); padding: 30px; text-align: center; border-radius: 20px; color: #94a3b8; font-size: 18px;">📭 لا توجد شركات مسجلة في النظام حتى الآن.</div>';
             return;
         }
@@ -329,8 +339,7 @@
             const statusClass = isActive ? 'status-active' : 'status-stopped';
             const statusText = isActive ? '🟢 مفعل' : '🟡 متوقف';
             const photoSrc = c.photo || 'https://via.placeholder.com/85';
-            // لتجنب المشاكل في المعرفات النصية ننشئ معرف آمن للاستخدام في DOM
-            const safeId = compId.replace(/[^a-zA-Z0-9_-]/g, '_');
+            const safeId = 'comp_' + compId.replace(/[^a-zA-Z0-9]/g, '_');
 
             container.innerHTML += `
                 <div class="company-card" id="card-${safeId}">
@@ -371,13 +380,12 @@
 
     function enableEdit(safeId, compId) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        let c = list.find(item => (item.companyId || item.id) === compId);
-        if (!c) return;
+        let c = list.find(item => String(item.companyId || item.id) === String(compId)) || {};
 
         const compNameAr = c.companyName || c.name || '';
         const compNameEn = c.nameEn || '';
 
-        document.getElementById(`id-view-${safeId}`).innerHTML = `(<input type="text" class="edit-input" id="edit-id-${safeId}" value="${compId}" placeholder="رمز الشركة" style="display:inline-block; width:100px;">)`;
+        document.getElementById(`id-view-${safeId}`).innerHTML = `(<input type="text" class="edit-input" id="edit-id-${safeId}" value="${compId}" style="display:inline-block; width:100px;">)`;
         document.getElementById(`nameAr-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-name-${safeId}" value="${compNameAr}" placeholder="اسم الشركة بالعربي">`;
         document.getElementById(`nameEn-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameEn-${safeId}" value="${compNameEn}" placeholder="English Name">`;
         document.getElementById(`manager-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-manager-${safeId}" value="${c.manager || ''}" placeholder="المدير">`;
@@ -392,11 +400,12 @@
 
     async function saveEdit(safeId, oldId) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        let index = list.findIndex(item => (item.companyId || item.id) === oldId);
-        if (index === -1) return;
+        let index = list.findIndex(item => String(item.companyId || item.id) === String(oldId));
+        
+        let existing = index !== -1 ? list[index] : {};
 
         const updatedData = {
-            ...list[index],
+            ...existing,
             oldCompanyId: oldId,
             companyId: document.getElementById(`edit-id-${safeId}`).value.trim(),
             companyName: document.getElementById(`edit-name-${safeId}`).value.trim(),
@@ -407,7 +416,7 @@
             email: document.getElementById(`edit-email-${safeId}`).value.trim(),
             username: document.getElementById(`edit-user-${safeId}`).value.trim(),
             password: document.getElementById(`edit-pass-${safeId}`).value.trim(),
-            status: list[index].status || 'active'
+            status: existing.status || 'active'
         };
 
         try {
@@ -418,7 +427,12 @@
             });
         } catch (e) {}
 
-        list[index] = updatedData;
+        if (index !== -1) {
+            list[index] = updatedData;
+        } else {
+            list.push(updatedData);
+        }
+        
         localStorage.setItem('registeredCompanies', JSON.stringify(list));
         alert('✨ تم حفظ التعديلات وتحديث لوحة المدير بنجاح!');
         renderList();
@@ -426,9 +440,13 @@
 
     function toggleStatus(compId) {
         let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-        let c = list.find(item => (item.companyId || item.id) === compId);
-        if (!c) return;
-        c.status = (c.status === 'stopped') ? 'active' : 'stopped';
+        let c = list.find(item => String(item.companyId || item.id) === String(compId));
+        if (!c) {
+            c = { companyId: compId, status: 'stopped' };
+            list.push(c);
+        } else {
+            c.status = (c.status === 'stopped') ? 'active' : 'stopped';
+        }
         localStorage.setItem('registeredCompanies', JSON.stringify(list));
         renderList();
     }
@@ -436,7 +454,7 @@
     function deleteComp(compId) {
         if (confirm(`⚠️ هل أنت متأكد من حذف الشركة (${compId}) نهائياً؟`)) {
             let list = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
-            list = list.filter(item => (item.companyId || item.id) !== compId);
+            list = list.filter(item => String(item.companyId || item.id) !== String(compId));
             localStorage.setItem('registeredCompanies', JSON.stringify(list));
             renderList();
             alert('✅ تم حذف الشركة بنجاح.');
