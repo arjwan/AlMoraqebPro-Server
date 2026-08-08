@@ -19,6 +19,9 @@ const db = new sqlite3.Database('./almoraqeb_pro.db', (err) => {
     }
 });
 
+app.get('/', (req, res) => {
+    res.send('<h1>🚀 سيرفر المراقب برو يعمل بنجاح على السحابة!</h1>');
+});
 // رابط سيرفرك السحابي على Render
 const CLOUD_API_URL = 'https://your-app-name.onrender.com/api/v1/employees';
 
