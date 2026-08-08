@@ -1,16 +1,66 @@
-{
-  "name": "almoraqebpro-server",
-  "version": "1.0.0",
-  "description": "AlMoraqebPro Local and Cloud Server",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "build": "echo 'Build skipped successfully'"
-  },
-  "dependencies": {
-    "axios": "^1.6.8",
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "sqlite3": "^6.0.1"
-  }
+const fs = require('fs');
+const path = require('path');
+const DATA_FILE = path.join(__dirname, 'data', 'companies.json');
+
+// التأكد من وجود مجلد وملف البيانات على الهارد دسك
+if (!fs.existsSync(path.dirname(DATA_FILE))) {
+    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
 }
+if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+}
+
+// 1. جلب الشركات مباشرة من ملفات الهارد دسك
+app.get('/api/developer/companies', (req, res) => {
+    try {
+        const fileData = fs.readFileSync(DATA_FILE, 'utf8');
+        const companies = JSON.parse(fileData);
+        res.json({ success: true, companies });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'خطأ في قراءة ملفات البيانات من الهارد' });
+    }
+});
+
+// 2. حفظ أو تحديث الشركة فورياً على ملفات الهارد دسك
+app.post('/api/developer/company/create', (req, res) => {
+    try {
+        const newCompany = req.body;
+        let fileData = fs.readFileSync(DATA_FILE, 'utf8');
+        let companies = JSON.parse(fileData);
+
+        // التحقق مما إذا كان هناك تعديل لشركة موجودة أو إضافة شركة جديدة
+        const index = companies.findIndex(c => String(c.companyId || c.id) === String(newCompany.oldCompanyId || newCompany.companyId));
+        
+        if (index !== -1) {
+            // تحديث البيانات الحالية
+            companies[index] = { ...companies[index], ...newCompany };
+            delete companies[index].oldCompanyId;
+        } else {
+            // إضافة شركة جديدة
+            companies.push(newCompany);
+        }
+
+        // الكتابة الفورية واللحظية على الهارد دسك
+        fs.writeFileSync(DATA_FILE, JSON.stringify(companies, null, 2), 'utf8');
+        res.json({ success: true, message: 'تم الحفظ وتحديث الملفات على الهارد دسك بنجاح' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'فشل الحفظ على الهارد دسك: ' + err.message });
+    }
+});
+
+// 3. حذف الشركة فورياً من ملفات الهارد دسك
+app.post('/api/developer/company/delete', (req, res) => {
+    try {
+        const { companyId } = req.body;
+        let fileData = fs.readFileSync(DATA_FILE, 'utf8');
+        let companies = JSON.parse(fileData);
+
+        companies = companies.filter(c => String(c.companyId || c.id) !== String(companyId));
+
+        // تحديث الملف على الهارد دسك فوراً
+        fs.writeFileSync(DATA_FILE, JSON.stringify(companies, null, 2), 'utf8');
+        res.json({ success: true, message: 'تم الحذف من ملفات الهارد دسك بنجاح' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'فشل الحذف من الهارد' });
+    }
+});
