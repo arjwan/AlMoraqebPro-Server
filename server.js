@@ -3,148 +3,89 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
 
-// المسارات الأساسية على الهارد دسك
-const ROOT_DATA_DIR = path.join(__dirname, 'data');
-const COMPANIES_DIR = path.join(ROOT_DATA_DIR, 'companies');
-const MASTER_DB_PATH = path.join(__dirname, 'almaqeb_pro.db'); // القاعدة الأم الحالية
+// Middleware لتنظيم استقبال البيانات
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// تهيئة القاعدة الأم وقواعد الـ 10 شركات الفرعية
-function initSystemWithTenDatabases() {
-    if (!fs.existsSync(ROOT_DATA_DIR)) fs.mkdirSync(ROOT_DATA_DIR, { recursive: true });
-    if (!fs.existsSync(COMPANIES_DIR)) fs.mkdirSync(COMPANIES_DIR, { recursive: true });
+// السماح بقراءة الملفات الثابتة (مثل ملفات الـ HTML والـ CSS والـ JS من المجلد الحالي)
+app.use(express.static(__dirname));
 
-    // 1. تهيئة القاعدة الأم إذا لم تكن موجودة
-    let masterData;
-    if (fs.existsSync(MASTER_DB_PATH)) {
-        try {
-            masterData = JSON.parse(fs.readFileSync(MASTER_DB_PATH, 'utf8'));
-        } catch (e) {
-            masterData = { developer: "Mohammed Al-Obeidi", companies: [] };
-        }
-    } else {
-        masterData = { developer: "Mohammed Al-Obeidi", companies: [] };
-    }
+// مسارات ملفات وقواعد البيانات على الهارد دسك
+const DATA_DIR = path.join(__dirname, 'data');
+const COMPANIES_DIR = path.join(DATA_DIR, 'companies');
+const MAIN_DB_PATH = path.join(DATA_DIR, 'almaqeb_pro.db');
 
-    // 2. إنشاء 10 قواعد بيانات فرعية برموز قابلة للتغيير إذا لم تكن موجودة
-    const defaultCompanies = [
-        { id: "ARJ-307", name: "شركة الأرجوان" },
-        { id: "COMP-001", name: "الشركة الفرعية الأولى" },
-        { id: "COMP-002", name: "الشركة الفرعية الثانية" },
-        { id: "COMP-003", name: "الشركة الفرعية الثالثة" },
-        { id: "COMP-004", name: "الشركة الفرعية الرابعة" },
-        { id: "COMP-005", name: "الشركة الفرعية الخامسة" },
-        { id: "COMP-006", name: "الشركة الفرعية السادسة" },
-        { id: "COMP-007", name: "الشركة الفرعية السابعة" },
-        { id: "COMP-008", name: "الشركة الفرعية الثامنة" },
-        { id: "COMP-009", name: "الشركة الفرعية التاسعة" },
-        { id: "COMP-010", name: "الشركة الفرعية العاشرة" }
-    ];
-
-    defaultCompanies.forEach(comp => {
-        const compDir = path.join(COMPANIES_DIR, comp.id);
-        const compDbFile = path.join(compDir, 'database.json');
-
-        if (!fs.existsSync(compDir)) {
-            fs.mkdirSync(compDir, { recursive: true });
-            fs.mkdirSync(path.join(compDir, 'uploads'), { recursive: true });
-        }
-
-        if (!fs.existsSync(compDbFile)) {
-            const initialData = {
-                companyId: comp.id,
-                companyName: comp.name,
-                employees: [],
-                branches: [],
-                shifts: [],
-                settings: {}
-            };
-            fs.writeFileSync(compDbFile, JSON.stringify(initialData, null, 2), 'utf8');
-        }
-
-        // تسجيلها في القاعدة الأم إن لم تكن مسجلة
-        if (!masterData.companies.some(c => c.companyId === comp.id)) {
-            masterData.companies.push({
-                companyId: comp.id,
-                companyName: comp.name,
-                status: "active",
-                createdAt: new Date().toISOString(),
-                dbPath: compDbFile
-            });
-        }
-    });
-
-    // حفظ القاعدة الأم
-    fs.writeFileSync(MASTER_DB_PATH, JSON.stringify(masterData, null, 2), 'utf8');
-    console.log("تم اعتماد القاعدة الأم وإنشاء الـ 10 قواعد الفرعية بنجاح على الهارد دسك.");
+// التأكد من وجود المجلدات عند تشغيل السيرفر
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!fs.existsSync(COMPANIES_DIR)) fs.mkdirSync(COMPANIES_DIR, { recursive: true });
+if (!fs.existsSync(MAIN_DB_PATH)) {
+    fs.writeFileSync(MAIN_DB_PATH, JSON.stringify({ companies: [] }, null, 2));
 }
 
-// تشغيل التهيئة عند بدء السيرفر
-initSystemWithTenDatabases();
-
-// --- مسارات الـ API لإدارة الشركات والقواعد من لوحة المطور ---
-
-// جلب كافة الشركات وقواعدها
+// 1. مسار جلب جميع الشركات المسجلة
 app.get('/api/developer/companies', (req, res) => {
     try {
-        const masterData = JSON.parse(fs.readFileSync(MASTER_DB_PATH, 'utf8'));
-        res.json({ success: true, companies: masterData.companies });
+        const dbData = JSON.parse(fs.readFileSync(MAIN_DB_PATH, 'utf8'));
+        res.json({ success: true, companies: dbData.companies || [] });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(500).json({ success: false, message: 'خطأ في قراءة قاعدة البيانات الرئيسية' });
     }
 });
 
-// تعديل رمز أو اسم الشركة (قابل للتغيير)
-app.put('/api/developer/company/update', (req, res) => {
-    const { oldCompanyId, newCompanyId, newCompanyName } = req.body;
+// 2. مسار إنشاء شركة جديدة وحفظها على الهارد دسك
+app.post('/api/developer/company/create', (req, res) => {
     try {
-        const masterData = JSON.parse(fs.readFileSync(MASTER_DB_PATH, 'utf8'));
-        const company = masterData.companies.find(c => c.companyId === oldCompanyId);
+        const companyData = req.body;
+        const companyId = companyData.companyId || companyData.id;
 
-        if (!company) {
-            return res.status(404).json({ success: false, message: "الشركة غير موجودة." });
+        if (!companyId) {
+            return res.status(400).json({ success: false, message: 'معرف الشركة (ID) مطلوب!' });
         }
 
-        // تحديث البيانات والرمز على الهارد دسك إذا تم تغييره
-        if (newCompanyId && newCompanyId !== oldCompanyId) {
-            const oldDir = path.join(COMPANIES_DIR, oldCompanyId);
-            const newDir = path.join(COMPANIES_DIR, newCompanyId);
-            if (fs.existsSync(oldDir)) {
-                fs.renameSync(oldDir, newDir);
-            }
-            company.companyId = newCompanyId;
-            company.dbPath = path.join(newDir, 'database.json');
+        // قراءة القاعدة الرئيسية
+        let dbData = JSON.parse(fs.readFileSync(MAIN_DB_PATH, 'utf8'));
+        
+        // التحقق مما إذا كانت الشركة موجودة مسبقاً
+        const existingIndex = dbData.companies.findIndex(c => (c.id === companyId || c.companyId === companyId));
+        if (existingIndex !== -1) {
+            dbData.companies[existingIndex] = companyData;
+        } else {
+            dbData.companies.push(companyData);
         }
 
-        if (newCompanyName) {
-            company.companyName = newCompanyName;
-        }
+        // حفظ التحديث في القاعدة الرئيسية
+        fs.writeFileSync(MAIN_DB_PATH, JSON.stringify(dbData, null, 2));
 
-        fs.writeFileSync(MASTER_DB_PATH, JSON.stringify(masterData, null, 2), 'utf8');
-        res.json({ success: true, message: "تم تحديث بيانات الشركة والرمز بنجاح." });
+        // إنشاء مجلد خاص وقاعدة بيانات فرعية لهذه الشركة على الهارد دسك
+        const specificCompanyDir = path.join(COMPANIES_DIR, companyId);
+        if (!fs.existsSync(specificCompanyDir)) {
+            fs.mkdirSync(specificCompanyDir, { recursive: true });
+        }
+        
+        const companyDbPath = path.join(specificCompanyDir, 'database.json');
+        fs.writeFileSync(companyDbPath, JSON.stringify({
+            info: companyData,
+            employees: [],
+            requests: [],
+            attendance: [],
+            settings: {}
+        }, null, 2));
+
+        res.json({ success: true, message: `تم تأسيس وحفظ شركة (${companyId}) وقاعدة بياناتها على الهارد دسك بنجاح!` });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        console.error(error);
+        res.status(500).json({ success: false, message: 'حدث خطأ داخلي أثناء حفظ الشركة' });
     }
 });
 
-// تشغيل أو إيقاف شركة
-app.put('/api/developer/company/status', (req, res) => {
-    const { companyId, status } = req.body; // 'active' أو 'suspended'
-    try {
-        const masterData = JSON.parse(fs.readFileSync(MASTER_DB_PATH, 'utf8'));
-        const company = masterData.companies.find(c => c.companyId === companyId);
-        if (!company) return res.status(404).json({ success: false, message: "الشركة غير موجودة." });
-
-        company.status = status;
-        fs.writeFileSync(MASTER_DB_PATH, JSON.stringify(masterData, null, 2), 'utf8');
-        res.json({ success: true, message: `تم تغيير حالة الشركة ${companyId} إلى (${status}).` });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
+// توجيه صريح لصفحة الإدارة لتجنب مشاكل Cannot GET
+app.get('/admin.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
-const PORT = process.env.PORT || 3000;
+// تشغيل السيرفر
 app.listen(PORT, () => {
-    console.log(`الخادم يعمل على المنفذ: ${PORT}`);
+    console.log(`🚀 السيرفر يعمل الآن بكفاءة على البورت: ${PORT}`);
 });
