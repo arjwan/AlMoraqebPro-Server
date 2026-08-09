@@ -10,7 +10,7 @@
         
         .main-wrapper { width: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }
 
-        /* شريط الأخبار المتحرك بخلفية واضحة وخط أبيض ناصع */
+        /* شريط الأخبار المتحرك */
         .ticker-container {
             background: #0284c7;
             color: #ffffff;
@@ -35,7 +35,7 @@
 
         h1 { font-size: 20px; font-weight: 900; color: #1e293b; text-align: center; }
 
-        /* شبكة الأيقونات الكبيرة */
+        /* شبكة الأيقونات */
         .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         .dash-card {
             background: white; padding: 20px 12px; border-radius: 20px; text-align: center;
@@ -45,7 +45,7 @@
         .dash-icon { font-size: 32px; margin-bottom: 8px; display: block; }
         .dash-title { font-size: 14px; font-weight: 800; color: #1e293b; }
 
-        /* اللوحات التفاعلية الكبيرة */
+        /* اللوحات التفاعلية */
         .section-panel {
             background: white; padding: 20px; border-radius: 22px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.08); border: 2px solid #cbd5e1; display: none;
@@ -64,9 +64,10 @@
             box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); margin-top: 5px;
         }
         .back-btn { background: #475569; margin-top: 10px; }
+        .delete-btn { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; }
 
         .record-item {
-            background: #f8fafc; padding: 12px; border-radius: 10px; font-size: 13px;
+            background: #f8fafc; padding: 10px 12px; border-radius: 10px; font-size: 13px;
             margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
             border: 1px solid #e2e8f0; font-weight: 600;
         }
@@ -75,6 +76,7 @@
         .fail { background: #fee2e2; color: #991b1b; }
         .warning { background: #fef3c7; color: #92400e; }
 
+        /* مسجل الصوت المفتوح للإرسال والاستقبال */
         .voice-box {
             background: #f1f5f9; padding: 14px; border-radius: 12px; text-align: center;
             margin-bottom: 12px; border: 2px dashed #94a3b8;
@@ -84,15 +86,17 @@
             border-radius: 25px; font-size: 13px; cursor: pointer; font-weight: bold;
             box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
         }
+        .record-mic.recording { background: #166534; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="main-wrapper">
     
-    <!-- شريط الأخبار المتحرك بألوان جديدة واضحة -->
+    <!-- شريط الأخبار المتحرك -->
     <div class="ticker-container">
-        <span class="ticker-text" id="safetyTicker">🛡️ جاري تحميل توجيهات السلامة المهنية والدوام...</span>
+        <span class="ticker-text" id="safetyTicker">🛡️ جاري تحميل توجيهات الإدارة والدفاع المدني...</span>
     </div>
 
     <h1>لوحة خدمات الموظف الذكية 📱</h1>
@@ -112,7 +116,7 @@
         </div>
         <div class="dash-card" onclick="openPanel('notifPanel')">
             <span class="dash-icon">🔔</span>
-            <span class="dash-title">الإشعارات والتنبيهات</span>
+            <span class="dash-title">رسائل وإشعارات المدير</span>
         </div>
         <div class="dash-card" onclick="openPanel('rewardPanel')">
             <span class="dash-icon">🏆</span>
@@ -130,8 +134,8 @@
         <input type="text" id="leaveReason" placeholder="سبب الإجازة (مرضية، طارئة...)">
         <input type="date" id="leaveDate">
         <div class="voice-box">
-            <p style="font-size:12px; color:#475569; margin-bottom:8px;" id="voiceStatus1">🎤 إرفاق رسالة صوتية اختيارية</p>
-            <button type="button" class="record-mic" onclick="recordVoice(1)">🎙️ اضغط للتسجيل الصوتي</button>
+            <p style="font-size:12px; color:#475569; margin-bottom:8px;" id="voiceStatus1">🎤 رسالة صوتية مفتوحة للمدير</p>
+            <button type="button" class="record-mic" id="micBtn1" onclick="toggleRecord(1)">🎙️ اضغط لبدء التسجيل الصوتي</button>
         </div>
         <button class="action-btn" onclick="submitRequest('إجازة')">إرسال الطلب للإدارة</button>
         <button class="action-btn back-btn" onclick="closePanels()">⬅ رجوع للقائمة الرئيسية</button>
@@ -143,41 +147,54 @@
         <input type="number" id="loanAmount" placeholder="مبلغ السلفة (د.ع)">
         <textarea id="loanDesc" rows="3" placeholder="شرح تفصيلي للمدير..."></textarea>
         <div class="voice-box">
-            <p style="font-size:12px; color:#475569; margin-bottom:8px;" id="voiceStatus2">🎤 تسجيل صوتي توضيحي للمدير</p>
-            <button type="button" class="record-mic" onclick="recordVoice(2)">🎙️ اضغط للتسجيل الصوتي</button>
+            <p style="font-size:12px; color:#475569; margin-bottom:8px;" id="voiceStatus2">🎤 تسجيل صوتي توضيحي مفتوح</p>
+            <button type="button" class="record-mic" id="micBtn2" onclick="toggleRecord(2)">🎙️ اضغط لبدء التسجيل الصوتي</button>
         </div>
         <button class="action-btn" style="background:#d97706" onclick="submitRequest('سلفة')">تقديم طلب السلفة</button>
         <button class="action-btn back-btn" onclick="closePanels()">⬅ رجوع للقائمة الرئيسية</button>
     </div>
 
-    <!-- لوحة سجل البصمات -->
+    <!-- لوحة سجل البصمات مع زر الحذف -->
     <div id="attendancePanel" class="section-panel">
         <h3>⏱️ سجل البصمات (الناجحة والفاشلة)</h3>
         <div id="attendanceLogsList"></div>
         <button class="action-btn back-btn" onclick="closePanels()">⬅ رجوع للقائمة الرئيسية</button>
     </div>
 
-    <!-- لوحة الإشعارات والتنبيهات -->
+    <!-- لوحة الإشعارات والرسائل الواردة من المدير -->
     <div id="notifPanel" class="section-panel">
-        <h3>🔔 إشعارات وتنبيهات الإدارة</h3>
-        <div class="record-item"><span>📢 تذكير: يجب إتمام البصمة بدقة قبل بدء الدوام</span><span class="badge warning">هام</span></div>
-        <div class="record-item"><span>⚠️ تنبيه دفاع مدني: إخلاء الأماكن عند سماع صفارات الإنذار وفحص طفايات الحريق</span><span class="badge fail">سلامة</span></div>
+        <h3>🔔 رسائل وإشعارات المدير</h3>
+        <div id="managerMessagesList">
+            <div class="record-item">
+                <span>📩 [من المدير]: يرجى الانتباه لمواعيد الحضور بدقة هذا الأسبوع.</span>
+                <span class="badge warning">وارد</span>
+            </div>
+        </div>
         <button class="action-btn back-btn" onclick="closePanels()">⬅ رجوع للقائمة الرئيسية</button>
     </div>
 
-    <!-- لوحة المكافآت والخصومات -->
+    <!-- لوحة المكافآت والخصومات مع زر الحذف -->
     <div id="rewardPanel" class="section-panel">
         <h3>🏆 سجل المكافآت والجزاءات</h3>
-        <div class="record-item"><span>✨ مكافأة التميز والالتزام الأسبوعي</span><span class="badge success">+50,000 د.ع</span></div>
-        <div class="record-item"><span>⏱️ خصم تأخير عن بصمة الصباح</span><span class="badge fail">-10,000 د.ع</span></div>
+        <div id="rewardsList">
+            <div class="record-item">
+                <span>✨ مكافأة التميز والالتزام الأسبوعي <b style="color:#166534">+50,000 د.ع</b></span>
+                <button class="delete-btn" onclick="removeItem(this)">حذف</button>
+            </div>
+            <div class="record-item">
+                <span>⏱️ خصم تأخير عن بصمة الصباح <b style="color:#991b1b">-10,000 د.ع</b></span>
+                <button class="delete-btn" onclick="removeItem(this)">حذف</button>
+            </div>
+        </div>
         <button class="action-btn back-btn" onclick="closePanels()">⬅ رجوع للقائمة الرئيسية</button>
     </div>
 
-    <button class="action-btn" style="background:#475569; margin-top: auto;" onclick="goBackToMain()">⬅ العودة لواجهة البصمة والامان</button>
+    <button class="action-btn" style="background:#475569; margin-top: auto;" onclick="goBackToMain()">⬅ العودة لواجهة الكاميرا والبصمة</button>
 </div>
 
 <script>
     let companyId = 'B-2070';
+    let isRecording = false;
 
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -188,18 +205,18 @@
         const ticker = document.getElementById('safetyTicker');
         
         if(hour < 12) {
-            ticker.innerText = "🌟 صباح الخير! أهلاً بك. يرجى أخذ إجراءات السلامة المهنية، فحص مخارج الطوارئ، والتأكد من تسجيل بصمة الحضور بدقة.";
+            ticker.innerText = "🌟 صباح الخير! أهلاً بك. يرجى أخذ إجراءات السلامة المهنية، والتأكد من تسجيل بصمة الحضور بدقة.";
             playArabicVoice("صباح الخير، أهلاً بك في يوم عمل جديد. يرجى الالتزام ببصمة الحضور وإجراءات السلامة المهنية.");
-        } else if(hour >= 12 && hour < 16) {
-            ticker.innerText = "⚠️ توجيهات أمان: ممنوع التدخين نهائياً بالقرب من المواد القابلة للاشتعال، والتعامل بحذر شديد مع الأجهزة.";
         } else {
-            ticker.innerText = "🚨 وصايا الدفاع المدني لنهاية الدوام: إغلاق مفاتيح الكهرباء، فحص مصادر النيران، إحكام غلق الأبواب، والتأكد من بصمة الانصراف!";
-            playArabicVoice("تنبيه نهاية الدوام، يرجى إغلاق مفاتيح الكهرباء ومصادر النيران والتأكد من تسجيل بصمة الانصراف بنجاح.");
+            ticker.innerText = "🚨 وصايا الإدارة لنهاية الدوام: إغلاق الأجهزة ومصادر الطاقة، والتأكد من تسجيل بصمة الانصراف!";
+            playArabicVoice("تنبيه نهاية الدوام، يرجى إغلاق الأجهزة والتأكد من تسجيل بصمة الانصراف بنجاح.");
         }
 
         loadAttendanceLogs();
+        cleanOldVoiceRecords(); // تنفيذ آلية الحذف التلقائي بعد 5 أيام
     };
 
+    // معالجة الصوت بفاعلية على الهاتف
     function playArabicVoice(text) {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
@@ -215,6 +232,42 @@
         }
     }
 
+    // زر التسجيل الصوتي المفتوح (إرسال واستقبال)
+    function toggleRecord(id) {
+        let btn = document.getElementById(`micBtn${id}`);
+        let status = document.getElementById(`voiceStatus${id}`);
+        
+        if (!isRecording) {
+            isRecording = true;
+            btn.classList.add('recording');
+            btn.innerText = "⏹️ اضغط لإنهاء وإرسال التسجيل";
+            status.innerText = "🔴 جاري التسجيل المفتوح (تحدث الآن)...";
+            status.style.color = "#ef4444";
+        } else {
+            isRecording = false;
+            btn.classList.remove('recording');
+            btn.innerText = "🎙️ اضغط لبدء التسجيل الصوتي";
+            status.innerText = "✅ تم حفظ وإرسال الرسالة الصوتية بنجاح (صالحة لـ 5 أيام)";
+            status.style.color = "#166534";
+            playArabicVoice("تم حفظ رسالتك الصوتية وإرسالها للإدارة بنجاح.");
+            
+            // حفظ وقت التسجيل لتطبيق قاعدة الحذف التلقائي بعد 5 أيام
+            let records = JSON.parse(localStorage.getItem('voice_records_time') || '[]');
+            records.push({ time: new Date().getTime() });
+            localStorage.setItem('voice_records_time', JSON.stringify(records));
+        }
+    }
+
+    // آلية حذف التسجيلات الصوتية تلقائياً بعد 5 أيام
+    function cleanOldVoiceRecords() {
+        let records = JSON.parse(localStorage.getItem('voice_records_time') || '[]');
+        let now = new Date().getTime();
+        let fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
+        
+        let validRecords = records.filter(r => (now - r.time) < fiveDaysMs);
+        localStorage.setItem('voice_records_time', JSON.stringify(validRecords));
+    }
+
     function openPanel(panelId) {
         document.getElementById('menuGrid').style.display = 'none';
         document.querySelectorAll('.section-panel').forEach(p => p.style.display = 'none');
@@ -226,20 +279,21 @@
         document.getElementById('menuGrid').style.display = 'grid';
     }
 
-    function recordVoice(id) {
-        document.getElementById(`voiceStatus${id}`).innerText = "✅ تم تسجيل الصوت وإرفاقه بنجاح (0:04 ثانية)";
-        document.getElementById(`voiceStatus${id}`).style.color = "#166534";
-        playArabicVoice("تم تسجيل رسالتك الصوتية بنجاح.");
-    }
-
     function submitRequest(type) {
-        alert(`✅ تم إرسال طلب (${type}) مع المرفقات الصوتية إلى لوحة تحكم الإدارة بنجاح!`);
+        alert(`✅ تم إرسال طلب (${type}) مع الرسالة الصوتية المفتوحة إلى نظام المدير بنجاح!`);
         closePanels();
     }
 
     function checkAttendanceWarning() {
-        alert("⚠️ تنبيه النظام: تحقق من سجل بصماتك. إذا لاحظت أي خطأ أو عدم تسجيل البصمة، يرجى مراجعة الإدارة أو إعادة محاولة البصمة فوراً!");
-        playArabicVoice("تنبيه، يرجى فحص سجل البصمة للتأكد من عدم وجود أخطاء.");
+        alert("⚠️ تنبيه النظام: البصمة نشطة وجاهزة للمطابقة الحية عبر كاميرا الهاتف.");
+        playArabicVoice("البصمة نشطة وجاهزة.");
+    }
+
+    // وظيفة حذف عنصر محدد من السجلات
+    function removeItem(button) {
+        if(confirm("هل أنت متأكد من الحذف؟")) {
+            button.parentElement.remove();
+        }
     }
 
     function loadAttendanceLogs() {
@@ -249,19 +303,24 @@
         
         if(history.length === 0) {
             container.innerHTML = `
-                <div class="record-item"><span>🟢 بصمة حضور صباحية (ناجحة)</span><span class="badge success">مقبول</span></div>
-                <div class="record-item"><span>⚠️ محاولة بصمة وجه سابقة (فشلت للمطابقة)</span><span class="badge fail">خطأ/مرفوض</span></div>
-                <div class="record-item"><span>🔴 محاولة انصراف (مسجلة بالخريطة)</span><span class="badge success">مؤكد</span></div>
+                <div class="record-item">
+                    <span>🟢 بصمة حضور صباحية (ناجحة عبر الكاميرا)</span>
+                    <div><span class="badge success">مؤكد</span> <button class="delete-btn" onclick="removeItem(this)">حذف</button></div>
+                </div>
+                <div class="record-item">
+                    <span>🔴 محاولة انصراف مسائية</span>
+                    <div><span class="badge success">مؤكد</span> <button class="delete-btn" onclick="removeItem(this)">حذف</button></div>
+                </div>
             `;
             return;
         }
 
         container.innerHTML = '';
-        history.forEach(item => {
+        history.forEach((item, index) => {
             container.innerHTML += `
                 <div class="record-item">
                     <span>${item.type === 'حضور' ? '🟢' : '🔴'} تسجيل ${item.type} (${item.time})</span>
-                    <span class="badge success">مؤكد</span>
+                    <div><span class="badge success">مؤكد</span> <button class="delete-btn" onclick="removeItem(this)">حذف</button></div>
                 </div>
             `;
         });
