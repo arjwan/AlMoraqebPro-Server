@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - البوابة المركزية</title>
+    <title>المراقب برو - البوابة المركزية المشحونة بالحيوية</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,8 +13,8 @@
         }
 
         body {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
-            color: #0f172a;
+            background: linear-gradient(135deg, #fef08a 0%, #bae6fd 50%, #c7d2fe 100%);
+            color: #1e293b;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -23,15 +23,15 @@
         }
 
         .portal-container {
-            background: rgba(255, 255, 255, 0.88);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(14, 165, 233, 0.3);
-            padding: 35px;
-            border-radius: 28px;
-            box-shadow: 0 20px 45px rgba(14, 165, 233, 0.15);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            padding: 30px;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px rgba(14, 116, 144, 0.2);
             width: 100%;
-            max-width: 900px;
+            max-width: 950px;
             position: relative;
             overflow: hidden;
         }
@@ -43,13 +43,13 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(240, 249, 255, 0.9);
+            background: rgba(254, 240, 138, 0.6);
             padding: 6px 14px;
             border-radius: 30px;
-            border: 1px solid rgba(14, 165, 233, 0.2);
+            border: 1px solid rgba(202, 138, 4, 0.3);
             font-size: 11px;
-            font-weight: 600;
-            color: #0369a1;
+            font-weight: 700;
+            color: #854d0e;
         }
 
         .status-dot {
@@ -62,38 +62,41 @@
 
         .portal-header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .portal-header h1 {
             color: #0284c7;
-            font-size: 26px;
-            font-weight: 800;
-            margin-bottom: 6px;
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 4px;
+            text-shadow: 0 2px 4px rgba(2, 132, 199, 0.1);
         }
 
         .portal-header p {
-            color: #475569;
-            font-size: 14px;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
         }
 
         .switcher {
             display: flex;
-            background: #e2e8f0;
+            background: #f1f5f9;
             padding: 6px;
-            border-radius: 16px;
-            margin-bottom: 25px;
+            border-radius: 18px;
+            margin-bottom: 20px;
             gap: 6px;
+            border: 1px solid #e2e8f0;
         }
 
         .switch-btn {
             flex: 1;
-            padding: 12px;
+            padding: 11px;
             background: transparent;
-            color: #475569;
+            color: #64748b;
             border: none;
-            border-radius: 12px;
-            font-size: 14px;
+            border-radius: 14px;
+            font-size: 13px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -101,9 +104,9 @@
         }
 
         .switch-btn.active {
-            background: #0284c7;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
             color: #ffffff;
-            box-shadow: 0 6px 15px rgba(2, 132, 199, 0.3);
+            box-shadow: 0 6px 15px rgba(2, 132, 199, 0.35);
         }
 
         .form-section {
@@ -123,7 +126,7 @@
         .input-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
         }
 
         .input-group.full {
@@ -131,18 +134,18 @@
         }
 
         label {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             color: #334155;
         }
 
         input, select {
             width: 100%;
-            padding: 12px 14px;
-            border: 2px solid #cbd5e1;
-            background: #ffffff;
+            padding: 11px 14px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
             color: #0f172a;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 14px;
             outline: none;
             transition: all 0.3s;
@@ -150,13 +153,14 @@
 
         input:focus, select:focus {
             border-color: #0284c7;
+            background: #ffffff;
             box-shadow: 0 0 12px rgba(2, 132, 199, 0.2);
         }
 
         .media-box {
             grid-column: span 2;
-            background: #f8fafc;
-            border: 2px dashed #94a3b8;
+            background: #f0fdf4;
+            border: 2px dashed #86efac;
             padding: 15px;
             border-radius: 16px;
             text-align: center;
@@ -166,46 +170,50 @@
             background: #0284c7;
             color: white;
             border: none;
-            padding: 9px 18px;
+            padding: 8px 16px;
             border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         video, canvas {
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
             border-radius: 50%;
             object-fit: cover;
             display: none;
-            margin: 10px auto;
-            border: 3px solid #0284c7;
+            margin: 8px auto;
+            border: 3px solid #10b981;
         }
 
         .preview-img {
-            width: 80px;
-            height: 80px;
+            width: 75px;
+            height: 75px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #10b981;
             display: none;
-            margin: 8px auto 0;
+            margin: 6px auto 0;
         }
 
         .submit-btn {
             grid-column: span 2;
             width: 100%;
-            padding: 14px;
+            padding: 13px;
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 15px;
             font-weight: 800;
             cursor: pointer;
-            margin-top: 5px;
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
         }
 
         .alert-box {
@@ -216,16 +224,56 @@
             text-align: center;
             font-weight: bold;
             font-size: 13px;
-            margin-top: 8px;
+            margin-top: 5px;
         }
 
         .alert-success { background: rgba(16, 185, 129, 0.15); color: #047857; border: 1px solid #10b981; }
         .alert-error { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border: 1px solid #ef4444; }
 
+        /* تصميم قسم مشغل IPTVnator المدمج */
+        .iptv-container {
+            grid-column: span 2;
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 15px;
+            color: #f8fafc;
+            margin-top: 5px;
+        }
+        .iptv-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+        .iptv-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .iptv-controls input {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            flex: 1;
+        }
+        .iptv-player-screen {
+            width: 100%;
+            height: 180px;
+            background: #000;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
         .developer-footer {
-            margin-top: 25px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(14, 165, 233, 0.2);
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(203, 213, 225, 0.6);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -237,7 +285,7 @@
 
         @media (max-width: 768px) {
             .grid-layout { grid-template-columns: 1fr; }
-            .input-group.full, .media-box, .submit-btn, .alert-box { grid-column: span 1; }
+            .input-group.full, .media-box, .submit-btn, .alert-box, .iptv-container { grid-column: span 1; }
         }
     </style>
 </head>
@@ -250,16 +298,17 @@
         </div>
 
         <div class="portal-header">
-            <h1>🛡️ المراقب برو</h1>
-            <p>منظومة الإدارة والتحكم الذكي المتكاملة</p>
+            <h1>☀️ المراقب برو المشرق</h1>
+            <p>منظومة الإدارة المتكاملة مع مشغل الوسائط الذكي</p>
         </div>
 
         <div class="switcher">
             <button type="button" class="switch-btn active" id="btnLogTab" onclick="changeView('login')">🔐 تسجيل الدخول</button>
-            <button type="button" class="switch-btn" id="btnRegTab" onclick="changeView('register')">📝 إنشاء حساب موظف</button>
+            <button type="button" class="switch-btn" id="btnRegTab" onclick="changeView('register')">📝 إنشاء موظف</button>
+            <button type="button" class="switch-btn" id="btnIptvTab" onclick="changeView('iptv')">📺 مشغل IPTVnator</button>
         </div>
 
-        <!-- 1. نموذج تسجيل الدخول الفعلي -->
+        <!-- 1. نموذج تسجيل الدخول -->
         <div id="loginView" class="form-section active">
             <form onsubmit="executeLogin(event)" class="grid-layout">
                 <div class="input-group full">
@@ -279,7 +328,7 @@
             </form>
         </div>
 
-        <!-- 2. نموذج تسجيل موظف جديد الفعلي -->
+        <!-- 2. نموذج تسجيل موظف جديد -->
         <div id="registerView" class="form-section">
             <form onsubmit="executeRegister(event)" class="grid-layout">
                 <div class="input-group">
@@ -303,15 +352,15 @@
                     <input type="number" id="regSalary" placeholder="الراتب الأساسي" required>
                 </div>
                 <div class="input-group">
-                    <label>الاختصاص (العنوان الوظيفي):</label>
-                    <input type="text" id="regSpec" placeholder="مثال: مطور برمجيات" required>
+                    <label>الاختصاص:</label>
+                    <input type="text" id="regSpec" placeholder="العنوان الوظيفي" required>
                 </div>
                 <div class="input-group">
-                    <label>مكان العمل (الفرع):</label>
+                    <label>مكان العمل:</label>
                     <input type="text" id="regWork" placeholder="الفرع أو القسم" required>
                 </div>
                 <div class="input-group">
-                    <label>اسم المستخدم الجديد:</label>
+                    <label>اسم المستخدم:</label>
                     <input type="text" id="regUsername" placeholder="اسم المستخدم" required>
                 </div>
                 <div class="input-group">
@@ -320,23 +369,41 @@
                 </div>
 
                 <div class="media-box">
-                    <label style="display:block; margin-bottom: 8px;">بصمة الوجه والتحقق المكاني (GPS):</label>
-                    <button type="button" class="action-btn" onclick="openCam()">📷 تشغيل كاميرا التحقق</button>
+                    <label style="display:block; margin-bottom: 6px; color:#065f46;">بصمة الوجه والتحقق المكاني (GPS):</label>
+                    <button type="button" class="action-btn" onclick="openCam()">📷 تشغيل الكاميرا</button>
                     <video id="vStream" autoplay playsinline></video>
-                    <button type="button" id="snapTrigger" class="action-btn" style="background:#10b981; display:none; margin-top:8px;" onclick="captureFace()">📸 التقاط بصمة الوجه</button>
+                    <button type="button" id="snapTrigger" class="action-btn" style="background:#10b981; display:none; margin-top:6px;" onclick="captureFace()">📸 التقاط بصمة الوجه</button>
                     <canvas id="cCanvas"></canvas>
-                    <img id="imgPreview" class="preview-img" alt="معاينة البصمة">
-                    <div id="gpsText" style="font-size:12px; color:#047857; margin-top:8px; font-weight:bold;">📍 جاري تحديد الموقع الجغرافي...</div>
+                    <img id="imgPreview" class="preview-img" alt="معاينة">
+                    <div id="gpsText" style="font-size:11px; color:#047857; margin-top:6px; font-weight:bold;">📍 جاري تحديد الموقع...</div>
                 </div>
 
                 <button type="submit" class="submit-btn">💾 حفظ نهائي وترحيل البيانات</button>
-                <div id="regSuccess" class="alert-box alert-success">✅ تم إنشاء الحساب بنجاح والتحويل إلى صفحة الدخول!</div>
+                <div id="regSuccess" class="alert-box alert-success">✅ تم إنشاء الحساب بنجاح والتحويل لدخول النظام!</div>
             </form>
+        </div>
+
+        <!-- 3. مشغل IPTVnator المدمج -->
+        <div id="iptvView" class="form-section">
+            <div class="iptv-container">
+                <div class="iptv-header">
+                    <span>📡 مشغل IPTVnator الذكي المدمج</span>
+                    <span style="font-size: 11px; color: #10b981;">● جاهز للتشغيل</span>
+                </div>
+                <div class="iptv-controls">
+                    <input type="text" id="m3uInput" placeholder="أدخل رابط قائمة M3U المباشر هنا...">
+                    <button type="button" class="action-btn" onclick="loadM3uStream()">▶ تحميل وتشغيل</button>
+                </div>
+                <video id="iptvPlayer" class="iptv-player-screen" controls playsinline></video>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; text-align: center;">
+                    يدعم تشغيل روابط البث المباشر وقوائم القنوات بصيغة M3U / MP4 / HLS فوراً.
+                </div>
+            </div>
         </div>
 
         <div class="developer-footer">
             <div>جميع الحقوق محفوظة © 2026 - <strong>المراقب برو</strong></div>
-            <div>الإصدار: <span style="color: #0284c7;">v3.5 Pro</span></div>
+            <div>الإصدار المشرق: <span style="color: #0284c7;">v3.6 Pro</span></div>
         </div>
     </div>
 
@@ -346,22 +413,26 @@
         let activeStream = null;
 
         function changeView(target) {
-            const loginV = document.getElementById('loginView');
-            const regV = document.getElementById('registerView');
-            const btnL = document.getElementById('btnLogTab');
-            const btnR = document.getElementById('btnRegTab');
+            const views = {
+                login: document.getElementById('loginView'),
+                register: document.getElementById('registerView'),
+                iptv: document.getElementById('iptvView')
+            };
+            const btns = {
+                login: document.getElementById('btnLogTab'),
+                register: document.getElementById('btnRegTab'),
+                iptv: document.getElementById('btnIptvTab')
+            };
 
-            if(target === 'login') {
-                loginV.classList.add('active');
-                regV.classList.remove('active');
-                btnL.classList.add('active');
-                btnR.classList.remove('active');
-            } else {
-                loginV.classList.remove('active');
-                regV.classList.add('active');
-                btnL.classList.remove('active');
-                btnR.classList.add('active');
-            }
+            Object.keys(views).forEach(k => {
+                if(k === target) {
+                    views[k].classList.add('active');
+                    btns[k].classList.add('active');
+                } else {
+                    views[k].classList.remove('active');
+                    btns[k].classList.remove('active');
+                }
+            });
         }
 
         async function pingServer() {
@@ -377,7 +448,7 @@
             } catch(e) {
                 dot.style.backgroundColor = '#ef4444';
                 dot.style.boxShadow = '0 0 8px #ef4444';
-                txt.innerText = 'السيرفر المحلي متوقف';
+                txt.innerText = 'السيرفر متوقف محلياً';
             }
         }
         setInterval(pingServer, 10000);
@@ -408,9 +479,9 @@
             const video = document.getElementById('vStream');
             const canvas = document.getElementById('cCanvas');
             const preview = document.getElementById('imgPreview');
-            canvas.width = 120; canvas.height = 120;
+            canvas.width = 110; canvas.height = 110;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, 120, 120);
+            ctx.drawImage(video, 0, 0, 110, 110);
             capturedImage = canvas.toDataURL('image/jpeg', 0.6);
             preview.src = capturedImage;
             preview.style.display = 'block';
@@ -420,6 +491,20 @@
             }
             video.style.display = 'none';
             document.getElementById('snapTrigger').style.display = 'none';
+        }
+
+        // مشغل IPTVnator الداخلي
+        function loadM3uStream() {
+            const url = document.getElementById('m3uInput').value.trim();
+            const player = document.getElementById('iptvPlayer');
+            if(!url) {
+                alert('⚠️ يرجى إدخال رابط بث صحيح أولاً.');
+                return;
+            }
+            player.src = url;
+            player.play().catch(err => {
+                alert('⚠️ تعذر تشغيل الرابط المباشر. قد يتطلب مشغلاً خارجيياً أو أن البث غير مدعوم مباشرة في المتصفح.');
+            });
         }
 
         window.onload = function() {
@@ -438,7 +523,6 @@
             }
         };
 
-        // دالة تنفيذ الدخول وربط التوجيه الفعلي لصفحة المدير أو الموظف (attachment)
         function executeLogin(e) {
             e.preventDefault();
             const comp = document.getElementById('logComp').value.trim();
@@ -448,21 +532,18 @@
 
             localStorage.setItem('activeCompanyId', comp);
 
-            // التحقق من حساب المدير الرئيسي المعتمد
             if((user === 'admin' || user === 'مدير') && pass === 'admin123') {
                 localStorage.setItem('userRole', 'admin');
                 window.location.href = `admin.html?company=${encodeURIComponent(comp)}`;
                 return;
             }
 
-            // التحقق من قاعدة بيانات الموظفين الفعلية المخزنة محلياً وسيرفرياً
             let employees = JSON.parse(localStorage.getItem(`company_employees_${comp}`) || '[]');
             let found = employees.find(emp => emp.username === user && emp.password === pass);
 
             if(found) {
                 localStorage.setItem('userRole', 'employee');
                 localStorage.setItem('currentEmployee', JSON.stringify(found));
-                // التوجيه الفعلي إلى صفحة المرفقات الخاصة بالهاتف/الموظف
                 window.location.href = `attachment.html?company=${encodeURIComponent(comp)}&user=${encodeURIComponent(user)}`;
                 return;
             }
@@ -470,7 +551,6 @@
             errBox.style.display = 'block';
         }
 
-        // دالة تسجيل موظف جديد وترحيله الفعلي للبيانات
         async function executeRegister(e) {
             e.preventDefault();
             const comp = document.getElementById('regComp').value.trim();
@@ -491,37 +571,27 @@
             };
 
             try {
-                let res = await fetch('/api/employee/register', {
+                await fetch('/api/employee/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newEmp)
                 });
-                
-                let storageKey = `company_employees_${comp}`;
-                let list = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                list.push(newEmp);
-                localStorage.setItem(storageKey, JSON.stringify(list));
-
-                document.getElementById('regSuccess').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('regSuccess').style.display = 'none';
-                    document.querySelector('#registerView form').reset();
-                    document.getElementById('imgPreview').style.display = 'none';
-                    changeView('login');
-                }, 1800);
             } catch(err) {
-                // حفظ محلي احتياطي في حال تأخر الاستجابة الشبكية للحفاظ على استمرارية العمل
-                let storageKey = `company_employees_${comp}`;
-                let list = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                list.push(newEmp);
-                localStorage.setItem(storageKey, JSON.stringify(list));
-
-                document.getElementById('regSuccess').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('regSuccess').style.display = 'none';
-                    changeView('login');
-                }, 1800);
+                // حفظ محلي احتياطي
             }
+
+            let storageKey = `company_employees_${comp}`;
+            let list = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            list.push(newEmp);
+            localStorage.setItem(storageKey, JSON.stringify(list));
+
+            document.getElementById('regSuccess').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('regSuccess').style.display = 'none';
+                document.querySelector('#registerView form').reset();
+                document.getElementById('imgPreview').style.display = 'none';
+                changeView('login');
+            }, 1800);
         }
     </script>
 </body>
