@@ -22,6 +22,28 @@
             align-items: center;
         }
 
+        /* مؤشر الاتصال بالسيرفر */
+        #connection-status {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+        }
+        #status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #ef4444;
+            box-shadow: 0 0 5px #ef4444;
+        }
+
         .login-card {
             width: 100%;
             max-width: 420px;
@@ -29,6 +51,7 @@
             padding: 35px 30px;
             border-radius: 24px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            margin-top: 30px;
         }
 
         .header-title {
@@ -117,6 +140,12 @@
 </head>
 <body>
 
+    <!-- مؤشر الاتصال الذكي -->
+    <div id="connection-status">
+        <div id="status-dot"></div>
+        <span id="status-text" style="color: white; font-size: 11px; font-weight: bold;">جاري الفحص...</span>
+    </div>
+
     <div class="login-card">
         <div class="header-title">
             <h2>🔐 تسجيل دخول الموظف</h2>
@@ -148,8 +177,29 @@
     </div>
 
     <script>
+        // فحص الاتصال التلقائي بالسيرفر
+        async function checkConnection() {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            try {
+                const response = await fetch('/api/ping', { cache: 'no-cache' });
+                if (response.ok) {
+                    dot.style.backgroundColor = '#22c55e'; // أخضر (متصل)
+                    dot.style.boxShadow = '0 0 8px #22c55e';
+                    text.innerText = 'متصل';
+                } else {
+                    throw new Error();
+                }
+            } catch (error) {
+                dot.style.backgroundColor = '#ef4444'; // أحمر (غير متصل)
+                dot.style.boxShadow = '0 0 5px #ef4444';
+                text.innerText = 'غير متصل';
+            }
+        }
+        setInterval(checkConnection, 5000);
+        checkConnection();
+
         window.onload = function() {
-            // استرجاع رمز الشركة تلقائياً من الرابط أو التخزين إن وجد لتسهيل الاستخدام من الهاتف
             const urlParams = new URLSearchParams(window.location.search);
             const compId = urlParams.get('company') || localStorage.getItem('activeCompanyId');
             if (compId) {
@@ -164,7 +214,6 @@
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
 
-            // 1. محاولة التحقق عبر السيرفر أولاً
             try {
                 const response = await fetch('/api/employee/login', {
                     method: 'POST',
@@ -185,7 +234,6 @@
                 console.log("السيرفر غير متصل، جاري التبديل للتحقق المحلي...");
             }
 
-            // 2. التحقق الاحتياطي المحلي من الذاكرة (لضمان عمل الهاتف دون مشاكل انقطاع الإنترنت أو السيرفر)
             const storageKey = `company_employees_${compId}`;
             const localEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
             

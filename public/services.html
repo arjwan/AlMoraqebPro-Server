@@ -3,217 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - خدمات الموظف المتكاملة</title>
+    <title>المراقب برو - التسجيل الآمن والذكي</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; min-height: 100vh; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .header-card { background: #1e293b; padding: 20px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border: 1px solid #334155; }
-        .header-card h2 { color: #38bdf8; font-size: 18px; }
-        .btn-logout { background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .card { background: #1e293b; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 100%; max-width: 520px; border: 1px solid #334155; position: relative; }
         
-        .status-banner { background: #d97706; color: #fff; padding: 12px; border-radius: 14px; margin-bottom: 20px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        /* مؤشر الاتصال بالسيرفر */
+        #connection-status { position: absolute; top: 15px; left: 15px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 20px; border: 1px solid #334155; }
+        #status-dot { width: 10px; height: 10px; border-radius: 50%; background-color: #ef4444; box-shadow: 0 0 5px #ef4444; }
         
-        .service-card { background: #1e293b; padding: 20px; border-radius: 18px; margin-bottom: 15px; border: 1px solid #334155; cursor: pointer; transition: 0.2s; text-align: center; }
-        .service-card:hover { border-color: #38bdf8; transform: translateY(-2px); }
-        .service-card h3 { color: #38bdf8; font-size: 18px; margin: 10px 0 5px; }
-        .service-card p { color: #94a3b8; font-size: 13px; }
-        .service-icon { font-size: 28px; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; padding: 20px; z-index: 1000; }
-        .modal-content { background: #1e293b; padding: 25px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid #334155; }
-        .modal-content h3 { color: #38bdf8; margin-bottom: 15px; font-size: 18px; text-align: center; }
-        .form-group { margin-bottom: 12px; }
+        h2 { color: #38bdf8; font-size: 22px; margin-bottom: 20px; text-align: center; font-weight: 800; }
+        .form-group { margin-bottom: 15px; }
         label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #cbd5e1; }
-        input, textarea, select { width: 100%; padding: 10px; border: 2px solid #334155; background: #0f172a; color: #fff; border-radius: 8px; font-size: 14px; outline: none; }
-        .modal-btns { display: flex; gap: 10px; margin-top: 15px; }
-        .btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .btn-confirm { background: #10b981; color: white; }
-        .btn-close { background: #475569; color: white; }
+        input { width: 100%; padding: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; border-radius: 10px; font-size: 14px; outline: none; }
+        input:focus { border-color: #38bdf8; }
+        
+        .capture-section { background: #0f172a; border: 2px dashed #475569; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
+        video, canvas { width: 100%; max-height: 180px; border-radius: 8px; background: #000; object-fit: cover; display: none; margin-top: 10px; }
+        .snapshot-preview { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; display: none; margin: 10px auto 0; }
+        .btn-cam { background: #0284c7; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; margin-top: 5px; }
+        .gps-status { font-size: 12px; color: #34d399; margin-top: 5px; font-weight: bold; }
+        .btn { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.2s; }
+        .btn:hover { background: #059669; }
+        #successMsg { display: none; margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- رأس الصفحة -->
-        <div class="header-card">
-            <div>
-                <h2>🛡️ خدمات الموظف</h2>
-                <span id="employeeNameDisplay" style="font-size: 13px; color: #94a3b8;">(محمد الموظف)</span>
+    <div class="card">
+        <!-- مؤشر الحالة -->
+        <div id="connection-status">
+            <div id="status-dot"></div>
+            <span id="status-text" style="font-size: 10px; color: #f8fafc;">جاري الاتصال...</span>
+        </div>
+
+        <h2>🛡️ تسجيل موظف (نظام منع التكرار الذكي)</h2>
+        
+        <div class="form-group">
+            <label>رمز الشركة المرتبط (معرّف الشركة):</label>
+            <input type="text" id="companyIdInput" placeholder="أدخل رمز الشركة هنا" style="color: #38bdf8; font-weight: bold;">
+        </div>
+
+        <div class="form-group">
+            <label>الاسم الكامل (الثلاثي):</label>
+            <input type="text" id="empName" placeholder="أدخل الاسم الكامل">
+        </div>
+        
+        <div class="form-group">
+            <label>البريد الإلكتروني:</label>
+            <input type="email" id="empEmail" placeholder="name@company.com">
+        </div>
+
+        <div class="form-group">
+            <label>العنوان الوظيفي ومكان العمل:</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="empSpecialty" placeholder="الاختصاص" style="flex:1;">
+                <input type="text" id="empWorkplace" placeholder="مكان العمل" style="flex:1;">
             </div>
-            <button class="btn-logout" onclick="logout()">تسجيل الخروج</button>
         </div>
 
-        <!-- شريط حالة آخر طلب -->
-        <div id="lastRequestBanner" class="status-banner">
-            🔔 حالة آخر طلب: <span id="lastRequestText">جاري الاتصال بالسيرفر...</span>
+        <div class="form-group">
+            <label>اسم المستخدم وكلمة المرور:</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="empUsername" placeholder="اسم المستخدم" style="flex:1;">
+                <input type="password" id="empPassword" placeholder="كلمة المرور" style="flex:1;">
+            </div>
         </div>
 
-        <!-- قائمة الخدمات كاملة -->
-        <div class="service-card" onclick="openModal('loanModal')">
-            <div class="service-icon">💳</div>
-            <h3>طلب سلفة</h3>
-            <p>تقديم طلب سلفة مالية جديدة ومتابعة حالة الموافقة</p>
+        <div class="capture-section">
+            <label style="margin-bottom: 8px;">بصمة الوجه والموقع الجغرافي (GPS):</label>
+            <button type="button" class="btn-cam" onclick="startCamera()">📷 فتح الكاميرا للصورة</button>
+            <video id="videoElement" autoplay playsinline></video>
+            <button type="button" id="snapBtn" class="btn-cam" style="background: #10b981; display: none;" onclick="takeSnapshot()">📸 التقاط</button>
+            <canvas id="canvasElement"></canvas>
+            <img id="snapshotPreview" class="snapshot-preview" alt="صورة">
+            <div id="gpsStatus" class="gps-status">📍 جاري رصد الـ GPS والمعرف الفريد للجهاز...</div>
         </div>
 
-        <div class="service-card" onclick="openModal('vacationModal')">
-            <div class="service-icon">🏖️</div>
-            <h3>طلب إجازة</h3>
-            <p>تقديم طلب إجازة رسمية ومتابعة الرد الفوري</p>
-        </div>
-
-        <div class="service-card" onclick="openModal('notificationsModal')">
-            <div class="service-icon">🎁</div>
-            <h3>الإشعارات والمكافآت</h3>
-            <p>استعراض قرارات المدير والردود على طلباتك السابقة</p>
-        </div>
-
-        <div class="service-card" onclick="openModal('absencesModal')">
-            <div class="service-icon">❌</div>
-            <h3>سجل الغيابات</h3>
-            <p>مراجعة أيام الغياب والإنذارات المرتبطة بالدوام</p>
-        </div>
-
-        <div class="service-card" onclick="openModal('rejectedModal')">
-            <div class="service-icon">⚠️</div>
-            <h3>البصمات المرفوضة</h3>
-            <p>عرض محاولات الحضور المرفوضة بسبب النطاق أو الوجه</p>
-        </div>
-
-        <div class="service-card" onclick="openModal('attendanceModal')">
-            <div class="service-icon">📊</div>
-            <h3>سجل الحضور اليومي</h3>
-            <p>متابعة أوقات الدخول والخروج وساعات العمل الفعلي</p>
-        </div>
+        <button type="button" class="btn" onclick="registerWithStrictValidation()">💾 حفظ نهائي ومزامنة مع النظام</button>
+        <div id="successMsg">✅ تم التحقق والتسجيل بنجاح! جاري تحويلك...</div>
     </div>
-
-    <!-- نافذة طلب سلفة -->
-    <div id="loanModal" class="modal">
-        <div class="modal-content">
-            <h3>💳 تقديم طلب سلفة مالية</h3>
-            <div class="form-group">
-                <label>مبلغ السلفة المطلوبة:</label>
-                <input type="number" id="loanAmount" placeholder="مثلاً: 100000">
-            </div>
-            <div class="form-group">
-                <label>ملاحظات إضافية للمدير:</label>
-                <textarea id="loanNotes" rows="3" placeholder="سبب السلفة..."></textarea>
-            </div>
-            <div class="modal-btns">
-                <button class="btn btn-close" onclick="closeModal('loanModal')">إلغاء</button>
-                <button class="btn btn-confirm" onclick="submitServerRequest('طلب سلفة مالية', document.getElementById('loanAmount').value, document.getElementById('loanNotes').value, 'loanModal')">إرسال للمدير</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- نافذة طلب إجازة -->
-    <div id="vacationModal" class="modal">
-        <div class="modal-content">
-            <h3>🏖️ تقديم طلب إجازة</h3>
-            <div class="form-group">
-                <label>نوع الإجازة:</label>
-                <select id="vacationType">
-                    <option value="إجازة اعتيادية">إجازة اعتيادية</option>
-                    <option value="إجازة مرضية">إجازة مرضية</option>
-                    <option value="إجازة طارئة">إجازة طارئة</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>سبب أو ملاحظات الإجازة:</label>
-                <textarea id="vacationNotes" rows="3" placeholder="التفاصيل..."></textarea>
-            </div>
-            <div class="modal-btns">
-                <button class="btn btn-close" onclick="closeModal('vacationModal')">إلغاء</button>
-                <button class="btn btn-confirm" onclick="submitServerRequest('طلب إجازة', document.getElementById('vacationType').value, document.getElementById('vacationNotes').value, 'vacationModal')">إرسال للمدير</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- نوافذ عرض السجلات وباقي الخدمات -->
-    <div id="notificationsModal" class="modal"><div class="modal-content"><h3>🎁 الإشعارات والمكافآت</h3><div style="font-size:13px; color:#cbd5e1; text-align:center; padding:15px;">لا توجد إشعارات جديدة حالياً.</div><div class="modal-btns"><button class="btn btn-close" onclick="closeModal('notificationsModal')">إغلاق</button></div></div></div>
-    <div id="absencesModal" class="modal"><div class="modal-content"><h3>❌ سجل الغيابات</h3><p style="font-size:13px; color:#34d399; text-align:center; padding:15px;">سجل نظيف: لا توجد أي غيابات مسجلة.</p><div class="modal-btns"><button class="btn btn-close" onclick="closeModal('absencesModal')">إغلاق</button></div></div></div>
-    <div id="rejectedModal" class="modal"><div class="modal-content"><h3>⚠️ البصمات المرفوضة</h3><p style="font-size:13px; color:#34d399; text-align:center; padding:15px;">لا توجد بصمات مرفوضة.</p><div class="modal-btns"><button class="btn btn-close" onclick="closeModal('rejectedModal')">إغلاق</button></div></div></div>
-    <div id="attendanceModal" class="modal"><div class="modal-content"><h3>📊 سجل الحضور اليومي</h3><p style="font-size:13px; color:#cbd5e1; text-align:center; padding:15px;">تم رصد الحضور بنجاح طيلة الأيام الحالية.</p><div class="modal-btns"><button class="btn btn-close" onclick="closeModal('attendanceModal')">إغلاق</button></div></div></div>
 
     <script>
-        let currentCompanyId = 'B-2026';
-        let currentUsername = 'محمد الموظف';
-        
-        const SERVER_BASE = window.location.origin.includes('onrender.com') 
-            ? window.location.origin 
-            : 'https://almaqebpro-server.onrender.com';
+        let compressedPhotoData = "";
+        let currentGPSLocation = { latitude: 33.3152, longitude: 44.3661 };
+        let deviceUniqueId = "";
+
+        // فحص الاتصال التلقائي بالسيرفر
+        async function checkConnection() {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            try {
+                const response = await fetch('/api/ping', { method: 'HEAD', cache: 'no-cache' });
+                if (response.ok) {
+                    dot.style.backgroundColor = '#22c55e';
+                    dot.style.boxShadow = '0 0 8px #22c55e';
+                    text.innerText = 'متصل';
+                } else {
+                    throw new Error();
+                }
+            } catch (error) {
+                dot.style.backgroundColor = '#ef4444';
+                dot.style.boxShadow = '0 0 5px #ef4444';
+                text.innerText = 'غير متصل';
+            }
+        }
+        setInterval(checkConnection, 10000);
+        checkConnection();
+
+        function getOrCreateDeviceID() {
+            let id = localStorage.getItem('system_device_fingerprint');
+            if (!id) {
+                id = 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase() + '-' + Date.now();
+                localStorage.setItem('system_device_fingerprint', id);
+            }
+            return id;
+        }
+
+        function startCamera() {
+            const video = document.getElementById('videoElement');
+            const snapBtn = document.getElementById('snapBtn');
+            navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false })
+                .then(stream => {
+                    video.style.display = 'block';
+                    video.srcObject = stream;
+                    snapBtn.style.display = 'inline-block';
+                })
+                .catch(err => alert("⚠️ تعذر تشغيل الكاميرا."));
+        }
+
+        function takeSnapshot() {
+            const video = document.getElementById('videoElement');
+            const canvas = document.getElementById('canvasElement');
+            const preview = document.getElementById('snapshotPreview');
+            
+            canvas.width = 100;
+            canvas.height = 100;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, 100, 100);
+            
+            compressedPhotoData = canvas.toDataURL('image/jpeg', 0.5);
+            
+            preview.src = compressedPhotoData;
+            preview.style.display = 'block';
+            let stream = video.srcObject;
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            video.style.display = 'none';
+            document.getElementById('snapBtn').style.display = 'none';
+        }
 
         window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            currentCompanyId = urlParams.get('company') || 'B-2026';
+            deviceUniqueId = getOrCreateDeviceID();
             
-            let activeSession = JSON.parse(localStorage.getItem('active_employee_session')) || {};
-            if (activeSession.username) {
-                currentUsername = activeSession.username;
+            const urlParams = new URLSearchParams(window.location.search);
+            let companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'COMP-01';
+            document.getElementById('companyIdInput').value = companyId;
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        currentGPSLocation = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+                        document.getElementById('gpsStatus').innerText = `📍 الجهاز محمي والموقع جاهز.`;
+                    },
+                    (err) => {
+                        document.getElementById('gpsStatus').innerText = `📍 المعرف الفريد جاهز وموقع افتراضي نشط.`;
+                    },
+                    { timeout: 5000 }
+                );
             }
-            document.getElementById('employeeNameDisplay').innerText = `(${currentUsername})`;
-            fetchServerRequests();
         };
 
-        function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
-        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        async function registerWithStrictValidation() {
+            const companyId = document.getElementById('companyIdInput').value.trim();
+            const name = document.getElementById('empName').value.trim();
+            const email = document.getElementById('empEmail').value.trim();
+            const specialty = document.getElementById('empSpecialty').value.trim();
+            const workplace = document.getElementById('empWorkplace').value.trim();
+            const username = document.getElementById('empUsername').value.trim();
+            const password = document.getElementById('empPassword').value.trim();
 
-        function submitServerRequest(type, value, notes, modalId) {
-            if (!value) {
-                alert("⚠️ يرجى إكمال الحقول المطلوبة.");
+            if (!companyId) {
+                alert("⚠️ يرجى كتابة رمز الشركة بدقة.");
                 return;
             }
 
-            const requestData = {
-                username: currentUsername,
-                type: type,
-                details: value,
-                notes: notes || 'بدون ملاحظات',
-                date: new Date().toLocaleString('ar-EG'),
-                status: "قيد الانتظار",
-                companyId: currentCompanyId
+            if (!name || !email || !specialty || !workplace || !username || !password) {
+                alert("⚠️ يرجى تعبئة كافة الحقول المطلوبة بدقة.");
+                return;
+            }
+
+            if (!compressedPhotoData) {
+                alert("⚠️ يرجى التقاط صورة الوجه أولاً.");
+                return;
+            }
+
+            const payload = {
+                companyId,
+                name,
+                email,
+                specialty,
+                workplace,
+                username,
+                password,
+                deviceId: deviceUniqueId,
+                location: currentGPSLocation,
+                photo: compressedPhotoData
             };
 
-            fetch(`${SERVER_BASE}/api/requests`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestData)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    alert("✅ تم إرسال طلبك بنجاح إلى الإدارة عبر السيرفر!");
-                    closeModal(modalId);
-                    fetchServerRequests();
-                } else {
-                    alert("⚠️ حدث خطأ أثناء الحفظ بالسيرفر.");
-                }
-            })
-            .catch(err => {
-                console.error("خطأ اتصال:", err);
-                alert("❌ تعذر الاتصال بالسيرفر من الهاتف، تحقق من الإنترنت.");
-            });
-        }
+            const storageKey = `company_employees_${companyId}`;
+            let existingEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            
+            const isDuplicate = existingEmployees.some(emp => emp.username === username || emp.email === email);
+            if (isDuplicate) {
+                alert("⚠️ اسم المستخدم أو البريد الإلكتروني مسجل مسبقاً لهذه الشركة.");
+                return;
+            }
 
-        function fetchServerRequests() {
-            fetch(`${SERVER_BASE}/api/requests`)
-            .then(res => res.json())
-            .then(requests => {
-                if (requests && requests.length > 0) {
-                    const last = requests[0];
-                    document.getElementById('lastRequestText').innerText = `${last.type} (${last.details}) - ${last.status}`;
-                } else {
-                    document.getElementById('lastRequestText').innerText = `لا توجد طلبات سابقة مسجلة`;
-                }
-            })
-            .catch(() => {
-                document.getElementById('lastRequestText').innerText = `غير قادر على جلب الحالة حالياً`;
-            });
-        }
+            existingEmployees.push(payload);
+            localStorage.setItem(storageKey, JSON.stringify(existingEmployees));
+            localStorage.setItem('activeCompanyId', companyId);
+            localStorage.setItem('activeEmployee', name);
 
-        function logout() {
-            localStorage.removeItem('active_employee_session');
-            window.location.href = `login.html?company=${currentCompanyId}`;
+            try {
+                await fetch('/api/employee/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (error) {
+                console.log("تم الحفظ محلياً بنجاح (السيرفر غير متصل حالياً).");
+            }
+
+            document.getElementById('successMsg').style.display = 'block';
+
+            setTimeout(() => {
+                window.location.href = `login.html?company=${encodeURIComponent(companyId)}`;
+            }, 1000);
         }
     </script>
 </body>
