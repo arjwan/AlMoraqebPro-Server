@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - تسجيل وتأسيس شركة جديدة</title>
+    <title>المراقب برو - تسجيل وتأسيس وإدارة الشركات</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,27 +13,23 @@
         }
 
         body {
-            /* خلفية مبهجة ومضيئة متناسقة مع الهوية الجديدة */
             background: linear-gradient(135deg, #fef08a 0%, #bae6fd 50%, #c7d2fe 100%);
             color: #1e293b;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
         }
 
         .company-container {
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 2px solid rgba(255, 255, 255, 0.8);
-            padding: 35px;
+            padding: 30px;
             border-radius: 32px;
             box-shadow: 0 25px 50px rgba(14, 116, 144, 0.2);
             width: 100%;
-            max-width: 850px;
-            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
         .company-header {
@@ -43,7 +39,7 @@
 
         .company-header h1 {
             color: #0284c7;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 900;
             margin-bottom: 6px;
             text-shadow: 0 2px 4px rgba(2, 132, 199, 0.1);
@@ -77,7 +73,7 @@
             color: #334155;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 12px 14px;
             border: 2px solid #e2e8f0;
@@ -89,10 +85,29 @@
             transition: all 0.3s;
         }
 
-        input:focus {
+        input:focus, select:focus {
             border-color: #0284c7;
             background: #ffffff;
             box-shadow: 0 0 12px rgba(2, 132, 199, 0.2);
+        }
+
+        .logo-preview-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            padding: 10px 14px;
+            border-radius: 14px;
+        }
+
+        .logo-preview {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #0284c7;
+            display: none;
         }
 
         .submit-btn {
@@ -108,12 +123,16 @@
             cursor: pointer;
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
             transition: transform 0.2s;
-            margin-top: 10px;
+            margin-top: 5px;
         }
 
         .submit-btn:hover {
             transform: translateY(-2px);
         }
+
+        .btn-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); }
+        .btn-danger { background: #ef4444; color: white; padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: bold;}
+        .btn-info { background: #0ea5e9; color: white; padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: bold;}
 
         .alert-box {
             display: none;
@@ -129,6 +148,65 @@
         .alert-success { background: rgba(16, 185, 129, 0.15); color: #047857; border: 1px solid #10b981; }
         .alert-error { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border: 1px solid #ef4444; }
 
+        /* قسم إدارة الشركات والبحث */
+        .management-section {
+            margin-top: 35px;
+            border-top: 2px dashed #cbd5e1;
+            padding-top: 25px;
+        }
+
+        .management-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .management-section h2 {
+            color: #0f172a;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .search-box {
+            max-width: 300px;
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+
+        th {
+            background: #0284c7;
+            color: white;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .active-badge { background: #dcfce7; color: #166534; }
+        .stopped-badge { background: #fee2e2; color: #991b1b; }
+
         .footer-note {
             text-align: center;
             margin-top: 20px;
@@ -141,6 +219,8 @@
         @media (max-width: 768px) {
             .grid-layout { grid-template-columns: 1fr; }
             .input-group.full, .submit-btn, .alert-box { grid-column: span 1; }
+            .management-header-flex { flex-direction: column; align-items: stretch; }
+            .search-box { max-width: 100%; }
         }
     </style>
 </head>
@@ -148,11 +228,15 @@
 
     <div class="company-container">
         <div class="company-header">
-            <h1>✨ تسجيل وتأسيس شركة جديدة</h1>
-            <p>نظام الإدارة والسيطرة المركزية للشركات - المراقب برو</p>
+            <h1>✨ لوحة تأسيس وإدارة الشركات المركزية</h1>
+            <p>نظام الإدارة والسيطرة الحقيقية - المراقب برو</p>
         </div>
 
-        <form onsubmit="registerCompany(event)" class="grid-layout">
+        <!-- نموذج التسجيل والتعديل -->
+        <form onsubmit="saveOrUpdateCompany(event)" class="grid-layout">
+            <input type="hidden" id="isEditing" value="false">
+            <input type="hidden" id="companyLogoBase64" value="">
+            
             <div class="input-group full">
                 <label>رمز الشركة (المعرف الأساسي - ID):</label>
                 <input type="text" id="compId" placeholder="مثال: comp01" required>
@@ -179,12 +263,12 @@
             </div>
 
             <div class="input-group">
-                <label>اسم المستخدم:</label>
+                <label>اسم المستخدم (مدير لوحة التحكم):</label>
                 <input type="text" id="adminUser" value="admin" required>
             </div>
 
             <div class="input-group">
-                <label>كلمة المرور:</label>
+                <label>رمز المرور (يميزه النظام كمدير):</label>
                 <input type="password" id="adminPass" placeholder="كلمة المرور الإدارية" required>
             </div>
 
@@ -193,10 +277,46 @@
                 <input type="email" id="compEmail" placeholder="company@domain.com" required>
             </div>
 
-            <button type="submit" class="submit-btn">🚀 اعتماد وتأسيس الشركة فوراً</button>
-            <div id="successMsg" class="alert-box alert-success">✅ تم تأسيس الشركة بنجاح وتم تفعيل لوحة التحكم!</div>
-            <div id="errorMsg" class="alert-box alert-error">⚠️ حدث خطأ أثناء التسجيل، يرجى التحقق من الحقول.</div>
+            <!-- حقل رفع الشعار أو الصورة -->
+            <div class="input-group full">
+                <label>شعار / صورة الشركة:</label>
+                <div class="logo-preview-container">
+                    <input type="file" id="logoFile" accept="image/*" onchange="handleLogoUpload(event)" style="border:none; background:transparent; padding:0;">
+                    <img id="logoPreviewImg" class="logo-preview" alt="معاينة الشعار">
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="submit-btn">🚀 اعتماد وتأسيس الشركة فوراً</button>
+            <button type="button" id="cancelBtn" class="submit-btn btn-warning" style="display:none;" onclick="resetForm()">❌ إلغاء التعديل</button>
+            
+            <div id="successMsg" class="alert-box alert-success">✅ تم حفظ وعمل الإجراء بنجاح في قاعدة البيانات!</div>
+            <div id="errorMsg" class="alert-box alert-error">⚠️ حدث خطأ أثناء الحفظ، يرجى التحقق من الاتصال.</div>
         </form>
+
+        <!-- جدول إدارة الشركات المحفوظة مع شريط البحث -->
+        <div class="management-section">
+            <div class="management-header-flex">
+                <h2>🏢 سجل الشركات المحفوظة وقاعدة البيانات</h2>
+                <input type="text" id="searchInput" class="search-box" placeholder="🔍 بحث عن شركة (بالاسم أو الرمز)..." onkeyup="filterCompanies()">
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الشعار</th>
+                            <th>الرمز (ID)</th>
+                            <th>اسم الشركة</th>
+                            <th>المدير</th>
+                            <th>حالة النظام</th>
+                            <th>الإجراءات والتحكم</th>
+                        </tr>
+                    </thead>
+                    <tbody id="companiesTableBody">
+                        <tr><td colspan="6" style="text-align: center; color: #64748b;">جاري جلب الشركات من قاعدة البيانات...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         <div class="footer-note">
             جميع الحقوق محفوظة © 2026 - <strong>المراقب برو</strong>
@@ -204,13 +324,98 @@
     </div>
 
     <script>
-        async function registerCompany(e) {
+        const SERVER_URL = "https://almoraqebpro-server.onrender.com";
+
+        window.onload = function() {
+            fetchCompanies();
+        };
+
+        // تحويل الصورة المرفوعة إلى Base64 لحفظها مع بيانات الشركة
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64String = e.target.result;
+                    document.getElementById('companyLogoBase64').value = base64String;
+                    
+                    // عرض معاينة الشعار
+                    const previewImg = document.getElementById('logoPreviewImg');
+                    previewImg.src = base64String;
+                    previewImg.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // جلب جميع الشركات من السيرفر أو التخزين الاحتياطي المحلي
+        async function fetchCompanies() {
+            try {
+                let res = await fetch(`${SERVER_URL}/api/companies`);
+                if (!res.ok) throw new Error("فشل الاتصال بالسيرفر");
+                let data = await res.json();
+                window.allCompaniesCache = data;
+                renderTable(data);
+            } catch(err) {
+                let localData = JSON.parse(localStorage.getItem('all_companies_db') || '[]');
+                window.allCompaniesCache = localData;
+                renderTable(localData);
+            }
+        }
+
+        // دالة عرض الجدول
+        function renderTable(companies) {
+            const tbody = document.getElementById('companiesTableBody');
+            tbody.innerHTML = '';
+
+            if (!companies || companies.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b;">لا توجد شركات مطابقة للبحث أو مسجلة حالياً.</td></tr>`;
+                return;
+            }
+
+            companies.forEach(comp => {
+                let status = comp.status !== undefined ? comp.status : 'active';
+                let isStopped = status === 'stopped';
+                let logoHtml = comp.logo ? `<img src="${comp.logo}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">` : '<span>🏢</span>';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${logoHtml}</td>
+                        <td><b>${comp.companyId}</b></td>
+                        <td>${comp.nameAr}</td>
+                        <td>${comp.manager}</td>
+                        <td><span class="badge ${isStopped ? 'stopped-badge' : 'active-badge'}">${isStopped ? 'موقوفة' : 'نشطة'}</span></td>
+                        <td>
+                            <button class="btn-info" onclick="editCompany('${comp.companyId}')">✏️ تعديل</button>
+                            <button class="btn-warning" style="padding:6px 12px; border-radius:8px; border:none; cursor:pointer; font-size:12px; font-weight:bold;" onclick="toggleCompanyStatus('${comp.companyId}', '${status}')">${isStopped ? '▶️ تشغيل' : '⏸️ إيقاف'}</button>
+                            <button class="btn-danger" onclick="deleteCompany('${comp.companyId}')">🗑️ حذف</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // نظام البحث الفوري في الجدول
+        function filterCompanies() {
+            let query = document.getElementById('searchInput').value.trim().toLowerCase();
+            let cached = window.allCompaniesCache || [];
+            
+            let filtered = cached.filter(comp => 
+                comp.companyId.toLowerCase().includes(query) || 
+                comp.nameAr.toLowerCase().includes(query) || 
+                comp.nameEn.toLowerCase().includes(query) ||
+                comp.manager.toLowerCase().includes(query)
+            );
+            
+            renderTable(filtered);
+        }
+
+        // حفظ أو تعديل شركة
+        async function saveOrUpdateCompany(e) {
             e.preventDefault();
             const compId = document.getElementById('compId').value.trim();
+            const isEditing = document.getElementById('isEditing').value === 'true';
             const successBox = document.getElementById('successMsg');
-            
-            // تخزين رمز الشركة النشط محلياً للربط السريع
-            localStorage.setItem('activeCompanyId', compId);
 
             let companyData = {
                 companyId: compId,
@@ -219,29 +424,138 @@
                 manager: document.getElementById('managerName').value.trim(),
                 phone: document.getElementById('managerPhone').value.trim(),
                 username: document.getElementById('adminUser').value.trim(),
-                password: document.getElementById('adminPass').value.trim(),
-                email: document.getElementById('compEmail').value.trim()
+                password: document.getElementById('adminPass').value.trim(), // رمز المرور المميز لمدير اللوحة
+                email: document.getElementById('compEmail').value.trim(),
+                logo: document.getElementById('companyLogoBase64').value,
+                status: 'active'
             };
 
             try {
-                let res = await fetch('/api/company/create', {
-                    method: 'POST',
+                let endpoint = isEditing ? `${SERVER_URL}/api/company/update/${compId}` : `${SERVER_URL}/api/company/create`;
+                let method = isEditing ? 'PUT' : 'POST';
+
+                let res = await fetch(endpoint, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(companyData)
                 });
-                
+
+                if (!res.ok) throw new Error();
+
+                saveLocalDatabase(companyData, isEditing);
+
                 successBox.style.display = 'block';
                 setTimeout(() => {
-                    window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
+                    successBox.style.display = 'none';
+                    resetForm();
+                    fetchCompanies();
                 }, 1500);
+
             } catch(err) {
-                // تفعيل التخزين المحلي الاحتياطي لضمان استمرارية العمل في حال انقطاع السيرفر اللحظي
-                localStorage.setItem(`company_profile_${compId}`, JSON.stringify(companyData));
+                saveLocalDatabase(companyData, isEditing);
                 successBox.style.display = 'block';
                 setTimeout(() => {
-                    window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
+                    successBox.style.display = 'none';
+                    resetForm();
+                    fetchCompanies();
                 }, 1500);
             }
+        }
+
+        function saveLocalDatabase(data, isEditing) {
+            let localData = JSON.parse(localStorage.getItem('all_companies_db') || '[]');
+            if (isEditing) {
+                let index = localData.findIndex(c => c.companyId === data.companyId);
+                if (index !== -1) {
+                    // الاحتفاظ بالشعار القديم إن لم يتم رفع شعار جديد
+                    if (!data.logo && localData[index].logo) {
+                        data.logo = localData[index].logo;
+                    }
+                    localData[index] = { ...localData[index], ...data };
+                }
+            } else {
+                localData = localData.filter(c => c.companyId !== data.companyId);
+                localData.push(data);
+            }
+            localStorage.setItem('all_companies_db', JSON.stringify(localData));
+            localStorage.setItem('activeCompanyId', data.companyId);
+        }
+
+        // تعبئة البيانات للتعديل
+        async function editCompany(compId) {
+            let localData = JSON.parse(localStorage.getItem('all_companies_db') || '[]');
+            let comp = localData.find(c => c.companyId === compId);
+
+            if (!comp) {
+                alert("لم يتم العثور على بيانات الشركة محلياً.");
+                return;
+            }
+
+            document.getElementById('compId').value = comp.companyId;
+            document.getElementById('compId').readOnly = true;
+            document.getElementById('compNameAr').value = comp.nameAr;
+            document.getElementById('compNameEn').value = comp.nameEn;
+            document.getElementById('managerName').value = comp.manager;
+            document.getElementById('managerPhone').value = comp.phone;
+            document.getElementById('adminUser').value = comp.username;
+            document.getElementById('adminPass').value = comp.password;
+            document.getElementById('compEmail').value = comp.email;
+            
+            if (comp.logo) {
+                document.getElementById('companyLogoBase64').value = comp.logo;
+                let previewImg = document.getElementById('logoPreviewImg');
+                previewImg.src = comp.logo;
+                previewImg.style.display = 'block';
+            }
+
+            document.getElementById('isEditing').value = 'true';
+            document.getElementById('submitBtn').innerText = "💾 حفظ التعديلات وتحديث السيرفر";
+            document.getElementById('cancelBtn').style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // إيقاف أو تشغيل الشركة
+        async function toggleCompanyStatus(compId, currentStatus) {
+            let newStatus = currentStatus === 'active' ? 'stopped' : 'active';
+            let localData = JSON.parse(localStorage.getItem('all_companies_db') || '[]');
+            let index = localData.findIndex(c => c.companyId === compId);
+            if (index !== -1) {
+                localData[index].status = newStatus;
+                localStorage.setItem('all_companies_db', JSON.stringify(localData));
+            }
+            try {
+                await fetch(`${SERVER_URL}/api/company/status/${compId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+            } catch(e) {}
+            fetchCompanies();
+        }
+
+        // حذف الشركة
+        async function deleteCompany(compId) {
+            if (!confirm(`هل أنت متأكد من حذف الشركة ذات الرمز (${compId}) نهائياً؟`)) return;
+
+            let localData = JSON.parse(localStorage.getItem('all_companies_db') || '[]');
+            localData = localData.filter(c => c.companyId !== compId);
+            localStorage.setItem('all_companies_db', JSON.stringify(localData));
+
+            try {
+                await fetch(`${SERVER_URL}/api/company/delete/${compId}`, { method: 'DELETE' });
+            } catch(e) {}
+
+            fetchCompanies();
+        }
+
+        function resetForm() {
+            document.querySelector('form').reset();
+            document.getElementById('compId').readOnly = false;
+            document.getElementById('isEditing').value = 'false';
+            document.getElementById('companyLogoBase64').value = '';
+            document.getElementById('logoPreviewImg').style.display = 'none';
+            document.getElementById('submitBtn').innerText = "🚀 اعتماد وتأسيس الشركة فوراً";
+            document.getElementById('cancelBtn').style.display = "none";
         }
     </script>
 </body>
