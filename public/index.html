@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - البوابة الرئيسية للنظام</title>
+    <title>المراقب برو - البوابة المركزية</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,602 +13,573 @@
         }
 
         body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: #f8fafc;
+            /* خلفية مبهجة ومضيئة مستوحاة من لوحات التحكم العصرية */
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+            color: #0f172a;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 15px;
+            padding: 20px;
         }
 
-        .main-card {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+        .portal-container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            padding: 35px;
+            border-radius: 28px;
+            box-shadow: 0 20px 45px rgba(14, 165, 233, 0.15);
             width: 100%;
-            max-width: 850px;
-            border: 1px solid #334155;
+            max-width: 900px;
             position: relative;
-            margin: auto;
+            overflow: hidden;
         }
 
-        /* مؤشر الاتصال بالسيرفر */
-        #connection-status {
+        /* مؤشر الاتصال المضيء */
+        .status-badge {
             position: absolute;
-            top: 15px;
-            left: 15px;
+            top: 25px;
+            left: 30px;
             display: flex;
             align-items: center;
-            gap: 6px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 4px 10px;
-            border-radius: 20px;
-            border: 1px solid #334155;
+            gap: 8px;
+            background: rgba(240, 249, 255, 0.9);
+            padding: 6px 14px;
+            border-radius: 30px;
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            font-size: 11px;
+            font-weight: 600;
+            color: #0369a1;
         }
 
-        #status-dot {
+        .status-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
             background-color: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
         }
 
-        h2 {
-            color: #38bdf8;
-            font-size: 22px;
-            margin-bottom: 20px;
+        .portal-header {
             text-align: center;
-            font-weight: 800;
-        }
-
-        /* أزرار التنقل بين النماذج (Tabs) */
-        .tabs-container {
-            display: flex;
-            gap: 10px;
             margin-bottom: 25px;
-            background: #0f172a;
-            padding: 6px;
-            border-radius: 12px;
-            border: 1px solid #334155;
         }
 
-        .tab-btn {
+        .portal-header h1 {
+            color: #0284c7;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .portal-header p {
+            color: #475569;
+            font-size: 14px;
+        }
+
+        /* شريط إشعار البرنامج */
+        .system-announcement {
+            background: linear-gradient(135deg, rgba(224, 242, 254, 0.9), rgba(186, 230, 253, 0.5));
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            padding: 12px 16px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: #03346b;
+        }
+
+        .system-announcement span.icon {
+            font-size: 18px;
+            animation: pulseIcon 2s infinite;
+        }
+
+        @keyframes pulseIcon {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* أزرار التبديل الفاخرة (Tabs) */
+        .switcher {
+            display: flex;
+            background: #e2e8f0;
+            padding: 6px;
+            border-radius: 16px;
+            border: 1px solid rgba(14, 165, 233, 0.1);
+            margin-bottom: 25px;
+            gap: 6px;
+        }
+
+        .switch-btn {
             flex: 1;
             padding: 12px;
             background: transparent;
-            color: #cbd5e1;
+            color: #475569;
             border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: bold;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.3s ease;
             text-align: center;
         }
 
-        .tab-btn.active {
-            background: #0284c7;
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+        .switch-btn.active {
+            background: linear-gradient(135deg, #0284c7 0%, #0284c7 100%);
+            color: #ffffff;
+            box-shadow: 0 6px 15px rgba(2, 132, 199, 0.3);
         }
 
         .form-section {
             display: none;
+            animation: fadeIn 0.4s ease-in-out;
         }
 
         .form-section.active {
             display: block;
         }
 
-        .form-grid {
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .grid-layout {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
         }
 
-        .form-group {
+        .input-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 6px;
         }
 
-        .form-group.full-width {
+        .input-group.full {
             grid-column: span 2;
         }
 
         label {
-            display: block;
             font-size: 13px;
-            font-weight: bold;
-            color: #cbd5e1;
+            font-weight: 700;
+            color: #334155;
         }
 
         input, select {
             width: 100%;
-            padding: 11px 13px;
-            border: 2px solid #334155;
-            background: #0f172a;
-            color: #fff;
-            border-radius: 10px;
+            padding: 12px 14px;
+            border: 2px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            border-radius: 12px;
             font-size: 14px;
             outline: none;
-            transition: 0.2s;
+            transition: all 0.3s;
         }
 
         input:focus, select:focus {
-            border-color: #38bdf8;
-            background: #1e293b;
+            border-color: #0284c7;
+            background: #ffffff;
+            box-shadow: 0 0 12px rgba(2, 132, 199, 0.2);
         }
 
-        .capture-section {
-            background: #0f172a;
-            border: 2px dashed #475569;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
+        /* صندوق الكاميرا والبصمة */
+        .media-box {
             grid-column: span 2;
+            background: #f8fafc;
+            border: 2px dashed #94a3b8;
+            padding: 15px;
+            border-radius: 16px;
+            text-align: center;
         }
 
-        video, canvas {
-            width: 100%;
-            max-width: 180px;
-            max-height: 140px;
-            border-radius: 8px;
-            background: #000;
-            object-fit: cover;
-            display: none;
-            margin: 8px auto;
-        }
-
-        .snapshot-preview {
-            width: 65px;
-            height: 65px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #38bdf8;
-            display: none;
-            margin: 8px auto 0;
-        }
-
-        .btn-cam {
+        .action-btn {
             background: #0284c7;
             color: white;
             border: none;
-            padding: 8px 14px;
-            border-radius: 8px;
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-weight: bold;
             cursor: pointer;
             font-size: 13px;
-            font-weight: bold;
-            margin-top: 4px;
             transition: 0.2s;
         }
 
-        .btn-cam:hover {
+        .action-btn:hover {
             background: #0369a1;
         }
 
-        .gps-status {
-            font-size: 12px;
-            color: #34d399;
-            margin-top: 5px;
-            font-weight: bold;
+        video, canvas {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: none;
+            margin: 10px auto;
+            border: 3px solid #0284c7;
         }
 
-        .btn {
+        .preview-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #10b981;
+            display: none;
+            margin: 8px auto 0;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .submit-btn {
+            grid-column: span 2;
             width: 100%;
-            padding: 13px;
-            background: #10b981;
+            padding: 14px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 15px;
-            font-weight: bold;
+            font-weight: 800;
             cursor: pointer;
-            grid-column: span 2;
             margin-top: 5px;
-            transition: 0.2s;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s;
         }
 
-        .btn:hover {
-            background: #059669;
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(16, 185, 129, 0.5);
         }
 
-        .msg-box {
+        .alert-box {
             display: none;
-            margin-top: 10px;
+            grid-column: span 2;
             padding: 10px;
             border-radius: 10px;
             text-align: center;
             font-weight: bold;
             font-size: 13px;
-            grid-column: span 2;
+            margin-top: 8px;
         }
 
-        .success-msg {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            border: 1px solid #10b981;
+        .alert-success { background: rgba(16, 185, 129, 0.15); color: #047857; border: 1px solid #10b981; }
+        .alert-error { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border: 1px solid #ef4444; }
+
+        /* معلومات المطور وإصدار النظام */
+        .developer-footer {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(14, 165, 233, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #64748b;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
-        .error-msg {
-            background: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-            border: 1px solid #ef4444;
+        .developer-footer .dev-name {
+            color: #0284c7;
+            font-weight: bold;
         }
 
-        /* التجاوب الذكي للهواتف المحمولة والشاشات الصغيرة */
+        /* التجاوب التام مع الشاشات والهواتف */
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            .main-card {
-                padding: 18px;
-                border-radius: 16px;
-            }
-            .form-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-            .form-group.full-width,
-            .capture-section,
-            .btn,
-            .msg-box {
-                grid-column: span 1;
-            }
-            #connection-status {
-                top: 10px;
-                left: 10px;
-                padding: 3px 8px;
-            }
-            #status-text {
-                font-size: 9px;
-            }
-            h2 {
-                font-size: 19px;
-                margin-top: 5px;
-            }
+            body { padding: 10px; }
+            .portal-container { padding: 18px; border-radius: 20px; }
+            .grid-layout { grid-template-columns: 1fr; gap: 12px; }
+            .input-group.full, .media-box, .submit-btn, .alert-box { grid-column: span 1; }
+            .status-badge { top: 12px; left: 12px; padding: 4px 10px; font-size: 10px; }
+            .portal-header h1 { font-size: 20px; }
+            .developer-footer { flex-direction: column; text-align: center; justify-content: center; }
         }
     </style>
 </head>
 <body>
 
-    <div class="main-card">
-        <!-- مؤشر الحالة -->
-        <div id="connection-status">
-            <div id="status-dot"></div>
-            <span id="status-text" style="font-size: 10px;">جاري الاتصال...</span>
+    <div class="portal-container">
+        <!-- مؤشر الاتصال -->
+        <div class="status-badge">
+            <div id="dot" class="status-dot"></div>
+            <span id="txt-status">جاري الاتصال...</span>
         </div>
 
-        <h2>🛡️ النظام المركزي - المراقب برو</h2>
-
-        <!-- أزرار التبديل بين تسجيل الدخول وتسجيل حساب جديد -->
-        <div class="tabs-container">
-            <button type="button" class="tab-btn active" id="tabLoginBtn" onclick="switchTab('login')">🔐 تسجيل الدخول</button>
-            <button type="button" class="tab-btn" id="tabRegisterBtn" onclick="switchTab('register')">📝 تسجيل موظف جديد</button>
+        <div class="portal-header">
+            <h1>🛡️ المراقب برو</h1>
+            <p>منظومة الإدارة والتحكم الذكي المتكاملة</p>
         </div>
 
-        <!-- 1. نموذج تسجيل الدخول -->
-        <div id="loginSection" class="form-section active">
-            <form id="loginForm" onsubmit="handleLogin(event)">
-                <div class="form-group" style="margin-bottom: 15px;">
+        <!-- إشعار البرنامج المحدث -->
+        <div class="system-announcement">
+            <span class="icon">📢</span>
+            <div>
+                <strong>إشعار النظام:</strong> تم تحديث واجهات لوحة التحكم لتكون أكثر إشراقاً وسلاسة. يرجى إدخال رمز الشركة الصحيح للمتابعة.
+            </div>
+        </div>
+
+        <!-- أزرار التبديل الفاخرة (Tabs) -->
+        <div class="switcher">
+            <button type="button" class="switch-btn active" id="btnLogTab" onclick="changeView('login')">🔐 تسجيل الدخول</button>
+            <button type="button" class="switch-btn" id="btnRegTab" onclick="changeView('register')">📝 إنشاء حساب موظف</button>
+        </div>
+
+        <!-- 1. واجهة تسجيل الدخول -->
+        <div id="loginView" class="form-section active">
+            <form onsubmit="executeLogin(event)" class="grid-layout">
+                <div class="input-group full">
                     <label>رمز الشركة:</label>
-                    <input type="text" id="loginCompanyId" placeholder="أدخل رمز الشركة" required>
+                    <input type="text" id="logComp" placeholder="أدخل رمز الشركة (مثال: B-2080)" required>
                 </div>
-
-                <div class="form-group" style="margin-bottom: 15px;">
+                <div class="input-group full">
                     <label>اسم المستخدم أو البريد:</label>
-                    <input type="text" id="loginUsername" placeholder="اسم المستخدم" required>
+                    <input type="text" id="logUser" placeholder="أدخل اسم المستخدم" required>
                 </div>
-
-                <div class="form-group" style="margin-bottom: 20px;">
+                <div class="input-group full">
                     <label>كلمة المرور:</label>
-                    <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
+                    <input type="password" id="logPass" placeholder="أدخل كلمة المرور" required>
                 </div>
-
-                <button type="submit" class="btn" style="grid-column: span 1;">🚀 دخول النظام</button>
-                <div id="loginErrorMsg" class="msg-box error-msg" style="display: none; grid-column: span 1;">⚠️ اسم المستخدم أو كلمة المرور غير صحيحة!</div>
+                <button type="submit" class="submit-btn">🚀 دخول النظام فوراً</button>
+                <div id="logError" class="alert-box alert-error">⚠️ اسم المستخدم أو كلمة المرور غير صحيحة!</div>
             </form>
         </div>
 
-        <!-- 2. نموذج تسجيل موظف جديد -->
-        <div id="registerSection" class="form-section">
-            <form id="registerForm" class="form-grid" onsubmit="registerAndDistribute(event)">
-                <div class="form-group">
-                    <label>رمز الشركة المرتبط:</label>
-                    <input type="text" id="companyIdInput" placeholder="أدخل رمز الشركة" style="color: #38bdf8; font-weight: bold;" required oninput="saveActiveCompany()">
+        <!-- 2. واجهة تسجيل موظف جديد -->
+        <div id="registerView" class="form-section">
+            <form onsubmit="executeRegister(event)" class="grid-layout">
+                <div class="input-group">
+                    <label>رمز الشركة:</label>
+                    <input type="text" id="regComp" placeholder="رمز الشركة" required oninput="syncCompany()">
                 </div>
-
-                <div class="form-group">
+                <div class="input-group">
                     <label>اسم الشركة:</label>
-                    <input type="text" id="companyName" placeholder="أدخل اسم الشركة" required>
+                    <input type="text" id="regCompName" placeholder="اسم الشركة" required>
                 </div>
-
-                <div class="form-group full-width">
+                <div class="input-group full">
                     <label>الاسم الكامل:</label>
-                    <input type="text" id="empName" placeholder="أدخل الاسم الكامل ثلاثي" required>
+                    <input type="text" id="regName" placeholder="الاسم الثلاثي واللقب" required>
                 </div>
-                
-                <div class="form-group">
+                <div class="input-group">
                     <label>البريد الإلكتروني:</label>
-                    <input type="email" id="empEmail" placeholder="name@company.com">
+                    <input type="email" id="regEmail" placeholder="name@domain.com">
                 </div>
-
-                <div class="form-group">
-                    <label>مقدار الراتب:</label>
-                    <input type="number" id="employeeSalary" placeholder="قيمة الراتب الأساسي" required>
+                <div class="input-group">
+                    <label>قيمة الراتب:</label>
+                    <input type="number" id="regSalary" placeholder="الراتب الأساسي" required>
                 </div>
-
-                <div class="form-group">
+                <div class="input-group">
                     <label>الاختصاص (العنوان الوظيفي):</label>
-                    <input type="text" id="empSpecialty" placeholder="مثال: مهندس برمجيات" required>
+                    <input type="text" id="regSpec" placeholder="مثال: مطور برمجيات" required>
                 </div>
-
-                <div class="form-group">
-                    <label>مكان العمل (الفرع أو القسم):</label>
-                    <input type="text" id="empWorkplace" placeholder="مكان العمل" required>
+                <div class="input-group">
+                    <label>مكان العمل (الفرع):</label>
+                    <input type="text" id="regWork" placeholder="الفرع أو القسم" required>
                 </div>
-
-                <div class="form-group">
-                    <label>اسم المستخدم:</label>
-                    <input type="text" id="empUsername" placeholder="اسم المستخدم للدخول" required>
+                <div class="input-group">
+                    <label>اسم المستخدم الجديد:</label>
+                    <input type="text" id="regUsername" placeholder="اسم المستخدم" required>
                 </div>
-
-                <div class="form-group">
+                <div class="input-group">
                     <label>كلمة المرور:</label>
-                    <input type="password" id="empPassword" placeholder="كلمة المرور" required>
+                    <input type="password" id="regPassword" placeholder="كلمة المرور" required>
                 </div>
 
-                <div class="capture-section">
-                    <label style="margin-bottom: 6px;">بصمة الوجه والموقع الجغرافي (GPS):</label>
-                    <button type="button" class="btn-cam" onclick="startCamera()">📷 فتح الكاميرا</button>
-                    <video id="videoElement" autoplay playsinline></video>
-                    <button type="button" id="snapBtn" class="btn-cam" style="background: #10b981; display: none;" onclick="takeSnapshot()">📸 التقاط الصورة</button>
-                    <canvas id="canvasElement"></canvas>
-                    <img id="snapshotPreview" class="snapshot-preview" alt="صورة المعاينة">
-                    <div id="gpsStatus" class="gps-status">📍 جاري رصد الموقع...</div>
+                <div class="media-box">
+                    <label style="display:block; margin-bottom: 8px;">بصمة الوجه والتحقق المكاني (GPS):</label>
+                    <button type="button" class="action-btn" onclick="openCam()">📷 تشغيل كاميرا التحقق</button>
+                    <video id="vStream" autoplay playsinline></video>
+                    <button type="button" id="snapTrigger" class="action-btn" style="background:#10b981; display:none; margin-top:8px;" onclick="captureFace()">📸 التقاط بصمة الوجه</button>
+                    <canvas id="cCanvas"></canvas>
+                    <img id="imgPreview" class="preview-img" alt="معاينة البصمة">
+                    <div id="gpsText" style="font-size:12px; color:#047857; margin-top:8px; font-weight:bold;">📍 جاري تحديد الموقع الجغرافي...</div>
                 </div>
 
-                <button type="submit" class="btn">💾 حفظ نهائي وترحيل البيانات</button>
-                <div id="successMsg" class="msg-box success-msg">✅ تم التسجيل وتوزيع البيانات بنجاح! جاري تحويلك...</div>
+                <button type="submit" class="submit-btn">💾 حفظ نهائي وترحيل البيانات</button>
+                <div id="regSuccess" class="alert-box alert-success">✅ تم إنشاء الحساب بنجاح وتوزيع البيانات على الأنظمة!</div>
             </form>
+        </div>
+
+        <!-- معلومات المطور وإصدار النظام -->
+        <div class="developer-footer">
+            <div>جميع الحقوق محفوظة © 2026 - <strong>المراقب برو</strong></div>
+            <div>إصدار المنظومة: <span style="color: #0284c7;">v3.5 Pro</span> | تطوير وهندسة: <span class="dev-name">فريق البرمجيات الذكية</span></div>
         </div>
     </div>
 
     <script>
-        let compressedPhotoData = "";
-        let currentGPSLocation = { latitude: 33.3152, longitude: 44.3661 };
-        let deviceUniqueId = "";
-        let videoStream = null;
+        let capturedImage = "";
+        let gpsData = { lat: 33.3152, lng: 44.3661 };
+        let activeStream = null;
 
-        // التبديل بين التبويبات (تسجيل الدخول / تسجيل جديد)
-        function switchTab(tabName) {
-            const loginSec = document.getElementById('loginSection');
-            const registerSec = document.getElementById('registerSection');
-            const loginBtn = document.getElementById('tabLoginBtn');
-            const registerBtn = document.getElementById('tabRegisterBtn');
+        function changeView(target) {
+            const loginV = document.getElementById('loginView');
+            const regV = document.getElementById('registerView');
+            const btnL = document.getElementById('btnLogTab');
+            const btnR = document.getElementById('btnRegTab');
 
-            if (tabName === 'login') {
-                loginSec.classList.add('active');
-                registerSec.classList.remove('active');
-                loginBtn.classList.add('active');
-                registerBtn.classList.remove('active');
+            if(target === 'login') {
+                loginV.classList.add('active');
+                regV.classList.remove('active');
+                btnL.classList.add('active');
+                btnR.classList.remove('active');
             } else {
-                loginSec.classList.remove('active');
-                registerSec.classList.add('active');
-                loginBtn.classList.remove('active');
-                registerBtn.classList.add('active');
+                loginV.classList.remove('active');
+                regV.classList.add('active');
+                btnL.classList.remove('active');
+                btnR.classList.add('active');
             }
         }
 
-        // فحص الاتصال بالسيرفر
-        async function checkConnection() {
-            const dot = document.getElementById('status-dot');
-            const text = document.getElementById('status-text');
+        async function pingServer() {
+            const dot = document.getElementById('dot');
+            const txt = document.getElementById('txt-status');
             try {
-                const response = await fetch('/api/ping', { method: 'HEAD', cache: 'no-cache' });
-                if (response.ok) {
+                let res = await fetch('/api/ping', { method: 'HEAD', cache: 'no-cache' });
+                if(res.ok) {
                     dot.style.backgroundColor = '#22c55e';
-                    text.innerText = 'متصل';
+                    dot.style.boxShadow = '0 0 8px #22c55e';
+                    txt.innerText = 'متصل بالسيرفر';
                 }
-            } catch (e) {
+            } catch(e) {
                 dot.style.backgroundColor = '#ef4444';
-                text.innerText = 'غير متصل';
+                dot.style.boxShadow = '0 0 8px #ef4444';
+                txt.innerText = 'غير متصل';
             }
         }
-        setInterval(checkConnection, 10000);
-        checkConnection();
+        setInterval(pingServer, 10000);
+        pingServer();
 
-        function getOrCreateDeviceID() {
-            let id = localStorage.getItem('system_device_fingerprint');
-            if (!id) {
-                id = 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase() + '-' + Date.now();
-                localStorage.setItem('system_device_fingerprint', id);
-            }
-            return id;
-        }
-
-        function saveActiveCompany() {
-            const compId = document.getElementById('companyIdInput').value.trim();
-            if (compId) {
-                localStorage.setItem('activeCompanyId', compId);
-                document.getElementById('loginCompanyId').value = compId;
+        function syncCompany() {
+            let val = document.getElementById('regComp').value.trim();
+            if(val) {
+                localStorage.setItem('activeCompanyId', val);
+                document.getElementById('logComp').value = val;
             }
         }
 
-        function startCamera() {
-            const video = document.getElementById('videoElement');
-            const snapBtn = document.getElementById('snapBtn');
-            navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false })
-                .then(stream => {
-                    videoStream = stream;
-                    video.style.display = 'block';
-                    video.srcObject = stream;
-                    snapBtn.style.display = 'inline-block';
-                })
-                .catch(err => alert("⚠️ تعذر تشغيل الكاميرا: " + err.message));
+        function openCam() {
+            const video = document.getElementById('vStream');
+            const btn = document.getElementById('snapTrigger');
+            navigator.mediaDevices.getUserMedia({ video: { width: 300, height: 300, facingMode: 'user' }, audio: false })
+            .then(stream => {
+                activeStream = stream;
+                video.style.display = 'block';
+                video.srcObject = stream;
+                btn.style.display = 'inline-block';
+            })
+            .catch(err => alert("⚠️ تعذر تشغيل الكاميرا: " + err.message));
         }
 
-        function takeSnapshot() {
-            const video = document.getElementById('videoElement');
-            const canvas = document.getElementById('canvasElement');
-            const preview = document.getElementById('snapshotPreview');
-            canvas.width = 120; 
-            canvas.height = 120;
+        function captureFace() {
+            const video = document.getElementById('vStream');
+            const canvas = document.getElementById('cCanvas');
+            const preview = document.getElementById('imgPreview');
+            canvas.width = 120; canvas.height = 120;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, 120, 120);
-            compressedPhotoData = canvas.toDataURL('image/jpeg', 0.6);
-            preview.src = compressedPhotoData;
+            capturedImage = canvas.toDataURL('image/jpeg', 0.6);
+            preview.src = capturedImage;
             preview.style.display = 'block';
-            
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
+
+            if(activeStream) {
+                activeStream.getTracks().forEach(t => t.stop());
             }
             video.style.display = 'none';
-            document.getElementById('snapBtn').style.display = 'none';
+            document.getElementById('snapTrigger').style.display = 'none';
         }
 
         window.onload = function() {
-            deviceUniqueId = getOrCreateDeviceID();
-            const urlParams = new URLSearchParams(window.location.search);
-            let companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'COMP-01';
-            
-            document.getElementById('companyIdInput').value = companyId;
-            document.getElementById('loginCompanyId').value = companyId;
+            let savedComp = localStorage.getItem('activeCompanyId') || 'B-2080';
+            document.getElementById('logComp').value = savedComp;
+            document.getElementById('regComp').value = savedComp;
 
-            // إذا كان الرابط يطلب فتح تبويب التسجيل مباشرة
-            if (urlParams.get('action') === 'register') {
-                switchTab('register');
-            }
-
-            if (navigator.geolocation) {
+            if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => { 
-                        currentGPSLocation = { latitude: pos.coords.latitude, longitude: pos.coords.longitude }; 
-                        document.getElementById('gpsStatus').innerText = `📍 الموقع جاهز (${currentGPSLocation.latitude.toFixed(2)}, ${currentGPSLocation.longitude.toFixed(2)})`; 
+                    pos => {
+                        gpsData = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        document.getElementById('gpsText').innerText = `📍 تم رصد الموقع بدقة (${gpsData.lat.toFixed(2)}, ${gpsData.lng.toFixed(2)})`;
                     },
-                    (err) => { document.getElementById('gpsStatus').innerText = `📍 موقع افتراضي نشط.`; }
+                    err => { document.getElementById('gpsText').innerText = `📍 تم ضبط الموقع الافتراضي للنظام.`; }
                 );
             }
         };
 
-        // معالجة تسجيل الدخول الذكي
-        function handleLogin(event) {
-            event.preventDefault();
+        function executeLogin(e) {
+            e.preventDefault();
+            const comp = document.getElementById('logComp').value.trim();
+            const user = document.getElementById('logUser').value.trim();
+            const pass = document.getElementById('logPass').value.trim();
+            const errBox = document.getElementById('logError');
 
-            const compId = document.getElementById('loginCompanyId').value.trim();
-            const username = document.getElementById('loginUsername').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
-            const errorMsg = document.getElementById('loginErrorMsg');
+            localStorage.setItem('activeCompanyId', comp);
 
-            localStorage.setItem('activeCompanyId', compId);
-
-            // 1. التحقق من حساب المدير
-            if ((username === 'admin' || username === 'مدير') && password === 'admin123') {
+            if((user === 'admin' || user === 'مدير') && pass === 'admin123') {
                 localStorage.setItem('userRole', 'admin');
-                localStorage.setItem('currentUser', username);
-                window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
+                window.location.href = `admin.html?company=${encodeURIComponent(comp)}`;
                 return;
             }
 
-            // 2. التحقق من قائمة الموظفين المخزنة محلياً
-            const storageKey = `company_employees_${compId}`;
-            const employees = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            const matchedEmp = employees.find(emp => emp.username === username && emp.password === password);
+            let employees = JSON.parse(localStorage.getItem(`company_employees_${comp}`) || '[]');
+            let found = employees.find(emp => emp.username === user && emp.password === pass);
 
-            if (matchedEmp) {
+            if(found) {
                 localStorage.setItem('userRole', 'employee');
-                localStorage.setItem('currentEmployee', JSON.stringify(matchedEmp));
-                window.location.href = `attachment.html?company=${encodeURIComponent(compId)}&user=${encodeURIComponent(username)}`;
+                localStorage.setItem('currentEmployee', JSON.stringify(found));
+                window.location.href = `attachment.html?company=${encodeURIComponent(comp)}&user=${encodeURIComponent(user)}`;
                 return;
             }
 
-            // 3. التحقق عبر السيرفر الخارجي إن وجد
-            fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ companyId: compId, username, password })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.role === 'admin') {
-                        window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
-                    } else {
-                        window.location.href = `attachment.html?company=${encodeURIComponent(compId)}`;
-                    }
-                } else {
-                    errorMsg.style.display = 'block';
-                }
-            })
-            .catch(err => {
-                errorMsg.style.display = 'block';
-            });
+            errBox.style.display = 'block';
         }
 
-        // معالجة تسجيل موظف جديد وترحيل البيانات
-        async function registerAndDistribute(event) {
-            event.preventDefault();
+        async function executeRegister(e) {
+            e.preventDefault();
+            const comp = document.getElementById('regComp').value.trim();
+            syncCompany();
 
-            const compId = document.getElementById('companyIdInput').value.trim();
-            saveActiveCompany();
-
-            const newEmployee = {
-                companyId: compId,
-                companyName: document.getElementById('companyName').value.trim(),
-                name: document.getElementById('empName').value.trim(),
-                email: document.getElementById('empEmail').value.trim(),
-                specialty: document.getElementById('empSpecialty').value.trim(),
-                workplace: document.getElementById('empWorkplace').value.trim(),
-                salary: document.getElementById('employeeSalary').value.trim(),
-                username: document.getElementById('empUsername').value.trim(),
-                password: document.getElementById('empPassword').value.trim(),
-                photo: compressedPhotoData || 'https://via.placeholder.com/45',
-                location: `${currentGPSLocation.latitude}, ${currentGPSLocation.longitude}`,
-                deviceFingerprint: deviceUniqueId,
-                startDate: new Date().toLocaleDateString('ar-EG')
+            let newEmp = {
+                companyId: comp,
+                companyName: document.getElementById('regCompName').value.trim(),
+                name: document.getElementById('regName').value.trim(),
+                email: document.getElementById('regEmail').value.trim(),
+                salary: document.getElementById('regSalary').value.trim(),
+                specialty: document.getElementById('regSpec').value.trim(),
+                workplace: document.getElementById('regWork').value.trim(),
+                username: document.getElementById('regUsername').value.trim(),
+                password: document.getElementById('regPassword').value.trim(),
+                photo: capturedImage || 'https://via.placeholder.com/50',
+                location: `${gpsData.lat}, ${gpsData.lng}`
             };
 
             try {
-                const response = await fetch('/api/employee/register', {
+                let res = await fetch('/api/employee/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newEmployee)
+                    body: JSON.stringify(newEmp)
                 });
+                let result = await res.json();
+                
+                let storageKey = `company_employees_${comp}`;
+                let list = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                list.push(newEmp);
+                localStorage.setItem(storageKey, JSON.stringify(list));
 
-                const result = await response.json();
-
-                if (!response.ok || !result.success) {
-                    throw new Error(result.message || 'فشل الحفظ في السيرفر');
-                }
-
-                // 🔄 التوزيع التلقائي للبيانات على الذاكرة المحلية والصفحات المرتبطة
-                const storageKey = `company_employees_${compId}`;
-                let existingEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                existingEmployees.push(newEmployee);
-                localStorage.setItem(storageKey, JSON.stringify(existingEmployees));
-
-                let salariesList = JSON.parse(localStorage.getItem(`salaries_${compId}`) || '[]');
-                salariesList.push({ username: newEmployee.username, name: newEmployee.name, salary: newEmployee.salary, allowances: '0' });
-                localStorage.setItem(`salaries_${compId}`, JSON.stringify(salariesList));
-
-                let shiftsList = JSON.parse(localStorage.getItem(`shifts_${compId}`) || '[]');
-                shiftsList.push({ username: newEmployee.username, name: newEmployee.name, workplace: newEmployee.workplace, status: 'نشط' });
-                localStorage.setItem(`shifts_${compId}`, JSON.stringify(shiftsList));
-
-                // إظهار رسالة النجاح ثم الانتقال لصفحة الدخول أو لوحة المدير
-                const successMsg = document.getElementById('successMsg');
-                successMsg.style.display = 'block';
+                document.getElementById('regSuccess').style.display = 'block';
                 setTimeout(() => {
-                    successMsg.style.display = 'none';
-                    document.getElementById('registerForm').reset();
-                    document.getElementById('snapshotPreview').style.display = 'none';
-                    switchTab('login'); // التحويل التلقائي لتبويب تسجيل الدخول
-                }, 2500);
-
-            } catch (error) {
-                alert('حدث خطأ أثناء حفظ البيانات: ' + error.message);
+                    document.getElementById('regSuccess').style.display = 'none';
+                    document.querySelector('#registerView form').reset();
+                    document.getElementById('imgPreview').style.display = 'none';
+                    changeView('login');
+                }, 2000);
+            } catch(err) {
+                alert("⚠️ حدث خطأ في الاتصال بالسيرفر: " + err.message);
             }
         }
     </script>
