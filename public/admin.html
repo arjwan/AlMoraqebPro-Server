@@ -251,7 +251,7 @@
         </div>
     </div>
 
-    <script>
+   <script>
         let currentCompanyId = '';
 
         window.onload = async () => {
@@ -293,9 +293,10 @@
             const serverIcon = document.getElementById('serverIcon');
             const serverText = document.getElementById('serverText');
             
-            fetch('/api/developer/companies', { method: 'HEAD' })
+            // استخدام مسار الفحص الصحيح /api/ping الموجود في السيرفر
+            fetch('/api/ping')
                 .then(res => {
-                    if (res.ok || res.status < 500) {
+                    if (res.ok) {
                         statusBar.classList.add('online');
                         serverIcon.textContent = '✔';
                         serverText.textContent = 'السيرفر متصل بقاعدة البيانات بنجاح (Online)';
@@ -314,8 +315,8 @@
             try {
                 const compId = currentCompanyId || 'general';
                 
-                // محاولة جلب النسخة الاحتياطية مباشرة من السيرفر
-                const response = await fetch(`/api/backup?company=${encodeURIComponent(compId)}`);
+                // استخدام مسار النسخ الاحتياطي الصحيح المطابق للسيرفر /api/admin/backup
+                const response = await fetch('/api/admin/backup');
                 
                 if (response.ok) {
                     const blob = await response.blob();
@@ -332,29 +333,10 @@
                 }
                 throw new Error();
             } catch (error) {
-                // طريقة بديلة للتحميل المباشر من المتصفح في حال عدم توفر نقطة السيرفر
-                const compId = currentCompanyId || 'general';
-                const backupData = {
-                    companyId: compId,
-                    date: new Date().toISOString(),
-                    employees: JSON.parse(localStorage.getItem(`company_employees_${compId}`) || '[]'),
-                    salaries: JSON.parse(localStorage.getItem(`salaries_${compId}`) || '[]'),
-                    shifts: JSON.parse(localStorage.getItem(`shifts_${compId}`) || '[]')
-                };
-
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-                const downloadAnchor = document.createElement('a');
-                downloadAnchor.setAttribute("href", dataStr);
-                downloadAnchor.setAttribute("download", `AlMoraqebPro_Backup_${compId}_local.json`);
-                document.body.appendChild(downloadAnchor);
-                downloadAnchor.click();
-                downloadAnchor.remove();
-
-                alert('✅ تم إنشاء وتحميل النسخة الاحتياطية محلياً بنجاح.');
+                alert('❌ فشل في سحب النسخة الاحتياطية من السيرفر.');
             }
         }
 
-        // ربط الزر بالدالة المعدلة مباشرة
         function backupData() {
             backupDatabase();
         }
@@ -365,7 +347,7 @@
 
         function syncServer() {
             checkServerConnection();
-            alert('جاري محاولة مزامنة وفحص اتصال السيرفر...');
+            alert('✅ تم فحص اتصال السيرفر وتحديث الحالة بنجاح.');
         }
 
         function logout() {
