@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - إضافة موظف جديد</title>
+    <title>المراقب برو - تسجيل موظف جديد</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,88 +13,66 @@
         }
 
         body {
-            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%);
-            color: #1e293b;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #f8fafc;
             min-height: 100vh;
-            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 30px;
+            padding: 15px;
         }
 
         .main-card {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
             width: 100%;
-            max-width: 1100px;
-            background: #ffffff;
-            padding: 40px;
-            border-radius: 28px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+            max-width: 850px;
+            border: 1px solid #334155;
+            position: relative;
             margin: auto;
         }
 
-        .top-header {
+        /* مؤشر الاتصال بالسيرفر */
+        #connection-status {
+            position: absolute;
+            top: 15px;
+            left: 15px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+        }
+
+        #status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ef4444;
         }
 
         h2 {
-            font-size: 28px;
+            color: #38bdf8;
+            font-size: 22px;
+            margin-bottom: 20px;
+            text-align: center;
             font-weight: 800;
-            color: #0284c7;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .btn-dashboard {
-            background: #475569;
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 14px;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-dashboard:hover {
-            background: #334155;
-        }
-
-        .date-box {
-            background: #e0f2fe;
-            color: #0369a1;
-            padding: 8px 14px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: bold;
         }
 
         .form-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+            gap: 15px;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 5px;
         }
 
         .form-group.full-width {
@@ -102,101 +80,195 @@
         }
 
         label {
-            font-weight: 700;
-            font-size: 14px;
-            color: #334155;
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            color: #cbd5e1;
         }
 
         input, select {
-            padding: 12px 16px;
-            border: 2px solid #cbd5e1;
-            border-radius: 12px;
+            width: 100%;
+            padding: 11px 13px;
+            border: 2px solid #334155;
+            background: #0f172a;
+            color: #fff;
+            border-radius: 10px;
             font-size: 14px;
             outline: none;
             transition: 0.2s;
-            background: #f8fafc;
         }
 
         input:focus, select:focus {
-            border-color: #0284c7;
-            background: #fff;
+            border-color: #38bdf8;
+            background: #1e293b;
         }
 
-        .media-section {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-            background: #f1f5f9;
+        .capture-section {
+            background: #0f172a;
+            border: 2px dashed #475569;
             padding: 15px;
             border-radius: 12px;
-            border: 1px dashed #cbd5e1;
-        }
-
-        .media-section input[type="file"] {
-            border: none;
-            background: transparent;
-            padding: 0;
-        }
-
-        .btn {
-            background: #0284c7;
-            color: #fff;
-            border: none;
-            padding: 14px 24px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            transition: 0.2s;
             text-align: center;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        .btn-success {
-            background: #10b981;
             grid-column: span 2;
-            margin-top: 10px;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-        }
-
-        .location-status {
-            font-size: 13px;
-            color: #0d9488;
-            font-weight: bold;
         }
 
         video, canvas {
             width: 100%;
-            max-width: 200px;
+            max-width: 180px;
+            max-height: 140px;
             border-radius: 8px;
+            background: #000;
+            object-fit: cover;
             display: none;
+            margin: 8px auto;
+        }
+
+        .snapshot-preview {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #38bdf8;
+            display: none;
+            margin: 8px auto 0;
+        }
+
+        .btn-cam {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 4px;
+            transition: 0.2s;
+        }
+
+        .btn-cam:hover {
+            background: #0369a1;
+        }
+
+        .gps-status {
+            font-size: 12px;
+            color: #34d399;
             margin-top: 5px;
+            font-weight: bold;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 13px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            grid-column: span 2;
+            margin-top: 5px;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #059669;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            grid-column: span 2;
+            margin-top: 5px;
+        }
+
+        .btn-secondary {
+            background: #475569;
+            flex: 1;
+            padding: 10px;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            background: #334155;
+        }
+
+        #successMsg {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid #10b981;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            grid-column: span 2;
+        }
+
+        /* التجاوب الذكي للهواتف المحمولة والشاشات الصغيرة */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .main-card {
+                padding: 18px;
+                border-radius: 16px;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .form-group.full-width,
+            .capture-section,
+            .btn,
+            .nav-buttons,
+            #successMsg {
+                grid-column: span 1;
+            }
+            .nav-buttons {
+                flex-direction: column;
+            }
+            #connection-status {
+                top: 10px;
+                left: 10px;
+                padding: 3px 8px;
+            }
+            #status-text {
+                font-size: 9px;
+            }
+            h2 {
+                font-size: 19px;
+                margin-top: 5px;
+            }
         }
     </style>
 </head>
 <body>
 
     <div class="main-card">
-        <div class="top-header">
-            <h2>➕ إضافة موظف جديد</h2>
-            <div class="header-actions">
-                <button type="button" class="btn-dashboard" onclick="goToDashboard()">🏠 العودة لوحة التحكم</button>
-                <div class="date-box" id="currentDateDisplay">التاريخ: جاري التحميل...</div>
-            </div>
+        <!-- مؤشر الحالة -->
+        <div id="connection-status">
+            <div id="status-dot"></div>
+            <span id="status-text" style="font-size: 10px;">جاري الاتصال...</span>
         </div>
 
-        <form id="addEmployeeForm" class="form-grid" onsubmit="saveEmployee(event)">
-            
+        <h2>🛡️ تسجيل موظف جديد وتوزيع البيانات</h2>
+        
+        <form id="registerForm" class="form-grid" onsubmit="registerAndDistribute(event)">
             <div class="form-group">
-                <label>رمز الشركة:</label>
-                <input type="text" id="companyId" placeholder="مثال: B-2026" required oninput="saveActiveCompany()">
+                <label>رمز الشركة المرتبط:</label>
+                <input type="text" id="companyIdInput" placeholder="أدخل رمز الشركة" style="color: #38bdf8; font-weight: bold;" required oninput="saveActiveCompany()">
             </div>
 
             <div class="form-group">
@@ -205,18 +277,13 @@
             </div>
 
             <div class="form-group full-width">
-                <label>اسم الموظف الكامل:</label>
-                <input type="text" id="employeeName" placeholder="الاسم ثلاثي" required>
+                <label>الاسم الكامل:</label>
+                <input type="text" id="empName" placeholder="أدخل الاسم الكامل ثلاثي" required>
             </div>
-
+            
             <div class="form-group">
-                <label>العنوان الوظيفي:</label>
-                <input type="text" id="employeeSpecialty" placeholder="مثال: مهندس برمجيات، محاسب..." required>
-            </div>
-
-            <div class="form-group">
-                <label>مكان العمل:</label>
-                <input type="text" id="employeeWorkplace" placeholder="الفرع أو القسم الرئيسي" required>
+                <label>البريد الإلكتروني:</label>
+                <input type="email" id="empEmail" placeholder="name@company.com">
             </div>
 
             <div class="form-group">
@@ -225,178 +292,159 @@
             </div>
 
             <div class="form-group">
-                <label>المخصصات:</label>
-                <input type="number" id="employeeAllowances" placeholder="مخصصات النقل أو السكن (اختياري)">
+                <label>الاختصاص (العنوان الوظيفي):</label>
+                <input type="text" id="empSpecialty" placeholder="مثال: مهندس برمجيات" required>
             </div>
 
             <div class="form-group">
-                <label>اسم المستخدم (للدخول):</label>
-                <input type="text" id="employeeUsername" placeholder="اسم المستخدم الفريد" required>
+                <label>مكان العمل (الفرع أو القسم):</label>
+                <input type="text" id="empWorkplace" placeholder="مكان العمل" required>
+            </div>
+
+            <div class="form-group">
+                <label>اسم المستخدم:</label>
+                <input type="text" id="empUsername" placeholder="اسم المستخدم للدخول" required>
             </div>
 
             <div class="form-group">
                 <label>كلمة المرور:</label>
-                <input type="password" id="employeePassword" placeholder="كلمة المرور الخاصة بالموظف" required>
+                <input type="password" id="empPassword" placeholder="كلمة المرور" required>
             </div>
 
-            <div class="form-group full-width">
-                <label>صورة الموظف (التقاط بالكاميرا أو تحميل ملف):</label>
-                <div class="media-section">
-                    <input type="file" id="uploadImageInput" accept="image/*" onchange="handleImageUpload(event)">
-                    <button type="button" class="btn" style="padding: 8px 14px; font-size: 14px;" onclick="startCamera()">📷 فتح الكاميرا للتقاط</button>
-                    <button type="button" class="btn" style="padding: 8px 14px; font-size: 14px; background: #ef4444; display:none;" id="captureBtn" onclick="capturePhoto()">التقاط الصورة</button>
-                </div>
-                <video id="cameraStream" autoplay playsinline></video>
-                <canvas id="cameraCanvas"></canvas>
-                <input type="hidden" id="employeePhoto" value="">
+            <div class="capture-section">
+                <label style="margin-bottom: 6px;">بصمة الوجه والموقع الجغرافي (GPS):</label>
+                <button type="button" class="btn-cam" onclick="startCamera()">📷 فتح الكاميرا</button>
+                <video id="videoElement" autoplay playsinline></video>
+                <button type="button" id="snapBtn" class="btn-cam" style="background: #10b981; display: none;" onclick="takeSnapshot()">📸 التقاط الصورة</button>
+                <canvas id="canvasElement"></canvas>
+                <img id="snapshotPreview" class="snapshot-preview" alt="صورة المعاينة">
+                <div id="gpsStatus" class="gps-status">📍 جاري رصد الموقع...</div>
             </div>
 
-            <div class="form-group full-width">
-                <label>الموقع الجغرافي (الإحداثيات):</label>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <button type="button" class="btn" style="padding: 10px 16px; font-size: 14px; background: #0d9488;" onclick="getLocation()">📍 جلب الموقع الحالي</button>
-                    <span id="locationStatus" class="location-status">لم يتم تحديد الموقع بعد</span>
-                </div>
-                <input type="hidden" id="employeeLocation" value="غير متوفر">
+            <button type="submit" class="btn">💾 حفظ نهائي وترحيل البيانات</button>
+            
+            <div class="nav-buttons">
+                <button type="button" class="btn-secondary" onclick="goToLoginPage()">🔐 الذهاب لتسجيل الدخول (Index)</button>
+                <button type="button" class="btn-secondary" onclick="goToAdminDashboard()">📊 الانتقال للوحة المدير</button>
             </div>
 
-            <button type="submit" class="btn btn-success">💾 الحفظ والتسجيل وترحيل البيانات</button>
-
+            <div id="successMsg">✅ تم التسجيل وتوزيع البيانات بنجاح! جاري التوجيه...</div>
         </form>
     </div>
 
     <script>
-        let capturedPhotoData = '';
+        let compressedPhotoData = "";
+        let currentGPSLocation = { latitude: 33.3152, longitude: 44.3661 };
+        let deviceUniqueId = "";
+        let videoStream = null;
 
-        window.onload = () => {
-            const today = new Date().toLocaleDateString('ar-EG');
-            document.getElementById('currentDateDisplay').innerText = `التاريخ: ${today}`;
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const compParam = urlParams.get('company');
-            if (compParam) {
-                document.getElementById('companyId').value = compParam;
-                localStorage.setItem('activeCompanyId', compParam);
-            } else {
-                const savedComp = localStorage.getItem('activeCompanyId');
-                if (savedComp) document.getElementById('companyId').value = savedComp;
+        // فحص الاتصال بالسيرفر
+        async function checkConnection() {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            try {
+                const response = await fetch('/api/ping', { method: 'HEAD', cache: 'no-cache' });
+                if (response.ok) {
+                    dot.style.backgroundColor = '#22c55e';
+                    text.innerText = 'متصل';
+                }
+            } catch (e) {
+                dot.style.backgroundColor = '#ef4444';
+                text.innerText = 'غير متصل';
             }
-        };
+        }
+        setInterval(checkConnection, 10000);
+        checkConnection();
+
+        function getOrCreateDeviceID() {
+            let id = localStorage.getItem('system_device_fingerprint');
+            if (!id) {
+                id = 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase() + '-' + Date.now();
+                localStorage.setItem('system_device_fingerprint', id);
+            }
+            return id;
+        }
 
         function saveActiveCompany() {
-            const compId = document.getElementById('companyId').value.trim();
+            const compId = document.getElementById('companyIdInput').value.trim();
             if (compId) {
                 localStorage.setItem('activeCompanyId', compId);
             }
         }
 
-        function goToDashboard() {
-            const compId = document.getElementById('companyId').value.trim();
-            if (compId) {
-                window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
-            } else {
-                window.location.href = 'admin.html';
-            }
-        }
-
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    capturedPhotoData = e.target.result;
-                    document.getElementById('employeePhoto').value = capturedPhotoData;
-                    alert('تم تحميل الصورة بنجاح!');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        let videoStream = null;
         function startCamera() {
-            const video = document.getElementById('cameraStream');
-            document.getElementById('captureBtn').style.display = 'inline-block';
-            video.style.display = 'block';
-
-            navigator.mediaDevices.getUserMedia({ video: true })
+            const video = document.getElementById('videoElement');
+            const snapBtn = document.getElementById('snapBtn');
+            navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false })
                 .then(stream => {
                     videoStream = stream;
+                    video.style.display = 'block';
                     video.srcObject = stream;
+                    snapBtn.style.display = 'inline-block';
                 })
-                .catch(err => {
-                    alert('تعذر الوصول إلى الكاميرا: ' + err.message);
-                });
+                .catch(err => alert("⚠️ تعذر تشغيل الكاميرا: " + err.message));
         }
 
-        function capturePhoto() {
-            const video = document.getElementById('cameraStream');
-            const canvas = document.getElementById('cameraCanvas');
-            canvas.width = video.videoWidth || 320;
-            canvas.height = video.videoHeight || 240;
+        function takeSnapshot() {
+            const video = document.getElementById('videoElement');
+            const canvas = document.getElementById('canvasElement');
+            const preview = document.getElementById('snapshotPreview');
+            canvas.width = 120; 
+            canvas.height = 120;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, 120, 120);
+            compressedPhotoData = canvas.toDataURL('image/jpeg', 0.6);
+            preview.src = compressedPhotoData;
+            preview.style.display = 'block';
             
-            capturedPhotoData = canvas.toDataURL('image/png');
-            document.getElementById('employeePhoto').value = capturedPhotoData;
-
             if (videoStream) {
                 videoStream.getTracks().forEach(track => track.stop());
             }
             video.style.display = 'none';
-            document.getElementById('captureBtn').style.display = 'none';
-            alert('تم التقاط صورة الوجه بنجاح!');
+            document.getElementById('snapBtn').style.display = 'none';
         }
 
-        function getLocation() {
-            const statusEl = document.getElementById('locationStatus');
-            const locationInput = document.getElementById('employeeLocation');
+        window.onload = function() {
+            deviceUniqueId = getOrCreateDeviceID();
+            const urlParams = new URLSearchParams(window.location.search);
+            let companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'COMP-01';
+            document.getElementById('companyIdInput').value = companyId;
 
             if (navigator.geolocation) {
-                statusEl.innerText = 'جاري تحديد الإحداثيات...';
                 navigator.geolocation.getCurrentPosition(
-                    position => {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        const coordsStr = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-                        locationInput.value = coordsStr;
-                        statusEl.innerText = `✅ تم جلب الموقع بنجاح: (${coordsStr})`;
+                    (pos) => { 
+                        currentGPSLocation = { latitude: pos.coords.latitude, longitude: pos.coords.longitude }; 
+                        document.getElementById('gpsStatus').innerText = `📍 الموقع جاهز (${currentGPSLocation.latitude.toFixed(2)}, ${currentGPSLocation.longitude.toFixed(2)})`; 
                     },
-                    error => {
-                        statusEl.innerText = '❌ فشل جلب الموقع، يرجى السماح بالصلاحيات.';
-                        locationInput.value = 'غير متوفر';
-                    }
+                    (err) => { document.getElementById('gpsStatus').innerText = `📍 موقع افتراضي نشط.`; }
                 );
-            } else {
-                alert('متصفحك لا يدعم خاصية تحديد الموقع الجغرافي.');
             }
-        }
+        };
 
-        async function saveEmployee(event) {
+        async function registerAndDistribute(event) {
             event.preventDefault();
 
-            const compId = document.getElementById('companyId').value.trim();
-            if (!compId) {
-                alert('يرجى إدخال رمز الشركة أولاً!');
-                return;
-            }
+            const compId = document.getElementById('companyIdInput').value.trim();
+            saveActiveCompany();
 
             const newEmployee = {
                 companyId: compId,
                 companyName: document.getElementById('companyName').value.trim(),
-                name: document.getElementById('employeeName').value.trim(),
-                specialty: document.getElementById('employeeSpecialty').value.trim(),
-                workplace: document.getElementById('employeeWorkplace').value.trim(),
+                name: document.getElementById('empName').value.trim(),
+                email: document.getElementById('empEmail').value.trim(),
+                specialty: document.getElementById('empSpecialty').value.trim(),
+                workplace: document.getElementById('empWorkplace').value.trim(),
                 salary: document.getElementById('employeeSalary').value.trim(),
-                allowances: document.getElementById('employeeAllowances').value.trim() || '0',
-                username: document.getElementById('employeeUsername').value.trim(),
-                password: document.getElementById('employeePassword').value.trim(),
-                photo: document.getElementById('employeePhoto').value || 'https://via.placeholder.com/45',
-                location: document.getElementById('employeeLocation').value,
+                username: document.getElementById('empUsername').value.trim(),
+                password: document.getElementById('empPassword').value.trim(),
+                photo: compressedPhotoData || 'https://via.placeholder.com/45',
+                location: `${currentGPSLocation.latitude}, ${currentGPSLocation.longitude}`,
+                deviceFingerprint: deviceUniqueId,
                 startDate: new Date().toLocaleDateString('ar-EG')
             };
 
             try {
-                // إرسال البيانات إلى السيرفر لقاعدة البيانات الحقيقية
+                // إرسال البيانات إلى السيرفر
                 const response = await fetch('/api/employee/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -409,47 +457,41 @@
                     throw new Error(result.message || 'فشل الحفظ في السيرفر');
                 }
 
-                // الحفظ الاحتياطي المحلي لتحديث الجداول التلقائية في المتصفح
+                // 🔄 توزيع البيانات وتهيئة التخزين المحلي لتظهر فوراً في الصفحات المرتبطة
                 const storageKey = `company_employees_${compId}`;
                 let existingEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
                 existingEmployees.push(newEmployee);
                 localStorage.setItem(storageKey, JSON.stringify(existingEmployees));
 
-                let generalEmployees = JSON.parse(localStorage.getItem('company_employees') || '[]');
-                generalEmployees.push(newEmployee);
-                localStorage.setItem('company_employees', JSON.stringify(generalEmployees));
-
+                // توزيع على جدول الرواتب
                 let salariesList = JSON.parse(localStorage.getItem(`salaries_${compId}`) || '[]');
-                salariesList.push({ username: newEmployee.username, name: newEmployee.name, salary: newEmployee.salary, allowances: newEmployee.allowances });
+                salariesList.push({ username: newEmployee.username, name: newEmployee.name, salary: newEmployee.salary, allowances: '0' });
                 localStorage.setItem(`salaries_${compId}`, JSON.stringify(salariesList));
 
+                // توزيع على جدول الحضور والمناوبات
                 let shiftsList = JSON.parse(localStorage.getItem(`shifts_${compId}`) || '[]');
                 shiftsList.push({ username: newEmployee.username, name: newEmployee.name, workplace: newEmployee.workplace, status: 'نشط' });
                 localStorage.setItem(`shifts_${compId}`, JSON.stringify(shiftsList));
 
-                let securityList = JSON.parse(localStorage.getItem(`security_${compId}`) || '[]');
-                securityList.push({ username: newEmployee.username, name: newEmployee.name, verified: true, date: newEmployee.startDate });
-                localStorage.setItem(`security_${compId}`, JSON.stringify(securityList));
-
-                alert('🎉 تم حفظ وتخزين وترحيل بيانات الموظف بنجاح إلى قاعدة البيانات والجداول المرتبطة!');
-
-                // تفريغ الحقول بعد الحفظ الناجح
-                document.getElementById('employeeName').value = '';
-                document.getElementById('employeeSpecialty').value = '';
-                document.getElementById('employeeWorkplace').value = '';
-                document.getElementById('employeeSalary').value = '';
-                document.getElementById('employeeAllowances').value = '';
-                document.getElementById('employeeUsername').value = '';
-                document.getElementById('employeePassword').value = '';
-                document.getElementById('employeePhoto').value = '';
-                document.getElementById('uploadImageInput').value = '';
-                document.getElementById('employeeLocation').value = 'غير متوفر';
-                document.getElementById('locationStatus').innerText = 'لم يتم تحديد الموقع بعد';
-                capturedPhotoData = '';
+                // إظهار رسالة النجاح ثم الانتقال التلقائي لصفحة تسجيل الدخول (index.html)
+                document.getElementById('successMsg').style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = `index.html?company=${encodeURIComponent(compId)}`;
+                }, 2000);
 
             } catch (error) {
                 alert('حدث خطأ أثناء حفظ البيانات: ' + error.message);
             }
+        }
+
+        function goToLoginPage() {
+            const compId = document.getElementById('companyIdInput').value.trim();
+            window.location.href = `index.html?company=${encodeURIComponent(compId)}`;
+        }
+
+        function goToAdminDashboard() {
+            const compId = document.getElementById('companyIdInput').value.trim();
+            window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
         }
     </script>
 </body>

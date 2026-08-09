@@ -3,66 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - الهاتف</title>
+    <title>المراقب برو - مرحباً بك</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { 
-            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); 
-            color: #ffffff; 
-            min-height: 100vh; 
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1b2e;
+            color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            height: 100vh;
         }
         .welcome-card {
-            background: #1e2530;
+            background-color: #262338;
+            border-radius: 16px;
+            padding: 40px 30px;
             width: 100%;
             max-width: 420px;
-            padding: 40px 30px;
-            border-radius: 20px;
             text-align: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
         }
-        .logo-icon { font-size: 50px; margin-bottom: 10px; }
-        h1 { font-size: 26px; color: #38bdf8; margin-bottom: 5px; }
-        p { font-size: 14px; color: #94a3b8; line-height: 1.5; margin-bottom: 20px; }
-        
+        .logo-container img {
+            width: 70px;
+            height: 70px;
+            margin-bottom: 15px;
+        }
+        .logo-placeholder {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #f3f4f6;
+        }
+        p {
+            font-size: 14px;
+            color: #9ca3af;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
         .btn {
+            display: block;
             width: 100%;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 8px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
             text-decoration: none;
-            transition: 0.2s;
-            display: inline-block;
+            margin-bottom: 15px;
+            transition: background 0.3s;
         }
         .btn-primary {
-            background: #0284c7;
+            background-color: #0284c7;
             color: #ffffff;
             border: none;
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
         }
-        .btn-primary:hover { background: #0369a1; }
-        
-        .btn-secondary {
-            background: transparent;
-            color: #f8fafc;
-            border: 2px solid #475569;
+        .btn-primary:hover {
+            background-color: #0369a1;
         }
-        .btn-secondary:hover { background: rgba(255,255,255,0.05); border-color: #0284c7; }
-
-        .footer-info {
-            margin-top: 20px;
+        .btn-outline {
+            background-color: transparent;
+            color: #e5e7eb;
+            border: 1px solid #4b5563;
+        }
+        .btn-outline:hover {
+            background-color: #374151;
+        }
+        .developer-info {
+            margin-top: 30px;
             font-size: 12px;
-            color: #64748b;
-            border-top: 1px solid rgba(255,255,255,0.05);
+            color: #6b7280;
+            border-top: 1px solid #374151;
             padding-top: 15px;
         }
     </style>
@@ -70,19 +85,22 @@
 <body>
 
     <div class="welcome-card">
-        <div class="logo-icon">🛡️</div>
+        <!-- شعار البرنامج -->
+        <div class="logo-container">
+            <div class="logo-placeholder">🛡️</div>
+        </div>
+
         <h1>المراقب برو</h1>
-        <p>النظام الذكي لإدارة الحضور، الشفتات، وبيانات الموظفين بكل كفاءة وأمان عبر بصمة الوجه والموقع الجغرافي.</p>
+        <p>النظام الذكي لإدارة الحضور، المنشآت، وبيانات الموظفين بكل كفاءة وأمان عبر بصمة الوجه والموقع الجغرافي.</p>
 
-        <!-- يوجه الموظف لصفحة تسجيل الدخول الخاصة بالبصمة والحضور -->
-        <a href="employee-login.html" class="btn btn-primary">تسجيل الدخول</a>
-        
-        <!-- يوجه لتسجيل موظف جديد -->
-        <a href="admin-add-employee.html" class="btn btn-secondary">إنشاء حساب جديد</a>
+        <!-- أزرار التوجيه الموحدة -->
+        <a href="login.html" class="btn btn-primary">تسجيل الدخول</a>
+        <a href="register.html" class="btn btn-outline">إنشاء حساب جديد</a>
 
-        <div class="footer-info">
+        <!-- معلومات المطور -->
+        <div class="developer-info">
             تطوير وبرمجة: محمد العبيدي<br>
-            mohmmed1628@gmail.com
+            mohmmed1626@gmail.com
         </div>
     </div>
 

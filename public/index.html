@@ -2,170 +2,206 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تسجيل الدخول - المراقب برو</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - تسجيل الدخول الذكي</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        
         body {
-            background: radial-gradient(circle at top right, #1e1b4b, #0f172a, #020617);
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             color: #f8fafc;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 15px;
         }
 
         .login-card {
-            background: rgba(30, 41, 59, 0.75);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 45px;
-            border-radius: 28px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            background: #1e293b;
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
             width: 100%;
-            max-width: 450px;
+            max-width: 420px;
+            border: 1px solid #334155;
+            position: relative;
+        }
+
+        h2 {
+            color: #38bdf8;
+            font-size: 22px;
+            margin-bottom: 25px;
             text-align: center;
-        }
-
-        .login-card h1 {
-            font-size: 32px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
-
-        .login-card p {
-            color: #94a3b8;
-            font-size: 15px;
-            margin-bottom: 30px;
+            font-weight: 800;
         }
 
         .form-group {
-            margin-bottom: 20px;
-            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
         }
 
         label {
-            font-size: 15px;
-            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: bold;
             color: #cbd5e1;
-            font-weight: 700;
-            display: block;
         }
 
-        input {
+        input, select {
             width: 100%;
-            padding: 16px;
-            background: rgba(15, 23, 42, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            color: white;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        input:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
-            outline: none;
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 18px;
-            background: linear-gradient(135deg, #0284c7, #6366f1);
-            border: none;
-            border-radius: 14px;
-            color: white;
-            font-size: 18px;
-            font-weight: 900;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 25px rgba(2, 132, 199, 0.4);
-            margin-top: 10px;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 30px rgba(99, 102, 241, 0.5);
-        }
-
-        .divider {
-            margin: 25px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            color: #64748b;
+            padding: 12px;
+            border: 2px solid #334155;
+            background: #0f172a;
+            color: #fff;
+            border-radius: 10px;
             font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: #38bdf8;
+            background: #1e293b;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 13px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #059669;
+        }
+
+        #errorMsg {
+            display: none;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid #ef4444;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 20px;
+            }
         }
     </style>
 </head>
 <body>
 
     <div class="login-card">
-        <h1>🛡️ المراقب برو</h1>
-        <p>تسجيل الدخول إلى لوحة تحكم الشركة</p>
-
-        <form id="loginForm" onsubmit="handleLoginMatch(event)">
+        <h2>🛡️ تسجيل الدخول - المراقب برو</h2>
+        
+        <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
-                <label>رمز الشركة (ID)</label>
-                <input type="text" id="companyCode" placeholder="مثال: B-2080" required>
+                <label>رمز الشركة:</label>
+                <input type="text" id="companyId" placeholder="أدخل رمز الشركة" required>
             </div>
 
             <div class="form-group">
-                <label>رقم الهاتف</label>
-                <input type="text" id="phone" placeholder="رقم هاتف المدير">
-            </div>
-
-            <div class="divider">أو بيانات الحساب</div>
-
-            <div class="form-group">
-                <label>اسم المستخدم</label>
-                <input type="text" id="username" placeholder="اسم المستخدم">
+                <label>اسم المستخدم:</label>
+                <input type="text" id="username" placeholder="اسم المستخدم أو البريد" required>
             </div>
 
             <div class="form-group">
-                <label>كلمة المرور</label>
-                <input type="password" id="password" placeholder="كلمة المرور">
+                <label>كلمة المرور:</label>
+                <input type="password" id="password" placeholder="كلمة المرور" required>
             </div>
 
-            <button type="submit" class="btn-login">تسجيل الدخول 🚀</button>
+            <button type="submit" class="btn">🚀 دخول النظام</button>
+            <div id="errorMsg">⚠️ اسم المستخدم أو كلمة المرور غير صحيحة!</div>
         </form>
     </div>
 
     <script>
-        async function handleLoginMatch(e) {
-            e.preventDefault();
-            
-            const companyId = document.getElementById('companyCode').value.trim();
-            const phone = document.getElementById('phone').value.trim();
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId');
+            if (companyId) {
+                document.getElementById('companyId').value = companyId;
+            }
+        };
+
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const compId = document.getElementById('companyId').value.trim();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
 
-            try {
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ companyId, phone, username, password })
-                });
+            // حفظ معرف الشركة الحالي
+            localStorage.setItem('activeCompanyId', compId);
 
-                const data = await response.json();
-
-                if (data.success) {
-                    localStorage.setItem('activeCompanyId', data.company.companyId);
-                    localStorage.setItem('activeCompanyName', data.company.name);
-
-                    alert(`✨ مرحباً بك في نظام ${data.company.name}`);
-                    window.location.href = `admin.html?company=${encodeURIComponent(data.company.companyId)}`;
-                } else {
-                    alert(`❌ ${data.message || 'البيانات المدخلة غير صحيحة'}`);
-                }
-            } catch (error) {
-                alert('❌ حدث خطأ في الاتصال بالخادم، تأكد من تشغيل السيرفر.');
+            // 1. التحقق إذا كان المستخدم هو المدير (افتراضي أو مسجل محلياً)
+            // يمكنك تعديل كلمة مرور وسودو المدير حسب رغبتك
+            if ((username === 'admin' || username === 'مدير') && password === 'admin123') {
+                localStorage.setItem('userRole', 'admin');
+                localStorage.setItem('currentUser', username);
+                window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
+                return;
             }
+
+            // 2. التحقق من قائمة الموظفين المخزنة محلياً للسيرفر المحلي
+            const storageKey = `company_employees_${compId}`;
+            const employees = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            
+            const matchedEmp = employees.find(emp => emp.username === username && emp.password === password);
+
+            if (matchedEmp) {
+                // حفظ بيانات الموظف الجلسة الحالية
+                localStorage.setItem('userRole', 'employee');
+                localStorage.setItem('currentEmployee', JSON.stringify(matchedEmp));
+                
+                // الانتقال إلى صفحة المرفقات/الملفات الخاصة بالموظف (Attachment)
+                window.location.href = `attachment.html?company=${encodeURIComponent(compId)}&user=${encodeURIComponent(username)}`;
+                return;
+            }
+
+            // محاولة التحقق عبر السيرفر العام إن وجد
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId: compId, username, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.role === 'admin') {
+                        window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
+                    } else {
+                        window.location.href = `attachment.html?company=${encodeURIComponent(compId)}`;
+                    }
+                } else {
+                    errorMsg.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                // إذا فشل الاتصال بالسيرفر وكان مطابقاً لأي بيانات مخزنة محلياً كمدير عام
+                errorMsg.style.display = 'block';
+            });
         }
     </script>
 </body>
