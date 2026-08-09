@@ -70,6 +70,13 @@
                     <input type="password" id="logPass" placeholder="أدخل كلمة المرور" required>
                 </div>
                 <button type="submit" class="submit-btn">🚀 دخول النظام فوراً</button>
+                
+                <!-- أزرار تسجيل الحضور والانصراف السريع المرتبطة بالبصمة والـ GPS لاحتساب الرواتب -->
+                <div class="input-group full" style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" class="action-btn" style="flex:1; background:#10b981; padding: 12px;" onclick="recordAttendanceAction('حضور')">📥 تسجيل الحضور بالبصمة وGPS</button>
+                    <button type="button" class="action-btn" style="flex:1; background:#f59e0b; padding: 12px;" onclick="recordAttendanceAction('انصراف')">📤 تسجيل الإنصراف بالبصمة وGPS</button>
+                </div>
+
                 <div id="logError" class="alert-box alert-error">⚠️ بيانات الدخول غير صحيحة أو غير مسجلة!</div>
             </form>
         </div>
@@ -114,8 +121,11 @@
                 </div>
 
                 <div class="media-box">
-                    <label style="display:block; margin-bottom: 6px; color:#065f46;">بصمة الوجه والتحقق المكاني (GPS):</label>
-                    <button type="button" class="action-btn" onclick="openCam()">📷 تشغيل الكاميرا</button>
+                    <label style="display:block; margin-bottom: 6px; color:#065f46;">بصمة الوجه، بصمة الإصبع والتحقق المكاني (GPS):</label>
+                    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                        <button type="button" class="action-btn" onclick="openCam()">📷 تشغيل الكاميرا</button>
+                        <button type="button" class="action-btn" style="background:#6366f1;" onclick="registerFingerprintCredential()">👆 تسجيل بصمة الإصبع</button>
+                    </div>
                     <video id="vStream" autoplay playsinline></video>
                     <button type="button" id="snapTrigger" class="action-btn" style="background:#10b981; display:none; margin-top:6px;" onclick="captureFace()">📸 التقاط بصمة الوجه</button>
                     <canvas id="cCanvas"></canvas>
@@ -150,6 +160,7 @@
         let capturedImage = "";
         let gpsData = { lat: 33.3152, lng: 44.3661 };
         let activeStream = null;
+        let registeredFingerprintData = null; // لتخزين بيانات بصمة الإصبع
 
         // --- نظام Offline-First الذكي ---
         
@@ -242,6 +253,95 @@
             video.style.display = 'none'; document.getElementById('snapTrigger').style.display = 'none';
         }
 
+        // --- وظائف بصمة الإصبع (WebAuthn) والمطابقة والحضور ---
+        async function registerFingerprintCredential() {
+            try {
+                const challenge = new Uint8Array([21, 31, 105, 47, 11, 99]);
+                const publicKey = {
+                    challenge: challenge,
+                    rp: { name: "AlMoraqebPro", id: window.location.hostname },
+                    user: {
+                        id: Uint8Array.from(document.getElementById('regUsername').value || "emp_id", c => c.charCodeAt(0)),
+                        name: document.getElementById('regEmail').value || "employee@domain.com",
+                        displayName: document.getElementById('regName').value || "موظف"
+                    },
+                    pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                    timeout: 60000,
+                    attestation: "direct"
+                };
+
+                const credential = await navigator.credentials.create({ publicKey });
+                registeredFingerprintData = {
+                    id: credential.id,
+                    type: credential.type
+                };
+                alert("✅ تم تسجيل بصمة الإصبع الحيوية بنجاح!");
+            } catch (err) {
+                console.error("خطأ تسجيل البصمة:", err);
+                alert("⚠️ تعذر تسجيل بصمة الإصبع، تأكد من دعم جهازك للمستشعر.");
+            }
+        }
+
+        async function verifyBiometricMatch() {
+            try {
+                const challenge = new Uint8Array([9, 51, 12, 100, 42]);
+                const publicKey = { challenge: challenge, timeout: 60000, userVerification: "required" };
+                const assertion = await navigator.credentials.get({ publicKey });
+                return assertion ? true : false;
+            } catch (err) {
+                console.error("فشل مطابقة البصمة:", err);
+                return false;
+            }
+        }
+
+        async function recordAttendanceAction(actionType) {
+            const compId = document.getElementById('logComp').value;
+            const username = document.getElementById('logUser').value;
+
+            if (!compId || !username) {
+                alert("⚠️ يرجى إدخال رمز الشركة واسم المستخدم في شاشة الدخول أولاً.");
+                return;
+            }
+
+            alert("👆 جاري التحقق من بصمة الإصبع أو الوجه للموظف...");
+            const isVerified = await verifyBiometricMatch();
+            if (!isVerified) {
+                alert("❌ فشلت مطابقة البصمة الحيوية! لا يمكن تسجيل الحضور.");
+                return;
+            }
+
+            if (!navigator.geolocation) {
+                alert("⚠️ المتصفح لا يدعم تحديد الموقع (GPS).");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const attendanceRecord = {
+                    companyId: compId,
+                    employeeUsername: username,
+                    type: actionType, // "حضور" أو "انصراف"
+                    timestamp: new Date().toISOString(),
+                    location: {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    },
+                    verification: "Biometric + GPS"
+                };
+
+                let res = await safeApiCall('/api/attendance/log', 'POST', attendanceRecord);
+                if (res && res.success) {
+                    alert(`✅ تم اعتماد وثثبيت سجل (${actionType}) بنجاح عبر البصمة والموقع لاحتساب الرواتب!`);
+                } else {
+                    let localLogs = JSON.parse(localStorage.getItem(`attendance_${compId}`) || '[]');
+                    localLogs.push(attendanceRecord);
+                    localStorage.setItem(`attendance_${compId}`, JSON.stringify(localLogs));
+                    alert(`💾 تم حفظ سجل (${actionType}) محلياً مع البصمة وGPS وستتم مزامنته تلقائياً.`);
+                }
+            }, (error) => {
+                alert("⚠️ تعذر تحديد موقع الـ GPS، يرجى تفعيل الخدمة لتسجيل الدخول.");
+            }, { enableHighAccuracy: true });
+        }
+
         async function executeRegister(e) {
             e.preventDefault();
             const newEmp = {
@@ -250,6 +350,7 @@
                 username: document.getElementById('regUsername').value,
                 password: document.getElementById('regPassword').value,
                 photo: capturedImage,
+                fingerprint: registeredFingerprintData,
                 location: `${gpsData.lat}, ${gpsData.lng}`
             };
 
@@ -261,6 +362,7 @@
             
             document.getElementById('regSuccess').style.display = 'block';
             setTimeout(() => { document.querySelector('#registerView form').reset(); changeView('login'); }, 1800);
+            validatorGPS(); // تحديث الموقع عند الحاجة
         }
 
         function executeLogin(e) {
@@ -270,6 +372,17 @@
             if((user === 'admin') && document.getElementById('logPass').value === 'admin123') window.location.href = `admin.html?company=${comp}`;
             else alert("جاري التحقق...");
         }
+
+        function validatorGPS() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    gpsData = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    let gpsEl = document.getElementById('gpsText');
+                    if(gpsEl) gpsEl.innerText = `📍 الموقع: ${gpsData.lat.toFixed(4)}, ${gpsData.lng.toFixed(4)}`;
+                });
+            }
+        }
+        window.onload = validatorGPS;
     </script>
 </body>
 </html>
