@@ -148,6 +148,15 @@
     </div>
 
     <script>
+        window.onload = function() {
+            // استرجاع رمز الشركة تلقائياً من الرابط أو التخزين إن وجد لتسهيل الاستخدام من الهاتف
+            const urlParams = new URLSearchParams(window.location.search);
+            const compId = urlParams.get('company') || localStorage.getItem('activeCompanyId');
+            if (compId) {
+                document.getElementById('loginCompanyId').value = compId;
+            }
+        };
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -155,31 +164,40 @@
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
 
+            // 1. محاولة التحقق عبر السيرفر أولاً
             try {
-                // إرسال البيانات للتحقق عبر السيرفر وقاعدة بيانات MongoDB
                 const response = await fetch('/api/employee/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ companyId: compId, username, password })
                 });
 
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    // حفظ معلومات الجلسة وتمرير معرف الشركة عبر الرابط
-                    localStorage.setItem('activeCompanyId', compId);
-                    localStorage.setItem('activeEmployee', result.employeeName || username);
-
-                    alert(`مرحباً بك يا ${result.employeeName || username}! تم التحقق بنجاح.`);
-                    
-                    // الانتقال إلى صفحة البصمة مع تمرير رمز الشركة في الـ URL
-                    window.location.href = `attendance.html?company=${encodeURIComponent(compId)}`;
-                } else {
-                    alert(result.message || '⚠️ خطأ: رمز الشركة، اسم المستخدم، أو كلمة المرور غير صحيحة!');
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        localStorage.setItem('activeCompanyId', compId);
+                        localStorage.setItem('activeEmployee', result.employeeName || username);
+                        window.location.href = `attendance.html?company=${encodeURIComponent(compId)}`;
+                        return;
+                    }
                 }
             } catch (error) {
-                console.error("خطأ في الاتصال بالسيرفر:", error);
-                alert('⚠️ تعذر الاتصال بالسيرفر. تأكد من عمل السيرفر وقاعدة البيانات.');
+                console.log("السيرفر غير متصل، جاري التبديل للتحقق المحلي...");
+            }
+
+            // 2. التحقق الاحتياطي المحلي من الذاكرة (لضمان عمل الهاتف دون مشاكل انقطاع الإنترنت أو السيرفر)
+            const storageKey = `company_employees_${compId}`;
+            const localEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            
+            const foundEmployee = localEmployees.find(emp => emp.username === username && emp.password === password);
+
+            if (foundEmployee) {
+                localStorage.setItem('activeCompanyId', compId);
+                localStorage.setItem('activeEmployee', foundEmployee.name);
+                alert(`مرحباً بك يا ${foundEmployee.name}! تم تسجيل الدخول محلياً بنجاح.`);
+                window.location.href = `attendance.html?company=${encodeURIComponent(compId)}`;
+            } else {
+                alert('⚠️ خطأ: رمز الشركة، اسم المستخدم، أو كلمة المرور غير صحيحة!');
             }
         });
     </script>
