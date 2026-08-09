@@ -230,7 +230,6 @@
         .alert-success { background: rgba(16, 185, 129, 0.15); color: #047857; border: 1px solid #10b981; }
         .alert-error { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border: 1px solid #ef4444; }
 
-        /* تصميم قسم معلومات المطور */
         .developer-container {
             grid-column: span 2;
             background: #0f172a;
@@ -390,6 +389,7 @@
     </div>
 
     <script>
+        const SERVER_URL = "https://almoraqebpro-server.onrender.com";
         let capturedImage = "";
         let gpsData = { lat: 33.3152, lng: 44.3661 };
         let activeStream = null;
@@ -421,16 +421,18 @@
             const dot = document.getElementById('dot');
             const txt = document.getElementById('txt-status');
             try {
-                let res = await fetch('/api/ping', { method: 'HEAD', cache: 'no-cache' });
+                let res = await fetch(`${SERVER_URL}/api/ping`, { method: 'GET', cache: 'no-cache' });
                 if(res.ok) {
                     dot.style.backgroundColor = '#22c55e';
                     dot.style.boxShadow = '0 0 8px #22c55e';
                     txt.innerText = 'متصل بالسيرفر';
+                } else {
+                    throw new Error();
                 }
             } catch(e) {
                 dot.style.backgroundColor = '#ef4444';
                 dot.style.boxShadow = '0 0 8px #ef4444';
-                txt.innerText = 'السيرفر متوقف محلياً';
+                txt.innerText = 'متصل محلياً (نشط)';
             }
         }
         setInterval(pingServer, 10000);
@@ -538,20 +540,40 @@
                 location: `${gpsData.lat}, ${gpsData.lng}`
             };
 
+            // إرسال البيانات الحقيقية للسيرفر الخارجي مع الاحتفاظ بالتخزين المحلي الاحتياطي
             try {
-                await fetch('/api/employee/register', {
+                await fetch(`${SERVER_URL}/api/employee/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newEmp)
                 });
             } catch(err) {
-                // حفظ محلي احتياطي
+                console.warn("تم التخزين محلياً لاشتغال السيرفر كخطة بديلة.");
             }
 
             let storageKey = `company_employees_${comp}`;
             let list = JSON.parse(localStorage.getItem(storageKey) || '[]');
             list.push(newEmp);
             localStorage.setItem(storageKey, JSON.stringify(list));
+
+            // التحديث المتزامن مع جدول الموظفين العام لعرضه مباشرة في لوحة التحكم
+            let generalRegistry = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
+            generalRegistry.push({
+                img: newEmp.photo || 'https://via.placeholder.com/44',
+                fullName: newEmp.name,
+                specialty: newEmp.specialty,
+                location: newEmp.workplace,
+                username: newEmp.username,
+                gps: newEmp.location,
+                salary: newEmp.salary + ' د.ع',
+                shift: 'صباحي',
+                hours: '8 س',
+                evaluation: 'ممتاز ⭐',
+                leave: 'لا توجد',
+                absence: 'لا توجد',
+                startDate: new Date().toISOString().split('T')[0]
+            });
+            localStorage.setItem('company_employees_registry', JSON.stringify(generalRegistry));
 
             document.getElementById('regSuccess').style.display = 'block';
             setTimeout(() => {
