@@ -1,45 +1,174 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cors = require('cors');
+
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// إعداد middleware لمعالجة طلبات JSON إذا كنت تستخدم API
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// الرابط الافتراضي لقاعدة بيانات MongoDB (يمكن تغليفه بمتغير بيئي لاحقاً)
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/almoraqebpro";
 
-// هذه هي النقطة الأهم: ربط مجلد public لخدمة الملفات الثابتة
-// تأكد أن المجلد اسمه "public" وموجود بجانب هذا الملف
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// إتاحة مجلد الملفات والرفع والصور للعام
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads');
+}
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// مسار فحص الاتصال (Ping) لحل مشكلة تعليق "جاري الاتصال..." في الواجهة
-app.get('/api/ping', (req, res) => {
-    res.status(200).send('pong');
-});
+// ==========================================
+// 1. تعريف نماذج قاعدة البيانات (Mongoose Schemas)
+// ==========================================
 
-app.head('/api/ping', (req, res) => {
-    res.status(200).end();
+// نموذج الشركة
+const companySchema = new mongoose.Schema({
+    id: { type: String, required: true, unique: true, index: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now }
 });
+const Company = mongoose.model('Company', companySchema);
 
-// المسار الرئيسي: يوجه المستخدم دائماً إلى index.html عند فتح الرابط
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// نموذج الموظف (شامل بصمة الوجه والموقع الجغرافي)
+const employeeSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true },
+    companyName: { type: String },
+    name: { type: String, required: true },
+    email: { type: String },
+    salary: { type: Number },
+    specialty: { type: String },
+    workplace: { type: String },
+    username: { type: String, required: true },
+    password: { type: String, required: true },
+    photoUrl: { type: String },
+    location: { type: String },
+    createdAt: { type: Date, default: Date.now }
 });
+const Employee = mongoose.model('Employee', employeeSchema);
 
-// إضافة معالجة للمسارات الأخرى (مثل admin.html) لتعمل مباشرة
-app.get('/:page', (req, res) => {
-    const page = req.params.page;
-    const filePath = path.join(__dirname, 'public', page);
-    
-    // التحقق من وجود الملف قبل إرساله
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        res.status(404).send("الصفحة المطلوبة غير موجودة");
+// ==========================================
+// 2. إعداد Multer لرفع الصور والملفات
+// ==========================================
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-// تعريف البورت
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB كحد أقصى للصورة
+});
+
+// ==========================================
+// 3. المسارات البرمجية (API Endpoints)
+// ==========================================
+
+// مسار فحص الاتصال (Ping)
+app.get('/api/ping', (req, res) => {
+    res.status(200).json({ status: 'connected', message: 'السيرفر يعمل بكفاءة ومتصل بنجاح' });
+});
+
+// تسجيل شركة جديدة
+app.post('/api/companies/register', async (req, res) => {
+    try {
+        const { id, name, email, phone } = req.body;
+        let existingCompany = await Company.findOne({ id });
+        if (existingCompany) {
+            return res.status(200).json({ success: true, message: 'الشركة مسجلة مسبقاً', company: existingCompany });
+        }
+        const newCompany = new Company({ id, name, email, phone });
+        await newCompany.save();
+        res.status(201).json({ success: true, message: 'تم تسجيل الشركة بنجاح في قاعدة البيانات', company: newCompany });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// جلب قائمة الشركات
+app.get('/api/companies', async (req, res) => {
+    try {
+        const companies = await Company.find().sort({ createdAt: -1 });
+        res.status(200).json({ success: true, companies });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// تسجيل موظف جديد مع رفع صورة بصمة الوجه
+app.post('/api/employee/register', upload.single('photo'), async (req, res) => {
+    try {
+        const photoPath = req.file ? `/uploads/${req.file.filename}` : (req.body.photo || '');
+        
+        const newEmployee = new Employee({
+            companyId: req.body.companyId,
+            companyName: req.body.companyName,
+            name: req.body.name,
+            email: req.body.email,
+            salary: req.body.salary,
+            specialty: req.body.specialty,
+            workplace: req.body.workplace,
+            username: req.body.username,
+            password: req.body.password,
+            photoUrl: photoPath,
+            location: req.body.location
+        });
+
+        await newEmployee.save();
+        res.status(201).json({ success: true, message: 'تم تسجيل الموظف وحفظه في السيرفر وقاعدة البيانات بنجاح', employee: newEmployee });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// جلب موظفي شركة معينة مع دعم التقسيم (Pagination) لآلاف الموظفين
+app.get('/api/employees/:companyId', async (req, res) => {
+    try {
+        const { companyId } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50; // جلب 50 موظفاً كدفعة افتراضية لضمان السرعة
+
+        const employees = await Employee.find({ companyId })
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit);
+
+        const total = await Employee.countDocuments({ companyId });
+
+        res.status(200).json({
+            success: true,
+            total,
+            page,
+            pages: Math.ceil(total / limit),
+            employees
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ==========================================
+// 4. الاتصال بقاعدة البيانات وتشغيل السيرفر
+// ==========================================
+mongoose.connect(MONGO_URI)
+.then(() => {
+    console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح واستقرار تام');
+    app.listen(PORT, () => {
+        console.log(`🚀 السيرفر يعمل الآن على المنفذ: ${PORT}`);
+    });
+})
+.catch(err => {
+    console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err.message);
 });

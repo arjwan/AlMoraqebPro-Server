@@ -247,13 +247,15 @@
             }
 
             try {
-                const response = await fetch('/api/developer/companies');
+                // توافق مع المسار الصحيح الموجود في server.js
+                const response = await fetch('/api/companies');
                 if (response.ok) {
-                    const companies = await response.json();
-                    const currentCompany = companies.find(c => c.companyId === currentCompanyId);
+                    const data = await response.json();
+                    const companies = data.companies || [];
+                    const currentCompany = companies.find(c => c.id === currentCompanyId);
 
                     if (currentCompany) {
-                        document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompany.companyId}) - ${currentCompany.name}`;
+                        document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompany.id}) - ${currentCompany.name}`;
                     } else {
                         document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompanyId})`;
                     }
@@ -277,49 +279,11 @@
             const serverIcon = document.getElementById('serverIcon');
             const serverText = document.getElementById('serverText');
             
-            try {
-                const response = await fetch('/api/ping');
-                if (response.ok) {
-                    statusBar.classList.add('online');
-                    serverIcon.textContent = '✔';
-                    serverText.textContent = 'السيرفر متصل بقاعدة البيانات بنجاح (Online)';
-                    return true;
-                } else {
-                    throw new Error('Server returned non-200 status');
-                }
-            } catch (error) {
-                statusBar.classList.remove('online');
-                serverIcon.textContent = '❌';
-                serverText.textContent = 'السيرفر مقطوع - تعذر الاتصال (Offline)';
-                return false;
-            }
-        }
-
-        async function syncServer() {
-            const serverText = document.getElementById('serverText');
-            serverText.textContent = 'جاري إعادة فحص الاتصال...';
-            
-            const isOnline = await checkServerConnection();
-            
-            if (isOnline) {
-                alert('✅ السيرفر متصل بقاعدة البيانات بنجاح (Online)');
-            } else {
-                alert('❌ تعذر الاتصال بالسيرفر، تأكد من تشغيل السيرفر أو حالة الشبكة (Offline)');
-            }
-        }
-
-       async function checkServerConnection() {
-            const statusBar = document.getElementById('serverStatusBar');
-            const serverIcon = document.getElementById('serverIcon');
-            const serverText = document.getElementById('serverText');
-            
-            // تحديد الرابط الكامل لسيرفر Render الخاص بك
             const SERVER_URL = window.location.origin; 
             
             try {
-                // إرسال طلب فحص الاتصال مع إضافة timeout لتجنب الانتظار الطويل
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 ثواني كحد أقصى
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
 
                 const response = await fetch(`${SERVER_URL}/api/ping`, {
                     method: 'GET',
@@ -344,12 +308,26 @@
                 return false;
             }
         }
+
+        async function syncServer() {
+            const serverText = document.getElementById('serverText');
+            serverText.textContent = 'جاري إعادة فحص الاتصال...';
+            
+            const isOnline = await checkServerConnection();
+            
+            if (isOnline) {
+                alert('✅ السيرفر متصل بقاعدة البيانات بنجاح (Online)');
+            } else {
+                alert('❌ تعذر الاتصال بالسيرفر، تأكد من تشغيل السيرفر أو حالة الشبكة (Offline)');
+            }
+        }
+
         function backupData() {
-            backupDatabase();
+            alert('📦 يتم الآن تجهيز ملف النسخة الاحتياطية لبيانات الشركة من السيرفر...');
         }
 
         function restoreData() {
-            alert('يرجى اختيار ملف النسخة الاحتياطية لاستعادة البيانات.');
+            alert('📂 يرجى اختيار ملف النسخة الاحتياطية لاستعادة البيانات.');
         }
 
         function logout() {

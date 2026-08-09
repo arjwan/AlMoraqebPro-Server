@@ -20,11 +20,9 @@
             border-bottom: 2px solid #e2e8f0;
         }
         
-        /* عنوان الصفحة الرئيسي */
         .title-area { display: flex; align-items: center; gap: 12px; }
         .title-area h2 { font-size: 22px; font-weight: 900; color: #0f172a; }
 
-        /* اسم الشركة والرمز في اليسار بتصميم ديناميكي متحرك وخلفية غير سوداء */
         .company-badge-container {
             display: flex; align-items: center; gap: 10px;
             background: linear-gradient(135deg, #0284c7, #0369a1);
@@ -48,7 +46,6 @@
         .dot.connected { background: #10b981; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        /* أزرار التحكم أكبر وأجمل */
         .top-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         
         .btn {
@@ -71,7 +68,6 @@
         
         .btn:active { transform: scale(0.97); }
 
-        /* شريط البحث المصغر والفلاتر */
         .filter-section {
             display: flex; gap: 12px; margin-bottom: 20px; background: #f8fafc; padding: 15px; 
             border-radius: 14px; border: 1px solid #cbd5e1; align-items: center; flex-wrap: wrap;
@@ -95,7 +91,6 @@
         .badge { padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; display: inline-block; }
         .bg-green { background: #dcfce7; color: #166534; }
 
-        /* نافذة التعديل المنبثقة الحقيقية */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
@@ -123,7 +118,6 @@
 <div class="main-container">
     
     <div class="top-bar">
-        <!-- اسم الشركة والرمز في الجهة اليسرى مع تصميم ديناميكي متحرك -->
         <div class="company-badge-container" title="معلومات الشركة والرمز التعريفي">
             <span class="company-header-name">🏢 المراقب برو</span>
             <span class="company-header-badge">B-2070</span>
@@ -134,7 +128,6 @@
             <span id="serverStatusText">جاري الاتصال بالسيرفر الحقيقي...</span>
         </div>
 
-        <!-- أزرار التحكم في مكانها الطبيعي وبتصميم أكبر وأجمل -->
         <div class="top-actions">
             <button class="btn btn-dark" onclick="goBackDashboard()">⬅ العودة</button>
             <button class="btn btn-success" onclick="fetchEmployeesFromServer()">🔄 مزامنة</button>
@@ -142,13 +135,11 @@
         </div>
     </div>
 
-    <!-- عنوان الصفحة -->
     <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
         <span style="font-size: 26px;">👥</span>
         <h2 style="font-size: 20px; font-weight: 900; color: #0f172a;">إدارة ومتابعة موظفي الشركة</h2>
     </div>
 
-    <!-- شريط البحث المصغر مع زر بحث فعال والفلاتر بجانبه -->
     <div class="filter-section">
         <div class="search-box-group">
             <input type="text" id="searchInput" placeholder="🔍 بحث عن موظف..." onkeydown="if(event.key==='Enter') executeSearch()">
@@ -199,7 +190,6 @@
 
 </div>
 
-<!-- نافذة التعديل المنبثقة الحقيقية -->
 <div class="modal-overlay" id="editModal">
     <div class="modal-content">
         <h3>📝 تعديل بيانات الموظف</h3>
@@ -317,9 +307,9 @@
 
         let filtered = employees.filter(emp => {
             let matchText = emp.fullName.toLowerCase().includes(input) || 
-                            emp.specialty.toLowerCase().includes(input) || 
-                            emp.username.toLowerCase().includes(input) || 
-                            emp.location.toLowerCase().includes(input);
+                          emp.specialty.toLowerCase().includes(input) || 
+                          emp.username.toLowerCase().includes(input) || 
+                          emp.location.toLowerCase().includes(input);
             let matchBranch = branchFilter === "" || emp.location === branchFilter;
             let matchShift = shiftFilter === "" || emp.shift === shiftFilter;
             return matchText && matchBranch && matchShift;
