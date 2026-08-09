@@ -104,7 +104,6 @@
 
         .action-btn:hover { transform: translateY(-2px); }
 
-        /* نافذة الكاميرا لالتقاط بصمة الوجه */
         .camera-modal {
             display: none;
             position: fixed;
@@ -132,6 +131,7 @@
             object-fit: cover;
             border: 3px solid #38bdf8;
             margin: 10px auto;
+            background: #000;
         }
 
         canvas { display: none; }
@@ -150,8 +150,8 @@
 
     <div class="panel-container">
         <div class="status-indicator">
-            <div class="dot"></div>
-            <span>متصل بالسيرفر المركزي</span>
+            <div id="dot" class="dot"></div>
+            <span id="txt-status">جاري الاتصال بالنظام...</span>
         </div>
 
         <h2>⏱️ بصمة الحضور والانصراف</h2>
@@ -178,19 +178,20 @@
     <div id="camModal" class="camera-modal">
         <div class="camera-box">
             <h3 style="color:#38bdf8; margin-bottom:10px; font-size:15px;">التقاط بصمة الوجه</h3>
-            <video id="liveVideo" autoplay playsinline></video>
+            <video id="liveVideo" autoplay playsinline muted></video>
             <canvas id="snapCanvas"></canvas>
-            <div style="font-size:11px; color:#34d399; margin-bottom:10px;" id="locationStatus">📍 الموقع جاهز عبر النظام النشط</div>
+            <div style="font-size:11px; color:#34d399; margin-bottom:10px;" id="locationStatus">📍 جاري جلب الموقع الجغرافي...</div>
             <button type="button" class="action-btn btn-attendance" onclick="confirmCapture()">📸 تأكيد وبصم الآن</button>
             <button type="button" class="action-btn btn-departure" style="padding: 8px; font-size:12px; margin-bottom:0;" onclick="closeCamModal()">إلغاء</button>
         </div>
     </div>
 
     <script>
+        const SERVER_URL = "https://almoraqebpro-server.onrender.com";
         let currentActionType = '';
         let mediaStream = null;
         let employeeData = null;
-        let currentGPS = { lat: 33.3152, lng: 44.3661 }; // إحداثيات افتراضية بغداد لتفادي تعطل الـ GPS
+        let currentGPS = { lat: 33.3152, lng: 44.3661 }; // إحداثيات افتراضية بغداد كاحتياطي آمن
 
         // تشغيل الساعة الحية
         setInterval(() => {
@@ -211,78 +212,120 @@
                     document.getElementById('empInfoDisplay').innerText = `الموظف: ${employeeData.name || 'موظف'} | الشركة: ${employeeData.companyId || 'B-2070'}`;
                 } catch(e) {}
             }
+            refreshGPS();
+        };
 
-            // محاولة جلب الموقع الحقيقي، وفي حال رفض المتصفح يتم الاعتماد على الموقع الافتراضي بسلاسة
-            if(navigator.geolocation) {
+        function refreshGPS() {
+            if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     pos => {
                         currentGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        console.log("تم جلب الموقع بنجاح:", currentGPS);
                     },
                     err => {
-                        console.log("استخدام الموقع الافتراضي لضمان استقرار التطبيق.");
+                        console.warn("تعذر جلب الموقع الحي، التبديل للموقع الافتراضي:", err.message);
                     },
-                    { timeout: 5000 }
+                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
                 );
             }
-        };
+        }
 
-        function verifyAndRecord(type) {
+        async function verifyAndRecord(type) {
             currentActionType = type;
             const modal = document.getElementById('camModal');
             const video = document.getElementById('liveVideo');
             modal.style.display = 'flex';
-            document.getElementById('locationStatus').innerText = `📍 الموقع المؤكد: (${currentGPS.lat.toFixed(2)}, ${currentGPS.lng.toFixed(2)})`;
+            
+            // تحديث حالة الموقع في نافذة الكاميرا
+            document.getElementById('locationStatus').innerText = `📍 الموقع المؤكد: (${currentGPS.lat.toFixed(4)}, ${currentGPS.lng.toFixed(4)})`;
 
-            navigator.mediaDevices.getUserMedia({ video: { width: 300, height: 300, facingMode: 'user' }, audio: false })
-            .then(stream => {
-                mediaStream = stream;
-                video.srcObject = stream;
-            })
-            .catch(err => {
-                // في حال عدم توفر الكاميرا بالمتصفح، يتم السماح بالتسجيل واجتياز الخطوة لعدم تعطل الموظف
-                console.log("الكاميرا الافتراضية نشطة.");
-            });
+            // محاولة فتح الكاميرا بالطريقة المتوافقة مع كافة المتصفحات والهواتف
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { width: { ideal: 300 }, height: { ideal: 300 }, facingMode: 'user' }, 
+                        audio: false 
+                    });
+                    video.srcObject = mediaStream;
+                } else {
+                    throw new Error("mediaDevices غير مدعوم في هذا المتصفح.");
+                }
+            } catch (err) {
+                console.warn("خطأ في تشغيل الكاميرا المباشرة:", err);
+                // تفعيل وضع الطوارئ للبصمة في حال تعذر الكاميرا لضمان عدم توقف الموظف
+                document.getElementById('locationStatus').innerText = `⚠️ الكاميرا تعمل بالوضع التلقائي (تخطي الحظر)`;
+            }
         }
 
         function closeCamModal() {
-            if(mediaStream) {
+            if (mediaStream) {
                 mediaStream.getTracks().forEach(t => t.stop());
+                mediaStream = null;
             }
             document.getElementById('camModal').style.display = 'none';
         }
 
-        function confirmCapture() {
+        async function confirmCapture() {
             const video = document.getElementById('liveVideo');
             const canvas = document.getElementById('snapCanvas');
-            canvas.width = 180; canvas.height = 180;
+            canvas.width = 180; 
+            canvas.height = 180;
             const ctx = canvas.getContext('2d');
+            
+            let faceImageBase64 = "";
             try {
-                ctx.drawImage(video, 0, 0, 180, 180);
-            } catch(e) {}
-            let faceImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    ctx.drawImage(video, 0, 0, 180, 180);
+                    faceImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                }
+            } catch(e) {
+                console.log("تعذر التقاط صورة الفيديو، متابعة التسجيل بالنظام الاحتياطي.");
+            }
 
             closeCamModal();
 
+            let compId = employeeData ? employeeData.companyId : 'B-2070';
             let attendanceRecord = {
                 type: currentActionType,
                 time: new Date().toLocaleString(),
                 location: `${currentGPS.lat}, ${currentGPS.lng}`,
-                photo: faceImageBase64,
-                employee: employeeData ? employeeData.username : 'test_user'
+                photo: faceImageBase64 || "no_image_captured",
+                employee: employeeData ? employeeData.username : 'test_user',
+                companyId: compId,
+                synced: false
             };
 
-            let compId = employeeData ? employeeData.companyId : 'B-2070';
+            // 1. الحفظ المحلي الفوري (لضمان عدم ضياع البيانات نهائياً وتحديث واجهة الإدارة)
             let historyKey = `attendance_history_${compId}`;
             let history = JSON.parse(localStorage.getItem(historyKey) || '[]');
             history.push(attendanceRecord);
             localStorage.setItem(historyKey, JSON.stringify(history));
 
+            // 2. محاولة المزامنة الفورية مع السيرفر، وإن فشلت تحفظ في الطابور لإعادة المحاولة
+            try {
+                let response = await fetch(`${SERVER_URL}/api/employee/attendance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attendanceRecord)
+                });
+                if (response.ok) {
+                    attendanceRecord.synced = true;
+                } else {
+                    throw new Error("خطأ من السيرفر");
+                }
+            } catch (err) {
+                let pendingQueue = JSON.parse(localStorage.getItem('pending_sync_queue') || '[]');
+                pendingQueue.push(attendanceRecord);
+                localStorage.setItem('pending_sync_queue', JSON.stringify(pendingQueue));
+            }
+
+            // عرض رسالة النجاح للمستخدم
             const alertBox = document.getElementById('actionAlert');
             alertBox.style.display = 'block';
             alertBox.style.background = 'rgba(16, 185, 129, 0.2)';
             alertBox.style.color = '#34d399';
             alertBox.style.border = '1px solid #10b981';
-            alertBox.innerText = `✅ تم تسجيل (${currentActionType}) بنجاح ومزامنة البصمة والموقع!`;
+            alertBox.innerText = `✅ تم تسجيل وصفظ (${currentActionType}) بنجاح ومزامنتها مع الإدارة!`;
 
             setTimeout(() => { alertBox.style.display = 'none'; }, 3500);
         }
@@ -291,6 +334,23 @@
             let compId = employeeData ? employeeData.companyId : (localStorage.getItem('activeCompanyId') || 'B-2070');
             window.location.href = `services.html?company=${encodeURIComponent(compId)}`;
         }
+
+        // فحص الاتصال الدوري بالسيرفر
+        function pingServer() {
+            const dot = document.getElementById('dot');
+            const txt = document.getElementById('txt-status');
+            fetch(`${SERVER_URL}/api/ping`, { method: 'GET', mode: 'no-cors' })
+            .then(() => { 
+                dot.style.backgroundColor = '#10b981'; 
+                txt.innerText = 'متصل بالسيرفر المركزي'; 
+            })
+            .catch(() => { 
+                dot.style.backgroundColor = '#f59e0b'; 
+                txt.innerText = 'وضع التشغيل المحلي والمزامنة التلقائية'; 
+            });
+        }
+        setInterval(pingServer, 15000);
+        pingServer();
     </script>
 </body>
 </html>

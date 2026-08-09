@@ -193,8 +193,55 @@
 </div>
 
 <script>
+    const SERVER_URL = "https://almoraqebpro-server.onrender.com";
     let companyId = 'B-2070';
     let isRecording = false;
+
+    // --- نظام Offline-First الذكي ---
+    async function safeApiCall(endpoint, method = 'POST', payload = null) {
+        if (!navigator.onLine) {
+            return handleOfflineOperation(endpoint, method, payload);
+        }
+        try {
+            let response = await fetch(`${SERVER_URL}${endpoint}`, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            return await response.json();
+        } catch (e) {
+            return handleOfflineOperation(endpoint, method, payload);
+        }
+    }
+
+    function handleOfflineOperation(endpoint, method, payload) {
+        let offlineQueue = JSON.parse(localStorage.getItem('pending_sync_queue') || '[]');
+        offlineQueue.push({ endpoint, method, data: payload, timestamp: new Date().toISOString() });
+        localStorage.setItem('pending_sync_queue', JSON.stringify(offlineQueue));
+        
+        showLocalStorageAlert("💾 تم الحفظ محلياً (Offline)، ستتم المزامنة تلقائياً عند عودة الإنترنت.");
+        return { success: true, offline: true };
+    }
+
+    function showLocalStorageAlert(message) {
+        let alertBox = document.getElementById('offlineAlertBox') || document.createElement('div');
+        alertBox.id = 'offlineAlertBox';
+        alertBox.style.cssText = "position: fixed; bottom: 20px; right: 20px; background: #334155; color: #fff; padding: 12px 20px; border-radius: 10px; z-index: 9999; font-weight: bold; font-size: 14px;";
+        alertBox.innerText = message;
+        document.body.appendChild(alertBox);
+        setTimeout(() => { alertBox.style.display = 'none'; }, 5000);
+    }
+
+    window.addEventListener('online', async () => {
+        let offlineQueue = JSON.parse(localStorage.getItem('pending_sync_queue') || '[]');
+        if (offlineQueue.length > 0) {
+            for (let item of offlineQueue) {
+                await fetch(`${SERVER_URL}${item.endpoint}`, { method: item.method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(item.data) });
+            }
+            localStorage.removeItem('pending_sync_queue');
+            showLocalStorageAlert("🔄 تم مزامنة البيانات المخزنة محلياً مع السيرفر بنجاح!");
+        }
+    });
 
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -213,10 +260,9 @@
         }
 
         loadAttendanceLogs();
-        cleanOldVoiceRecords(); // تنفيذ آلية الحذف التلقائي بعد 5 أيام
+        cleanOldVoiceRecords();
     };
 
-    // معالجة الصوت بفاعلية على الهاتف
     function playArabicVoice(text) {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
@@ -232,7 +278,6 @@
         }
     }
 
-    // زر التسجيل الصوتي المفتوح (إرسال واستقبال)
     function toggleRecord(id) {
         let btn = document.getElementById(`micBtn${id}`);
         let status = document.getElementById(`voiceStatus${id}`);
@@ -251,14 +296,12 @@
             status.style.color = "#166534";
             playArabicVoice("تم حفظ رسالتك الصوتية وإرسالها للإدارة بنجاح.");
             
-            // حفظ وقت التسجيل لتطبيق قاعدة الحذف التلقائي بعد 5 أيام
             let records = JSON.parse(localStorage.getItem('voice_records_time') || '[]');
             records.push({ time: new Date().getTime() });
             localStorage.setItem('voice_records_time', JSON.stringify(records));
         }
     }
 
-    // آلية حذف التسجيلات الصوتية تلقائياً بعد 5 أيام
     function cleanOldVoiceRecords() {
         let records = JSON.parse(localStorage.getItem('voice_records_time') || '[]');
         let now = new Date().getTime();
@@ -279,8 +322,17 @@
         document.getElementById('menuGrid').style.display = 'grid';
     }
 
-    function submitRequest(type) {
-        alert(`✅ تم إرسال طلب (${type}) مع الرسالة الصوتية المفتوحة إلى نظام المدير بنجاح!`);
+    async function submitRequest(type) {
+        let payload = {
+            companyId: companyId,
+            type: type,
+            reason: document.getElementById(type === 'إجازة' ? 'leaveReason' : 'loanDesc')?.value || '',
+            amount: type === 'سلفة' ? document.getElementById('loanAmount').value : null,
+            date: type === 'إجازة' ? document.getElementById('leaveDate').value : new Date().toISOString()
+        };
+
+        await safeApiCall('/api/employee/request', 'POST', payload);
+        alert(`✅ تم إرسال طلب (${type}) بنجاح!`);
         closePanels();
     }
 
@@ -289,7 +341,6 @@
         playArabicVoice("البصمة نشطة وجاهزة.");
     }
 
-    // وظيفة حذف عنصر محدد من السجلات
     function removeItem(button) {
         if(confirm("هل أنت متأكد من الحذف؟")) {
             button.parentElement.remove();
@@ -316,7 +367,7 @@
         }
 
         container.innerHTML = '';
-        history.forEach((item, index) => {
+        history.forEach((item) => {
             container.innerHTML += `
                 <div class="record-item">
                     <span>${item.type === 'حضور' ? '🟢' : '🔴'} تسجيل ${item.type} (${item.time})</span>
