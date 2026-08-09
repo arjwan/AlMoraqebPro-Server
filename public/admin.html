@@ -308,30 +308,42 @@
             }
         }
 
-        async function backupDatabase() {
+       async function checkServerConnection() {
+            const statusBar = document.getElementById('serverStatusBar');
+            const serverIcon = document.getElementById('serverIcon');
+            const serverText = document.getElementById('serverText');
+            
+            // تحديد الرابط الكامل لسيرفر Render الخاص بك
+            const SERVER_URL = window.location.origin; 
+            
             try {
-                const compId = currentCompanyId || 'general';
-                const response = await fetch('/api/admin/backup');
+                // إرسال طلب فحص الاتصال مع إضافة timeout لتجنب الانتظار الطويل
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 ثواني كحد أقصى
+
+                const response = await fetch(`${SERVER_URL}/api/ping`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    signal: controller.signal
+                });
                 
+                clearTimeout(timeoutId);
+
                 if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `AlMoraqebPro_Backup_${compId}_${new Date().toISOString().slice(0,10)}.json`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    a.remove();
-                    alert('✅ تم إنشاء وتحميل النسخة الاحتياطية بنجاح إلى جهازك!');
-                    return;
+                    statusBar.classList.add('online');
+                    serverIcon.textContent = '✔';
+                    serverText.textContent = 'السيرفر متصل بقاعدة البيانات بنجاح (Online)';
+                    return true;
+                } else {
+                    throw new Error('Server status not OK');
                 }
-                throw new Error();
             } catch (error) {
-                alert('❌ فشل في سحب النسخة الاحتياطية من السيرفر.');
+                statusBar.classList.remove('online');
+                serverIcon.textContent = '❌';
+                serverText.textContent = 'السيرفر جاري الاستجابة أو غير متصل (Offline)';
+                return false;
             }
         }
-
         function backupData() {
             backupDatabase();
         }
