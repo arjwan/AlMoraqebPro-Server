@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const app = express();
 
 // إعداد middleware لمعالجة طلبات JSON إذا كنت تستخدم API
@@ -9,6 +10,15 @@ app.use(express.urlencoded({ extended: true }));
 // هذه هي النقطة الأهم: ربط مجلد public لخدمة الملفات الثابتة
 // تأكد أن المجلد اسمه "public" وموجود بجانب هذا الملف
 app.use(express.static(path.join(__dirname, 'public')));
+
+// مسار فحص الاتصال (Ping) لحل مشكلة تعليق "جاري الاتصال..." في الواجهة
+app.get('/api/ping', (req, res) => {
+    res.status(200).send('pong');
+});
+
+app.head('/api/ping', (req, res) => {
+    res.status(200).end();
+});
 
 // المسار الرئيسي: يوجه المستخدم دائماً إلى index.html عند فتح الرابط
 app.get('/', (req, res) => {
@@ -21,7 +31,6 @@ app.get('/:page', (req, res) => {
     const filePath = path.join(__dirname, 'public', page);
     
     // التحقق من وجود الملف قبل إرساله
-    const fs = require('fs');
     if (fs.existsSync(filePath)) {
         res.sendFile(filePath);
     } else {
