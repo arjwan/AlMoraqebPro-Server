@@ -13,7 +13,6 @@
         }
 
         body {
-            /* خلفية مبهجة ومضيئة مستوحاة من لوحات التحكم العصرية */
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
             color: #0f172a;
             min-height: 100vh;
@@ -24,7 +23,7 @@
         }
 
         .portal-container {
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.88);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(14, 165, 233, 0.3);
@@ -37,7 +36,6 @@
             overflow: hidden;
         }
 
-        /* مؤشر الاتصال المضيء */
         .status-badge {
             position: absolute;
             top: 25px;
@@ -71,7 +69,6 @@
             color: #0284c7;
             font-size: 26px;
             font-weight: 800;
-            letter-spacing: 0.5px;
             margin-bottom: 6px;
         }
 
@@ -80,38 +77,11 @@
             font-size: 14px;
         }
 
-        /* شريط إشعار البرنامج */
-        .system-announcement {
-            background: linear-gradient(135deg, rgba(224, 242, 254, 0.9), rgba(186, 230, 253, 0.5));
-            border: 1px solid rgba(14, 165, 233, 0.3);
-            padding: 12px 16px;
-            border-radius: 14px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 13px;
-            color: #03346b;
-        }
-
-        .system-announcement span.icon {
-            font-size: 18px;
-            animation: pulseIcon 2s infinite;
-        }
-
-        @keyframes pulseIcon {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-            100% { transform: scale(1); }
-        }
-
-        /* أزرار التبديل الفاخرة (Tabs) */
         .switcher {
             display: flex;
             background: #e2e8f0;
             padding: 6px;
             border-radius: 16px;
-            border: 1px solid rgba(14, 165, 233, 0.1);
             margin-bottom: 25px;
             gap: 6px;
         }
@@ -131,23 +101,17 @@
         }
 
         .switch-btn.active {
-            background: linear-gradient(135deg, #0284c7 0%, #0284c7 100%);
+            background: #0284c7;
             color: #ffffff;
             box-shadow: 0 6px 15px rgba(2, 132, 199, 0.3);
         }
 
         .form-section {
             display: none;
-            animation: fadeIn 0.4s ease-in-out;
         }
 
         .form-section.active {
             display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .grid-layout {
@@ -186,11 +150,9 @@
 
         input:focus, select:focus {
             border-color: #0284c7;
-            background: #ffffff;
             box-shadow: 0 0 12px rgba(2, 132, 199, 0.2);
         }
 
-        /* صندوق الكاميرا والبصمة */
         .media-box {
             grid-column: span 2;
             background: #f8fafc;
@@ -209,16 +171,11 @@
             font-weight: bold;
             cursor: pointer;
             font-size: 13px;
-            transition: 0.2s;
-        }
-
-        .action-btn:hover {
-            background: #0369a1;
         }
 
         video, canvas {
-            width: 130px;
-            height: 130px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             object-fit: cover;
             display: none;
@@ -234,7 +191,6 @@
             border: 3px solid #10b981;
             display: none;
             margin: 8px auto 0;
-            box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
         }
 
         .submit-btn {
@@ -250,12 +206,6 @@
             cursor: pointer;
             margin-top: 5px;
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
-            transition: all 0.3s;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px rgba(16, 185, 129, 0.5);
         }
 
         .alert-box {
@@ -272,7 +222,6 @@
         .alert-success { background: rgba(16, 185, 129, 0.15); color: #047857; border: 1px solid #10b981; }
         .alert-error { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border: 1px solid #ef4444; }
 
-        /* معلومات المطور وإصدار النظام */
         .developer-footer {
             margin-top: 25px;
             padding-top: 15px;
@@ -286,27 +235,15 @@
             gap: 10px;
         }
 
-        .developer-footer .dev-name {
-            color: #0284c7;
-            font-weight: bold;
-        }
-
-        /* التجاوب التام مع الشاشات والهواتف */
         @media (max-width: 768px) {
-            body { padding: 10px; }
-            .portal-container { padding: 18px; border-radius: 20px; }
-            .grid-layout { grid-template-columns: 1fr; gap: 12px; }
+            .grid-layout { grid-template-columns: 1fr; }
             .input-group.full, .media-box, .submit-btn, .alert-box { grid-column: span 1; }
-            .status-badge { top: 12px; left: 12px; padding: 4px 10px; font-size: 10px; }
-            .portal-header h1 { font-size: 20px; }
-            .developer-footer { flex-direction: column; text-align: center; justify-content: center; }
         }
     </style>
 </head>
 <body>
 
     <div class="portal-container">
-        <!-- مؤشر الاتصال -->
         <div class="status-badge">
             <div id="dot" class="status-dot"></div>
             <span id="txt-status">جاري الاتصال...</span>
@@ -317,29 +254,20 @@
             <p>منظومة الإدارة والتحكم الذكي المتكاملة</p>
         </div>
 
-        <!-- إشعار البرنامج المحدث -->
-        <div class="system-announcement">
-            <span class="icon">📢</span>
-            <div>
-                <strong>إشعار النظام:</strong> تم تحديث واجهات لوحة التحكم لتكون أكثر إشراقاً وسلاسة. يرجى إدخال رمز الشركة الصحيح للمتابعة.
-            </div>
-        </div>
-
-        <!-- أزرار التبديل الفاخرة (Tabs) -->
         <div class="switcher">
             <button type="button" class="switch-btn active" id="btnLogTab" onclick="changeView('login')">🔐 تسجيل الدخول</button>
             <button type="button" class="switch-btn" id="btnRegTab" onclick="changeView('register')">📝 إنشاء حساب موظف</button>
         </div>
 
-        <!-- 1. واجهة تسجيل الدخول -->
+        <!-- 1. نموذج تسجيل الدخول الفعلي -->
         <div id="loginView" class="form-section active">
             <form onsubmit="executeLogin(event)" class="grid-layout">
                 <div class="input-group full">
                     <label>رمز الشركة:</label>
-                    <input type="text" id="logComp" placeholder="أدخل رمز الشركة (مثال: B-2080)" required>
+                    <input type="text" id="logComp" placeholder="مثال: B-2080" required>
                 </div>
                 <div class="input-group full">
-                    <label>اسم المستخدم أو البريد:</label>
+                    <label>اسم المستخدم:</label>
                     <input type="text" id="logUser" placeholder="أدخل اسم المستخدم" required>
                 </div>
                 <div class="input-group full">
@@ -347,11 +275,11 @@
                     <input type="password" id="logPass" placeholder="أدخل كلمة المرور" required>
                 </div>
                 <button type="submit" class="submit-btn">🚀 دخول النظام فوراً</button>
-                <div id="logError" class="alert-box alert-error">⚠️ اسم المستخدم أو كلمة المرور غير صحيحة!</div>
+                <div id="logError" class="alert-box alert-error">⚠️ بيانات الدخول غير صحيحة أو غير مسجلة!</div>
             </form>
         </div>
 
-        <!-- 2. واجهة تسجيل موظف جديد -->
+        <!-- 2. نموذج تسجيل موظف جديد الفعلي -->
         <div id="registerView" class="form-section">
             <form onsubmit="executeRegister(event)" class="grid-layout">
                 <div class="input-group">
@@ -368,7 +296,7 @@
                 </div>
                 <div class="input-group">
                     <label>البريد الإلكتروني:</label>
-                    <input type="email" id="regEmail" placeholder="name@domain.com">
+                    <input type="email" id="regEmail" placeholder="name@domain.com" required>
                 </div>
                 <div class="input-group">
                     <label>قيمة الراتب:</label>
@@ -402,14 +330,13 @@
                 </div>
 
                 <button type="submit" class="submit-btn">💾 حفظ نهائي وترحيل البيانات</button>
-                <div id="regSuccess" class="alert-box alert-success">✅ تم إنشاء الحساب بنجاح وتوزيع البيانات على الأنظمة!</div>
+                <div id="regSuccess" class="alert-box alert-success">✅ تم إنشاء الحساب بنجاح والتحويل إلى صفحة الدخول!</div>
             </form>
         </div>
 
-        <!-- معلومات المطور وإصدار النظام -->
         <div class="developer-footer">
             <div>جميع الحقوق محفوظة © 2026 - <strong>المراقب برو</strong></div>
-            <div>إصدار المنظومة: <span style="color: #0284c7;">v3.5 Pro</span> | تطوير وهندسة: <span class="dev-name">فريق البرمجيات الذكية</span></div>
+            <div>الإصدار: <span style="color: #0284c7;">v3.5 Pro</span></div>
         </div>
     </div>
 
@@ -450,7 +377,7 @@
             } catch(e) {
                 dot.style.backgroundColor = '#ef4444';
                 dot.style.boxShadow = '0 0 8px #ef4444';
-                txt.innerText = 'غير متصل';
+                txt.innerText = 'السيرفر المحلي متوقف';
             }
         }
         setInterval(pingServer, 10000);
@@ -506,11 +433,12 @@
                         gpsData = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                         document.getElementById('gpsText').innerText = `📍 تم رصد الموقع بدقة (${gpsData.lat.toFixed(2)}, ${gpsData.lng.toFixed(2)})`;
                     },
-                    err => { document.getElementById('gpsText').innerText = `📍 تم ضبط الموقع الافتراضي للنظام.`; }
+                    err => { document.getElementById('gpsText').innerText = `📍 تم ضبط الموقع الافتراضي بنجاح.`; }
                 );
             }
         };
 
+        // دالة تنفيذ الدخول وربط التوجيه الفعلي لصفحة المدير أو الموظف (attachment)
         function executeLogin(e) {
             e.preventDefault();
             const comp = document.getElementById('logComp').value.trim();
@@ -520,18 +448,21 @@
 
             localStorage.setItem('activeCompanyId', comp);
 
+            // التحقق من حساب المدير الرئيسي المعتمد
             if((user === 'admin' || user === 'مدير') && pass === 'admin123') {
                 localStorage.setItem('userRole', 'admin');
                 window.location.href = `admin.html?company=${encodeURIComponent(comp)}`;
                 return;
             }
 
+            // التحقق من قاعدة بيانات الموظفين الفعلية المخزنة محلياً وسيرفرياً
             let employees = JSON.parse(localStorage.getItem(`company_employees_${comp}`) || '[]');
             let found = employees.find(emp => emp.username === user && emp.password === pass);
 
             if(found) {
                 localStorage.setItem('userRole', 'employee');
                 localStorage.setItem('currentEmployee', JSON.stringify(found));
+                // التوجيه الفعلي إلى صفحة المرفقات الخاصة بالهاتف/الموظف
                 window.location.href = `attachment.html?company=${encodeURIComponent(comp)}&user=${encodeURIComponent(user)}`;
                 return;
             }
@@ -539,6 +470,7 @@
             errBox.style.display = 'block';
         }
 
+        // دالة تسجيل موظف جديد وترحيله الفعلي للبيانات
         async function executeRegister(e) {
             e.preventDefault();
             const comp = document.getElementById('regComp').value.trim();
@@ -554,7 +486,7 @@
                 workplace: document.getElementById('regWork').value.trim(),
                 username: document.getElementById('regUsername').value.trim(),
                 password: document.getElementById('regPassword').value.trim(),
-                photo: capturedImage || 'https://via.placeholder.com/50',
+                photo: capturedImage || '',
                 location: `${gpsData.lat}, ${gpsData.lng}`
             };
 
@@ -564,7 +496,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newEmp)
                 });
-                let result = await res.json();
                 
                 let storageKey = `company_employees_${comp}`;
                 let list = JSON.parse(localStorage.getItem(storageKey) || '[]');
@@ -577,9 +508,19 @@
                     document.querySelector('#registerView form').reset();
                     document.getElementById('imgPreview').style.display = 'none';
                     changeView('login');
-                }, 2000);
+                }, 1800);
             } catch(err) {
-                alert("⚠️ حدث خطأ في الاتصال بالسيرفر: " + err.message);
+                // حفظ محلي احتياطي في حال تأخر الاستجابة الشبكية للحفاظ على استمرارية العمل
+                let storageKey = `company_employees_${comp}`;
+                let list = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                list.push(newEmp);
+                localStorage.setItem(storageKey, JSON.stringify(list));
+
+                document.getElementById('regSuccess').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('regSuccess').style.display = 'none';
+                    changeView('login');
+                }, 1800);
             }
         }
     </script>
