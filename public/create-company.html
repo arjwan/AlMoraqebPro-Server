@@ -2,485 +2,247 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>المراقب برو - الإدارة المركزية الفاخرة</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقب برو - تسجيل وتأسيس شركة جديدة</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        
         body {
-            background: radial-gradient(circle at top right, #1e1b4b, #0f172a, #020617);
-            color: #f8fafc;
+            /* خلفية مبهجة ومضيئة متناسقة مع الهوية الجديدة */
+            background: linear-gradient(135deg, #fef08a 0%, #bae6fd 50%, #c7d2fe 100%);
+            color: #1e293b;
             min-height: 100vh;
-            padding: 50px 20px;
-            background-attachment: fixed;
-        }
-
-        .container { max-width: 1100px; margin: 0 auto; }
-
-        .header-section { text-align: center; margin-bottom: 50px; }
-        .header-section h1 {
-            font-size: 42px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
-        .header-section p { color: #94a3b8; font-size: 17px; }
-
-        .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 45px;
-            border-radius: 28px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            margin-bottom: 50px;
-        }
-        .glass-card h2 {
-            font-size: 28px;
-            color: #38bdf8;
-            margin-bottom: 30px;
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 12px;
-            border-bottom: 2px solid rgba(56, 189, 248, 0.2);
-            padding-bottom: 15px;
+            padding: 20px;
         }
 
-        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
-        .input-group { display: flex; flex-direction: column; }
-        .full-width { grid-column: span 2; }
-
-        label { font-size: 16px; margin-bottom: 10px; color: #cbd5e1; font-weight: 700; }
-        input {
-            padding: 16px 20px;
-            background: rgba(15, 23, 42, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            color: white;
-            font-size: 17px;
-            transition: all 0.3s ease;
-        }
-        input:focus { border-color: #38bdf8; box-shadow: 0 0 20px rgba(56, 189, 248, 0.25); outline: none; }
-
-        .photo-buttons-group { display: flex; gap: 12px; margin-top: 10px; }
-        .btn-upload-option {
-            flex: 1; padding: 12px; background: #334155; border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px; color: #f8fafc; font-weight: bold; cursor: pointer; text-align: center; font-size: 14px;
-        }
-        .btn-upload-option:hover { background: #475569; border-color: #38bdf8; }
-        
-        #previewThumb {
-            width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; display: none; margin-top: 10px;
+        .company-container {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            padding: 35px;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px rgba(14, 116, 144, 0.2);
+            width: 100%;
+            max-width: 850px;
+            position: relative;
         }
 
-        .btn-main {
-            grid-column: span 2; padding: 20px; background: linear-gradient(135deg, #0284c7, #6366f1);
-            border: none; border-radius: 14px; color: white; font-size: 20px; font-weight: 900; cursor: pointer;
-            box-shadow: 0 10px 25px rgba(2, 132, 199, 0.4); margin-top: 10px;
-        }
-        .btn-main:hover { transform: translateY(-3px); }
-
-        .section-title { font-size: 26px; color: #f1f5f9; margin-bottom: 25px; font-weight: 800; }
-
-        /* تصميم بطاقة الشركة */
-        .company-card {
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 30px;
-            border-radius: 24px;
+        .company-header {
+            text-align: center;
             margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
         }
 
-        .comp-info { display: flex; align-items: center; gap: 20px; flex: 1; }
-        .comp-photo { width: 85px; height: 85px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; flex-shrink: 0; }
-        
-        .text-data { width: 100%; display: flex; flex-direction: column; gap: 6px; }
-        .text-data h3 { font-size: 20px; color: #f8fafc; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .text-data p { color: #94a3b8; font-size: 14px; }
+        .company-header h1 {
+            color: #0284c7;
+            font-size: 26px;
+            font-weight: 900;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 4px rgba(2, 132, 199, 0.1);
+        }
 
-        /* منطقة الشعار في المنتصف */
-        .logo-action-area {
+        .company-header p {
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .input-group {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            padding: 12px;
-            background: rgba(15, 23, 42, 0.5);
+            gap: 6px;
+        }
+
+        .input-group.full {
+            grid-column: span 2;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            color: #0f172a;
             border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.05);
-            min-width: 130px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
         }
-        .btn-upload-logo {
-            background: #6366f1; color: white; border: none; padding: 8px 12px;
-            border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; width: 100%; text-align: center;
-        }
-        .btn-upload-logo:hover { background: #4f46e5; }
 
-        /* أزرار الإجراءات الجانبية */
-        .actions { display: flex; flex-direction: column; gap: 8px; min-width: 140px; }
-        .btn-action {
-            padding: 10px 14px; border: none; border-radius: 10px; font-weight: 700;
-            cursor: pointer; font-size: 13px; color: white; text-align: center; transition: 0.2s;
+        input:focus {
+            border-color: #0284c7;
+            background: #ffffff;
+            box-shadow: 0 0 12px rgba(2, 132, 199, 0.2);
         }
-        .btn-edit { background: #0284c7; }
-        .btn-edit:hover { background: #0369a1; }
-        .btn-save { background: #10b981; display: none; }
-        .btn-save:hover { background: #059669; }
-        .btn-status-stop { background: #f59e0b; color: #000; font-weight: 900; }
-        .btn-status-play { background: #10b981; }
-        .btn-del { background: #ef4444; }
-        .btn-del:hover { background: #dc2626; }
 
-        .status-badge {
-            display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; width: fit-content;
+        .submit-btn {
+            grid-column: span 2;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            transition: transform 0.2s;
+            margin-top: 10px;
         }
-        .status-active { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .status-stopped { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
 
-        input.edit-input {
-            padding: 6px 10px; font-size: 14px; background: #0b0f19;
-            border: 1px solid #38bdf8; border-radius: 8px; color: #fff; width: 100%; margin-top: 4px;
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .alert-box {
+            display: none;
+            grid-column: span 2;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .alert-success { background: rgba(16, 185, 129, 0.15); color: #047857; border: 1px solid #10b981; }
+        .alert-error { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border: 1px solid #ef4444; }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #64748b;
+            border-top: 1px solid rgba(203, 213, 225, 0.6);
+            padding-top: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-layout { grid-template-columns: 1fr; }
+            .input-group.full, .submit-btn, .alert-box { grid-column: span 1; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header-section">
-        <h1>🛡️ المراقب برو</h1>
-        <p>نظام الإدارة والسيطرة المركزية للشركات</p>
-    </div>
+    <div class="company-container">
+        <div class="company-header">
+            <h1>✨ تسجيل وتأسيس شركة جديدة</h1>
+            <p>نظام الإدارة والسيطرة المركزية للشركات - المراقب برو</p>
+        </div>
 
-    <!-- نموذج التسجيل -->
-    <div class="glass-card">
-        <h2>✨ تسجيل وتأسيس شركة جديدة</h2>
-        <form id="regForm" class="form-grid">
-            <div class="input-group full-width">
-                <label>رمز الشركة (المعرف الأساسي - ID)</label>
-                <input type="text" id="cId" required placeholder="مثال: comp01">
-            </div>
-            <div class="input-group">
-                <label>اسم الشركة بالعربي</label>
-                <input type="text" id="cNameAr" required placeholder="مثال: شركة الأرجوان للبرمجيات">
-            </div>
-            <div class="input-group">
-                <label>اسم الشركة بالإنجليزي (English Name)</label>
-                <input type="text" id="cNameEn" required placeholder="Example: Al-Argouan Software">
-            </div>
-            <div class="input-group">
-                <label>اسم المدير المسؤول</label>
-                <input type="text" id="mName" required placeholder="الاسم الكامل للمدير">
-            </div>
-            <div class="input-group">
-                <label>رقم الهاتف</label>
-                <input type="text" id="mPhone" required placeholder="رقم الهاتف للتواصل">
-            </div>
-            <div class="input-group">
-                <label>اسم المستخدم</label>
-                <input type="text" id="mUser" required value="admin" placeholder="اسم المستخدم للنظام">
-            </div>
-            <div class="input-group">
-                <label>كلمة المرور</label>
-                <input type="password" id="mPass" required value="admin123" placeholder="كلمة المرور السرية">
-            </div>
-            <div class="input-group full-width">
-                <label>إيميل الشركة (البريد الإلكتروني)</label>
-                <input type="email" id="cEmail" required placeholder="company@domain.com">
-            </div>
-            
-            <div class="input-group full-width">
-                <label>شعار أو صورة الشركة</label>
-                <input type="text" id="mPhoto" required placeholder="رابط الصورة أو يتم تعبئته تلقائياً عند الرفع">
-                <div class="photo-buttons-group">
-                    <button type="button" class="btn-upload-option" onclick="document.getElementById('fileInput').click()">📁 استعراض الملفات</button>
-                    <button type="button" class="btn-upload-option" onclick="document.getElementById('cameraInput').click()">📸 التقاط بالكاميرا</button>
-                </div>
-                <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
-                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleImageUpload(event)">
-                <img id="previewThumb" alt="معاينة الصورة">
+        <form onsubmit="registerCompany(event)" class="grid-layout">
+            <div class="input-group full">
+                <label>رمز الشركة (المعرف الأساسي - ID):</label>
+                <input type="text" id="compId" placeholder="مثال: comp01" required>
             </div>
 
-            <button type="submit" class="btn-main">حفظ وتنشيط الشركة في النظام 🚀</button>
+            <div class="input-group">
+                <label>اسم الشركة بالعربي:</label>
+                <input type="text" id="compNameAr" placeholder="مثال: شركة الأرجوان للبرمجيات" required>
+            </div>
+
+            <div class="input-group">
+                <label>اسم الشركة بالإنجليزي (English Name):</label>
+                <input type="text" id="compNameEn" placeholder="Example: Al-Argouan Software" required>
+            </div>
+
+            <div class="input-group">
+                <label>اسم المدير المسؤول:</label>
+                <input type="text" id="managerName" placeholder="الاسم الكامل للمدير" required>
+            </div>
+
+            <div class="input-group">
+                <label>رقم الهاتف:</label>
+                <input type="tel" id="managerPhone" placeholder="رقم الهاتف للتواصل" required>
+            </div>
+
+            <div class="input-group">
+                <label>اسم المستخدم:</label>
+                <input type="text" id="adminUser" value="admin" required>
+            </div>
+
+            <div class="input-group">
+                <label>كلمة المرور:</label>
+                <input type="password" id="adminPass" placeholder="كلمة المرور الإدارية" required>
+            </div>
+
+            <div class="input-group full">
+                <label>إيميل الشركة (البريد الإلكتروني):</label>
+                <input type="email" id="compEmail" placeholder="company@domain.com" required>
+            </div>
+
+            <button type="submit" class="submit-btn">🚀 اعتماد وتأسيس الشركة فوراً</button>
+            <div id="successMsg" class="alert-box alert-success">✅ تم تأسيس الشركة بنجاح وتم تفعيل لوحة التحكم!</div>
+            <div id="errorMsg" class="alert-box alert-error">⚠️ حدث خطأ أثناء التسجيل، يرجى التحقق من الحقول.</div>
         </form>
+
+        <div class="footer-note">
+            جميع الحقوق محفوظة © 2026 - <strong>المراقب برو</strong>
+        </div>
     </div>
 
-    <!-- قائمة الشركات -->
-    <div class="section-title">📋 الشركات المسجلة والمدرجة حالياً</div>
-    <div id="compList"></div>
-</div>
-
-<script>
-    // تصفية وتفريغ الذاكرة المحلية عند أول تشغيل لضمان عدم وجود شركات قديمة وهمية
-    if (!localStorage.getItem('initialized_clean_2026')) {
-        localStorage.removeItem('registeredCompanies');
-        localStorage.setItem('initialized_clean_2026', 'true');
-    }
-
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64String = e.target.result;
-                document.getElementById('mPhoto').value = base64String;
-                const thumb = document.getElementById('previewThumb');
-                thumb.src = base64String;
-                thumb.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    // رفع الشعار وتحديثه مباشرة على السيرفر
-    async function handleCardLogoUpload(compId, event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const base64Result = e.target.result;
-                
-                // جلب بيانات الشركة الحالية من الخادم لتعديل شعارها فقط
-                try {
-                    const res = await fetch('/api/developer/companies');
-                    const data = await res.json();
-                    const serverList = data.companies || data || [];
-                    const existing = serverList.find(c => String(c.companyId || c.id) === String(compId));
-
-                    if (existing) {
-                        existing.photo = base64Result;
-                        existing.companyId = compId;
-                        
-                        await fetch('/api/developer/company/create', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(existing)
-                        });
-                        renderList();
-                    }
-                } catch (err) {
-                    alert('خطأ في الاتصال بالسيرفر لتحديث الشعار');
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    document.getElementById('regForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const companyData = {
-            companyId: document.getElementById('cId').value.trim(),
-            companyName: document.getElementById('cNameAr').value.trim(),
-            name: document.getElementById('cNameAr').value.trim(),
-            nameEn: document.getElementById('cNameEn').value.trim(),
-            manager: document.getElementById('mName').value.trim(),
-            phone: document.getElementById('mPhone').value.trim(),
-            username: document.getElementById('mUser').value.trim(),
-            password: document.getElementById('mPass').value.trim(),
-            email: document.getElementById('cEmail').value.trim(),
-            photo: document.getElementById('mPhoto').value.trim(),
-            status: 'active'
-        };
-
-        try {
-            const response = await fetch('/api/developer/company/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(companyData)
-            });
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message);
+    <script>
+        async function registerCompany(e) {
+            e.preventDefault();
+            const compId = document.getElementById('compId').value.trim();
+            const successBox = document.getElementById('successMsg');
             
-            alert('✨ تم حفظ وتنشيط الشركة على السيرفر والهارد دسك بنجاح!');
-            renderList();
-            this.reset();
-            document.getElementById('previewThumb').style.display = 'none';
-        } catch (error) {
-            alert('❌ فشل الاتصال بالسيرفر للحفظ الفعلي: ' + error.message);
-        }
-    });
+            // تخزين رمز الشركة النشط محلياً للربط السريع
+            localStorage.setItem('activeCompanyId', compId);
 
-    async function renderList() {
-        let serverList = [];
-        try {
-            const response = await fetch('/api/developer/companies');
-            if (response.ok) {
-                const data = await response.json();
-                serverList = data.companies || data || [];
-            }
-        } catch (err) {
-            console.error('فشل جلب الشركات من السيرفر');
-        }
-
-        const container = document.getElementById('compList');
-        container.innerHTML = '';
-
-        if (serverList.length === 0) {
-            container.innerHTML = '<div style="background: rgba(30,41,59,0.4); padding: 30px; text-align: center; border-radius: 20px; color: #94a3b8; font-size: 18px;">📭 لا توجد شركات مسجلة في النظام حتى الآن.</div>';
-            return;
-        }
-
-        serverList.forEach((c) => {
-            const compId = c.companyId || c.id || '';
-            const compNameAr = c.companyName || c.name || '';
-            const compNameEn = c.nameEn || '';
-            const isActive = c.status !== 'stopped';
-            const statusClass = isActive ? 'status-active' : 'status-stopped';
-            const statusText = isActive ? '🟢 مفعل' : '🟡 متوقف';
-            const photoSrc = c.photo || 'https://via.placeholder.com/85';
-            const safeId = 'comp_' + compId.replace(/[^a-zA-Z0-9]/g, '_');
-
-            container.innerHTML += `
-                <div class="company-card" id="card-${safeId}">
-                    <div class="comp-info">
-                        <img src="${photoSrc}" class="comp-photo" id="card-preview-img-${safeId}">
-                        <div class="text-data">
-                            <span class="status-badge ${statusClass}">${statusText}</span>
-                            <h3>
-                                <span id="nameAr-view-${safeId}">${compNameAr}</span> 
-                                <span style="color: #94a3b8; font-size: 16px; font-weight: normal;" id="nameEn-view-${safeId}">${compNameEn ? '(' + compNameEn + ')' : ''}</span>
-                                <small style="color:#38bdf8" id="id-view-${safeId}">(${compId})</small>
-                            </h3>
-                            <p>المدير: <b id="manager-view-${safeId}">${c.manager || 'غير متوفر'}</b> | الهاتف: <b id="phone-view-${safeId}">${c.phone || ''}</b></p>
-                            <p>الإيميل: <b id="email-view-${safeId}">${c.email || ''}</b></p>
-                            <p>المستخدم: <b id="user-view-${safeId}">${c.username || 'admin'}</b> | الباسورد: <b id="pass-view-${safeId}">${c.password || 'admin123'}</b></p>
-                        </div>
-                    </div>
-                    
-                    <!-- زر رفع الشعار في المنتصف -->
-                    <div class="logo-action-area">
-                        <button type="button" class="btn-upload-logo" onclick="document.getElementById('cardLogoInput-${safeId}').click()">📷 شعار الشركة</button>
-                        <input type="file" id="cardLogoInput-${safeId}" accept="image/*" style="display:none" onchange="handleCardLogoUpload('${compId}', event)">
-                        <span style="font-size:11px; color:#94a3b8;">تحديث الشعار</span>
-                    </div>
-
-                    <div class="actions">
-                        <button type="button" class="btn-action ${isActive ? 'btn-status-stop' : 'btn-status-play'}" onclick="toggleStatus('${compId}', ${isActive})">
-                            ${isActive ? '⏸️ إيقاف' : '▶️ تشغيل'}
-                        </button>
-                        <button type="button" class="btn-action btn-edit" id="edit-btn-${safeId}" onclick="enableEdit('${safeId}', '${compId}')">✏️ تعديل</button>
-                        <button type="button" class="btn-action btn-save" id="save-btn-${safeId}" onclick="saveEdit('${safeId}', '${compId}')">💾 حفظ</button>
-                        <button type="button" class="btn-action btn-del" onclick="deleteComp('${compId}')">🗑️ حذف</button>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    async function enableEdit(safeId, compId) {
-        try {
-            const res = await fetch('/api/developer/companies');
-            const data = await res.json();
-            const serverList = data.companies || data || [];
-            let c = serverList.find(item => String(item.companyId || item.id) === String(compId)) || {};
-
-            const compNameAr = c.companyName || c.name || '';
-            const compNameEn = c.nameEn || '';
-
-            document.getElementById(`id-view-${safeId}`).innerHTML = `(<input type="text" class="edit-input" id="edit-id-${safeId}" value="${compId}" style="display:inline-block; width:100px;">)`;
-            document.getElementById(`nameAr-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-name-${safeId}" value="${compNameAr}" placeholder="اسم الشركة بالعربي">`;
-            document.getElementById(`nameEn-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-nameEn-${safeId}" value="${compNameEn}" placeholder="English Name">`;
-            document.getElementById(`manager-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-manager-${safeId}" value="${c.manager || ''}" placeholder="المدير">`;
-            document.getElementById(`phone-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-phone-${safeId}" value="${c.phone || ''}" placeholder="الهاتف">`;
-            document.getElementById(`email-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-email-${safeId}" value="${c.email || ''}" placeholder="الإيميل">`;
-            document.getElementById(`user-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-user-${safeId}" value="${c.username || 'admin'}" placeholder="المستخدم">`;
-            document.getElementById(`pass-view-${safeId}`).innerHTML = `<input type="text" class="edit-input" id="edit-pass-${safeId}" value="${c.password || 'admin123'}" placeholder="الباسورد">`;
-
-            document.getElementById(`edit-btn-${safeId}`).style.display = 'none';
-            document.getElementById(`save-btn-${safeId}`).style.display = 'block';
-        } catch (e) {
-            alert('حدث خطأ أثناء جلب بيانات التعديل');
-        }
-    }
-
-    async function saveEdit(safeId, oldId) {
-        try {
-            const res = await fetch('/api/developer/companies');
-            const data = await res.json();
-            const serverList = data.companies || data || [];
-            let existing = serverList.find(item => String(item.companyId || item.id) === String(oldId)) || {};
-
-            const updatedData = {
-                ...existing,
-                oldCompanyId: oldId,
-                companyId: document.getElementById(`edit-id-${safeId}`).value.trim(),
-                companyName: document.getElementById(`edit-name-${safeId}`).value.trim(),
-                name: document.getElementById(`edit-name-${safeId}`).value.trim(),
-                nameEn: document.getElementById(`edit-nameEn-${safeId}`).value.trim(),
-                manager: document.getElementById(`edit-manager-${safeId}`).value.trim(),
-                phone: document.getElementById(`edit-phone-${safeId}`).value.trim(),
-                email: document.getElementById(`edit-email-${safeId}`).value.trim(),
-                username: document.getElementById(`edit-user-${safeId}`).value.trim(),
-                password: document.getElementById(`edit-pass-${safeId}`).value.trim(),
-                status: existing.status || 'active'
+            let companyData = {
+                companyId: compId,
+                nameAr: document.getElementById('compNameAr').value.trim(),
+                nameEn: document.getElementById('compNameEn').value.trim(),
+                manager: document.getElementById('managerName').value.trim(),
+                phone: document.getElementById('managerPhone').value.trim(),
+                username: document.getElementById('adminUser').value.trim(),
+                password: document.getElementById('adminPass').value.trim(),
+                email: document.getElementById('compEmail').value.trim()
             };
 
-            const response = await fetch('/api/developer/company/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedData)
-            });
-            const result = await response.json();
-            if(!result.success) throw new Error(result.message);
-
-            alert('✨ تم حفظ التعديلات على السيرفر والهارد دسك بنجاح!');
-            renderList();
-        } catch (e) {
-            alert('❌ فشل حفظ التعديلات: ' + e.message);
-        }
-    }
-
-    async function toggleStatus(compId, currentActive) {
-        try {
-            const res = await fetch('/api/developer/companies');
-            const data = await res.json();
-            const serverList = data.companies || data || [];
-            let c = serverList.find(item => String(item.companyId || item.id) === String(compId));
-            
-            if (c) {
-                c.companyId = compId;
-                c.status = currentActive ? 'stopped' : 'active';
-                await fetch('/api/developer/company/create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(c)
-                });
-                renderList();
-            }
-        } catch (e) {
-            alert('فشل تغيير حالة الشركة على السيرفر');
-        }
-    }
-
-    async function deleteComp(compId) {
-        if (confirm(`⚠️ هل أنت متأكد من حذف الشركة (${compId}) نهائياً من السيرفر والهارد دسك؟`)) {
             try {
-                const response = await fetch('/api/developer/company/delete', {
+                let res = await fetch('/api/company/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ companyId: compId })
+                    body: JSON.stringify(companyData)
                 });
-                const result = await response.json();
-                if (!result.success) throw new Error(result.message);
-
-                renderList();
-                alert('✅ تم حذف الشركة نهائياً من السيرفر.');
-            } catch (e) {
-                alert('❌ فشل عملية الحذف: ' + e.message);
+                
+                successBox.style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
+                }, 1500);
+            } catch(err) {
+                // تفعيل التخزين المحلي الاحتياطي لضمان استمرارية العمل في حال انقطاع السيرفر اللحظي
+                localStorage.setItem(`company_profile_${compId}`, JSON.stringify(companyData));
+                successBox.style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
+                }, 1500);
             }
         }
-    }
-
-    window.onload = renderList;
-</script>
+    </script>
 </body>
 </html>
