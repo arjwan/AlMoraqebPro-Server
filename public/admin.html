@@ -39,7 +39,6 @@
             gap: 15px; 
         }
 
-        /* عنوان النظام في اليمين وبخط كبير وبارز */
         .header-title {
             display: flex;
             align-items: center;
@@ -56,7 +55,6 @@
             font-size: 24px;
         }
 
-        /* الأزرار في اليسار */
         .header-actions { 
             display: flex; 
             gap: 10px; 
@@ -125,7 +123,6 @@
         .card-item h3 { font-size: 16px; font-weight: 700; color: #0f172a; }
         .card-item p { font-size: 13px; color: #64748b; line-height: 1.4; }
 
-        /* شريط حالة السيرفر في الأسفل */
         .server-status-bar { 
             width: 100%;
             background: #ef4444; 
@@ -151,7 +148,6 @@
 
     <div class="main-card">
         
-        <!-- الترويسة العلوية: العنوان في اليمين والأزرار في اليسار -->
         <div class="top-header">
             <div class="header-title">
                 <span>🛡️</span>
@@ -166,77 +162,64 @@
             </div>
         </div>
 
-        <!-- شبكة البطاقات مطابقة للأرقام (1 إلى 12) كما طلبت تماماً -->
         <div class="grid-cards">
-            <!-- 1 -->
             <a href="admin-add-employee.html" class="card-item">
                 <span class="icon">➕</span>
                 <h3>إضافة موظف جديد</h3>
                 <p>تسجيل موظف جديد مع بياناته الشخصية وبصمة الوجه</p>
             </a>
-            <!-- 2 -->
             <a href="admin-employees.html" class="card-item">
                 <span class="icon">👥</span>
                 <h3>إدارة الموظفين</h3>
                 <p>عرض، تعديل، وبحث في بيانات الموظفين المسجلين</p>
             </a>
-            <!-- 3 -->
             <a href="admin-branches.html" class="card-item">
                 <span class="icon">🏢</span>
                 <h3>إدارة الفروع</h3>
                 <p>توزيع وإدارة فروع العمل وأماكن التواجد</p>
             </a>
-            <!-- 4 -->
             <a href="admin-shifts.html" class="card-item">
                 <span class="icon">⏰</span>
                 <h3>الأوقات والشفتات</h3>
                 <p>إدارة مواعيد الدوام الرسمي والأوقات الخاصة</p>
             </a>
 
-            <!-- 5 -->
             <a href="admin-attendance.html" class="card-item">
                 <span class="icon">📍</span>
                 <h3>بصمة الوجه والـ GPS</h3>
                 <p>مراقبة مواقع الحضور والنطاق الجغرافي للموظفين</p>
             </a>
-            <!-- 6 -->
             <a href="admin-salaries.html" class="card-item">
                 <span class="icon">💰</span>
                 <h3>إدارة الرواتب</h3>
                 <p>احتساب الرواتب الأساسية، الاستقطاعات، والصفاء</p>
             </a>
-            <!-- 7 -->
             <a href="admin-loans.html" class="card-item">
                 <span class="icon">💳</span>
                 <h3>إدارة السلف</h3>
                 <p>تسجيل ومتابعة سلف الموظفين وأقساطها</p>
             </a>
-            <!-- 8 -->
             <a href="admin-reports.html" class="card-item">
                 <span class="icon">📈</span>
                 <h3>التقارير الشاملة</h3>
                 <p>استخراج تقارير الحضور، الغياب، والرواتب</p>
             </a>
 
-            <!-- 9 -->
             <a href="admin-permissions.html" class="card-item">
                 <span class="icon">🔒</span>
                 <h3>الصلاحيات والأذونات</h3>
                 <p>تحديد صلاحيات المشرفين والمستخدمين</p>
             </a>
-            <!-- 10 -->
             <a href="admin-archive.html" class="card-item">
                 <span class="icon">🗂️</span>
                 <h3>أرشيف النظام</h3>
                 <p>الرجوع إلى السجلات والبيانات المؤرشفة</p>
             </a>
-            <!-- 11 -->
             <a href="admin-logs.html" class="card-item">
                 <span class="icon">📝</span>
                 <h3>سجل الحركات</h3>
                 <p>متابعة حركة العمليات والنشاطات داخل النظام</p>
             </a>
-            <!-- 12 -->
             <a href="admin-settings.html" class="card-item">
                 <span class="icon">⚙️</span>
                 <h3>إعدادات النظام</h3>
@@ -244,14 +227,13 @@
             </a>
         </div>
 
-        <!-- شريط حالة السيرفر في الأسفل -->
         <div id="serverStatusBar" class="server-status-bar" onclick="syncServer()">
-            <span id="serverIcon">❌</span>
+            <span id="serverIcon">⏳</span>
             <span id="serverText">جاري التحقق من اتصال السيرفر...</span>
         </div>
     </div>
 
-   <script>
+    <script>
         let currentCompanyId = '';
 
         window.onload = async () => {
@@ -264,14 +246,17 @@
                 return;
             }
 
-            // جلب بيانات الشركة الحقيقية من قاعدة بيانات MongoDB مباشرة
             try {
                 const response = await fetch('/api/developer/companies');
-                const companies = await response.json();
-                const currentCompany = companies.find(c => c.companyId === currentCompanyId);
+                if (response.ok) {
+                    const companies = await response.json();
+                    const currentCompany = companies.find(c => c.companyId === currentCompanyId);
 
-                if (currentCompany) {
-                    document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompany.companyId}) - ${currentCompany.name}`;
+                    if (currentCompany) {
+                        document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompany.companyId}) - ${currentCompany.name}`;
+                    } else {
+                        document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompanyId})`;
+                    }
                 } else {
                     document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompanyId})`;
                 }
@@ -279,43 +264,53 @@
                 document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompanyId})`;
             }
 
-            // تمرير رمز الشركة في جميع روابط البطاقات لضمان الترابط التام
             document.querySelectorAll('.grid-cards a').forEach(link => {
                 let href = link.getAttribute('href').split('?')[0];
                 link.setAttribute('href', `${href}?company=${encodeURIComponent(currentCompanyId)}`);
             });
 
-            checkServerConnection();
+            await checkServerConnection();
         };
 
-        function checkServerConnection() {
+        async function checkServerConnection() {
             const statusBar = document.getElementById('serverStatusBar');
             const serverIcon = document.getElementById('serverIcon');
             const serverText = document.getElementById('serverText');
             
-            // استخدام مسار الفحص الصحيح /api/ping الموجود في السيرفر
-            fetch('/api/ping')
-                .then(res => {
-                    if (res.ok) {
-                        statusBar.classList.add('online');
-                        serverIcon.textContent = '✔';
-                        serverText.textContent = 'السيرفر متصل بقاعدة البيانات بنجاح (Online)';
-                    } else {
-                        throw new Error();
-                    }
-                })
-                .catch(() => {
-                    statusBar.classList.remove('online');
-                    serverIcon.textContent = '❌';
-                    serverText.textContent = 'السيرفر مقطوع - تعذر الاتصال (Offline)';
-                });
+            try {
+                const response = await fetch('/api/ping');
+                if (response.ok) {
+                    statusBar.classList.add('online');
+                    serverIcon.textContent = '✔';
+                    serverText.textContent = 'السيرفر متصل بقاعدة البيانات بنجاح (Online)';
+                    return true;
+                } else {
+                    throw new Error('Server returned non-200 status');
+                }
+            } catch (error) {
+                statusBar.classList.remove('online');
+                serverIcon.textContent = '❌';
+                serverText.textContent = 'السيرفر مقطوع - تعذر الاتصال (Offline)';
+                return false;
+            }
+        }
+
+        async function syncServer() {
+            const serverText = document.getElementById('serverText');
+            serverText.textContent = 'جاري إعادة فحص الاتصال...';
+            
+            const isOnline = await checkServerConnection();
+            
+            if (isOnline) {
+                alert('✅ السيرفر متصل بقاعدة البيانات بنجاح (Online)');
+            } else {
+                alert('❌ تعذر الاتصال بالسيرفر، تأكد من تشغيل السيرفر أو حالة الشبكة (Offline)');
+            }
         }
 
         async function backupDatabase() {
             try {
                 const compId = currentCompanyId || 'general';
-                
-                // استخدام مسار النسخ الاحتياطي الصحيح المطابق للسيرفر /api/admin/backup
                 const response = await fetch('/api/admin/backup');
                 
                 if (response.ok) {
@@ -343,11 +338,6 @@
 
         function restoreData() {
             alert('يرجى اختيار ملف النسخة الاحتياطية لاستعادة البيانات.');
-        }
-
-        function syncServer() {
-            checkServerConnection();
-            alert('✅ تم فحص اتصال السيرفر وتحديث الحالة بنجاح.');
         }
 
         function logout() {
