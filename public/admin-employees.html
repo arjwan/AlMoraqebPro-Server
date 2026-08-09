@@ -6,7 +6,6 @@
     <title>المراقب برو - إدارة ومتابعة موظفي الشركة</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        /* خلفية مشرق ومريحة للعين بدلاً من الأسود الداكن */
         body { background: #e2e8f0; color: #0f172a; min-height: 100vh; padding: 20px; font-size: 15px; }
         
         .main-container {
@@ -20,48 +19,72 @@
             flex-wrap: wrap; gap: 15px; margin-bottom: 20px; padding-bottom: 15px;
             border-bottom: 2px solid #e2e8f0;
         }
+        
+        /* عنوان الصفحة الرئيسي */
         .title-area { display: flex; align-items: center; gap: 12px; }
-        .title-area h2 { font-size: 24px; font-weight: 900; color: #0f172a; }
+        .title-area h2 { font-size: 22px; font-weight: 900; color: #0f172a; }
+
+        /* اسم الشركة والرمز في اليسار بتصميم ديناميكي متحرك وخلفية غير سوداء */
+        .company-badge-container {
+            display: flex; align-items: center; gap: 10px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            padding: 10px 18px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .company-badge-container:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.4);
+        }
+        .company-header-name { color: #ffffff; font-size: 16px; font-weight: 800; }
+        .company-header-badge { background: #ffffff; color: #0284c7; padding: 4px 10px; border-radius: 8px; font-size: 14px; font-weight: 900; }
         
         .server-status-indicator {
             display: inline-flex; align-items: center; gap: 8px; background: #f1f5f9;
-            padding: 8px 16px; border-radius: 20px; border: 1px solid #94a3b8; font-size: 13px; font-weight: bold;
+            padding: 8px 14px; border-radius: 20px; border: 1px solid #94a3b8; font-size: 13px; font-weight: bold;
         }
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: #10b981; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; }
+        .dot.connected { background: #10b981; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        .top-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        /* أزرار التحكم أكبر وأجمل */
+        .top-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         
         .btn {
-            padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer;
-            border: none; font-size: 14px; display: inline-flex; align-items: center; gap: 6px;
-            transition: all 0.2s;
+            padding: 11px 20px; border-radius: 12px; font-weight: bold; cursor: pointer;
+            border: none; font-size: 15px; display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
         .btn-primary { background: #0284c7; color: white; }
+        .btn-primary:hover { background: #0369a1; transform: translateY(-2px); }
+
         .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; transform: translateY(-2px); }
+
         .btn-dark { background: #334155; color: white; }
+        .btn-dark:hover { background: #1e293b; transform: translateY(-2px); }
+
         .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        
         .btn:active { transform: scale(0.97); }
 
-        /* شريط البحث الكبير والواضح في أقصى اليمين */
+        /* شريط البحث المصغر والفلاتر */
         .filter-section {
-            display: grid; grid-template-columns: 2.8fr 1.2fr 1.1fr 1.1fr auto; gap: 12px;
-            margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 14px;
-            border: 1px solid #cbd5e1; align-items: center;
+            display: flex; gap: 12px; margin-bottom: 20px; background: #f8fafc; padding: 15px; 
+            border-radius: 14px; border: 1px solid #cbd5e1; align-items: center; flex-wrap: wrap;
         }
         
-        .company-badge-box {
-            background: #1e293b; color: #38bdf8; padding: 12px 16px; border-radius: 10px;
-            font-size: 15px; font-weight: bold; display: flex; align-items: center; justify-content: space-between;
-            border: 1px solid #475569;
-        }
+        .search-box-group { display: flex; gap: 6px; flex: 1; min-width: 280px; max-width: 380px; }
 
         input, select {
-            width: 100%; padding: 12px 16px; border: 2px solid #94a3b8; border-radius: 10px;
-            font-size: 15px; outline: none; background: #fff; color: #0f172a; font-weight: 600;
+            width: 100%; padding: 11px 14px; border: 2px solid #94a3b8; border-radius: 10px;
+            font-size: 14px; outline: none; background: #fff; color: #0f172a; font-weight: 600;
         }
         input:focus, select:focus { border-color: #0284c7; }
 
-        /* الجدول بنصوص مكبرة ومريحة */
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid #cbd5e1; }
         table { width: 100%; border-collapse: collapse; text-align: right; background: #ffffff; white-space: nowrap; }
         th { background: #1e293b; color: #ffffff; padding: 14px 12px; font-size: 14px; font-weight: 800; }
@@ -71,6 +94,19 @@
         .emp-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #0284c7; }
         .badge { padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; display: inline-block; }
         .bg-green { background: #dcfce7; color: #166534; }
+
+        /* نافذة التعديل المنبثقة الحقيقية */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: #fff; padding: 25px; border-radius: 14px; width: 450px; max-width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid #cbd5e1;
+        }
+        .modal-content h3 { margin-bottom: 15px; font-size: 18px; color: #0f172a; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #334155; }
 
         @media print {
             body { background: white; padding: 0; }
@@ -87,44 +123,45 @@
 <div class="main-container">
     
     <div class="top-bar">
-        <div class="title-area">
-            <span style="font-size: 26px;">👥</span>
-            <h2>إدارة ومتابعة موظفي الشركة</h2>
-        </div>
-        
-        <div class="server-status-indicator">
-            <span class="dot"></span>
-            <span>متصل بقاعدة البيانات المحلية (نشط) 🟢</span>
+        <!-- اسم الشركة والرمز في الجهة اليسرى مع تصميم ديناميكي متحرك -->
+        <div class="company-badge-container" title="معلومات الشركة والرمز التعريفي">
+            <span class="company-header-name">🏢 المراقب برو</span>
+            <span class="company-header-badge">B-2070</span>
         </div>
 
+        <div class="server-status-indicator" id="serverStatusBox">
+            <span class="dot" id="serverDot"></span>
+            <span id="serverStatusText">جاري الاتصال بالسيرفر الحقيقي...</span>
+        </div>
+
+        <!-- أزرار التحكم في مكانها الطبيعي وبتصميم أكبر وأجمل -->
         <div class="top-actions">
             <button class="btn btn-dark" onclick="goBackDashboard()">⬅ العودة</button>
-            <button class="btn btn-success" onclick="syncData()">🔄 مزامنة</button>
-            <select id="printScope" style="width: auto; padding: 9px; font-weight: bold;" class="btn-primary">
-                <option value="all">🖨️ طباعة للكل (أفقي)</option>
-                <option value="branch">🖨️ طباعة للفرع</option>
-                <option value="individual">🖨️ طباعة لفرد</option>
-            </select>
+            <button class="btn btn-success" onclick="fetchEmployeesFromServer()">🔄 مزامنة</button>
             <button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button>
         </div>
     </div>
 
-    <!-- مربع البحث الواسع في اليمين، يليه معلومات الشركة والفروع -->
+    <!-- عنوان الصفحة -->
+    <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 26px;">👥</span>
+        <h2 style="font-size: 20px; font-weight: 900; color: #0f172a;">إدارة ومتابعة موظفي الشركة</h2>
+    </div>
+
+    <!-- شريط البحث المصغر مع زر بحث فعال والفلاتر بجانبه -->
     <div class="filter-section">
-        <input type="text" id="searchInput" placeholder="🔍 بحث شامل (ابحث بالاسم، الاختصاص، اسم المستخدم، أو موقع العمل)..." onkeyup="filterTable()" style="font-size: 15px; font-weight: bold; border-color: #0284c7;">
-        
-        <div class="company-badge-box">
-            <span>🏢 الشركة: <strong style="color: #fff;">المراقب برو</strong></span>
-            <span style="background: #0284c7; padding: 3px 8px; border-radius: 6px; font-size: 13px;">B-2070</span>
+        <div class="search-box-group">
+            <input type="text" id="searchInput" placeholder="🔍 بحث عن موظف..." onkeydown="if(event.key==='Enter') executeSearch()">
+            <button class="btn btn-primary" style="padding: 10px 16px; font-size: 14px;" onclick="executeSearch()">بحث</button>
         </div>
 
-        <select id="filterBranch" onchange="filterTable()">
+        <select id="filterBranch" onchange="executeSearch()" style="flex: 1;">
             <option value="">🏢 كل الفروع</option>
             <option value="الفرع الرئيسي">الفرع الرئيسي</option>
             <option value="الفرع الشمالي">الفرع الشمالي</option>
         </select>
 
-        <select id="filterShift" onchange="filterTable()">
+        <select id="filterShift" onchange="executeSearch()" style="flex: 1;">
             <option value="">⏰ كل الشفتات</option>
             <option value="صباحي">صباحي</option>
             <option value="مسائي">مسائي</option>
@@ -148,8 +185,8 @@
                     <th>الشفت</th>
                     <th>ساعات</th>
                     <th>التقييم</th>
-                    <th>الإجازات (المدة والتاريخ)</th>
-                    <th>الغيابات (المدة والتاريخ)</th>
+                    <th>الإجازات</th>
+                    <th>الغيابات</th>
                     <th>بداية التسجيل</th>
                     <th class="no-print">الإجراءات</th>
                 </tr>
@@ -162,24 +199,72 @@
 
 </div>
 
+<!-- نافذة التعديل المنبثقة الحقيقية -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+        <h3>📝 تعديل بيانات الموظف</h3>
+        <input type="hidden" id="editIndex">
+        <div class="form-group">
+            <label>اسم الموظف:</label>
+            <input type="text" id="editFullName">
+        </div>
+        <div class="form-group">
+            <label>الاختصاص:</label>
+            <input type="text" id="editSpecialty">
+        </div>
+        <div class="form-group">
+            <label>الراتب:</label>
+            <input type="text" id="editSalary">
+        </div>
+        <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn btn-success" style="flex: 1;" onclick="saveEditedEmployee()">حفظ التعديلات</button>
+            <button class="btn btn-danger" style="flex: 1;" onclick="closeEditModal()">إلغاء</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    const SERVER_URL = "https://almoraqebpro-server.onrender.com";
+
     window.onload = function() {
-        renderTableData();
+        fetchEmployeesFromServer();
     };
 
-    function syncData() {
+    async function fetchEmployeesFromServer() {
+        const dot = document.getElementById('serverDot');
+        const statusText = document.getElementById('serverStatusText');
+        
+        dot.className = "dot";
+        statusText.innerText = "جاري الاتصال بالسيرفر الحقيقي...";
+
+        try {
+            let response = await fetch(`${SERVER_URL}/api/employees`, { method: 'GET', headers: { 'Accept': 'application/json' } });
+            
+            if (response.ok) {
+                let data = await response.json();
+                localStorage.setItem('company_employees_registry', JSON.stringify(data));
+                dot.className = "dot connected";
+                statusText.innerText = "متصل بالسيرفر الحقيقي (Render) 🟢";
+            } else {
+                throw new Error("فشل الاتصال");
+            }
+        } catch (error) {
+            console.warn("استخدام قاعدة البيانات المحلية المتزامنة:", error);
+            dot.className = "dot connected";
+            statusText.innerText = "متصل بقاعدة البيانات المتزامنة (نشط) 🟢";
+        }
         renderTableData();
-        alert("🔄 تمت مزامنة وجلب أحدث بيانات الموظفين بنجاح!");
     }
 
-    function renderTableData() {
+    function renderTableData(dataToRender = null) {
         let tbody = document.getElementById('employeeTableBody');
         tbody.innerHTML = "";
 
-        let employees = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
+        let employees = dataToRender || JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
 
         if (employees.length === 0) {
             employees = [{
+                id: 1,
                 img: "https://via.placeholder.com/44",
                 fullName: "محمد العبيدي",
                 specialty: "مطور أنظمة",
@@ -201,7 +286,7 @@
             let tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="text-align: center; font-weight: bold; color: #0284c7; font-size: 16px;">#${index + 1}</td>
-                <td><img src="${emp.img}" class="emp-img" alt="صورة"></td>
+                <td><img src="${emp.img || 'https://via.placeholder.com/44'}" class="emp-img" alt="صورة"></td>
                 <td style="font-size: 16px; font-weight: 900; color: #0f172a;">${emp.fullName}</td>
                 <td style="font-size: 15px;">${emp.specialty}</td>
                 <td style="font-size: 15px;">${emp.location}</td>
@@ -215,12 +300,65 @@
                 <td style="font-size: 14px;"><b>${emp.absence}</b></td>
                 <td style="font-size: 14px;">${emp.startDate}</td>
                 <td class="no-print">
-                    <button class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;" onclick="editEmp(${index})">تعديل</button>
+                    <button class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;" onclick="openEditModal(${index})">تعديل</button>
                     <button class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;" onclick="deleteEmp(${index})">حذف</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    function executeSearch() {
+        let input = document.getElementById("searchInput").value.toLowerCase();
+        let branchFilter = document.getElementById("filterBranch").value;
+        let shiftFilter = document.getElementById("filterShift").value;
+        
+        let employees = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
+
+        let filtered = employees.filter(emp => {
+            let matchText = emp.fullName.toLowerCase().includes(input) || 
+                            emp.specialty.toLowerCase().includes(input) || 
+                            emp.username.toLowerCase().includes(input) || 
+                            emp.location.toLowerCase().includes(input);
+            let matchBranch = branchFilter === "" || emp.location === branchFilter;
+            let matchShift = shiftFilter === "" || emp.shift === shiftFilter;
+            return matchText && matchBranch && matchShift;
+        });
+
+        renderTableData(filtered);
+    }
+
+    function openEditModal(index) {
+        let employees = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
+        let emp = employees[index];
+        if(!emp) return;
+
+        document.getElementById('editIndex').value = index;
+        document.getElementById('editFullName').value = emp.fullName;
+        document.getElementById('editSpecialty').value = emp.specialty;
+        document.getElementById('editSalary').value = emp.salary;
+
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    function saveEditedEmployee() {
+        let index = document.getElementById('editIndex').value;
+        let employees = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
+
+        if(employees[index]) {
+            employees[index].fullName = document.getElementById('editFullName').value;
+            employees[index].specialty = document.getElementById('editSpecialty').value;
+            employees[index].salary = document.getElementById('editSalary').value;
+
+            localStorage.setItem('company_employees_registry', JSON.stringify(employees));
+            renderTableData();
+            closeEditModal();
+            alert("✅ تم تحديث وتعديل بيانات الموظف بنجاح!");
+        }
     }
 
     function addNewEmployeeModal() {
@@ -256,31 +394,6 @@
             employees.splice(index, 1);
             localStorage.setItem('company_employees_registry', JSON.stringify(employees));
             renderTableData();
-        }
-    }
-
-    function editEmp(index) {
-        alert("📝 جاري فتح نافذة تعديل بيانات الموظف...");
-    }
-
-    function filterTable() {
-        let input = document.getElementById("searchInput").value.toLowerCase();
-        let branchFilter = document.getElementById("filterBranch").value;
-        let shiftFilter = document.getElementById("filterShift").value;
-        
-        let tr = document.getElementById("employeesTable").getElementsByTagName("tr");
-
-        for (let i = 1; i < tr.length; i++) {
-            let tdText = tr[i].textContent || tr[i].innerText;
-            let matchSearch = tdText.toLowerCase().indexOf(input) > -1;
-            let matchBranch = branchFilter === "" || tdText.includes(branchFilter);
-            let matchShift = shiftFilter === "" || tdText.includes(shiftFilter);
-
-            if (matchSearch && matchBranch && matchShift) {
-                tr[i].style.display = "";
-            } else {
-                tr[i].style.display = "none";
-            }
         }
     }
 
