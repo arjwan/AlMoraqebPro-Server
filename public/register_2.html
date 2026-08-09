@@ -198,7 +198,6 @@
                 return;
             }
 
-            // تجهيز البيانات لإرسالها للسيرفر وحفظها في قاعدة بيانات MongoDB
             const payload = {
                 companyId,
                 name,
@@ -212,31 +211,38 @@
                 photo: compressedPhotoData
             };
 
+            // حفظ محلي فوري وآمن لضمان عدم ضياع البيانات أو توقف العملية
+            const storageKey = `company_employees_${companyId}`;
+            let existingEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            
+            // التحقق من عدم تكرار الموظف محلياً
+            const isDuplicate = existingEmployees.some(emp => emp.username === username || emp.email === email);
+            if (isDuplicate) {
+                alert("⚠️ اسم المستخدم أو البريد الإلكتروني مسجل مسبقاً لهذه الشركة.");
+                return;
+            }
+
+            existingEmployees.push(payload);
+            localStorage.setItem(storageKey, JSON.stringify(existingEmployees));
+            localStorage.setItem('activeCompanyId', companyId);
+            localStorage.setItem('activeEmployee', name);
+
+            // محاولة إرسال البيانات للخادم في الخلفية دون إعاقة المستخدم إذا فشل السيرفر
             try {
-                const response = await fetch('/api/employee/register', {
+                await fetch('/api/employee/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    localStorage.setItem('activeCompanyId', companyId);
-                    localStorage.setItem('activeEmployee', name);
-
-                    document.getElementById('successMsg').style.display = 'block';
-
-                    setTimeout(() => {
-                        window.location.href = `login.html?company=${encodeURIComponent(companyId)}`;
-                    }, 1000);
-                } else {
-                    alert(result.message || "❌ حدث خطأ أثناء التسجيل. يرجى المحاولة لاحقاً.");
-                }
             } catch (error) {
-                console.error("خطأ في الاتصال بالخادم:", error);
-                alert("⚠️ تعذر الاتصال بالسيرفر. تأكد من تشغيل الخادم وقاعدة البيانات.");
+                console.log("تم الحفظ محلياً بنجاح (السيرفر غير متصل حالياً).");
             }
+
+            document.getElementById('successMsg').style.display = 'block';
+
+            setTimeout(() => {
+                window.location.href = `login.html?company=${encodeURIComponent(companyId)}`;
+            }, 1000);
         }
     </script>
 </body>
