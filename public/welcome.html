@@ -3,24 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - شاشة الترحيب</title>
+    <title>المراقب برو - الهاتف</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        
-        .welcome-card { background: #1e293b; padding: 35px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 100%; max-width: 420px; text-align: center; border: 1px solid #334155; }
+        body { 
+            background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); 
+            color: #ffffff; 
+            min-height: 100vh; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .welcome-card {
+            background: #1e2530;
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
         .logo-icon { font-size: 50px; margin-bottom: 10px; }
-        h1 { color: #38bdf8; font-size: 24px; font-weight: 800; margin-bottom: 5px; }
-        .company-badge { background: #0f172a; color: #94a3b8; font-size: 12px; padding: 4px 12px; border-radius: 8px; border: 1px solid #334155; display: inline-block; margin-bottom: 15px; }
-        .desc { color: #94a3b8; font-size: 13px; line-height: 1.5; margin-bottom: 30px; }
-
-        .btn { width: 100%; padding: 14px; border-radius: 14px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 12px; display: block; text-decoration: none; text-align: center; }
-        .btn-primary { background: #0284c7; color: white; }
+        h1 { font-size: 26px; color: #38bdf8; margin-bottom: 5px; }
+        p { font-size: 14px; color: #94a3b8; line-height: 1.5; margin-bottom: 20px; }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            transition: 0.2s;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #0284c7;
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+        }
         .btn-primary:hover { background: #0369a1; }
-        .btn-secondary { background: #334155; color: #f8fafc; }
-        .btn-secondary:hover { background: #475569; }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #f8fafc;
+            border: 2px solid #475569;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.05); border-color: #0284c7; }
 
-        .footer-info { margin-top: 25px; font-size: 12px; color: #64748b; border-top: 1px solid #334155; padding-top: 15px; }
+        .footer-info {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #64748b;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -28,18 +72,17 @@
     <div class="welcome-card">
         <div class="logo-icon">🛡️</div>
         <h1>المراقب برو</h1>
-        <div class="company-badge">نظام إدارة الحضور والدوام الذكي</div>
-        <p class="desc">النظام الذكي لإدارة الحضور، الشفتات، وبيانات الموظفين بكل كفاءة وأمان عبر بصمة الوجه والموقع الجغرافي.</p>
+        <p>النظام الذكي لإدارة الحضور، الشفتات، وبيانات الموظفين بكل كفاءة وأمان عبر بصمة الوجه والموقع الجغرافي.</p>
 
-        <!-- التوجيه إلى صفحة تسجيل الدخول (سواء index.html أو login.html حسب التسمية لديك) -->
-        <a href="index.html" class="btn btn-primary">تسجيل الدخول</a>
+        <!-- يوجه الموظف لصفحة تسجيل الدخول الخاصة بالبصمة والحضور -->
+        <a href="employee-login.html" class="btn btn-primary">تسجيل الدخول</a>
         
-        <!-- التوجيه إلى صفحة التسجيل المحدثة -->
-        <a href="register_2.html" class="btn btn-secondary">إنشاء حساب جديد</a>
+        <!-- يوجه لتسجيل موظف جديد -->
+        <a href="admin-add-employee.html" class="btn btn-secondary">إنشاء حساب جديد</a>
 
         <div class="footer-info">
             تطوير وبرمجة: محمد العبيدي<br>
-            البريد: mohmmed1628@gmail.com
+            mohmmed1628@gmail.com
         </div>
     </div>
 
