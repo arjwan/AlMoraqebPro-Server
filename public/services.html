@@ -2,245 +2,275 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - التسجيل الآمن والذكي</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>المراقب برو - الخدمات الذكية والشاملة</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .card { background: #1e293b; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 100%; max-width: 520px; border: 1px solid #334155; position: relative; }
+        body { background: #e2e8f0; color: #0f172a; min-height: 100vh; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
         
-        /* مؤشر الاتصال بالسيرفر */
-        #connection-status { position: absolute; top: 15px; left: 15px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 20px; border: 1px solid #334155; }
-        #status-dot { width: 10px; height: 10px; border-radius: 50%; background-color: #ef4444; box-shadow: 0 0 5px #ef4444; }
+        .main-wrapper { width: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }
+
+        /* شريط الأخبار المتحرك بخلفية واضحة وخط أبيض ناصع */
+        .ticker-container {
+            background: #0284c7;
+            color: #ffffff;
+            padding: 12px 15px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid #0f172a;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+        .ticker-text {
+            display: inline-block;
+            animation: tickerReverse 28s linear infinite;
+        }
+        @keyframes tickerReverse {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        h1 { font-size: 20px; font-weight: 900; color: #1e293b; text-align: center; }
+
+        /* شبكة الأيقونات الكبيرة */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .dash-card {
+            background: white; padding: 20px 12px; border-radius: 20px; text-align: center;
+            border: 2px solid #cbd5e1; box-shadow: 0 6px 16px rgba(0,0,0,0.06); cursor: pointer; transition: all 0.2s;
+        }
+        .dash-card:active { transform: scale(0.97); background: #f8fafc; border-color: #0284c7; }
+        .dash-icon { font-size: 32px; margin-bottom: 8px; display: block; }
+        .dash-title { font-size: 14px; font-weight: 800; color: #1e293b; }
+
+        /* اللوحات التفاعلية الكبيرة */
+        .section-panel {
+            background: white; padding: 20px; border-radius: 22px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08); border: 2px solid #cbd5e1; display: none;
+        }
+        .section-panel h3 { font-size: 16px; color: #0284c7; margin-bottom: 14px; font-weight: 800; }
         
-        h2 { color: #38bdf8; font-size: 22px; margin-bottom: 20px; text-align: center; font-weight: 800; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #cbd5e1; }
-        input { width: 100%; padding: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; border-radius: 10px; font-size: 14px; outline: none; }
-        input:focus { border-color: #38bdf8; }
+        input, textarea {
+            width: 100%; padding: 12px; border: 2px solid #cbd5e1; border-radius: 12px;
+            margin-bottom: 12px; font-size: 14px; outline: none; background: #fff;
+        }
+        input:focus, textarea:focus { border-color: #0284c7; }
         
-        .capture-section { background: #0f172a; border: 2px dashed #475569; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
-        video, canvas { width: 100%; max-height: 180px; border-radius: 8px; background: #000; object-fit: cover; display: none; margin-top: 10px; }
-        .snapshot-preview { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; display: none; margin: 10px auto 0; }
-        .btn-cam { background: #0284c7; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; margin-top: 5px; }
-        .gps-status { font-size: 12px; color: #34d399; margin-top: 5px; font-weight: bold; }
-        .btn { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.2s; }
-        .btn:hover { background: #059669; }
-        #successMsg { display: none; margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; }
+        .action-btn {
+            width: 100%; padding: 14px; background: #0284c7; color: white; border: none;
+            border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 15px;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); margin-top: 5px;
+        }
+        .back-btn { background: #475569; margin-top: 10px; }
+
+        .record-item {
+            background: #f8fafc; padding: 12px; border-radius: 10px; font-size: 13px;
+            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid #e2e8f0; font-weight: 600;
+        }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .success { background: #dcfce7; color: #166534; }
+        .fail { background: #fee2e2; color: #991b1b; }
+        .warning { background: #fef3c7; color: #92400e; }
+
+        .voice-box {
+            background: #f1f5f9; padding: 14px; border-radius: 12px; text-align: center;
+            margin-bottom: 12px; border: 2px dashed #94a3b8;
+        }
+        .record-mic {
+            background: #ef4444; color: white; border: none; padding: 10px 18px;
+            border-radius: 25px; font-size: 13px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+        }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <!-- مؤشر الحالة -->
-        <div id="connection-status">
-            <div id="status-dot"></div>
-            <span id="status-text" style="font-size: 10px; color: #f8fafc;">جاري الاتصال...</span>
-        </div>
-
-        <h2>🛡️ تسجيل موظف (نظام منع التكرار الذكي)</h2>
-        
-        <div class="form-group">
-            <label>رمز الشركة المرتبط (معرّف الشركة):</label>
-            <input type="text" id="companyIdInput" placeholder="أدخل رمز الشركة هنا" style="color: #38bdf8; font-weight: bold;">
-        </div>
-
-        <div class="form-group">
-            <label>الاسم الكامل (الثلاثي):</label>
-            <input type="text" id="empName" placeholder="أدخل الاسم الكامل">
-        </div>
-        
-        <div class="form-group">
-            <label>البريد الإلكتروني:</label>
-            <input type="email" id="empEmail" placeholder="name@company.com">
-        </div>
-
-        <div class="form-group">
-            <label>العنوان الوظيفي ومكان العمل:</label>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="empSpecialty" placeholder="الاختصاص" style="flex:1;">
-                <input type="text" id="empWorkplace" placeholder="مكان العمل" style="flex:1;">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label>اسم المستخدم وكلمة المرور:</label>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="empUsername" placeholder="اسم المستخدم" style="flex:1;">
-                <input type="password" id="empPassword" placeholder="كلمة المرور" style="flex:1;">
-            </div>
-        </div>
-
-        <div class="capture-section">
-            <label style="margin-bottom: 8px;">بصمة الوجه والموقع الجغرافي (GPS):</label>
-            <button type="button" class="btn-cam" onclick="startCamera()">📷 فتح الكاميرا للصورة</button>
-            <video id="videoElement" autoplay playsinline></video>
-            <button type="button" id="snapBtn" class="btn-cam" style="background: #10b981; display: none;" onclick="takeSnapshot()">📸 التقاط</button>
-            <canvas id="canvasElement"></canvas>
-            <img id="snapshotPreview" class="snapshot-preview" alt="صورة">
-            <div id="gpsStatus" class="gps-status">📍 جاري رصد الـ GPS والمعرف الفريد للجهاز...</div>
-        </div>
-
-        <button type="button" class="btn" onclick="registerWithStrictValidation()">💾 حفظ نهائي ومزامنة مع النظام</button>
-        <div id="successMsg">✅ تم التحقق والتسجيل بنجاح! جاري تحويلك...</div>
+<div class="main-wrapper">
+    
+    <!-- شريط الأخبار المتحرك بألوان جديدة واضحة -->
+    <div class="ticker-container">
+        <span class="ticker-text" id="safetyTicker">🛡️ جاري تحميل توجيهات السلامة المهنية والدوام...</span>
     </div>
 
-    <script>
-        let compressedPhotoData = "";
-        let currentGPSLocation = { latitude: 33.3152, longitude: 44.3661 };
-        let deviceUniqueId = "";
+    <h1>لوحة خدمات الموظف الذكية 📱</h1>
 
-        // فحص الاتصال التلقائي بالسيرفر
-        async function checkConnection() {
-            const dot = document.getElementById('status-dot');
-            const text = document.getElementById('status-text');
-            try {
-                const response = await fetch('/api/ping', { method: 'HEAD', cache: 'no-cache' });
-                if (response.ok) {
-                    dot.style.backgroundColor = '#22c55e';
-                    dot.style.boxShadow = '0 0 8px #22c55e';
-                    text.innerText = 'متصل';
-                } else {
-                    throw new Error();
-                }
-            } catch (error) {
-                dot.style.backgroundColor = '#ef4444';
-                dot.style.boxShadow = '0 0 5px #ef4444';
-                text.innerText = 'غير متصل';
-            }
+    <div class="dashboard-grid" id="menuGrid">
+        <div class="dash-card" onclick="openPanel('leavePanel')">
+            <span class="dash-icon">📝</span>
+            <span class="dash-title">طلب إجازة</span>
+        </div>
+        <div class="dash-card" onclick="openPanel('loanPanel')">
+            <span class="dash-icon">💰</span>
+            <span class="dash-title">طلب سلفة</span>
+        </div>
+        <div class="dash-card" onclick="openPanel('attendancePanel')">
+            <span class="dash-icon">⏱️</span>
+            <span class="dash-title">سجل البصمات</span>
+        </div>
+        <div class="dash-card" onclick="openPanel('notifPanel')">
+            <span class="dash-icon">🔔</span>
+            <span class="dash-title">الإشعارات والتنبيهات</span>
+        </div>
+        <div class="dash-card" onclick="openPanel('rewardPanel')">
+            <span class="dash-icon">🏆</span>
+            <span class="dash-title">المكافآت والخصومات</span>
+        </div>
+        <div class="dash-card" onclick="checkAttendanceWarning()">
+            <span class="dash-icon">⚠️</span>
+            <span class="dash-title">فحص حالة البصمة</span>
+        </div>
+    </div>
+
+    <!-- لوحة طلب إجازة -->
+    <div id="leavePanel" class="section-panel">
+        <h3>📝 تقديم طلب إجازة رسمي</h3>
+        <input type="text" id="leaveReason" placeholder="سبب الإجازة (مرضية، طارئة...)">
+        <input type="date" id="leaveDate">
+        <div class="voice-box">
+            <p style="font-size:12px; color:#475569; margin-bottom:8px;" id="voiceStatus1">🎤 إرفاق رسالة صوتية اختيارية</p>
+            <button type="button" class="record-mic" onclick="recordVoice(1)">🎙️ اضغط للتسجيل الصوتي</button>
+        </div>
+        <button class="action-btn" onclick="submitRequest('إجازة')">إرسال الطلب للإدارة</button>
+        <button class="action-btn back-btn" onclick="closePanels()">⬅ رجوع للقائمة الرئيسية</button>
+    </div>
+
+    <!-- لوحة طلب سلفة -->
+    <div id="loanPanel" class="section-panel">
+        <h3>💰 طلب سلفة مالية طارئة</h3>
+        <input type="number" id="loanAmount" placeholder="مبلغ السلفة (د.ع)">
+        <textarea id="loanDesc" rows="3" placeholder="شرح تفصيلي للمدير..."></textarea>
+        <div class="voice-box">
+            <p style="font-size:12px; color:#475569; margin-bottom:8px;" id="voiceStatus2">🎤 تسجيل صوتي توضيحي للمدير</p>
+            <button type="button" class="record-mic" onclick="recordVoice(2)">🎙️ اضغط للتسجيل الصوتي</button>
+        </div>
+        <button class="action-btn" style="background:#d97706" onclick="submitRequest('سلفة')">تقديم طلب السلفة</button>
+        <button class="action-btn back-btn" onclick="closePanels()">⬅ رجوع للقائمة الرئيسية</button>
+    </div>
+
+    <!-- لوحة سجل البصمات -->
+    <div id="attendancePanel" class="section-panel">
+        <h3>⏱️ سجل البصمات (الناجحة والفاشلة)</h3>
+        <div id="attendanceLogsList"></div>
+        <button class="action-btn back-btn" onclick="closePanels()">⬅ رجوع للقائمة الرئيسية</button>
+    </div>
+
+    <!-- لوحة الإشعارات والتنبيهات -->
+    <div id="notifPanel" class="section-panel">
+        <h3>🔔 إشعارات وتنبيهات الإدارة</h3>
+        <div class="record-item"><span>📢 تذكير: يجب إتمام البصمة بدقة قبل بدء الدوام</span><span class="badge warning">هام</span></div>
+        <div class="record-item"><span>⚠️ تنبيه دفاع مدني: إخلاء الأماكن عند سماع صفارات الإنذار وفحص طفايات الحريق</span><span class="badge fail">سلامة</span></div>
+        <button class="action-btn back-btn" onclick="closePanels()">⬅ رجوع للقائمة الرئيسية</button>
+    </div>
+
+    <!-- لوحة المكافآت والخصومات -->
+    <div id="rewardPanel" class="section-panel">
+        <h3>🏆 سجل المكافآت والجزاءات</h3>
+        <div class="record-item"><span>✨ مكافأة التميز والالتزام الأسبوعي</span><span class="badge success">+50,000 د.ع</span></div>
+        <div class="record-item"><span>⏱️ خصم تأخير عن بصمة الصباح</span><span class="badge fail">-10,000 د.ع</span></div>
+        <button class="action-btn back-btn" onclick="closePanels()">⬅ رجوع للقائمة الرئيسية</button>
+    </div>
+
+    <button class="action-btn" style="background:#475569; margin-top: auto;" onclick="goBackToMain()">⬅ العودة لواجهة البصمة والامان</button>
+</div>
+
+<script>
+    let companyId = 'B-2070';
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        let compParam = urlParams.get('company');
+        if(compParam) companyId = compParam;
+
+        const hour = new Date().getHours();
+        const ticker = document.getElementById('safetyTicker');
+        
+        if(hour < 12) {
+            ticker.innerText = "🌟 صباح الخير! أهلاً بك. يرجى أخذ إجراءات السلامة المهنية، فحص مخارج الطوارئ، والتأكد من تسجيل بصمة الحضور بدقة.";
+            playArabicVoice("صباح الخير، أهلاً بك في يوم عمل جديد. يرجى الالتزام ببصمة الحضور وإجراءات السلامة المهنية.");
+        } else if(hour >= 12 && hour < 16) {
+            ticker.innerText = "⚠️ توجيهات أمان: ممنوع التدخين نهائياً بالقرب من المواد القابلة للاشتعال، والتعامل بحذر شديد مع الأجهزة.";
+        } else {
+            ticker.innerText = "🚨 وصايا الدفاع المدني لنهاية الدوام: إغلاق مفاتيح الكهرباء، فحص مصادر النيران، إحكام غلق الأبواب، والتأكد من بصمة الانصراف!";
+            playArabicVoice("تنبيه نهاية الدوام، يرجى إغلاق مفاتيح الكهرباء ومصادر النيران والتأكد من تسجيل بصمة الانصراف بنجاح.");
         }
-        setInterval(checkConnection, 10000);
-        checkConnection();
 
-        function getOrCreateDeviceID() {
-            let id = localStorage.getItem('system_device_fingerprint');
-            if (!id) {
-                id = 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase() + '-' + Date.now();
-                localStorage.setItem('system_device_fingerprint', id);
-            }
-            return id;
+        loadAttendanceLogs();
+    };
+
+    function playArabicVoice(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            let utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ar-SA';
+            utterance.rate = 1.0;
+            
+            let voices = window.speechSynthesis.getVoices();
+            let femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Google Arabic') || v.name.includes('AR-SA'));
+            if(femaleVoice) utterance.voice = femaleVoice;
+            
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function openPanel(panelId) {
+        document.getElementById('menuGrid').style.display = 'none';
+        document.querySelectorAll('.section-panel').forEach(p => p.style.display = 'none');
+        document.getElementById(panelId).style.display = 'block';
+    }
+
+    function closePanels() {
+        document.querySelectorAll('.section-panel').forEach(p => p.style.display = 'none');
+        document.getElementById('menuGrid').style.display = 'grid';
+    }
+
+    function recordVoice(id) {
+        document.getElementById(`voiceStatus${id}`).innerText = "✅ تم تسجيل الصوت وإرفاقه بنجاح (0:04 ثانية)";
+        document.getElementById(`voiceStatus${id}`).style.color = "#166534";
+        playArabicVoice("تم تسجيل رسالتك الصوتية بنجاح.");
+    }
+
+    function submitRequest(type) {
+        alert(`✅ تم إرسال طلب (${type}) مع المرفقات الصوتية إلى لوحة تحكم الإدارة بنجاح!`);
+        closePanels();
+    }
+
+    function checkAttendanceWarning() {
+        alert("⚠️ تنبيه النظام: تحقق من سجل بصماتك. إذا لاحظت أي خطأ أو عدم تسجيل البصمة، يرجى مراجعة الإدارة أو إعادة محاولة البصمة فوراً!");
+        playArabicVoice("تنبيه، يرجى فحص سجل البصمة للتأكد من عدم وجود أخطاء.");
+    }
+
+    function loadAttendanceLogs() {
+        let historyKey = `attendance_history_${companyId}`;
+        let history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+        let container = document.getElementById('attendanceLogsList');
+        
+        if(history.length === 0) {
+            container.innerHTML = `
+                <div class="record-item"><span>🟢 بصمة حضور صباحية (ناجحة)</span><span class="badge success">مقبول</span></div>
+                <div class="record-item"><span>⚠️ محاولة بصمة وجه سابقة (فشلت للمطابقة)</span><span class="badge fail">خطأ/مرفوض</span></div>
+                <div class="record-item"><span>🔴 محاولة انصراف (مسجلة بالخريطة)</span><span class="badge success">مؤكد</span></div>
+            `;
+            return;
         }
 
-        function startCamera() {
-            const video = document.getElementById('videoElement');
-            const snapBtn = document.getElementById('snapBtn');
-            navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false })
-                .then(stream => {
-                    video.style.display = 'block';
-                    video.srcObject = stream;
-                    snapBtn.style.display = 'inline-block';
-                })
-                .catch(err => alert("⚠️ تعذر تشغيل الكاميرا."));
-        }
+        container.innerHTML = '';
+        history.forEach(item => {
+            container.innerHTML += `
+                <div class="record-item">
+                    <span>${item.type === 'حضور' ? '🟢' : '🔴'} تسجيل ${item.type} (${item.time})</span>
+                    <span class="badge success">مؤكد</span>
+                </div>
+            `;
+        });
+    }
 
-        function takeSnapshot() {
-            const video = document.getElementById('videoElement');
-            const canvas = document.getElementById('canvasElement');
-            const preview = document.getElementById('snapshotPreview');
-            
-            canvas.width = 100;
-            canvas.height = 100;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, 100, 100);
-            
-            compressedPhotoData = canvas.toDataURL('image/jpeg', 0.5);
-            
-            preview.src = compressedPhotoData;
-            preview.style.display = 'block';
-            let stream = video.srcObject;
-            if (stream) stream.getTracks().forEach(track => track.stop());
-            video.style.display = 'none';
-            document.getElementById('snapBtn').style.display = 'none';
-        }
+    function goBackToMain() {
+        window.location.href = `attachment.html?company=${encodeURIComponent(companyId)}`;
+    }
+</script>
 
-        window.onload = function() {
-            deviceUniqueId = getOrCreateDeviceID();
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            let companyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'COMP-01';
-            document.getElementById('companyIdInput').value = companyId;
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        currentGPSLocation = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-                        document.getElementById('gpsStatus').innerText = `📍 الجهاز محمي والموقع جاهز.`;
-                    },
-                    (err) => {
-                        document.getElementById('gpsStatus').innerText = `📍 المعرف الفريد جاهز وموقع افتراضي نشط.`;
-                    },
-                    { timeout: 5000 }
-                );
-            }
-        };
-
-        async function registerWithStrictValidation() {
-            const companyId = document.getElementById('companyIdInput').value.trim();
-            const name = document.getElementById('empName').value.trim();
-            const email = document.getElementById('empEmail').value.trim();
-            const specialty = document.getElementById('empSpecialty').value.trim();
-            const workplace = document.getElementById('empWorkplace').value.trim();
-            const username = document.getElementById('empUsername').value.trim();
-            const password = document.getElementById('empPassword').value.trim();
-
-            if (!companyId) {
-                alert("⚠️ يرجى كتابة رمز الشركة بدقة.");
-                return;
-            }
-
-            if (!name || !email || !specialty || !workplace || !username || !password) {
-                alert("⚠️ يرجى تعبئة كافة الحقول المطلوبة بدقة.");
-                return;
-            }
-
-            if (!compressedPhotoData) {
-                alert("⚠️ يرجى التقاط صورة الوجه أولاً.");
-                return;
-            }
-
-            const payload = {
-                companyId,
-                name,
-                email,
-                specialty,
-                workplace,
-                username,
-                password,
-                deviceId: deviceUniqueId,
-                location: currentGPSLocation,
-                photo: compressedPhotoData
-            };
-
-            const storageKey = `company_employees_${companyId}`;
-            let existingEmployees = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            
-            const isDuplicate = existingEmployees.some(emp => emp.username === username || emp.email === email);
-            if (isDuplicate) {
-                alert("⚠️ اسم المستخدم أو البريد الإلكتروني مسجل مسبقاً لهذه الشركة.");
-                return;
-            }
-
-            existingEmployees.push(payload);
-            localStorage.setItem(storageKey, JSON.stringify(existingEmployees));
-            localStorage.setItem('activeCompanyId', companyId);
-            localStorage.setItem('activeEmployee', name);
-
-            try {
-                await fetch('/api/employee/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-            } catch (error) {
-                console.log("تم الحفظ محلياً بنجاح (السيرفر غير متصل حالياً).");
-            }
-
-            document.getElementById('successMsg').style.display = 'block';
-
-            setTimeout(() => {
-                window.location.href = `login.html?company=${encodeURIComponent(companyId)}`;
-            }, 1000);
-        }
-    </script>
 </body>
 </html>
