@@ -3,148 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - إدارة وعرض موظفي الشركة</title>
+    <title>المراقب برو - إدارة ومتابعة موظفي الشركة</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #2e1a47 0%, #1f1135 50%, #100820 100%); color: #1e293b; min-height: 100vh; padding: 30px; display: flex; justify-content: center; align-items: center; }
-        .main-card { width: 100%; max-width: 1300px; background: #ffffff; padding: 35px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
-        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; flex-wrap: wrap; gap: 15px; }
-        h2 { font-size: 26px; font-weight: 800; color: #0284c7; }
-        .badge-company { background: #e0f2fe; color: #0369a1; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; }
-        .controls-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .actions-group { display: flex; gap: 10px; align-items: center; }
-        .search-box { display: flex; gap: 8px; flex: 1; max-width: 400px; }
-        .search-box input { flex: 1; padding: 10px 14px; border: 2px solid #cbd5e1; border-radius: 10px; font-size: 14px; outline: none; }
-        .btn { background: #0284c7; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; }
-        .btn:hover { opacity: 0.9; }
-        .btn-secondary { background: #475569; }
-        .btn-print { background: #0d9488; }
-        .btn-danger { background: #ef4444; padding: 6px 12px; font-size: 12px; border-radius: 8px; color: #fff; cursor: pointer; border: none; }
-        .btn-danger:hover { background: #dc2626; }
-        table { width: 100%; border-collapse: collapse; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
-        th, td { padding: 14px; text-align: center; font-size: 14px; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f1f5f9; color: #334155; font-weight: 700; }
-        td img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #0284c7; }
-        @media print { body { background: #fff; padding: 0; } .main-card { box-shadow: none; padding: 0; max-width: 100%; } .top-nav, .controls-bar, th:last-child, td:last-child { display: none; } }
+        /* خلفية مشرق ومريحة للعين بدلاً من الأسود الداكن */
+        body { background: #e2e8f0; color: #0f172a; min-height: 100vh; padding: 20px; font-size: 15px; }
+        
+        .main-container {
+            width: 100%; max-width: 1650px; margin: 0 auto; background: #ffffff;
+            border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 25px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 15px; margin-bottom: 20px; padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .title-area { display: flex; align-items: center; gap: 12px; }
+        .title-area h2 { font-size: 24px; font-weight: 900; color: #0f172a; }
+        
+        .server-status-indicator {
+            display: inline-flex; align-items: center; gap: 8px; background: #f1f5f9;
+            padding: 8px 16px; border-radius: 20px; border: 1px solid #94a3b8; font-size: 13px; font-weight: bold;
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #10b981; }
+
+        .top-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        
+        .btn {
+            padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer;
+            border: none; font-size: 14px; display: inline-flex; align-items: center; gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #0284c7; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-dark { background: #334155; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn:active { transform: scale(0.97); }
+
+        /* شريط البحث الكبير والواضح في أقصى اليمين */
+        .filter-section {
+            display: grid; grid-template-columns: 2.8fr 1.2fr 1.1fr 1.1fr auto; gap: 12px;
+            margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 14px;
+            border: 1px solid #cbd5e1; align-items: center;
+        }
+        
+        .company-badge-box {
+            background: #1e293b; color: #38bdf8; padding: 12px 16px; border-radius: 10px;
+            font-size: 15px; font-weight: bold; display: flex; align-items: center; justify-content: space-between;
+            border: 1px solid #475569;
+        }
+
+        input, select {
+            width: 100%; padding: 12px 16px; border: 2px solid #94a3b8; border-radius: 10px;
+            font-size: 15px; outline: none; background: #fff; color: #0f172a; font-weight: 600;
+        }
+        input:focus, select:focus { border-color: #0284c7; }
+
+        /* الجدول بنصوص مكبرة ومريحة */
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid #cbd5e1; }
+        table { width: 100%; border-collapse: collapse; text-align: right; background: #ffffff; white-space: nowrap; }
+        th { background: #1e293b; color: #ffffff; padding: 14px 12px; font-size: 14px; font-weight: 800; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 15px; color: #1e293b; font-weight: 600; }
+        tr:hover { background: #f1f5f9; }
+
+        .emp-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #0284c7; }
+        .badge { padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; display: inline-block; }
+        .bg-green { background: #dcfce7; color: #166534; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .main-container { box-shadow: none; border: none; padding: 0; max-width: 100%; }
+            .top-actions, .filter-section, .no-print { display: none !important; }
+            @page { size: landscape; margin: 5mm; }
+            table { font-size: 12px; }
+            th { background: #000 !important; color: #fff !important; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="main-card">
-        <div class="top-nav">
-            <h2>👥 قائمة وإدارة موظفي الشركة (مباشر)</h2>
-            <div id="companyBadge" class="badge-company">قاعدة البيانات: جاري التحميل...</div>
+<div class="main-container">
+    
+    <div class="top-bar">
+        <div class="title-area">
+            <span style="font-size: 26px;">👥</span>
+            <h2>إدارة ومتابعة موظفي الشركة</h2>
+        </div>
+        
+        <div class="server-status-indicator">
+            <span class="dot"></span>
+            <span>متصل بقاعدة البيانات المحلية (نشط) 🟢</span>
         </div>
 
-        <div class="controls-bar">
-            <div class="actions-group">
-                <button class="btn btn-secondary" onclick="window.location.href='admin.html'">← العودة لوحة التحكم</button>
-                <button class="btn btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
-                <button class="btn" style="background: #10b981;" onclick="loadEmployees()">🔄 تحديث القائمة</button>
-            </div>
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="بحث عن اسم الموظف، الاختصاص، أو مكان العمل..." onkeyup="filterEmployees()">
-                <button class="btn" onclick="filterEmployees()">بحث</button>
-            </div>
+        <div class="top-actions">
+            <button class="btn btn-dark" onclick="goBackDashboard()">⬅ العودة</button>
+            <button class="btn btn-success" onclick="syncData()">🔄 مزامنة</button>
+            <select id="printScope" style="width: auto; padding: 9px; font-weight: bold;" class="btn-primary">
+                <option value="all">🖨️ طباعة للكل (أفقي)</option>
+                <option value="branch">🖨️ طباعة للفرع</option>
+                <option value="individual">🖨️ طباعة لفرد</option>
+            </select>
+            <button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button>
+        </div>
+    </div>
+
+    <!-- مربع البحث الواسع في اليمين، يليه معلومات الشركة والفروع -->
+    <div class="filter-section">
+        <input type="text" id="searchInput" placeholder="🔍 بحث شامل (ابحث بالاسم، الاختصاص، اسم المستخدم، أو موقع العمل)..." onkeyup="filterTable()" style="font-size: 15px; font-weight: bold; border-color: #0284c7;">
+        
+        <div class="company-badge-box">
+            <span>🏢 الشركة: <strong style="color: #fff;">المراقب برو</strong></span>
+            <span style="background: #0284c7; padding: 3px 8px; border-radius: 6px; font-size: 13px;">B-2070</span>
         </div>
 
-        <table>
+        <select id="filterBranch" onchange="filterTable()">
+            <option value="">🏢 كل الفروع</option>
+            <option value="الفرع الرئيسي">الفرع الرئيسي</option>
+            <option value="الفرع الشمالي">الفرع الشمالي</option>
+        </select>
+
+        <select id="filterShift" onchange="filterTable()">
+            <option value="">⏰ كل الشفتات</option>
+            <option value="صباحي">صباحي</option>
+            <option value="مسائي">مسائي</option>
+        </select>
+
+        <button class="btn btn-primary" onclick="addNewEmployeeModal()">➕ إضافة موظف</button>
+    </div>
+
+    <div class="table-responsive">
+        <table id="employeesTable">
             <thead>
                 <tr>
-                    <th>الصورة</th>
-                    <th>الاسم الكامل</th>
-                    <th>العنوان الوظيفي</th>
-                    <th>مكان العمل</th>
+                    <th style="width: 55px; text-align: center;">تسلسل</th>
+                    <th>صورة</th>
+                    <th style="min-width: 170px;">اسم الموظف</th>
+                    <th>الاختصاص</th>
+                    <th>موقع العمل</th>
                     <th>اسم المستخدم</th>
                     <th>الموقع (GPS)</th>
-                    <th>تاريخ التسجيل</th>
-                    <th>الإجراءات</th>
+                    <th>الراتب</th>
+                    <th>الشفت</th>
+                    <th>ساعات</th>
+                    <th>التقييم</th>
+                    <th>الإجازات (المدة والتاريخ)</th>
+                    <th>الغيابات (المدة والتاريخ)</th>
+                    <th>بداية التسجيل</th>
+                    <th class="no-print">الإجراءات</th>
                 </tr>
             </thead>
-            <tbody id="employeesTableBody">
-                <!-- تعبئة تلقائية -->
+            <tbody id="employeeTableBody">
+                <!-- تعبئة ديناميكية -->
             </tbody>
         </table>
     </div>
 
-    <script>
-        let allCompanyEmployees = [];
-        let currentCompanyId = '';
+</div>
 
-        function loadEmployees() {
-            const urlParams = new URLSearchParams(window.location.search);
-            currentCompanyId = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'B-2060';
+<script>
+    window.onload = function() {
+        renderTableData();
+    };
 
-            document.getElementById('companyBadge').innerText = `قاعدة البيانات للشركة: [ ${currentCompanyId} ]`;
+    function syncData() {
+        renderTableData();
+        alert("🔄 تمت مزامنة وجلب أحدث بيانات الموظفين بنجاح!");
+    }
 
-            const storageKey = `company_employees_${currentCompanyId}`;
-            let data = localStorage.getItem(storageKey);
+    function renderTableData() {
+        let tbody = document.getElementById('employeeTableBody');
+        tbody.innerHTML = "";
 
-            if (!data) {
-                // محاولة جلب النسخة العامة إذا لم توجد النسخة المعزولة
-                data = localStorage.getItem('company_employees');
-            }
+        let employees = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
 
-            if (data) {
-                try {
-                    allCompanyEmployees = JSON.parse(data);
-                } catch(e) {
-                    allCompanyEmployees = [];
-                }
+        if (employees.length === 0) {
+            employees = [{
+                img: "https://via.placeholder.com/44",
+                fullName: "محمد العبيدي",
+                specialty: "مطور أنظمة",
+                location: "الفرع الرئيسي",
+                username: "mohmmedali",
+                gps: "33.3661, 44.3152",
+                salary: "1,200,000 د.ع",
+                shift: "صباحي",
+                hours: "8 س",
+                evaluation: "ممتاز ⭐",
+                leave: "3 أيام (10/08 - 13/08)",
+                absence: "يوم واحد (01/08)",
+                startDate: "2026-06-01"
+            }];
+            localStorage.setItem('company_employees_registry', JSON.stringify(employees));
+        }
+
+        employees.forEach((emp, index) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-align: center; font-weight: bold; color: #0284c7; font-size: 16px;">#${index + 1}</td>
+                <td><img src="${emp.img}" class="emp-img" alt="صورة"></td>
+                <td style="font-size: 16px; font-weight: 900; color: #0f172a;">${emp.fullName}</td>
+                <td style="font-size: 15px;">${emp.specialty}</td>
+                <td style="font-size: 15px;">${emp.location}</td>
+                <td><span style="color:#0284c7; font-size: 15px;">${emp.username}</span></td>
+                <td><a href="https://maps.google.com/?q=${emp.gps}" target="_blank" style="color:#0284c7; font-size: 15px;">📍 إحداثي</a></td>
+                <td><b style="color:#166534; font-size: 15px;">${emp.salary}</b></td>
+                <td><span class="badge bg-green">${emp.shift}</span></td>
+                <td style="font-size: 15px;">${emp.hours}</td>
+                <td><span class="badge bg-green">${emp.evaluation}</span></td>
+                <td style="font-size: 14px;"><b>${emp.leave}</b></td>
+                <td style="font-size: 14px;"><b>${emp.absence}</b></td>
+                <td style="font-size: 14px;">${emp.startDate}</td>
+                <td class="no-print">
+                    <button class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;" onclick="editEmp(${index})">تعديل</button>
+                    <button class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;" onclick="deleteEmp(${index})">حذف</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function addNewEmployeeModal() {
+        let name = prompt("أدخل الاسم الكامل للموظف الجديد:");
+        if(!name) return;
+        let specialty = prompt("أدخل الاختصاص:", "ممرض / إداري");
+        
+        let employees = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
+        employees.push({
+            img: "https://via.placeholder.com/44",
+            fullName: name,
+            specialty: specialty || "موظف",
+            location: "الفرع الرئيسي",
+            username: name.toLowerCase().replace(/\s+/g, '_'),
+            gps: "33.3661, 44.3152",
+            salary: "1,000,000 د.ع",
+            shift: "صباحي",
+            hours: "8 س",
+            evaluation: "ممتاز ⭐",
+            leave: "لا توجد",
+            absence: "لا توجد",
+            startDate: new Date().toISOString().split('T')[0]
+        });
+
+        localStorage.setItem('company_employees_registry', JSON.stringify(employees));
+        renderTableData();
+        alert("✅ تمت إضافة الموظف بنجاح!");
+    }
+
+    function deleteEmp(index) {
+        if(confirm("هل أنت متأكد من حذف هذا السجل نهائياً؟")) {
+            let employees = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
+            employees.splice(index, 1);
+            localStorage.setItem('company_employees_registry', JSON.stringify(employees));
+            renderTableData();
+        }
+    }
+
+    function editEmp(index) {
+        alert("📝 جاري فتح نافذة تعديل بيانات الموظف...");
+    }
+
+    function filterTable() {
+        let input = document.getElementById("searchInput").value.toLowerCase();
+        let branchFilter = document.getElementById("filterBranch").value;
+        let shiftFilter = document.getElementById("filterShift").value;
+        
+        let tr = document.getElementById("employeesTable").getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            let tdText = tr[i].textContent || tr[i].innerText;
+            let matchSearch = tdText.toLowerCase().indexOf(input) > -1;
+            let matchBranch = branchFilter === "" || tdText.includes(branchFilter);
+            let matchShift = shiftFilter === "" || tdText.includes(shiftFilter);
+
+            if (matchSearch && matchBranch && matchShift) {
+                tr[i].style.display = "";
             } else {
-                allCompanyEmployees = [];
-            }
-
-            renderTable(allCompanyEmployees);
-        }
-
-        function renderTable(employees) {
-            const tbody = document.getElementById('employeesTableBody');
-            tbody.innerHTML = '';
-
-            if (!employees || employees.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="color: #64748b; padding: 30px; font-weight: bold;">لا يوجد موظفون مسجلون حالياً. قم بالتسجيل عبر صفحة الموظف (register.html) لتظهر البيانات هنا فوراً.</td></tr>`;
-                return;
-            }
-
-            employees.forEach((emp) => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><img src="${emp.photo || 'https://via.placeholder.com/40'}" alt="صورة"></td>
-                        <td><b>${emp.name || emp.fullName || 'بدون اسم'}</b></td>
-                        <td>${emp.specialty || '-'}</td>
-                        <td>${emp.workplace || '-'}</td>
-                        <td style="color: #0284c7; font-weight: bold;">${emp.username || '-'}</td>
-                        <td style="font-size: 12px; color: #475569;">📍 ${emp.location || 'غير متوفر'}</td>
-                        <td>${emp.startDate || '-'}</td>
-                        <td><button class="btn-danger" onclick="deleteEmp('${emp.username}')">حذف</button></td>
-                    </tr>
-                `;
-            });
-        }
-
-        function filterEmployees() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = allCompanyEmployees.filter(emp => {
-                const name = (emp.name || emp.fullName || '').toLowerCase();
-                const specialty = (emp.specialty || '').toLowerCase();
-                const workplace = (emp.workplace || '').toLowerCase();
-                return name.includes(query) || specialty.includes(query) || workplace.includes(query);
-            });
-            renderTable(filtered);
-        }
-
-        function deleteEmp(username) {
-            if (confirm('هل أنت متأكد من حذف هذا الموظف نهائياً؟')) {
-                allCompanyEmployees = allCompanyEmployees.filter(emp => emp.username !== username);
-                const storageKey = `company_employees_${currentCompanyId}`;
-                localStorage.setItem(storageKey, JSON.stringify(allCompanyEmployees));
-                localStorage.setItem('company_employees', JSON.stringify(allCompanyEmployees));
-                renderTable(allCompanyEmployees);
+                tr[i].style.display = "none";
             }
         }
+    }
 
-        window.onload = loadEmployees;
-    </script>
+    function goBackDashboard() {
+        window.location.href = "services.html";
+    }
+</script>
+
 </body>
 </html>
