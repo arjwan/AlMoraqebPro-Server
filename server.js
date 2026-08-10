@@ -37,7 +37,7 @@ const companySchema = new mongoose.Schema({
 });
 const Company = mongoose.model('Company', companySchema);
 
-// نموذج الموظف (شامل بصمة الوجه والموقع الجغرافي)
+// نموذج الموظف (تمت إضافة حقل السلف والاستقطاعات)
 const employeeSchema = new mongoose.Schema({
     companyId: { type: String, required: true, index: true },
     companyName: { type: String },
@@ -50,7 +50,14 @@ const employeeSchema = new mongoose.Schema({
     password: { type: String, required: true },
     photoUrl: { type: String },
     location: { type: String },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    // إضافة مصفوفة السلف النشطة والمرتبطة بالموظف
+    loans: [{
+        loanAmount: Number,
+        monthlyInstallment: Number,
+        remainingAmount: Number,
+        startDate: { type: Date, default: Date.now }
+    }]
 });
 const Employee = mongoose.model('Employee', employeeSchema);
 
@@ -123,7 +130,8 @@ app.post('/api/employee/register', upload.single('photo'), async (req, res) => {
             username: req.body.username,
             password: req.body.password,
             photoUrl: photoPath,
-            location: req.body.location
+            location: req.body.location,
+            loans: []
         });
 
         await newEmployee.save();
@@ -154,6 +162,56 @@ app.get('/api/employees/:companyId', async (req, res) => {
             pages: Math.ceil(total / limit),
             employees
         });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ==========================================
+// مسارات السلف والاستقطاعات الجديدة (مدمجة بأمان)
+// ==========================================
+
+// إضافة سلفة جديدة للموظف وتحديد القسط
+app.post('/api/employees/:employeeId/loan', async (req, res) => {
+    try {
+        const { loanAmount, monthlyInstallment } = req.body;
+        const employee = await Employee.findById(req.params.employeeId);
+        
+        if (!employee) {
+            return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+        }
+
+        employee.loans.push({
+            loanAmount: parseFloat(loanAmount),
+            monthlyInstallment: parseFloat(monthlyInstallment),
+            remainingAmount: parseFloat(loanAmount)
+        });
+
+        await employee.save();
+        res.status(200).json({ success: true, message: 'تم إضافة السلفة بنجاح وتحديث حسابات الموظف', employee });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// حساب إجمالي الاستقطاعات الشهرية للسلف الخاصة بالموظف (لتحديث الرواتب)
+app.get('/api/employees/:employeeId/loan-deduction', async (req, res) => {
+    try {
+        const employee = await Employee.findById(req.params.employeeId);
+        if (!employee) {
+            return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+        }
+
+        let totalMonthlyDeduction = 0;
+        if (employee.loans && employee.loans.length > 0) {
+            employee.loans.forEach(loan => {
+                if (loan.remainingAmount > 0) {
+                    totalMonthlyDeduction += loan.monthlyInstallment;
+                }
+            });
+        }
+
+        res.status(200).json({ success: true, employeeId: employee._id, totalMonthlyDeduction });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

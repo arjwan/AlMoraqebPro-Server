@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل دخول المدير والمساعدين - نظام المراقب برو</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #1e1b4b; color: #0f172a; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 15px; }
+
+        .login-card {
+            width: 100%; max-width: 480px; background: #ffffff;
+            border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            padding: 30px; border: 1px solid #cbd5e1; text-align: right;
+        }
+
+        .login-header { text-align: center; margin-bottom: 25px; }
+        .login-header h2 { font-size: 24px; font-weight: 900; color: #1e293b; margin-bottom: 8px; }
+        .login-header p { font-size: 13px; color: #64748b; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
+        .form-group label { font-size: 13px; font-weight: bold; color: #334155; }
+        
+        input, select {
+            padding: 12px; border: 2px solid #94a3b8; border-radius: 10px;
+            font-size: 14px; outline: none; background: #fff; font-weight: 600; width: 100%;
+        }
+        input:focus, select:focus { border-color: #0284c7; }
+
+        .btn {
+            width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer;
+            border: none; font-size: 15px; display: inline-flex; justify-content: center; align-items: center; gap: 8px;
+            transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-top: 10px;
+        }
+        .btn-primary { background: #0284c7; color: white; }
+        .btn-primary:hover { background: #0369a1; transform: translateY(-1px); }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+
+        .tab-buttons { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        .tab-btn { flex: 1; padding: 8px; border: none; background: #f1f5f9; border-radius: 8px; font-weight: bold; cursor: pointer; color: #64748b; font-size: 13px; }
+        .tab-btn.active { background: #0284c7; color: white; }
+
+        .form-section { display: none; }
+        .form-section.active { display: block; }
+
+        .permissions-box {
+            background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px;
+            margin-bottom: 15px; max-height: 130px; overflow-y: auto;
+        }
+        .permission-item { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 6px; font-weight: 600; color: #475569; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="login-header">
+        <h2>🛡️ بوابة دخول نظام المراقب برو</h2>
+        <p>تسجيل دخول المدير العام أو المساعدين بصلاحيات مخصصة</p>
+    </div>
+
+    <!-- تبديل العرض بين تسجيل الدخول أو لوحة المدير لإضافة مساعدين -->
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('login')">تسجيل الدخول</button>
+        <button class="tab-btn" onclick="switchTab('assistant')">إدارة وإضافة مساعد</button>
+    </div>
+
+    <!-- نموذج تسجيل الدخول (المدير أو المساعد) -->
+    <div id="loginSection" class="form-section active">
+        <form onsubmit="handleSystemLogin(event)">
+            <div class="form-group">
+                <label>رمز الشركة (محدد من المطور):</label>
+                <input type="text" id="loginCompanyId" required placeholder="مثال: B-2070">
+            </div>
+            <div class="form-group">
+                <label>اسم المستخدم:</label>
+                <input type="text" id="loginUsername" required placeholder="أدخل اسم المستخدم">
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور:</label>
+                <input type="password" id="loginPassword" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt"></i> دخول إلى لوحة التحكم
+            </button>
+        </form>
+    </div>
+
+    <!-- نموذج إضافة مساعد من قبل المدير -->
+    <div id="assistantSection" class="form-section">
+        <form onsubmit="saveAssistant(event)">
+            <div class="form-group">
+                <label>رمز الشركة التابع لها:</label>
+                <input type="text" id="astCompanyId" required value="B-2070" placeholder="B-2070">
+            </div>
+            <div class="form-group">
+                <label>اسم المساعد الكامل:</label>
+                <input type="text" id="astName" required placeholder="اسم المساعد الثلاثي">
+            </div>
+            <div class="form-group">
+                <label>اسم المستخدم للمساعد:</label>
+                <input type="text" id="astUser" required placeholder="assistant_user">
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور:</label>
+                <input type="password" id="astPass" required placeholder="كلمة المرور">
+            </div>
+            <div class="form-group">
+                <label>تحديد الصلاحيات الممنوحة للمساعد:</label>
+                <div class="permissions-box">
+                    <label class="permission-item"><input type="checkbox" class="perm-chk" value="employees"> إدارة الموظفين</label>
+                    <label class="permission-item"><input type="checkbox" class="perm-chk" value="salaries"> إدارة الرواتب</label>
+                    <label class="permission-item"><input type="checkbox" class="perm-chk" value="reports"> التقارير وسجل الحركات</label>
+                    <label class="permission-item"><input type="checkbox" class="perm-chk" value="requests"> مراجعة طلبات التسجيل</label>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-user-shield"></i> حفظ وصلاحيات المساعد الجديد
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.form-section').forEach(sec => sec.classList.remove('active'));
+        
+        if(tabName === 'login') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('loginSection').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('assistantSection').classList.add('active');
+        }
+    }
+
+    function handleSystemLogin(event) {
+        event.preventDefault();
+        let companyId = document.getElementById('loginCompanyId').value.trim();
+        let username = document.getElementById('loginUsername').value.trim();
+        let password = document.getElementById('loginPassword').value.trim();
+
+        // بيانات المدير العام الافتراضية المعطاة من المطور (مثال لشركة B-2070)
+        let masterCompanyId = "B-2070";
+        let masterUser = "admin";
+        let masterPass = "admin2026";
+
+        // 1. التحقق من دخول المدير العام
+        if(companyId === masterCompanyId && username === masterUser && password === masterPass) {
+            localStorage.setItem('current_company_id', companyId);
+            localStorage.setItem('current_user_role', 'admin');
+            localStorage.setItem('logged_in_user', username);
+            alert("✅ تم التحقق من بيانات المدير العام بنجاح! جاري نقلك لشركة: " + companyId);
+            window.location.href = "admin_dashboard.html";
+            return;
+        }
+
+        // 2. التحقق من دخول المساعدين المسجلين مسبقاً
+        let assistants = JSON.parse(localStorage.getItem('system_assistants') || '[]');
+        let foundAst = assistants.find(a => a.companyId === companyId && a.username === username && a.pass === password);
+
+        if(foundAst) {
+            localStorage.setItem('current_company_id', companyId);
+            localStorage.setItem('current_user_role', 'assistant');
+            localStorage.setItem('logged_in_user', foundAst.name);
+            localStorage.setItem('assistant_permissions', JSON.stringify(foundAst.permissions));
+            alert("✅ تم تسجيل دخول المساعد (" + foundAst.name + ") بنجاح ضمن الشركة: " + companyId);
+            window.location.href = "admin_dashboard.html";
+            return;
+        }
+
+        // في حال عدم التطابق
+        alert("❌ خطأ: البيانات المدخلة (رمز الشركة، اسم المستخدم أو كلمة المرور) غير مطابقة لما تم إصداره من المطور أو غير مسجلة!");
+    }
+
+    function saveAssistant(event) {
+        event.preventDefault();
+        let companyId = document.getElementById('astCompanyId').value.trim();
+        let name = document.getElementById('astName').value.trim();
+        let username = document.getElementById('astUser').value.trim();
+        let pass = document.getElementById('astPass').value.trim();
+        
+        let selectedPermissions = [];
+        document.querySelectorAll('.perm-chk:checked').forEach(chk => {
+            selectedPermissions.push(chk.value);
+        });
+
+        let newAssistant = {
+            companyId: companyId,
+            name: name,
+            username: username,
+            pass: pass,
+            permissions: selectedPermissions
+        };
+
+        let assistants = JSON.parse(localStorage.getItem('system_assistants') || '[]');
+        assistants.push(newAssistant);
+        localStorage.setItem('system_assistants', JSON.stringify(assistants));
+
+        alert("✅ تمت إضافة المساعد وتأمين صلاحياته بنجاح للشركة رقم: " + companyId);
+        document.getElementById('assistantForm').reset();
+        switchTab('login');
+    }
+</script>
+
+</body>
+</html>
