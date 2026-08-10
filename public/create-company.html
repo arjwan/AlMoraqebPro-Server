@@ -67,13 +67,18 @@
             grid-column: span 2;
         }
 
+        .input-group.small-code {
+            grid-column: span 1;
+            max-width: 220px;
+        }
+
         label {
             font-size: 12px;
             font-weight: 700;
             color: #334155;
         }
 
-        input, select {
+        input {
             width: 100%;
             padding: 12px 14px;
             border: 2px solid #e2e8f0;
@@ -85,7 +90,7 @@
             transition: all 0.3s;
         }
 
-        input:focus, select:focus {
+        input:focus {
             border-color: #0284c7;
             background: #ffffff;
             box-shadow: 0 0 12px rgba(2, 132, 199, 0.2);
@@ -148,7 +153,6 @@
         .alert-success { background: rgba(16, 185, 129, 0.15); color: #047857; border: 1px solid #10b981; }
         .alert-error { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border: 1px solid #ef4444; }
 
-        /* قسم إدارة الشركات والبحث */
         .management-section {
             margin-top: 35px;
             border-top: 2px dashed #cbd5e1;
@@ -218,7 +222,7 @@
 
         @media (max-width: 768px) {
             .grid-layout { grid-template-columns: 1fr; }
-            .input-group.full, .submit-btn, .alert-box { grid-column: span 1; }
+            .input-group.full, .submit-btn, .alert-box, .input-group.small-code { grid-column: span 1; max-width: 100%; }
             .management-header-flex { flex-direction: column; align-items: stretch; }
             .search-box { max-width: 100%; }
         }
@@ -237,10 +241,13 @@
             <input type="hidden" id="isEditing" value="false">
             <input type="hidden" id="companyLogoBase64" value="">
             
-            <div class="input-group full">
-                <label>رمز الشركة (المعرف الأساسي - ID):</label>
-                <input type="text" id="compId" placeholder="مثال: comp01" required>
+            <!-- حقل الرمز قابل للتعديل بحرية -->
+            <div class="input-group small-code">
+                <label>رمز الشركة (ID):</label>
+                <input type="text" id="compId" placeholder="مثال: B2070" style="font-weight:bold; text-align:center;" required>
             </div>
+
+            <div class="input-group"></div> <!-- مسافة توازنية في الشبكة -->
 
             <div class="input-group">
                 <label>اسم الشركة بالعربي:</label>
@@ -268,13 +275,44 @@
             </div>
 
             <div class="input-group">
-                <label>رمز المرور (يميزه النظام كمدير):</label>
-                <input type="password" id="adminPass" placeholder="كلمة المرور الإدارية" required>
+                <label>رمز المدير الخاص (كلمة المرور):</label>
+                <input type="password" id="adminPass" placeholder="رمز الدخول الخاص للوحة التحكم" required>
             </div>
 
             <div class="input-group full">
                 <label>إيميل الشركة (البريد الإلكتروني):</label>
                 <input type="email" id="compEmail" placeholder="company@domain.com" required>
+            </div>
+
+            <!-- تم تحويل جميع القوائم المنسدلة إلى حقول نصية حرة قابلة للكتابة بالكامل -->
+            <div class="input-group">
+                <label>الدولة:</label>
+                <input type="text" id="addrCountry" placeholder="أدخل اسم الدولة" value="العراق" required>
+            </div>
+
+            <div class="input-group">
+                <label>المحافظة / المقاطعة:</label>
+                <input type="text" id="addrProvince" placeholder="أدخل اسم المحافظة" value="بغداد" required>
+            </div>
+
+            <div class="input-group">
+                <label>المدينة / القضاء أو الحي:</label>
+                <input type="text" id="addrCityOrDistrict" placeholder="أدخل اسم الحي أو المدينة" value="الكرادة" required>
+            </div>
+
+            <div class="input-group">
+                <label>محلة أو الشارع:</label>
+                <input type="text" id="addrStreetOrMahalla" placeholder="أدخل اسم الشارع أو المحلة" value="شارع الكرادة داخل" required>
+            </div>
+
+            <div class="input-group">
+                <label>زقاق:</label>
+                <input type="text" id="addrAlley" placeholder="أدخل رقم الزقاق" value="زقاق 1" required>
+            </div>
+
+            <div class="input-group">
+                <label>دار أو مبنى:</label>
+                <input type="text" id="addrBuilding" placeholder="أدخل رقم أو اسم المبنى/الدار" value="مبنى رقم 1" required>
             </div>
 
             <!-- حقل رفع الشعار أو الصورة -->
@@ -286,10 +324,10 @@
                 </div>
             </div>
 
-            <button type="submit" id="submitBtn" class="submit-btn">🚀 اعتماد وتأسيس الشركة فوراً</button>
+            <button type="submit" id="submitBtn" class="submit-btn">🚀 اعتماد وتأسيس الشركة والانتقال للوحة التحكم</button>
             <button type="button" id="cancelBtn" class="submit-btn btn-warning" style="display:none;" onclick="resetForm()">❌ إلغاء التعديل</button>
             
-            <div id="successMsg" class="alert-box alert-success">✅ تم حفظ وعمل الإجراء بنجاح في قاعدة البيانات!</div>
+            <div id="successMsg" class="alert-box alert-success">✅ تم حفظ البيانات وربط رمز المدير، جاري تحويلك...</div>
             <div id="errorMsg" class="alert-box alert-error">⚠️ حدث خطأ أثناء الحفظ، يرجى التحقق من الاتصال.</div>
         </form>
 
@@ -330,7 +368,6 @@
             fetchCompanies();
         };
 
-        // تحويل الصورة المرفوعة إلى Base64 لحفظها مع بيانات الشركة
         function handleLogoUpload(event) {
             const file = event.target.files[0];
             if (file) {
@@ -338,8 +375,6 @@
                 reader.onload = function(e) {
                     const base64String = e.target.result;
                     document.getElementById('companyLogoBase64').value = base64String;
-                    
-                    // عرض معاينة الشعار
                     const previewImg = document.getElementById('logoPreviewImg');
                     previewImg.src = base64String;
                     previewImg.style.display = 'block';
@@ -348,7 +383,6 @@
             }
         }
 
-        // جلب جميع الشركات من السيرفر أو التخزين الاحتياطي المحلي
         async function fetchCompanies() {
             try {
                 let res = await fetch(`${SERVER_URL}/api/companies`);
@@ -363,7 +397,6 @@
             }
         }
 
-        // دالة عرض الجدول
         function renderTable(companies) {
             const tbody = document.getElementById('companiesTableBody');
             tbody.innerHTML = '';
@@ -395,22 +428,18 @@
             });
         }
 
-        // نظام البحث الفوري في الجدول
         function filterCompanies() {
             let query = document.getElementById('searchInput').value.trim().toLowerCase();
             let cached = window.allCompaniesCache || [];
-            
             let filtered = cached.filter(comp => 
                 comp.companyId.toLowerCase().includes(query) || 
                 comp.nameAr.toLowerCase().includes(query) || 
                 comp.nameEn.toLowerCase().includes(query) ||
                 comp.manager.toLowerCase().includes(query)
             );
-            
             renderTable(filtered);
         }
 
-        // حفظ أو تعديل شركة
         async function saveOrUpdateCompany(e) {
             e.preventDefault();
             const compId = document.getElementById('compId').value.trim();
@@ -424,8 +453,14 @@
                 manager: document.getElementById('managerName').value.trim(),
                 phone: document.getElementById('managerPhone').value.trim(),
                 username: document.getElementById('adminUser').value.trim(),
-                password: document.getElementById('adminPass').value.trim(), // رمز المرور المميز لمدير اللوحة
+                password: document.getElementById('adminPass').value.trim(), // رمز المدير الخاص المرتبط للتعرف عليه في نظام الدخول
                 email: document.getElementById('compEmail').value.trim(),
+                country: document.getElementById('addrCountry').value.trim(),
+                province: document.getElementById('addrProvince').value.trim(),
+                cityOrDistrict: document.getElementById('addrCityOrDistrict').value.trim(),
+                streetOrMahalla: document.getElementById('addrStreetOrMahalla').value.trim(),
+                alley: document.getElementById('addrAlley').value.trim(),
+                building: document.getElementById('addrBuilding').value.trim(),
                 logo: document.getElementById('companyLogoBase64').value,
                 status: 'active'
             };
@@ -446,19 +481,15 @@
 
                 successBox.style.display = 'block';
                 setTimeout(() => {
-                    successBox.style.display = 'none';
-                    resetForm();
-                    fetchCompanies();
-                }, 1500);
+                    window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
+                }, 1200);
 
             } catch(err) {
                 saveLocalDatabase(companyData, isEditing);
                 successBox.style.display = 'block';
                 setTimeout(() => {
-                    successBox.style.display = 'none';
-                    resetForm();
-                    fetchCompanies();
-                }, 1500);
+                    window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
+                }, 1200);
             }
         }
 
@@ -467,7 +498,6 @@
             if (isEditing) {
                 let index = localData.findIndex(c => c.companyId === data.companyId);
                 if (index !== -1) {
-                    // الاحتفاظ بالشعار القديم إن لم يتم رفع شعار جديد
                     if (!data.logo && localData[index].logo) {
                         data.logo = localData[index].logo;
                     }
@@ -481,8 +511,7 @@
             localStorage.setItem('activeCompanyId', data.companyId);
         }
 
-        // تعبئة البيانات للتعديل
-        async function editCompany(compId) {
+        function editCompany(compId) {
             let localData = JSON.parse(localStorage.getItem('all_companies_db') || '[]');
             let comp = localData.find(c => c.companyId === compId);
 
@@ -492,7 +521,7 @@
             }
 
             document.getElementById('compId').value = comp.companyId;
-            document.getElementById('compId').readOnly = true;
+            document.getElementById('compId').readOnly = true; 
             document.getElementById('compNameAr').value = comp.nameAr;
             document.getElementById('compNameEn').value = comp.nameEn;
             document.getElementById('managerName').value = comp.manager;
@@ -501,6 +530,13 @@
             document.getElementById('adminPass').value = comp.password;
             document.getElementById('compEmail').value = comp.email;
             
+            if(comp.country) document.getElementById('addrCountry').value = comp.country;
+            if(comp.province) document.getElementById('addrProvince').value = comp.province;
+            if(comp.cityOrDistrict) document.getElementById('addrCityOrDistrict').value = comp.cityOrDistrict;
+            if(comp.streetOrMahalla) document.getElementById('addrStreetOrMahalla').value = comp.streetOrMahalla;
+            if(comp.alley) document.getElementById('addrAlley').value = comp.alley;
+            if(comp.building) document.getElementById('addrBuilding').value = comp.building;
+
             if (comp.logo) {
                 document.getElementById('companyLogoBase64').value = comp.logo;
                 let previewImg = document.getElementById('logoPreviewImg');
@@ -514,7 +550,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // إيقاف أو تشغيل الشركة
         async function toggleCompanyStatus(compId, currentStatus) {
             let newStatus = currentStatus === 'active' ? 'stopped' : 'active';
             let localData = JSON.parse(localStorage.getItem('all_companies_db') || '[]');
@@ -533,7 +568,6 @@
             fetchCompanies();
         }
 
-        // حذف الشركة
         async function deleteCompany(compId) {
             if (!confirm(`هل أنت متأكد من حذف الشركة ذات الرمز (${compId}) نهائياً؟`)) return;
 
@@ -554,7 +588,7 @@
             document.getElementById('isEditing').value = 'false';
             document.getElementById('companyLogoBase64').value = '';
             document.getElementById('logoPreviewImg').style.display = 'none';
-            document.getElementById('submitBtn').innerText = "🚀 اعتماد وتأسيس الشركة فوراً";
+            document.getElementById('submitBtn').innerText = "🚀 اعتماد وتأسيس الشركة والانتقال للوحة التحكم";
             document.getElementById('cancelBtn').style.display = "none";
         }
     </script>
