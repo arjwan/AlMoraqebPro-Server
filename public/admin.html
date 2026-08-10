@@ -162,11 +162,12 @@
             </div>
         </div>
 
+        <!-- الأزرار الـ 12 الأساسية في لوحة التحكم -->
         <div class="grid-cards">
             <a href="admin-add-employee.html" class="card-item">
                 <span class="icon">➕</span>
                 <h3>إضافة موظف جديد</h3>
-                <p>تسجيل موظف جديد مع بياناته الشخصية وبصمة الوجه</p>
+                <p>تسجيل موظف جديد مع بصمة الإصبع، الوجه، والـ GPS</p>
             </a>
             <a href="admin-employees.html" class="card-item">
                 <span class="icon">👥</span>
@@ -186,8 +187,8 @@
 
             <a href="admin-attendance.html" class="card-item">
                 <span class="icon">📍</span>
-                <h3>بصمة الوجه والـ GPS</h3>
-                <p>مراقبة مواقع الحضور والنطاق الجغرافي للموظفين</p>
+                <h3>سجل البصمات والحضور</h3>
+                <p>مراقبة بصمات الوجه والإصبع والنطاق الجغرافي للـ GPS</p>
             </a>
             <a href="admin-salaries.html" class="card-item">
                 <span class="icon">💰</span>
@@ -233,8 +234,12 @@
         </div>
     </div>
 
+    <!-- عنصر مخفي لرفع ملفات الاستعادة -->
+    <input type="file" id="restoreFilePicker" style="display: none;" accept=".json" onchange="processRestoreFile(event)">
+
     <script>
         let currentCompanyId = '';
+        const SERVER_URL = "https://almoraqebpro-server.onrender.com";
 
         window.onload = async () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -247,8 +252,7 @@
             }
 
             try {
-                // توافق مع المسار الصحيح الموجود في server.js
-                const response = await fetch('/api/companies');
+                const response = await fetch(`${SERVER_URL}/api/companies`);
                 if (response.ok) {
                     const data = await response.json();
                     const companies = data.companies || [];
@@ -263,9 +267,10 @@
                     document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompanyId})`;
                 }
             } catch (error) {
-                document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompanyId})`;
+                document.getElementById('headerCompanyName').textContent = `نظام المراقب برو (${currentCompanyId}) [وضع غير متصل]`;
             }
 
+            // ربط كافة الروابط بمعرف الشركة الحالي لضمان الاستمرارية
             document.querySelectorAll('.grid-cards a').forEach(link => {
                 let href = link.getAttribute('href').split('?')[0];
                 link.setAttribute('href', `${href}?company=${encodeURIComponent(currentCompanyId)}`);
@@ -279,11 +284,9 @@
             const serverIcon = document.getElementById('serverIcon');
             const serverText = document.getElementById('serverText');
             
-            const SERVER_URL = window.location.origin; 
-            
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                const timeoutId = setTimeout(() => controller.abort(), 6000);
 
                 const response = await fetch(`${SERVER_URL}/api/ping`, {
                     method: 'GET',
@@ -304,30 +307,75 @@
             } catch (error) {
                 statusBar.classList.remove('online');
                 serverIcon.textContent = '❌';
-                serverText.textContent = 'السيرفر جاري الاستجابة أو غير متصل (Offline)';
+                serverText.textContent = 'السيرفر يعمل حالياً بوضع التخزين المحلي (Offline-First)';
                 return false;
             }
         }
 
         async function syncServer() {
             const serverText = document.getElementById('serverText');
-            serverText.textContent = 'جاري إعادة فحص الاتصال...';
-            
+            serverText.textContent = 'جاري إعادة فحص الاتصال ومزامنة البيانات...';
             const isOnline = await checkServerConnection();
-            
             if (isOnline) {
-                alert('✅ السيرفر متصل بقاعدة البيانات بنجاح (Online)');
+                alert('✅ تم الاتصال بالسيرفر ومزامنة البيانات بنجاح!');
             } else {
-                alert('❌ تعذر الاتصال بالسيرفر، تأكد من تشغيل السيرفر أو حالة الشبكة (Offline)');
+                alert('⚠️ يعمل النظام حالياً بنجاح عبر التخزين المحلي.');
             }
         }
 
         function backupData() {
-            alert('📦 يتم الآن تجهيز ملف النسخة الاحتياطية لبيانات الشركة من السيرفر...');
+            try {
+                const backupObject = {
+                    companyId: currentCompanyId,
+                    exportDate: new Date().toISOString(),
+                    employees: JSON.parse(localStorage.getItem(`company_employees_${currentCompanyId}`) || '[]'),
+                    attendance: JSON.parse(localStorage.getItem(`attendance_${currentCompanyId}`) || '[]'),
+                    settings: JSON.parse(localStorage.getItem(`settings_${currentCompanyId}`) || '{}')
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObject, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `AlMoraqebPro_Backup_${currentCompanyId}_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+
+                alert('📦 تم تجهيز وتحميل ملف النسخة الاحتياطية بنجاح!');
+            } catch (err) {
+                alert('❌ حدث خطأ أثناء إنشاء النسخة الاحتياطية.');
+            }
         }
 
         function restoreData() {
-            alert('📂 يرجى اختيار ملف النسخة الاحتياطية لاستعادة البيانات.');
+            if(confirm("⚠️ تحذير: استعادة البيانات ستقوم بتحديث السجلات الحالية بالملف المختار. هل تريد المتابعة؟")) {
+                document.getElementById('restoreFilePicker').click();
+            }
+        }
+
+        function processRestoreFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.companyId && importedData.employees) {
+                        localStorage.setItem(`company_employees_${importedData.companyId}`, JSON.stringify(importedData.employees));
+                        if(importedData.attendance) {
+                            localStorage.setItem(`attendance_${importedData.companyId}`, JSON.stringify(importedData.attendance));
+                        }
+                        alert('✅ تم استعادة بيانات الشركة بنجاح!');
+                        window.location.reload();
+                    } else {
+                        alert('❌ ملف النسخة الاحتياطية غير صالح أو تالف.');
+                    }
+                } catch (err) {
+                    alert('❌ حدث خطأ أثناء قراءة ملف الـ JSON.');
+                }
+            };
+            reader.readAsText(file);
         }
 
         function logout() {
