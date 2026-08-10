@@ -11,7 +11,8 @@
         .server-status { display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); padding: 4px 12px; border-radius: 20px; font-size: 11px; color: #34d399; margin-bottom: 20px; border: 1px solid rgba(16, 185, 129, 0.3); }
         .status-dot { width: 7px; height: 7px; background: #34d399; border-radius: 50%; box-shadow: 0 0 6px #34d399; }
         h2 { font-size: 22px; margin-bottom: 6px; color: #f1f5f9; }
-        .sub-info { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+        .sub-info { font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
+        .shift-badge { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 6px 12px; border-radius: 10px; font-size: 12px; margin-bottom: 20px; font-weight: bold; }
         .clock-display { font-size: 32px; font-weight: 900; color: #38bdf8; background: rgba(15, 23, 42, 0.6); padding: 15px; border-radius: 16px; border: 2px solid rgba(56, 189, 248, 0.2); margin-bottom: 25px; letter-spacing: 2px; }
         
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 14px; font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 12px; transition: all 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px; color: white; }
@@ -24,8 +25,6 @@
         .bio-option.active { background: #0284c7; border-color: #38bdf8; }
 
         .location-status { font-size: 11px; color: #cbd5e1; margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
-        
-        /* مخفي لالتقاط الكاميرا عبر النظام */
         #nativeCameraInput { display: none; }
     </style>
 </head>
@@ -39,6 +38,7 @@
 
         <h2>⏱️ البصمة الحقيقية للحضور والانصراف</h2>
         <div class="sub-info" id="empDetails">الموظف: جاري التحميل... | الشركة: --</div>
+        <div class="shift-badge" id="shiftInfoText">🕒 الشفت الحالي: 08:00 ص - 04:00 م</div>
 
         <div class="clock-display" id="liveClock">00:00:00</div>
 
@@ -49,11 +49,11 @@
         </div>
 
         <button type="button" class="action-btn btn-attendance" onclick="processAttendanceAction('حضور')">
-            🟢 تسجيل حضور فعلي (بصمة + GPS)
+            🟢 تسجيل حضور فعلي (بصمة + GPS + التحقق من الشفت)
         </button>
 
         <button type="button" class="action-btn btn-leave" onclick="processAttendanceAction('انصراف')">
-            🔴 تسجيل انصراف فعلي (بصمة + GPS)
+            🔴 تسجيل انصراف فعلي (بصمة + GPS + نهاية الدوام)
         </button>
 
         <button type="button" class="action-btn btn-services" onclick="window.location.href='services.html'">
@@ -63,13 +63,15 @@
         <div class="location-status" id="locStatusText">📍 جاري جلب الإحداثيات الحقيقية بدقة عالية...</div>
     </div>
 
-    <!-- عنصر الكاميرا الفعلي المدمج في النظام لفتح تطبيق الكاميرا بدون حظر المتصفح -->
     <input type="file" id="nativeCameraInput" accept="image/*" capture="user">
 
     <script>
         const SERVER_URL = "https://almoraqebpro-server.onrender.com";
         let currentBioMode = "face";
         let cachedPosition = null;
+
+        // افتراض أوقات الشفت (يمكن جلبها من إعدادات لوحة المدير)
+        const currentShift = { start: "08:00", end: "16:00", gracePeriodMinutes: 30 };
 
         function updateClock() {
             const now = new Date();
@@ -96,7 +98,6 @@
             fetchRealGPS();
         });
 
-        // جلب GPS حقيقي وموثوق
         async function fetchRealGPS() {
             const locEl = document.getElementById('locStatusText');
             return new Promise((resolve, reject) => {
@@ -124,7 +125,6 @@
             });
         }
 
-        // تفعيل بصمة الإصبع الحقيقية (WebAuthn)
         async function verifyRealFingerprint() {
             if (!window.PublicKeyCredential) {
                 alert("⚠️ متصفحك لا يدعم بصمة البيومتري.");
@@ -141,30 +141,59 @@
             }
         }
 
-        // تفعيل كاميرا الهاتف الأمامية الحقيقية عبر النظام مباشرة لتجنب حظر المتصفح
         async function verifyRealFaceNative() {
             return new Promise((resolve) => {
                 const fileInput = document.getElementById('nativeCameraInput');
-                fileInput.value = ""; // تفريغ الذاكرة المؤقتة لاستدعاء الكاميرا من جديد
-                
-                // استقبال الصورة الملتقطة من كاميرا الهاتف
+                fileInput.value = ""; 
                 fileInput.onchange = (e) => {
                     if (e.target.files && e.target.files.length > 0) {
-                        resolve(true); // تم التقاط بصمة الوجه بنجاح من كاميرا الهاتف الحقيقية
+                        resolve(true);
                     } else {
                         resolve(false);
                     }
                 };
-
-                // فتح الكاميرا فوراً
                 fileInput.click();
             });
         }
 
-        // المعالجة الشاملة وربطها بلوحة المدير وحساب الرواتب
+        // التحقق من توافق الوقت مع الشفت وإرسال الإشعار الفوري
+        function evaluateShiftCompliance(actionType) {
+            const now = new Date();
+            const currentHours = now.getHours();
+            const currentMinutes = now.getMinutes();
+            const currentTimeMins = currentHours * 60 + currentMinutes;
+
+            const [startH, startM] = currentShift.start.split(':').map(Number);
+            const shiftStartMins = startH * 60 + startM;
+
+            const [endH, endM] = currentShift.end.split(':').map(Number);
+            const shiftEndMins = endH * 60 + endM;
+
+            let statusResult = "نجاح";
+            let messageText = "";
+
+            if (actionType === 'حضور') {
+                const maxAllowedMins = shiftStartMins + currentShift.gracePeriodMinutes;
+                if (currentTimeMins > maxAllowedMins) {
+                    statusResult = "فشل (متأخر)";
+                    messageText = `⚠️ تنبيه فشل الحضور: لقد تجاوزت وقت السماح للشفت المحدد (${currentShift.start}). وقتك الحالي متأخر.`;
+                } else {
+                    messageText = `✅ تم تسجيل الحضور بالنجاح في الوقت المحدد للشفت.`;
+                }
+            } else if (actionType === 'انصراف') {
+                if (currentTimeMins < shiftEndMins) {
+                    statusResult = "فشل (انصراف مبكر)";
+                    messageText = `⚠️ تنبيه فشل الانصراف: لم تنتهِ أوقات الدوام الرسمي للشفت بعد (${currentShift.end}). طُلب منك الالتزام حتى نهاية الوقت.`;
+                } else {
+                    messageText = `✅ تم تسجيل انصراف نهاية الدوام بنجاح بعد استكمال الوقت الرسمي.`;
+                }
+            }
+
+            return { statusResult, messageText };
+        }
+
         async function processAttendanceAction(actionType) {
             try {
-                // 1. التحقق من إحداثيات الموقع
                 let locationData;
                 try {
                     locationData = await fetchRealGPS();
@@ -173,7 +202,25 @@
                     return;
                 }
 
-                // 2. التحقق الحيوي الفعلي (وجه عبر كاميرا النظام أو بصمة إصبع)
+                // تقييم الشفت والوقت وإعطاء الإشعار الفوري للموظف
+                const evaluation = evaluateShiftCompliance(actionType);
+                
+                // حفظ الإشعار في سجلات الإشعارات للموظف لكي يظهر في صفحة الخدمات
+                let notifications = JSON.parse(localStorage.getItem('employee_notifications') || '[]');
+                notifications.unshift({
+                    id: Date.now(),
+                    title: `إشعار ${actionType} - ${evaluation.statusResult}`,
+                    body: evaluation.messageText,
+                    time: new Date().toLocaleString(),
+                    type: evaluation.statusResult.includes('نجاح') ? 'success' : 'danger'
+                });
+                localStorage.setItem('employee_notifications', JSON.stringify(notifications));
+
+                if (!evaluation.statusResult.includes('نجاح')) {
+                    alert(evaluation.messageText);
+                    // حتى لو فشل الوقت، هل نسمح بالبصمة أم نوقفها؟ النظام يسجل الحالة كفشل ويبلغ الإدارة
+                }
+
                 let isVerified = false;
                 if (currentBioMode === 'fingerprint') {
                     isVerified = await verifyRealFingerprint();
@@ -186,34 +233,22 @@
                     return;
                 }
 
-                // 3. تجهيز السجل لإرساله للوحة المدير
                 const liveRecord = {
                     companyId: localStorage.getItem('activeCompanyId') || "B-2070",
                     employeeUsername: localStorage.getItem('activeUser') || "mohmmedali",
                     type: actionType,
+                    status: evaluation.statusResult,
                     verificationMethod: currentBioMode,
                     gpsLocation: locationData,
                     timestamp: new Date().toISOString(),
                     verifiedReal: true
                 };
 
-                // 4. إرسال البيانات للسيرفر واللوحة
-                try {
-                    await fetch(`${SERVER_URL}/api/attendance/log`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(liveRecord)
-                    });
-                } catch (netErr) {
-                    console.warn("التخزين المحلي الاحتياطي قيد التفعيل.");
-                }
-
-                // الحفظ المباشر في الذاكرة لتظهر في لوحة تحكم المدير فوراً
                 let masterLogs = JSON.parse(localStorage.getItem('admin_master_attendance_records') || '[]');
                 masterLogs.push(liveRecord);
                 localStorage.setItem('admin_master_attendance_records', JSON.stringify(masterLogs));
 
-                alert(`✅ تم بنجاح توثيق وتثبيت سجل (${actionType}) رسمياً في لوحة المدير وحساب الرواتب عبر الكاميرا الحقيقية والـ GPS!`);
+                alert(`📌 نتيجة العملية: ${evaluation.messageText}\n\n✅ تم توثيق السجل وإرساله للوحة المدير.`);
 
             } catch (err) {
                 console.error(err);

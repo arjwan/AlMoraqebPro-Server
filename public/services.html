@@ -197,7 +197,7 @@
     let companyId = 'B-2070';
     let isRecording = false;
 
-    // --- نظام Offline-First الذكي ---
+    // --- نظام Offline-First الذكي والربط البرمجي ---
     async function safeApiCall(endpoint, method = 'POST', payload = null) {
         if (!navigator.onLine) {
             return handleOfflineOperation(endpoint, method, payload);
@@ -219,7 +219,8 @@
         offlineQueue.push({ endpoint, method, data: payload, timestamp: new Date().toISOString() });
         localStorage.setItem('pending_sync_queue', JSON.stringify(offlineQueue));
         
-        showLocalStorageAlert("💾 تم الحفظ محلياً (Offline)، ستتم المزامنة تلقائياً عند عودة الإنترنت.");
+        showLocalStorageAlert("💾 تم الحفظ محلياً (سيتم الحفظ محلياً أو المزامنة لاحقاً عند الاتصال).");
+        playArabicVoice("تم حفظ البيانات محلياً، وسيتم المزامنة عند الاتصال بالإنترنت.");
         return { success: true, offline: true };
     }
 
@@ -240,6 +241,7 @@
             }
             localStorage.removeItem('pending_sync_queue');
             showLocalStorageAlert("🔄 تم مزامنة البيانات المخزنة محلياً مع السيرفر بنجاح!");
+            playArabicVoice("تمت مزامنة البيانات وتسجيلها بنجاح.");
         }
     });
 
@@ -251,12 +253,13 @@
         const hour = new Date().getHours();
         const ticker = document.getElementById('safetyTicker');
         
+        // شريط الأخبار الصباحي والمسائي مع التوجيه الصوتي بصوت أنثى (جيمناي/متصفح مدعوم)
         if(hour < 12) {
             ticker.innerText = "🌟 صباح الخير! أهلاً بك. يرجى أخذ إجراءات السلامة المهنية، والتأكد من تسجيل بصمة الحضور بدقة.";
-            playArabicVoice("صباح الخير، أهلاً بك في يوم عمل جديد. يرجى الالتزام ببصمة الحضور وإجراءات السلامة المهنية.");
+            playArabicVoice("صباح الخير، أهلاً بك في يوم عمل جديد. يرجى الالتزام ببصمة الحضور وإجراءات السلامة المهنية والدفاع المدني.");
         } else {
-            ticker.innerText = "🚨 وصايا الإدارة لنهاية الدوام: إغلاق الأجهزة ومصادر الطاقة، والتأكد من تسجيل بصمة الانصراف!";
-            playArabicVoice("تنبيه نهاية الدوام، يرجى إغلاق الأجهزة والتأكد من تسجيل بصمة الانصراف بنجاح.");
+            ticker.innerText = "🚨 وصايا الدفاع المدني لنهاية الدوام: إغلاق الأجهزة ومصادر الطاقة، والتحضر لتسجيل بصمة الانصراف بأمان!";
+            playArabicVoice("تنبيه نهاية الدوام، يرجى مراجعة إجراءات السلامة والدفاع المدني، والتحضر لتسجيل بصمة الانصراف.");
         }
 
         loadAttendanceLogs();
@@ -271,7 +274,7 @@
             utterance.rate = 1.0;
             
             let voices = window.speechSynthesis.getVoices();
-            let femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Google Arabic') || v.name.includes('AR-SA'));
+            let femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Google Arabic') || v.name.includes('AR-SA') || v.name.includes('Zahra'));
             if(femaleVoice) utterance.voice = femaleVoice;
             
             window.speechSynthesis.speak(utterance);
@@ -286,13 +289,14 @@
             isRecording = true;
             btn.classList.add('recording');
             btn.innerText = "⏹️ اضغط لإنهاء وإرسال التسجيل";
-            status.innerText = "🔴 جاري التسجيل المفتوح (تحدث الآن)...";
+            status.innerText = "🔴 جاري التسجيل الصوتي التوضيحي (تحدث الآن)...";
             status.style.color = "#ef4444";
+            playArabicVoice("جاري التسجيل الصوتي.");
         } else {
             isRecording = false;
             btn.classList.remove('recording');
             btn.innerText = "🎙️ اضغط لبدء التسجيل الصوتي";
-            status.innerText = "✅ تم حفظ وإرسال الرسالة الصوتية بنجاح (صالحة لـ 5 أيام)";
+            status.innerText = "✅ تم حفظ وإرسال الرسالة الصوتية بنجاح";
             status.style.color = "#166534";
             playArabicVoice("تم حفظ رسالتك الصوتية وإرسالها للإدارة بنجاح.");
             
@@ -306,7 +310,6 @@
         let records = JSON.parse(localStorage.getItem('voice_records_time') || '[]');
         let now = new Date().getTime();
         let fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
-        
         let validRecords = records.filter(r => (now - r.time) < fiveDaysMs);
         localStorage.setItem('voice_records_time', JSON.stringify(validRecords));
     }
@@ -315,6 +318,14 @@
         document.getElementById('menuGrid').style.display = 'none';
         document.querySelectorAll('.section-panel').forEach(p => p.style.display = 'none');
         document.getElementById(panelId).style.display = 'block';
+
+        // تفاعل عند النقر على الأزرار المحددة
+        if(panelId === 'notifPanel') {
+            playArabicVoice("تم عرض إشعارات ورسائل الإدارة.");
+        } else if(panelId === 'rewardPanel') {
+            alert("🏆 هذه نافذة المكافآت والخصومات الخاصة بسجلك.");
+            playArabicVoice("سجل المكافآت والجزاءات.");
+        }
     }
 
     function closePanels() {
@@ -331,19 +342,25 @@
             date: type === 'إجازة' ? document.getElementById('leaveDate').value : new Date().toISOString()
         };
 
-        await safeApiCall('/api/employee/request', 'POST', payload);
-        alert(`✅ تم إرسال طلب (${type}) بنجاح!`);
+        let res = await safeApiCall('/api/employee/request', 'POST', payload);
+        if(res && res.offline) {
+            alert(`💾 تم حفظ طلب (${type}) محلياً، وستتم مزامنته عند الاتصال.`);
+        } else {
+            alert(`✅ تم إرسال طلب (${type}) بنجاح إلى الإدارة!`);
+            playArabicVoice(`تم إرسال طلب ${type} بنجاح.`);
+        }
         closePanels();
     }
 
     function checkAttendanceWarning() {
-        alert("⚠️ تنبيه النظام: البصمة نشطة وجاهزة للمطابقة الحية عبر كاميرا الهاتف.");
-        playArabicVoice("البصمة نشطة وجاهزة.");
+        alert("🟢 حالة البصمة: نشطة وجاهزة للمطابقة الحية، أو سيتم حفظها محلياً في حال انقطاع الشبكة.");
+        playArabicVoice("البصمة نشطة وجاهزة، أو سيتم حفظها محليا.");
     }
 
     function removeItem(button) {
         if(confirm("هل أنت متأكد من الحذف؟")) {
             button.parentElement.remove();
+            playArabicVoice("تم الحذف بنجاح.");
         }
     }
 
@@ -356,7 +373,7 @@
             container.innerHTML = `
                 <div class="record-item">
                     <span>🟢 بصمة حضور صباحية (ناجحة عبر الكاميرا)</span>
-                    <div><span class="badge success">مؤكد</span> <button class="delete-btn" onclick="removeItem(this)">حذف</button></div>
+                    <div><span class="badge success">مؤكد (التاريخ والوقت: ${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()})</span> <button class="delete-btn" onclick="removeItem(this)">حذف</button></div>
                 </div>
                 <div class="record-item">
                     <span>🔴 محاولة انصراف مسائية</span>
