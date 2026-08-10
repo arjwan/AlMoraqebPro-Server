@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المراقب برو - البوابة المركزية المشحونة بالحيوية</title>
     <style>
-        /* (تم الحفاظ على نفس تصميمك الأصلي بالكامل) */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: linear-gradient(135deg, #fef08a 0%, #bae6fd 50%, #c7d2fe 100%); color: #1e293b; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
         .portal-container { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); border: 2px solid rgba(255, 255, 255, 0.8); padding: 30px; border-radius: 32px; box-shadow: 0 25px 50px rgba(14, 116, 144, 0.2); width: 100%; max-width: 950px; position: relative; overflow: hidden; }
@@ -55,6 +54,7 @@
             <button type="button" class="switch-btn" id="btnDevTab" onclick="changeView('developer')">ℹ️ معلومات المطور</button>
         </div>
 
+        <!-- 1. واجهة تسجيل الدخول -->
         <div id="loginView" class="form-section active">
             <form onsubmit="executeLogin(event)" class="grid-layout">
                 <div class="input-group full">
@@ -71,7 +71,7 @@
                 </div>
                 <button type="submit" class="submit-btn">🚀 دخول النظام فوراً</button>
                 
-                <!-- أزرار تسجيل الحضور والانصراف السريع المرتبطة بالبصمة والـ GPS لاحتساب الرواتب -->
+                <!-- أزرار تسجيل الحضور والانصراف السريع المرتبطة بالبصمة والـ GPS -->
                 <div class="input-group full" style="display: flex; gap: 10px; margin-top: 10px;">
                     <button type="button" class="action-btn" style="flex:1; background:#10b981; padding: 12px;" onclick="recordAttendanceAction('حضور')">📥 تسجيل الحضور بالبصمة وGPS</button>
                     <button type="button" class="action-btn" style="flex:1; background:#f59e0b; padding: 12px;" onclick="recordAttendanceAction('انصراف')">📤 تسجيل الإنصراف بالبصمة وGPS</button>
@@ -81,6 +81,7 @@
             </form>
         </div>
 
+        <!-- 2. واجهة إنشاء موظف جديد (مع الكاميرا، بصمة الوجه، والـ GPS) -->
         <div id="registerView" class="form-section">
             <form onsubmit="executeRegister(event)" class="grid-layout">
                 <div class="input-group">
@@ -120,16 +121,17 @@
                     <input type="password" id="regPassword" placeholder="كلمة المرور" required>
                 </div>
 
+                <!-- صندوق الوسائط الحيوية: الكاميرا، بصمة الوجه، بصمة الإصبع، وموقع GPS -->
                 <div class="media-box">
-                    <label style="display:block; margin-bottom: 6px; color:#065f46;">بصمة الوجه، بصمة الإصبع والتحقق المكاني (GPS):</label>
+                    <label style="display:block; margin-bottom: 6px; color:#065f46;">بصمة الوجه، التقاط الصورة، الإصبع والتحقق المكاني (GPS):</label>
                     <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-                        <button type="button" class="action-btn" onclick="openCam()">📷 تشغيل الكاميرا</button>
+                        <button type="button" class="action-btn" onclick="openCam()">📷 تشغيل الكاميرا والوجه</button>
                         <button type="button" class="action-btn" style="background:#6366f1;" onclick="registerFingerprintCredential()">👆 تسجيل بصمة الإصبع</button>
                     </div>
                     <video id="vStream" autoplay playsinline></video>
-                    <button type="button" id="snapTrigger" class="action-btn" style="background:#10b981; display:none; margin-top:6px;" onclick="captureFace()">📸 التقاط بصمة الوجه</button>
+                    <button type="button" id="snapTrigger" class="action-btn" style="background:#10b981; display:none; margin-top:6px;" onclick="captureFace()">📸 التقاط بصمة الوجه والصورة</button>
                     <canvas id="cCanvas"></canvas>
-                    <img id="imgPreview" class="preview-img" alt="معاينة">
+                    <img id="imgPreview" class="preview-img" alt="معاينة الوجه">
                     <div id="gpsText" style="font-size:11px; color:#047857; margin-top:6px; font-weight:bold;">📍 جاري تحديد الموقع...</div>
                 </div>
 
@@ -138,10 +140,11 @@
             </form>
         </div>
 
-        <div id="developerVeiw" class="form-section">
+        <!-- 3. واجهة معلومات المطور -->
+        <div id="developerView" class="form-section">
             <div class="developer-container">
                 <div class="developer-info-header"><span>💡 معلومات المطور وجهة الاتصال</span></div>
-                <div class="developer-details">
+                <div class="developer-details" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
                     <div><strong>الجهة البرمجية:</strong> شركة الارجوان للبرمجيات</div>
                     <div><strong>المطور:</strong> محمد العبيدي</div>
                     <div><strong>رقم واتساب:</strong> 07807807491</div>
@@ -160,10 +163,9 @@
         let capturedImage = "";
         let gpsData = { lat: 33.3152, lng: 44.3661 };
         let activeStream = null;
-        let registeredFingerprintData = null; // لتخزين بيانات بصمة الإصبع
+        let registeredFingerprintData = null;
 
         // --- نظام Offline-First الذكي ---
-        
         async function safeApiCall(endpoint, method = 'POST', payload = null) {
             if (!navigator.onLine) {
                 return handleOfflineOperation(endpoint, method, payload);
@@ -184,7 +186,6 @@
             let offlineQueue = JSON.parse(localStorage.getItem('pending_sync_queue') || '[]');
             offlineQueue.push({ endpoint, method, data: payload, timestamp: new Date().toISOString() });
             localStorage.setItem('pending_sync_queue', JSON.stringify(offlineQueue));
-            
             showLocalStorageAlert("💾 تم الحفظ محلياً (Offline)، ستتم المزامنة تلقائياً عند عودة الإنترنت.");
             return { success: true, offline: true };
         }
@@ -209,8 +210,7 @@
             }
         });
 
-        // --- بقية الدوال (Ping, View Switching, Camera) ---
-        
+        // --- فحص حالة السيرفر ---
         function pingServer() {
             const dot = document.getElementById('dot');
             const txt = document.getElementById('txt-status');
@@ -222,11 +222,14 @@
         setInterval(pingServer, 10000);
         pingServer();
 
+        // --- تبديل الواجهات ---
         function changeView(target) {
             document.querySelectorAll('.form-section').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.switch-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(target + 'View' || target + 'Veiw').classList.add('active');
-            document.getElementById('btn' + target.charAt(0).toUpperCase() + target.slice(1) + 'Tab').classList.add('active');
+            const targetEl = document.getElementById(target + 'View');
+            if (targetEl) targetEl.classList.add('active');
+            const btnEl = document.getElementById('btn' + target.charAt(0).toUpperCase() + target.slice(1) + 'Tab');
+            if (btnEl) btnEl.classList.add('active');
         }
 
         function syncCompany() {
@@ -234,26 +237,39 @@
             if(val) { localStorage.setItem('activeCompanyId', val); document.getElementById('logComp').value = val; }
         }
 
+        // --- الكاميرا وبصمة الوجه ---
         function openCam() {
             const video = document.getElementById('vStream');
             const btn = document.getElementById('snapTrigger');
             navigator.mediaDevices.getUserMedia({ video: { width: 300, height: 300, facingMode: 'user' } })
-            .then(s => { activeStream = s; video.style.display = 'block'; video.srcObject = s; btn.style.display = 'inline-block'; });
+            .then(s => { 
+                activeStream = s; 
+                video.style.display = 'block'; 
+                video.srcObject = s; 
+                btn.style.display = 'inline-block'; 
+            })
+            .catch(err => {
+                alert("⚠️ تعذر الوصول إلى الكاميرا، يرجى السماح بالصلاحيات.");
+            });
         }
 
         function captureFace() {
             const video = document.getElementById('vStream');
             const canvas = document.getElementById('cCanvas');
             const preview = document.getElementById('imgPreview');
-            canvas.width = 110; canvas.height = 110;
+            canvas.width = 110; 
+            canvas.height = 110;
             canvas.getContext('2d').drawImage(video, 0, 0, 110, 110);
             capturedImage = canvas.toDataURL('image/jpeg', 0.6);
-            preview.src = capturedImage; preview.style.display = 'block';
+            preview.src = capturedImage; 
+            preview.style.display = 'block';
             if(activeStream) activeStream.getTracks().forEach(t => t.stop());
-            video.style.display = 'none'; document.getElementById('snapTrigger').style.display = 'none';
+            video.style.display = 'none'; 
+            document.getElementById('snapTrigger').style.display = 'none';
+            alert("✅ تم التقاط بصمة الوجه والصورة بنجاح!");
         }
 
-        // --- وظائف بصمة الإصبع (WebAuthn) والمطابقة والحضور ---
+        // --- بصمة الإصبع (WebAuthn) ---
         async function registerFingerprintCredential() {
             try {
                 const challenge = new Uint8Array([21, 31, 105, 47, 11, 99]);
@@ -271,10 +287,7 @@
                 };
 
                 const credential = await navigator.credentials.create({ publicKey });
-                registeredFingerprintData = {
-                    id: credential.id,
-                    type: credential.type
-                };
+                registeredFingerprintData = { id: credential.id, type: credential.type };
                 alert("✅ تم تسجيل بصمة الإصبع الحيوية بنجاح!");
             } catch (err) {
                 console.error("خطأ تسجيل البصمة:", err);
@@ -294,6 +307,7 @@
             }
         }
 
+        // --- تسجيل الحضور والإنصراف مع البصمة و GPS ---
         async function recordAttendanceAction(actionType) {
             const compId = document.getElementById('logComp').value;
             const username = document.getElementById('logUser').value;
@@ -319,7 +333,7 @@
                 const attendanceRecord = {
                     companyId: compId,
                     employeeUsername: username,
-                    type: actionType, // "حضور" أو "انصراف"
+                    type: actionType,
                     timestamp: new Date().toISOString(),
                     location: {
                         lat: position.coords.latitude,
@@ -330,7 +344,7 @@
 
                 let res = await safeApiCall('/api/attendance/log', 'POST', attendanceRecord);
                 if (res && res.success) {
-                    alert(`✅ تم اعتماد وثثبيت سجل (${actionType}) بنجاح عبر البصمة والموقع لاحتساب الرواتب!`);
+                    alert(`✅ تم اعتماد وتثبيت سجل (${actionType}) بنجاح عبر البصمة والموقع لاحتساب الرواتب!`);
                 } else {
                     let localLogs = JSON.parse(localStorage.getItem(`attendance_${compId}`) || '[]');
                     localLogs.push(attendanceRecord);
@@ -338,15 +352,21 @@
                     alert(`💾 تم حفظ سجل (${actionType}) محلياً مع البصمة وGPS وستتم مزامنته تلقائياً.`);
                 }
             }, (error) => {
-                alert("⚠️ تعذر تحديد موقع الـ GPS، يرجى تفعيل الخدمة لتسجيل الدخول.");
+                alert("⚠️ تعذر تحديد موقع الـ GPS، يرجى تفعيل الخدمة لتسجيل الحضور.");
             }, { enableHighAccuracy: true });
         }
 
+        // --- تنفيذ التسجيل ---
         async function executeRegister(e) {
             e.preventDefault();
             const newEmp = {
                 companyId: document.getElementById('regComp').value,
+                companyName: document.getElementById('regCompName').value,
                 name: document.getElementById('regName').value,
+                email: document.getElementById('regEmail').value,
+                salary: document.getElementById('regSalary').value,
+                specialty: document.getElementById('regSpec').value,
+                workLocation: document.getElementById('regWork').value,
                 username: document.getElementById('regUsername').value,
                 password: document.getElementById('regPassword').value,
                 photo: capturedImage,
@@ -362,23 +382,33 @@
             
             document.getElementById('regSuccess').style.display = 'block';
             setTimeout(() => { document.querySelector('#registerView form').reset(); changeView('login'); }, 1800);
-            validatorGPS(); // تحديث الموقع عند الحاجة
+            validatorGPS();
         }
 
+        // --- تنفيذ الدخول ---
         function executeLogin(e) {
             e.preventDefault();
             const comp = document.getElementById('logComp').value;
             const user = document.getElementById('logUser').value;
-            if((user === 'admin') && document.getElementById('logPass').value === 'admin123') window.location.href = `admin.html?company=${comp}`;
-            else alert("جاري التحقق...");
+            if((user === 'admin') && document.getElementById('logPass').value === 'admin123') {
+                window.location.href = `admin.html?company=${comp}`;
+            } else {
+                let alertBox = document.getElementById('logError');
+                alertBox.style.display = 'block';
+                alertBox.innerText = "⏳ جاري التحقق من الحساب والانتقال للبوابة...";
+                setTimeout(() => {
+                    window.location.href = `attachment.html?user=${user}`;
+                }, 1000);
+            }
         }
 
+        // --- جلب الموقع الجغرافي عند الفتح ---
         function validatorGPS() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((pos) => {
                     gpsData = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                     let gpsEl = document.getElementById('gpsText');
-                    if(gpsEl) gpsEl.innerText = `📍 الموقع: ${gpsData.lat.toFixed(4)}, ${gpsData.lng.toFixed(4)}`;
+                    if(gpsEl) gpsEl.innerText = `📍 الموقع الحالي: ${gpsData.lat.toFixed(4)}, ${gpsData.lng.toFixed(4)}`;
                 });
             }
         }
