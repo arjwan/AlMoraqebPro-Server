@@ -7,27 +7,16 @@ const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// الرابط الافتراضي لقاعدة بيانات MongoDB (يمكن تغليفه بمتغير بيئي لاحقاً)
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/almoraqebpro";
 
-// Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// إتاحة مجلد الملفات والرفع والصور للعام
-if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads');
-}
+if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ==========================================
-// 1. تعريف نماذج قاعدة البيانات (Mongoose Schemas)
-// ==========================================
-
-// نموذج الشركة
 const companySchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
@@ -37,21 +26,19 @@ const companySchema = new mongoose.Schema({
 });
 const Company = mongoose.model('Company', companySchema);
 
-// نموذج الموظف (تمت إضافة حقل السلف والاستقطاعات)
 const employeeSchema = new mongoose.Schema({
     companyId: { type: String, required: true, index: true },
-    companyName: { type: String },
+    companyName: String,
     name: { type: String, required: true },
-    email: { type: String },
-    salary: { type: Number },
-    specialty: { type: String },
-    workplace: { type: String },
+    email: String,
+    salary: Number,
+    specialty: String,
+    workplace: String,
     username: { type: String, required: true },
     password: { type: String, required: true },
-    photoUrl: { type: String },
-    location: { type: String },
+    photoUrl: String,
+    location: String,
     createdAt: { type: Date, default: Date.now },
-    // إضافة مصفوفة السلف النشطة والمرتبطة بالموظف
     loans: [{
         loanAmount: Number,
         monthlyInstallment: Number,
@@ -61,70 +48,54 @@ const employeeSchema = new mongoose.Schema({
 });
 const Employee = mongoose.model('Employee', employeeSchema);
 
-// ==========================================
-// 2. إعداد Multer لرفع الصور والملفات
-// ==========================================
+const attendanceSchema = new mongoose.Schema({
+    employeeId: { type: String, required: true, index: true },
+    companyId: { type: String, index: true },
+    fingerprintToken: String,
+    latitude: Number,
+    longitude: Number,
+    timestamp: { type: Date, default: Date.now },
+    type: { type: String, default: 'attendance' }
+});
+const Attendance = mongoose.model('Attendance', attendanceSchema);
+
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
+    destination: (req, file, cb) => cb(null, 'uploads/'),
+    filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
 });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB كحد أقصى للصورة
-});
-
-// ==========================================
-// 3. المسارات البرمجية (API Endpoints)
-// ==========================================
-
-// مسار فحص الاتصال (Ping)
 app.get('/api/ping', (req, res) => {
     res.status(200).json({ status: 'connected', message: 'السيرفر يعمل بكفاءة ومتصل بنجاح' });
 });
 
-// تسجيل شركة جديدة
 app.post('/api/companies/register', async (req, res) => {
     try {
         const { id, name, email, phone } = req.body;
-        let existingCompany = await Company.findOne({ id });
-        if (existingCompany) {
-            return res.status(200).json({ success: true, message: 'الشركة مسجلة مسبقاً', company: existingCompany });
-        }
-        const newCompany = new Company({ id, name, email, phone });
-        await newCompany.save();
-        res.status(201).json({ success: true, message: 'تم تسجيل الشركة بنجاح في قاعدة البيانات', company: newCompany });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
+        if (!id || !name) return res.status(400).json({ success: false, message: 'بيانات الشركة ناقصة' });
+        const existingCompany = await Company.findOne({ id });
+        if (existingCompany) return res.status(200).json({ success: true, message: 'الشركة مسجلة مسبقاً', company: existingCompany });
+        const company = await new Company({ id, name, email: email || '', phone: phone || '' }).save();
+        res.status(201).json({ success: true, message: 'تم تسجيل الشركة بنجاح في قاعدة البيانات', company });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// جلب قائمة الشركات
 app.get('/api/companies', async (req, res) => {
     try {
         const companies = await Company.find().sort({ createdAt: -1 });
         res.status(200).json({ success: true, companies });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// تسجيل موظف جديد مع رفع صورة بصمة الوجه
 app.post('/api/employee/register', upload.single('photo'), async (req, res) => {
     try {
         const photoPath = req.file ? `/uploads/${req.file.filename}` : (req.body.photo || '');
-        
-        const newEmployee = new Employee({
+        const employee = await new Employee({
             companyId: req.body.companyId,
             companyName: req.body.companyName,
             name: req.body.name,
             email: req.body.email,
-            salary: req.body.salary,
+            salary: req.body.salary ? Number(req.body.salary) : undefined,
             specialty: req.body.specialty,
             workplace: req.body.workplace,
             username: req.body.username,
@@ -132,101 +103,84 @@ app.post('/api/employee/register', upload.single('photo'), async (req, res) => {
             photoUrl: photoPath,
             location: req.body.location,
             loans: []
-        });
-
-        await newEmployee.save();
-        res.status(201).json({ success: true, message: 'تم تسجيل الموظف وحفظه في السيرفر وقاعدة البيانات بنجاح', employee: newEmployee });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
+        }).save();
+        res.status(201).json({ success: true, message: 'تم تسجيل الموظف وحفظه في MongoDB', employee });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// جلب موظفي شركة معينة مع دعم التقسيم (Pagination) لآلاف الموظفين
 app.get('/api/employees/:companyId', async (req, res) => {
     try {
-        const { companyId } = req.params;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 50; // جلب 50 موظفاً كدفعة افتراضية لضمان السرعة
-
-        const employees = await Employee.find({ companyId })
-            .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit);
-
-        const total = await Employee.countDocuments({ companyId });
-
-        res.status(200).json({
-            success: true,
-            total,
-            page,
-            pages: Math.ceil(total / limit),
-            employees
-        });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
+        const filter = { companyId: req.params.companyId };
+        const employees = await Employee.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit);
+        const total = await Employee.countDocuments(filter);
+        res.status(200).json({ success: true, total, page, pages: Math.ceil(total / limit), employees });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// ==========================================
-// مسارات السلف والاستقطاعات الجديدة (مدمجة بأمان)
-// ==========================================
+// Mobile login: verifies the employee against MongoDB and returns the canonical IDs.
+app.post('/api/mobile/login', async (req, res) => {
+    try {
+        const { companyId, username, password } = req.body;
+        if (!companyId || !username || !password) return res.status(400).json({ success: false, message: 'بيانات الدخول ناقصة' });
+        const employee = await Employee.findOne({ companyId, username, password }).lean();
+        if (!employee) return res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
+        res.json({ success: true, message: 'تم تسجيل الدخول بنجاح', employee });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
 
-// إضافة سلفة جديدة للموظف وتحديد القسط
+// Mobile attendance: persists the event in the same MongoDB database.
+app.post('/api/attendance', async (req, res) => {
+    try {
+        const { employeeId, fingerprintToken, latitude, longitude, timestamp } = req.body;
+        if (!employeeId) return res.status(400).json({ success: false, message: 'معرف الموظف مطلوب' });
+        const employee = await Employee.findById(employeeId).lean();
+        if (!employee) return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+        const attendance = await new Attendance({
+            employeeId: String(employee._id),
+            companyId: employee.companyId,
+            fingerprintToken: fingerprintToken || '',
+            latitude: latitude != null ? Number(latitude) : undefined,
+            longitude: longitude != null ? Number(longitude) : undefined,
+            timestamp: timestamp ? new Date(timestamp) : new Date()
+        }).save();
+        res.status(201).json({ success: true, message: 'تم تسجيل الحضور وحفظه في MongoDB', attendanceId: attendance._id });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.get('/api/employees/:employeeId/attendance', async (req, res) => {
+    try {
+        const attendance = await Attendance.find({ employeeId: req.params.employeeId }).sort({ timestamp: -1 }).limit(100).lean();
+        res.json({ success: true, attendance });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 app.post('/api/employees/:employeeId/loan', async (req, res) => {
     try {
-        const { loanAmount, monthlyInstallment } = req.body;
         const employee = await Employee.findById(req.params.employeeId);
-        
-        if (!employee) {
-            return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
-        }
-
-        employee.loans.push({
-            loanAmount: parseFloat(loanAmount),
-            monthlyInstallment: parseFloat(monthlyInstallment),
-            remainingAmount: parseFloat(loanAmount)
-        });
-
+        if (!employee) return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+        const loanAmount = parseFloat(req.body.loanAmount);
+        const monthlyInstallment = parseFloat(req.body.monthlyInstallment);
+        if (!Number.isFinite(loanAmount) || !Number.isFinite(monthlyInstallment)) return res.status(400).json({ success: false, message: 'بيانات السلفة غير صحيحة' });
+        employee.loans.push({ loanAmount, monthlyInstallment, remainingAmount: loanAmount });
         await employee.save();
-        res.status(200).json({ success: true, message: 'تم إضافة السلفة بنجاح وتحديث حسابات الموظف', employee });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
+        res.json({ success: true, message: 'تم إضافة السلفة بنجاح', employee });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// حساب إجمالي الاستقطاعات الشهرية للسلف الخاصة بالموظف (لتحديث الرواتب)
 app.get('/api/employees/:employeeId/loan-deduction', async (req, res) => {
     try {
         const employee = await Employee.findById(req.params.employeeId);
-        if (!employee) {
-            return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
-        }
-
-        let totalMonthlyDeduction = 0;
-        if (employee.loans && employee.loans.length > 0) {
-            employee.loans.forEach(loan => {
-                if (loan.remainingAmount > 0) {
-                    totalMonthlyDeduction += loan.monthlyInstallment;
-                }
-            });
-        }
-
-        res.status(200).json({ success: true, employeeId: employee._id, totalMonthlyDeduction });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
+        if (!employee) return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+        const totalMonthlyDeduction = (employee.loans || []).reduce((sum, loan) => sum + (loan.remainingAmount > 0 ? loan.monthlyInstallment : 0), 0);
+        res.json({ success: true, employeeId: employee._id, totalMonthlyDeduction });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// ==========================================
-// 4. الاتصال بقاعدة البيانات وتشغيل السيرفر
-// ==========================================
 mongoose.connect(MONGO_URI)
-.then(() => {
-    console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح واستقرار تام');
-    app.listen(PORT, () => {
-        console.log(`🚀 السيرفر يعمل الآن على المنفذ: ${PORT}`);
-    });
-})
-.catch(err => {
-    console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err.message);
-});
+    .then(() => {
+        console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح');
+        app.listen(PORT, () => console.log(`🚀 السيرفر يعمل الآن على المنفذ: ${PORT}`));
+    })
+    .catch(err => console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err.message));
