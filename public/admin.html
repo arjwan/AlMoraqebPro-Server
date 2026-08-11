@@ -547,6 +547,12 @@
         renderGpsSection();
         generateAdvancedReport();
         updatePendingBadge();
+
+        // استدعاء دالة جلب طلبات الموظفين عند تحميل الصفحة بناءً على معرف الشركة النشط
+        const currentCompanyId = getActiveCompanyId();
+        if (currentCompanyId) {
+            loadEmployeeRequests(currentCompanyId);
+        }
     };
 
     function editCompanyId() {
@@ -605,8 +611,8 @@
     }
 
     /* ========================================================
-       تطوير وتفعيل الأزرار الأربعة العلوية
-       ======================================================== */
+        تطوير وتفعيل الأزرار الأربعة العلوية
+        ======================================================== */
 
     function checkServerStatus() {
         let startTime = new Date().getTime();
@@ -641,396 +647,42 @@
         reader.readAsText(file);
     }
 
-    function backupData() {
-        let backupObj = {};
-        for (let i = 0; i < localStorage.length; i++) {
-            let key = localStorage.key(i);
-            try {
-                backupObj[key] = JSON.parse(localStorage.getItem(key));
-            } catch(e) {
-                backupObj[key] = localStorage.getItem(key);
-            }
-        }
-        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
-        let downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        let dateStr = new Date().toISOString().slice(0,10);
-        downloadAnchor.setAttribute("download", `AlMoraqebPro_Backup_${dateStr}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-        alert("✅ تم إنشاء وتنزيل النسخة الاحتياطية لجميع بيانات النظام بنجاح!");
-    }
-
-    function logoutSystem() {
-        if(confirm("هل أنت متأكد من رغبتك في تسجيل الخروج من لوحة تحكم نظام المراقب برو؟")) {
-            // نحذف حالة الجلسة فقط؛ تبقى بيانات النظام والطلبات المحفوظة كما هي.
-            localStorage.removeItem('activeUser');
-            localStorage.removeItem('activeCompanyId');
-            localStorage.removeItem('custom_company_id');
-            localStorage.removeItem('registered_device_user');
-            window.location.replace('index.html');
-        }
-    }
-
-    /* ========================================================
-       تطوير قسم بصمة الوجه والـ GPS والربط الحقيقي المباشر
-       ======================================================== */
-
-    function triggerAdminRealAttendance(actionType) {
-        const fileInput = document.getElementById('nativeCameraInput');
-        fileInput.value = "";
-        
-        fileInput.onchange = (e) => {
-            if (e.target.files && e.target.files.length > 0) {
-                // التقاط الجي بي إس الحقيقي أو افتراضي موثق
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                        saveAttendanceRecord(actionType, {
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude,
-                            accuracy: pos.coords.accuracy
-                        });
-                    }, (err) => {
-                        saveAttendanceRecord(actionType, { lat: 33.3152, lng: 44.3661, accuracy: 10 });
-                    }, { enableHighAccuracy: true });
-                } else {
-                    saveAttendanceRecord(actionType, { lat: 33.3152, lng: 44.3661, accuracy: 10 });
+    // دالة جلب طلبات الموظفين وعرضها في الجدول المخصص
+    async function loadEmployeeRequests(companyId) {
+        try {
+            const response = await fetch(`/api/employee/requests/${companyId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const tableBody = document.querySelector("#employeeRequestsTableBody");
+                
+                if (!tableBody) {
+                    return;
                 }
-            } else {
-                alert("⚠️ تم إلغاء التقاط بصمة الوجه.");
+
+                tableBody.innerHTML = "";
+
+                if (data.requests && data.requests.length > 0) {
+                    data.requests.forEach((req, index) => {
+                        const row = document.createElement("tr");
+                        
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${req.name || ''}</td>
+                            <td>${req.phone || ''}</td>
+                            <td>${req.date || ''}</td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="text-center">لا توجد طلبات معلقة حالياً</td></tr>`;
+                }
             }
-        };
-
-        fileInput.click();
-    }
-
-    function saveAttendanceRecord(actionType, gpsData) {
-        let activeUser = localStorage.getItem('activeUser') || "mohmmedali";
-        let activeCompany = getActiveCompanyId();
-
-        let newRecord = {
-            companyId: activeCompany,
-            employeeUsername: activeUser,
-            type: actionType,
-            verificationMethod: "face (كاميرا النظام)",
-            gpsLocation: gpsData,
-            timestamp: new Date().toISOString(),
-            verifiedReal: true
-        };
-
-        let masterLogs = JSON.parse(localStorage.getItem('admin_master_attendance_records') || '[]');
-        masterLogs.push(newRecord);
-        localStorage.setItem('admin_master_attendance_records', JSON.stringify(masterLogs));
-
-        alert(`✅ تم بنجاح توثيق وحفظ سجل (${actionType}) رسمياً في لوحة المدير وحساب الرواتب عبر بصمة الوجه الفعلي والـ GPS!`);
-        renderGpsSection();
-        generateAdvancedReport();
-        updatePendingBadge();
-    }
-
-    function renderGpsSection() {
-        let tbody = document.getElementById('gpsTableBody');
-        if(!tbody) return;
-        
-        let masterLogs = JSON.parse(localStorage.getItem('admin_master_attendance_records') || '[]');
-        
-        if(masterLogs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">لا توجد سجلات بصمة حقيقية مسجلة حتى الآن</td></tr>`;
-            return;
+        } catch (error) {
+            console.error("خطأ في جلب طلبات الموظفين:", error);
         }
-
-        tbody.innerHTML = '';
-        masterLogs.forEach((log, idx) => {
-            let timeStr = new Date(log.timestamp).toLocaleString('ar-IQ');
-            let gpsText = log.gpsLocation ? `${log.gpsLocation.lat.toFixed(4)}° N, ${log.gpsLocation.lng.toFixed(4)}° E (دقة: ${Math.round(log.gpsLocation.accuracy || 5)}م)` : "موقع افتراضي مؤكد";
-            let typeBadge = log.type === 'حضور' ? '<span class="badge" style="background:#10b981; color:#fff; padding:3px 8px; border-radius:6px;">حضور</span>' : '<span class="badge" style="background:#ef4444; color:#fff; padding:3px 8px; border-radius:6px;">انصراف</span>';
-            
-            tbody.innerHTML += `
-                <tr>
-                    <td>${idx + 1}</td>
-                    <td><b>${log.employeeUsername}</b></td>
-                    <td><span class="badge" style="background:#0284c7; color:#fff; padding:2px 6px; border-radius:6px;">${log.companyId}</span></td>
-                    <td>${typeBadge}</td>
-                    <td><span class="badge" style="background:#8b5cf6; color:#fff; padding:2px 6px; border-radius:6px;">${log.verificationMethod}</span></td>
-                    <td>${gpsText}</td>
-                    <td>${timeStr}</td>
-                </tr>
-            `;
-        });
     }
-
-    function updatePendingBadge() {
-        let masterLogs = JSON.parse(localStorage.getItem('admin_master_attendance_records') || '[]');
-        let badgeEl = document.getElementById('pendingLogsCount');
-        if(badgeEl) badgeEl.innerText = masterLogs.length;
-    }
-
-    /* ======================================================== */
-
-    function saveNewEmployeeFromForm(event) {
-        event.preventDefault();
-        
-        let newEmp = {
-            companyId: document.getElementById('newEmpCompanyId').value,
-            fullName: document.getElementById('newEmpName').value,
-            email: document.getElementById('newEmpEmail').value,
-            salary: document.getElementById('newEmpSalary').value,
-            specialty: document.getElementById('newEmpSpecialty').value,
-            workLocation: document.getElementById('newEmpWorkLocation').value,
-            username: document.getElementById('newEmpUser').value
-        };
-
-        let emps = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
-        emps.push(newEmp);
-        localStorage.setItem('company_employees_registry', JSON.stringify(emps));
-
-        let salaries = JSON.parse(localStorage.getItem('admin_salaries_full_data') || '[]');
-        salaries.push({
-            name: newEmp.fullName, companyId: newEmp.companyId, branch: newEmp.workLocation, 
-            basic: parseFloat(newEmp.salary.replace(/[^0-9.]/g, '')) || 1000000
-        });
-        localStorage.setItem('admin_salaries_full_data', JSON.stringify(salaries));
-
-        alert("✅ تمت الإضافة بنجاح، وتم ترحيل بيانات الموظف تلقائياً إلى أقسام (الموظفين، الرواتب، البصمة، والشفتات)!");
-        document.getElementById('addEmployeeForm').reset();
-        closeSections();
-    }
-
-    function approveReq(i) {
-        let reqs = JSON.parse(localStorage.getItem('company_registration_requests') || '[]');
-        let req = reqs[i];
-        if(!req) return;
-
-        let approvedEmp = {
-            companyId: req.companyId || "B-2070",
-            fullName: req.fullName,
-            email: req.email || "user@domain.com",
-            salary: req.salary || "1,000,000 د.ع",
-            specialty: req.specialty || "مختص ميداني",
-            workLocation: req.workLocation || "الفرع الرئيسي",
-            username: req.username || "user_sys"
-        };
-
-        let emps = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
-        emps.push(approvedEmp);
-        localStorage.setItem('company_employees_registry', JSON.stringify(emps));
-
-        let salaries = JSON.parse(localStorage.getItem('admin_salaries_full_data') || '[]');
-        salaries.push({
-            name: approvedEmp.fullName, companyId: approvedEmp.companyId, branch: approvedEmp.workLocation, 
-            basic: parseFloat(approvedEmp.salary.replace(/[^0-9.]/g, '')) || 1000000
-        });
-        localStorage.setItem('admin_salaries_full_data', JSON.stringify(salaries));
-
-        reqs.splice(i, 1);
-        localStorage.setItem('company_registration_requests', JSON.stringify(reqs));
-
-        alert("✅ تم اعتماد الطلب وتوزيع الموظف آلياً لكل أقسام النظام بنجاح!");
-        renderRequests();
-        renderEmployees();
-    }
-
-    function deleteReq(i) {
-        let reqs = JSON.parse(localStorage.getItem('company_registration_requests') || '[]');
-        reqs.splice(i, 1);
-        localStorage.setItem('company_registration_requests', JSON.stringify(reqs));
-        renderRequests();
-    }
-
-    function renderRequests() {
-        let reqs = JSON.parse(localStorage.getItem('company_registration_requests') || '[]');
-        let tbody = document.getElementById('reqTableBody');
-        let badge = document.getElementById('reqBadgeCount');
-        if(badge) badge.innerText = reqs.length;
-        
-        if(!tbody) return;
-        tbody.innerHTML = '';
-
-        if(reqs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">لا توجد طلبات تسجيل معلقة حالياً</td></tr>`;
-            return;
-        }
-
-        reqs.forEach((r, idx) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${idx + 1}</td>
-                    <td><span class="badge bg-blue">${r.companyId || 'B-2070'}</span></td>
-                    <td><b>${r.fullName}</b></td>
-                    <td>${r.email || '-'}</td>
-                    <td>${r.specialty || '-'}</td>
-                    <td>${r.workLocation || '-'}</td>
-                    <td>
-                        <button class="btn btn-success" style="padding:4px 10px; font-size:12px;" onclick="approveReq(${idx})">✓ موافقة واعتماد</button>
-                        <button class="btn btn-danger" style="padding:4px 10px; font-size:12px;" onclick="deleteReq(${idx})">✕ رفض</button>
-                    </td>
-                </tr>
-            `;
-        });
-    }
-
-    function renderEmployees() {
-        let emps = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
-        let tbody = document.getElementById('empTableBody');
-        let totalCount = document.getElementById('totalEmpCount');
-        if(totalCount) totalCount.innerText = emps.length;
-
-        if(!tbody) return;
-        tbody.innerHTML = '';
-
-        if(emps.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#64748b; padding:20px;">لا يوجد موظفون مسجلون حالياً</td></tr>`;
-            return;
-        }
-
-        emps.forEach((e, idx) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${idx + 1}</td>
-                    <td><span class="badge bg-blue">${e.companyId}</span></td>
-                    <td><b>${e.fullName}</b></td>
-                    <td>${e.email}</td>
-                    <td><span class="badge bg-green">${e.salary}</span></td>
-                    <td>${e.specialty} (${e.workLocation})</td>
-                    <td><code>${e.username}</code></td>
-                    <td>
-                        <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteEmployee(${idx})">حذف</button>
-                    </td>
-                </tr>
-            `;
-        });
-    }
-
-    function deleteEmployee(i) {
-        if(!confirm("هل أنت متأكد من حذف هذا الموظف؟")) return;
-        let emps = JSON.parse(localStorage.getItem('company_employees_registry') || '[]');
-        emps.splice(i, 1);
-        localStorage.setItem('company_employees_registry', JSON.stringify(emps));
-        renderEmployees();
-    }
-
-    function filterEmployees() {
-        let query = document.getElementById('searchInput').value.toLowerCase();
-        let rows = document.querySelectorAll('#empTableBody tr');
-        rows.forEach(row => {
-            let text = row.innerText.toLowerCase();
-            row.style.display = text.includes(query) ? '' : 'none';
-        });
-    }
-
-    function renderSalaryCards() {
-        let salaries = JSON.parse(localStorage.getItem('admin_salaries_full_data') || '[]');
-        let area = document.getElementById('salaryCardsArea');
-        let printBody = document.getElementById('printSalaryTableBody');
-        if(!area) return;
-
-        area.innerHTML = '';
-        if(printBody) printBody.innerHTML = '';
-
-        if(salaries.length === 0) {
-            area.innerHTML = `<p style="text-align:center; color:#64748b; grid-column:span 2; padding:20px;">لا توجد بيانات رواتب حالياً</p>`;
-            return;
-        }
-
-        salaries.forEach((s, idx) => {
-            let basic = s.basic || 1000000;
-            area.innerHTML += `
-                <div class="salary-emp-card">
-                    <div class="salary-card-header">
-                        <b>${s.name}</b>
-                        <span class="badge bg-blue">${s.companyId || 'B-2070'}</span>
-                    </div>
-                    <div class="salary-field-row"><label>الفرع:</label> <span>${s.branch || 'الفرع الرئيسي'}</span></div>
-                    <div class="salary-field-row"><label>الراتب الأساسي:</label> <span>${basic.toLocaleString()} د.ع</span></div>
-                    <div class="net-salary-box">الصافي النهائي: ${basic.toLocaleString()} د.ع</div>
-                </div>
-            `;
-            if(printBody) {
-                printBody.innerHTML += `
-                    <tr>
-                        <td>${s.name}</td><td>${s.companyId || 'B-2070'}</td><td>${s.branch || 'الفرع الرئيسي'}</td><td>${basic.toLocaleString()} د.ع</td><td>${basic.toLocaleString()} د.ع</td>
-                    </tr>
-                `;
-            }
-        });
-    }
-
-    function addNewSalaryCard() {
-        let name = prompt("أدخل اسم الموظف الجديد للرواتب:");
-        if(!name) return;
-        let salaries = JSON.parse(localStorage.getItem('admin_salaries_full_data') || '[]');
-        salaries.push({ name: name, companyId: getActiveCompanyId(), branch: 'الفرع الرئيسي', basic: 1000000 });
-        localStorage.setItem('admin_salaries_full_data', JSON.stringify(salaries));
-        renderSalaryCards();
-        alert("✅ تم تحديث كشف الرواتب وإضافة السجل بنجاح!");
-    }
-
-    function generateAdvancedReport() {
-        let tbody = document.getElementById('advancedReportTableBody');
-        if(!tbody) return;
-        
-        let masterLogs = JSON.parse(localStorage.getItem('admin_master_attendance_records') || '[]');
-        if(masterLogs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#64748b; padding:15px;">لا توجد حركات مسجلة حالياً</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = '';
-        masterLogs.forEach((log, idx) => {
-            let timeStr = new Date(log.timestamp).toLocaleString('ar-IQ');
-            let statusBadge = log.type === 'حضور' ? '<span class="badge" style="background:#10b981; color:#fff; padding:3px 8px; border-radius:6px;">حضور ناجح</span>' : '<span class="badge" style="background:#ef4444; color:#fff; padding:3px 8px; border-radius:6px;">انصراف ناجح</span>';
-            tbody.innerHTML += `
-                <tr>
-                    <td>${idx + 1}</td>
-                    <td>${timeStr}</td>
-                    <td><b>${log.employeeUsername}</b></td>
-                    <td>الفرع الرئيسي (${log.companyId})</td>
-                    <td>${statusBadge}</td>
-                </tr>
-            `;
-        });
-    }
-    // (نهاية الكود القديم لدالة generateAdvancedReport هنا)
-    }
-}
-
-// <<< أضف دالتك الجديدة هنا >>>
-async function loadEmployeeRequests(companyId) {
-    try {
-        const response = await fetch(`/api/employee/requests/${companyId}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            const tableBody = document.querySelector("#employeeRequestsTableBody");
-            
-            if (!tableBody) {
-                return;
-            }
-
-            tableBody.innerHTML = "";
-
-            if (data.requests && data.requests.length > 0) {
-                data.requests.forEach((req, index) => {
-                    const row = document.createElement("tr");
-                    
-                    row.innerHTML = `
-                        <td>${index + 1}</td>
-                        <td>${req.name || ''}</td>
-                        <td>${req.phone || ''}</td>
-                        <td>${req.date || ''}</td>
-                    `;
-                    
-                    tableBody.appendChild(row);
-                });
-            } else {
-                tableBody.innerHTML = `<tr><td colspan="4" class="text-center">لا توجد طلبات معلقة حالياً</td></tr>`;
-            }
-        }
-    } catch (error) {
-        console.error("خطأ في جلب طلبات الموظفين:", error);
-    }
-}
 </script>
 </body>
 </html>
