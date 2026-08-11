@@ -991,6 +991,47 @@
             `;
         });
     }
+    // (نهاية الكود القديم لدالة generateAdvancedReport هنا)
+    }
+}
+
+// <<< أضف دالتك الجديدة هنا >>>
+async function loadEmployeeRequests(companyId) {
+    try {
+        const response = await fetch(`/api/employee/requests/${companyId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const tableBody = document.querySelector("#employeeRequestsTableBody");
+            
+            if (!tableBody) {
+                return;
+            }
+
+            tableBody.innerHTML = "";
+
+            if (data.requests && data.requests.length > 0) {
+                data.requests.forEach((req, index) => {
+                    const row = document.createElement("tr");
+                    
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${req.name || ''}</td>
+                        <td>${req.phone || ''}</td>
+                        <td>${req.date || ''}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+            } else {
+                tableBody.innerHTML = `<tr><td colspan="4" class="text-center">لا توجد طلبات معلقة حالياً</td></tr>`;
+            }
+        }
+    } catch (error) {
+        console.error("خطأ في جلب طلبات الموظفين:", error);
+    }
+}
+
 </script>
 </body>
 </html>
