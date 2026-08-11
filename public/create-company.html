@@ -203,7 +203,7 @@
             const response = await fetch('/api/companies/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: compId, name: nameAr, email, phone: managerDetails })
+                body: JSON.stringify({ companyId: compId, name: nameAr, email, phone: managerDetails })
             });
             const result = await response.json();
             if (!response.ok || !result.success) {
@@ -227,9 +227,25 @@
         }
     }
 
-    function loadCompaniesTable() {
+    async function loadCompaniesTable() {
         let tbody = document.getElementById('companiesTableBody');
         let companies = JSON.parse(localStorage.getItem('all_registered_companies') || '[]');
+
+        try {
+            const response = await fetch('/api/companies');
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error('تعذر تحميل الشركات من الخادم');
+            companies = result.companies.map(company => ({
+                ...company,
+                id: company.companyId || company.id,
+                subscription: company.subscription || 'غير محدد',
+                expiry: company.expiry || null,
+                status: company.status || 'active'
+            }));
+            localStorage.setItem('all_registered_companies', JSON.stringify(companies));
+        } catch (error) {
+            console.warn('سيتم عرض النسخة المحلية مؤقتاً:', error);
+        }
 
         if (companies.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">لا توجد شركات مسجلة حالياً. قم بإضافة شركة جديدة.</td></tr>`;
@@ -238,7 +254,7 @@
 
         tbody.innerHTML = '';
         companies.forEach((comp, index) => {
-            let isExpired = new Date(comp.expiry) < new Date();
+            let isExpired = comp.expiry ? new Date(comp.expiry) < new Date() : false;
             let statusClass = comp.status === 'active' && !isExpired ? 'status-active' : 'status-stopped';
             let statusText = isExpired ? 'منتهي الاشتراك (موقوف تلقائياً)' : (comp.status === 'active' ? 'نشطة' : 'متوقفة يدوياً');
 

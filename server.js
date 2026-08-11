@@ -18,7 +18,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const companySchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true, index: true },
+    companyId: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true },
@@ -71,11 +71,13 @@ app.get('/api/ping', (req, res) => {
 
 app.post('/api/companies/register', async (req, res) => {
     try {
-        const { id, name, email, phone } = req.body;
-        if (!id || !name) return res.status(400).json({ success: false, message: 'بيانات الشركة ناقصة' });
-        const existingCompany = await Company.findOne({ id });
+        const { companyId, id, name, email, phone } = req.body;
+        const canonicalCompanyId = (companyId || id || '').trim();
+        if (!canonicalCompanyId || !name) return res.status(400).json({ success: false, message: 'بيانات الشركة ناقصة' });
+        // يدعم السجلات القديمة التي استُخدم فيها الاسم id، ويكتب الجديدة بصيغة companyId الموحدة.
+        const existingCompany = await Company.findOne({ $or: [{ companyId: canonicalCompanyId }, { id: canonicalCompanyId }] });
         if (existingCompany) return res.status(200).json({ success: true, message: 'الشركة مسجلة مسبقاً', company: existingCompany });
-        const company = await new Company({ id, name, email: email || '', phone: phone || '' }).save();
+        const company = await new Company({ companyId: canonicalCompanyId, name, email: email || '', phone: phone || '' }).save();
         res.status(201).json({ success: true, message: 'تم تسجيل الشركة بنجاح في قاعدة البيانات', company });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
