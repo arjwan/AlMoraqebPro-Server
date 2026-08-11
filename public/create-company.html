@@ -171,10 +171,12 @@
         }
     }
 
-    // 1 & 3. تسجيل شركة جديدة مع إمكانية منح تجريبي وحفظها محلياً/خادومياً
-    function registerNewCompany() {
+    // تسجيل الشركة في قاعدة البيانات أولاً، ثم حفظ نسخة محلية للاستخدام داخل اللوحة.
+    async function registerNewCompany() {
         let compId = document.getElementById('regCompanyId').value.trim();
         let nameAr = document.getElementById('regCompanyNameAr').value.trim();
+        let email = document.getElementById('regEmail').value.trim();
+        let managerDetails = document.getElementById('regManagerName').value.trim();
         let subType = document.getElementById('regSubscriptionType').value;
 
         if (!compId || !nameAr) {
@@ -182,8 +184,6 @@
             return;
         }
 
-        let companies = JSON.parse(localStorage.getItem('all_registered_companies') || '[]');
-        
         // حساب تاريخ انتهاء الاشتراك التجريبي أو العادي
         let expiryDate = new Date();
         if(subType === 'trial') expiryDate.setDate(expiryDate.getDate() + 7);
@@ -199,12 +199,32 @@
             passcode: document.getElementById('regPassword').value || '1234'
         };
 
-        companies.push(newComp);
-        localStorage.setItem('all_registered_companies', JSON.stringify(companies));
-        
-        alert(`✅ تم تأسيس وتثبيت الشركة (${nameAr}) بنجاح!`);
-        playGeminiVoice("تم تسجيل الشركة بنجاح.");
-        loadCompaniesTable();
+        try {
+            const response = await fetch('/api/companies/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: compId, name: nameAr, email, phone: managerDetails })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'تعذر تسجيل الشركة في قاعدة البيانات');
+            }
+
+            let companies = JSON.parse(localStorage.getItem('all_registered_companies') || '[]');
+            const existingIndex = companies.findIndex(company => company.id === compId);
+            if (existingIndex >= 0) companies[existingIndex] = { ...companies[existingIndex], ...newComp };
+            else companies.push(newComp);
+            localStorage.setItem('all_registered_companies', JSON.stringify(companies));
+
+            // هذا هو الرمز المعتمد الذي ستستخدمه لوحة الشركة بعد إعادة التوجيه.
+            localStorage.setItem('activeCompanyId', compId);
+            localStorage.setItem('custom_company_id', compId);
+            alert(`✅ تم تأسيس وتثبيت الشركة (${nameAr}) بالرمز (${compId}) في قاعدة البيانات بنجاح!`);
+            playGeminiVoice("تم تسجيل الشركة بنجاح.");
+            loadCompaniesTable();
+        } catch (error) {
+            alert(`❌ لم يتم حفظ الشركة في السيرفر: ${error.message}`);
+        }
     }
 
     function loadCompaniesTable() {

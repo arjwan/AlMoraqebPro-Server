@@ -165,7 +165,7 @@
     <div class="top-header-bar">
         <div class="identity-container-left">
             <span class="system-name-animated">نظام المراقب برو</span>
-            <span class="badge-id" id="systemIdLabel" onclick="editCompanyId()" title="انقر لتعديل رمز الشركة">B-2070</span>
+            <span class="badge-id" id="systemIdLabel" onclick="editCompanyId()" title="انقر لتعديل رمز الشركة">—</span>
         </div>
 
         <div class="actions-group-right">
@@ -181,7 +181,7 @@
         <div class="stat-card-top">
             <div class="stat-info">
                 <span>معرف الشركة الحالي</span>
-                <h3 id="statCompanyName">B-2070</h3>
+                <h3 id="statCompanyName">—</h3>
             </div>
             <div class="stat-icon">🏢</div>
         </div>
@@ -356,7 +356,7 @@
         <form id="addEmployeeForm" onsubmit="saveNewEmployeeFromForm(event)" class="uniform-form-grid">
             <div class="form-group">
                 <label>رمز الشركة:</label>
-                <input type="text" id="newEmpCompanyId" value="B-2070" required placeholder="رمز الشركة">
+                <input type="text" id="newEmpCompanyId" required placeholder="رمز الشركة">
             </div>
             <div class="form-group">
                 <label>الاسم الكامل:</label>
@@ -559,11 +559,20 @@
         alert("✅ تم تحديث رمز الشركة بنجاح!");
     }
 
+    function getActiveCompanyId() {
+        const queryCompanyId = new URLSearchParams(window.location.search).get('company')?.trim();
+        return queryCompanyId || localStorage.getItem('activeCompanyId') || localStorage.getItem('custom_company_id') || '';
+    }
+
     function loadSavedSystemId() {
-        let savedId = localStorage.getItem('custom_company_id');
-        if(savedId) {
-            document.getElementById('systemIdLabel').innerText = savedId;
-            document.getElementById('statCompanyName').innerText = savedId;
+        const savedId = getActiveCompanyId();
+        document.getElementById('systemIdLabel').innerText = savedId || 'غير محدد';
+        document.getElementById('statCompanyName').innerText = savedId || 'غير محدد';
+        const companyInput = document.getElementById('newEmpCompanyId');
+        if (companyInput) companyInput.value = savedId;
+        if (savedId) {
+            localStorage.setItem('activeCompanyId', savedId);
+            localStorage.setItem('custom_company_id', savedId);
         }
     }
 
@@ -694,7 +703,7 @@
 
     function saveAttendanceRecord(actionType, gpsData) {
         let activeUser = localStorage.getItem('activeUser') || "mohmmedali";
-        let activeCompany = localStorage.getItem('custom_company_id') || localStorage.getItem('activeCompanyId') || "B-2070";
+        let activeCompany = getActiveCompanyId();
 
         let newRecord = {
             companyId: activeCompany,
@@ -947,7 +956,7 @@
         let name = prompt("أدخل اسم الموظف الجديد للرواتب:");
         if(!name) return;
         let salaries = JSON.parse(localStorage.getItem('admin_salaries_full_data') || '[]');
-        salaries.push({ name: name, companyId: 'B-2070', branch: 'الفرع الرئيسي', basic: 1000000 });
+        salaries.push({ name: name, companyId: getActiveCompanyId(), branch: 'الفرع الرئيسي', basic: 1000000 });
         localStorage.setItem('admin_salaries_full_data', JSON.stringify(salaries));
         renderSalaryCards();
         alert("✅ تم تحديث كشف الرواتب وإضافة السجل بنجاح!");
