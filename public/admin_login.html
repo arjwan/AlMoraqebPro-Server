@@ -144,32 +144,26 @@
         }
     };
 
-    function handleAdminLogin() {
-        let compId = document.getElementById('adminCompanyId').value.trim();
-        let user = document.getElementById('adminUser').value.trim();
-        let pass = document.getElementById('adminPass').value.trim();
+   function handleAdminLogin() {
+    let compId = document.getElementById('adminCompanyId').value.trim();
+    let user = document.getElementById('adminUser').value.trim();
+    let pass = document.getElementById('adminPass').value.trim();
 
-        if (!compId || !user || !pass) {
-            alert("⚠️ يرجى تعبئة جميع الحقول المطلوبة (رمز الشركة، اسم المستخدم، وكلمة المرور)!");
-            return;
-        }
+    // 1. التحقق من البيانات (للتجربة المباشرة)
+    if (compId === "" || pass === "") {
+        alert("⚠️ يرجى تعبئة رمز الشركة وكلمة المرور.");
+        return;
+    }
 
-        // حفظ البيانات الأساسية (باستثناء كلمة المرور للأمان)
-        let secureSessionData = {
-            companyId: compId,
-            username: user
-        };
-        localStorage.setItem('secure_admin_session', JSON.stringify(secureSessionData));
-
-        // التحقق من صحة بيانات الدخول
-        if (pass.length >= 4) {
-            alert(`✅ تم التحقق بنجاح. أهلاً بك ${user} في لوحة تحكم شركة (${compId})`);
-            
-            // إنشاء جلسة مؤقتة للأمان
-            sessionStorage.setItem(`manager_logged_in_${compId}`, 'true');
-            
-            // التوجيه المباشر إلى لوحة التحكم الرئيسية للإدارة (admin.html) مع تمرير معرف الشركة
-            window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
+    // 2. محاولة الانتقال المباشر للملف الموجود بجانب هذا الملف في المجلد
+    // نستخدم الرابط النسبي ./admin.html لضمان أن المتصفح يبحث في نفس مجلد public
+    const targetUrl = "./admin.html?company=" + encodeURIComponent(compId);
+    
+    console.log("محاولة التوجيه إلى: " + targetUrl);
+    
+    // 3. التوجيه
+    window.location.href = targetUrl;
+}
         } else {
             alert("❌ كلمة المرور غير صحيحة! الدخول مرفوض.");
         }
