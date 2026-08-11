@@ -180,9 +180,21 @@ app.get('/api/employees/:employeeId/loan-deduction', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+async function migrateCompanyIndexes() {
+    const indexes = await Company.collection.indexes();
+    const legacyIdIndex = indexes.find(index => index.name === 'id_1');
+    if (legacyIdIndex) {
+        // الفهرس id_1 يعود إلى نسخة قديمة من المخطط. إزالته لا تحذف أي سجل.
+        await Company.collection.dropIndex(legacyIdIndex.name);
+        console.log('ℹ️ تمت إزالة فهرس الشركة القديم id_1');
+    }
+    await Company.collection.createIndex({ companyId: 1 }, { unique: true, name: 'companyId_1' });
+}
+
 mongoose.connect(MONGO_URI)
-    .then(() => {
+    .then(async () => {
         console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح');
+        await migrateCompanyIndexes();
         app.listen(PORT, () => console.log(`🚀 السيرفر يعمل الآن على المنفذ: ${PORT}`));
     })
     .catch(err => console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err.message));
