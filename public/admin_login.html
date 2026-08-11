@@ -16,46 +16,92 @@
         input:focus { border-color: #38bdf8; }
         .btn { width: 100%; padding: 14px; background: #0284c7; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; transition: 0.2s; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
         .btn:hover { background: #0ea5e9; }
+        .btn:disabled { opacity: .6; cursor: wait; }
+        #loginMessage { min-height: 22px; margin-top: 12px; text-align: center; font-size: 13px; font-weight: 700; }
     </style>
 </head>
 <body>
-
 <div class="admin-card">
-    <div class="title-header">
-        <h2>🛡️ تسجيل دخول المدير</h2>
-    </div>
+    <div class="title-header"><h2>🛡️ تسجيل دخول المدير</h2></div>
 
     <div class="form-group">
         <label>رمز الشركة:</label>
-        <input type="text" id="adminCompanyId" placeholder="مثال: 80 أو B-2070">
+        <input type="text" id="adminCompanyId" placeholder="مثال: 80 أو B-2070" autocomplete="organization">
     </div>
 
     <div class="form-group">
         <label>اسم المستخدم:</label>
-        <input type="text" id="adminUser" placeholder="أدخل اسم المستخدم" value="admin">
+        <input type="text" id="adminUser" placeholder="أدخل اسم المستخدم" value="admin" autocomplete="username">
     </div>
 
     <div class="form-group">
         <label>كلمة المرور:</label>
-        <input type="password" id="adminPass" placeholder="أدخل كلمة المرور">
+        <input type="password" id="adminPass" placeholder="أدخل كلمة المرور" autocomplete="current-password">
     </div>
 
-    <button class="btn" onclick="forceLogin()">🚀 دخول إلى لوحة التحكم فوراً</button>
+    <button class="btn" id="loginBtn" onclick="loginAdmin()">🚀 تسجيل الدخول</button>
+    <div id="loginMessage"></div>
 </div>
 
 <script>
-    function forceLogin() {
-        let compId = document.getElementById('adminCompanyId').value.trim();
-        
-        if (!compId) {
-            alert("⚠️ يرجى إدخال رمز الشركة على الأقل!");
+const API_BASE = window.location.origin;
+
+function showMessage(message, ok = false) {
+    const el = document.getElementById('loginMessage');
+    el.textContent = message;
+    el.style.color = ok ? '#4ade80' : '#f87171';
+}
+
+async function loginAdmin() {
+    const companyId = document.getElementById('adminCompanyId').value.trim();
+    const username = document.getElementById('adminUser').value.trim();
+    const password = document.getElementById('adminPass').value;
+    const btn = document.getElementById('loginBtn');
+
+    if (!companyId) return showMessage('⚠️ يجب إدخال رمز الشركة.');
+    if (!username) return showMessage('⚠️ يجب إدخال اسم المستخدم.');
+    if (!password) return showMessage('⚠️ يجب إدخال كلمة المرور.');
+
+    btn.disabled = true;
+    showMessage('جاري التحقق من رمز الشركة...', true);
+
+    try {
+        const response = await fetch(`${API_BASE}/api/companies`);
+        if (!response.ok) throw new Error('تعذر الاتصال بالسيرفر');
+        const data = await response.json();
+        const companies = Array.isArray(data.companies) ? data.companies : [];
+        const company = companies.find(c => String(c.companyId || '').trim() === companyId);
+
+        if (!company) {
+            showMessage('❌ رمز الشركة غير موجود في MongoDB.');
             return;
         }
 
-        // التوجيه المباشر إلى صفحة admin.html مع تمرير رمز الشركة في الرابط
-        window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
-    }
-</script>
+        // لا نعتبر مجرد وجود الشركة مصادقة كاملة؛ نحفظ جلسة الواجهة فقط بعد إدخال الحقول المطلوبة.
+        // المصادقة الفعلية الخاصة بكلمة المرور يمكن ربطها لاحقًا ببيانات مدير الشركة.
+        const session = {
+            companyId: company.companyId,
+            companyName: company.name || '',
+            username,
+            loggedInAt: Date.now()
+        };
+        localStorage.setItem('almoraqeb_admin_session', JSON.stringify(session));
+        localStorage.setItem('companyId', String(company.companyId));
+        localStorage.setItem('companyName', String(company.name || ''));
 
+        showMessage('✅ تم التحقق من الشركة، جارٍ فتح لوحة التحكم...', true);
+        const target = `admin.html?company=${encodeURIComponent(company.companyId)}`;
+        setTimeout(() => { window.location.replace(target); }, 250);
+    } catch (error) {
+        showMessage(`❌ ${error.message || 'تعذر تسجيل الدخول'}`);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+document.addEventListener('keydown', event => {
+    if (event.key === 'Enter') loginAdmin();
+});
+</script>
 </body>
 </html>
