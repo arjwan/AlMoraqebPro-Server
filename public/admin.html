@@ -664,8 +664,12 @@
 
     function logoutSystem() {
         if(confirm("هل أنت متأكد من رغبتك في تسجيل الخروج من لوحة تحكم نظام المراقب برو؟")) {
-            alert("🔒 تم تسجيل الخروج بنجاح.");
-            window.location.reload();
+            // نحذف حالة الجلسة فقط؛ تبقى بيانات النظام والطلبات المحفوظة كما هي.
+            localStorage.removeItem('activeUser');
+            localStorage.removeItem('activeCompanyId');
+            localStorage.removeItem('custom_company_id');
+            localStorage.removeItem('registered_device_user');
+            window.location.replace('index.html');
         }
     }
 
