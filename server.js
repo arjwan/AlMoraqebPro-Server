@@ -91,7 +91,6 @@ app.post('/api/companies/register', async (req, res) => {
         const { companyId, id, name, email, phone } = req.body;
         const canonicalCompanyId = (companyId || id || '').trim();
         if (!canonicalCompanyId || !name) return res.status(400).json({ success: false, message: 'بيانات الشركة ناقصة' });
-        // يدعم السجلات القديمة التي استُخدم فيها الاسم id، ويكتب الجديدة بصيغة companyId الموحدة.
         const existingCompany = await Company.findOne({ $or: [{ companyId: canonicalCompanyId }, { id: canonicalCompanyId }] });
         if (existingCompany) return res.status(200).json({ success: true, message: 'الشركة مسجلة مسبقاً', company: existingCompany });
         const company = await new Company({ companyId: canonicalCompanyId, name, email: email || '', phone: phone || '' }).save();
@@ -115,6 +114,16 @@ app.post('/api/employee/request', async (req, res) => {
         const request = await new EmployeeRequest({ ...req.body, salary: req.body.salary ? Number(req.body.salary) : undefined }).save();
         res.status(201).json({ success: true, message: 'تم إرسال الطلب إلى قاعدة البيانات بانتظار الموافقة', requestId: request._id });
     } catch (err) { res.status(500).json({ success: false, message: 'تعذر حفظ طلب الموظف في قاعدة البيانات', error: err.message }); }
+});
+
+// المسار الجديد المضاف لجلب طلبات الموظفين المعلقة الخاصة بالشركة وعرضها في لوحة التحكم
+app.get('/api/employee/requests/:companyId', async (req, res) => {
+    try {
+        const requests = await EmployeeRequest.find({ companyId: req.params.companyId }).sort({ createdAt: -1 }).lean();
+        res.status(200).json({ success: true, requests });
+    } catch (err) { 
+        res.status(500).json({ success: false, error: err.message }); 
+    }
 });
 
 app.post('/api/employee/register', upload.single('photo'), async (req, res) => {
@@ -149,7 +158,6 @@ app.get('/api/employees/:companyId', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// Mobile login: verifies the employee against MongoDB and returns the canonical IDs.
 app.post('/api/mobile/login', async (req, res) => {
     try {
         const { companyId, username, password } = req.body;
@@ -160,7 +168,6 @@ app.post('/api/mobile/login', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// Mobile attendance: persists the event in the same MongoDB database.
 app.post('/api/attendance', async (req, res) => {
     try {
         const { employeeId, fingerprintToken, latitude, longitude, timestamp, type } = req.body;
@@ -213,7 +220,6 @@ async function migrateCompanyIndexes() {
     const indexes = await Company.collection.indexes();
     const legacyIdIndex = indexes.find(index => index.name === 'id_1');
     if (legacyIdIndex) {
-        // الفهرس id_1 يعود إلى نسخة قديمة من المخطط. إزالته لا تحذف أي سجل.
         await Company.collection.dropIndex(legacyIdIndex.name);
         console.log('ℹ️ تمت إزالة فهرس الشركة القديم id_1');
     }
