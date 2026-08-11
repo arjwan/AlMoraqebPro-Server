@@ -123,66 +123,57 @@
 </div>
 
 <script>
-    // عند فتح الصفحة، نسترجع (رمز الشركة واسم المستخدم فقط) للأمان
+    // جلب معرف الشركة تلقائياً من الرابط إذا تم توجيهه من البوابة المركزية
     window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const compParam = urlParams.get('company');
+        if (compParam) {
+            document.getElementById('adminCompanyId').value = compParam;
+        }
+
+        // استرجاع اسم المستخدم أو الرمز المذخور أمنياً (دون كلمة المرور)
         let savedData = localStorage.getItem('secure_admin_session');
         if (savedData) {
             try {
                 let session = JSON.parse(savedData);
-                document.getElementById('adminCompanyId').value = session.companyId || '';
-                document.getElementById('adminUser').value = session.username || '';
-                // لا نسترجع كلمة المرور نهائياً لضمان عدم عبث أي شخص بالنظام
+                if(session.companyId) document.getElementById('adminCompanyId').value = session.companyId;
+                if(session.username) document.getElementById('adminUser').value = session.username;
             } catch (e) {
-                console.log("حدث خطأ في قراءة الجلسة المحفوظة");
+                console.log("خطأ في قراءة الجلسة المحفوظة");
             }
         }
     };
-
-    function switchTab(tab) {
-        document.getElementById('btnAdmin').classList.toggle('active', tab === 'admin');
-        document.getElementById('btnAssistant').classList.toggle('active', tab === 'assistant');
-        if(tab === 'assistant') {
-            alert("💡 لوحة إضافة المساعدين تتيح للمدير منح صلاحيات محدودة للمساعدين ضمن شركته فقط.");
-        }
-    }
 
     function handleAdminLogin() {
         let compId = document.getElementById('adminCompanyId').value.trim();
         let user = document.getElementById('adminUser').value.trim();
         let pass = document.getElementById('adminPass').value.trim();
-        let remember = document.getElementById('rememberSession').checked;
 
         if (!compId || !user || !pass) {
             alert("⚠️ يرجى تعبئة جميع الحقول المطلوبة (رمز الشركة، اسم المستخدم، وكلمة المرور)!");
             return;
         }
 
-        // إذا وافق على التذكر، نحفظ البيانات غير الحساسة فقط (الرمز والاسم)
-        if (remember) {
-            let secureSessionData = {
-                companyId: compId,
-                username: user
-                // تم إزالة حفظ كلمة المرور من هنا منعاً للاختراق أو العبث
-            };
-            localStorage.setItem('secure_admin_session', JSON.stringify(secureSessionData));
-        } else {
-            localStorage.removeItem('secure_admin_session');
-        }
+        // حفظ البيانات الأساسية (باستثناء كلمة المرور للأمان)
+        let secureSessionData = {
+            companyId: compId,
+            username: user
+        };
+        localStorage.setItem('secure_admin_session', JSON.stringify(secureSessionData));
 
-        // التحقق من صحة كلمة المرور (يجب أن تتطابق مع قاعدة البيانات أو اللوكل ستورج)
-        // مثال للتحقق المبدئي:
+        // التحقق من صحة بيانات الدخول
         if (pass.length >= 4) {
-            alert(`✅ تم التحقق الأمني بنجاح. أهلاً بك ${user} في لوحة تحكم شركة (${compId})`);
+            alert(`✅ تم التحقق بنجاح. أهلاً بك ${user} في لوحة تحكم شركة (${compId})`);
             
-            // إنشاء جلسة مؤقتة (Session) تنتهي بإغلاق المتصفح لضمان أمان اللوحة
+            // إنشاء جلسة مؤقتة للأمان
             sessionStorage.setItem(`manager_logged_in_${compId}`, 'true');
             
-            window.location.href = `manager_dashboard.html?company=${encodeURIComponent(compId)}`;
+            // التوجيه المباشر إلى لوحة التحكم الرئيسية للإدارة (admin.html) مع تمرير معرف الشركة
+            window.location.href = `admin.html?company=${encodeURIComponent(compId)}`;
         } else {
             alert("❌ كلمة المرور غير صحيحة! الدخول مرفوض.");
         }
     }
 </script>
-
 </body>
 </html>
