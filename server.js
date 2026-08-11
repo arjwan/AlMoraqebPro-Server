@@ -26,6 +26,23 @@ const companySchema = new mongoose.Schema({
 });
 const Company = mongoose.model('Company', companySchema);
 
+const employeeRequestSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true },
+    companyName: String,
+    name: { type: String, required: true },
+    jobTitle: String,
+    workLocation: String,
+    salary: Number,
+    shift: String,
+    workHours: Number,
+    wageType: String,
+    socialSecurity: String,
+    location: String,
+    status: { type: String, default: 'pending', index: true },
+    createdAt: { type: Date, default: Date.now }
+});
+const EmployeeRequest = mongoose.model('EmployeeRequest', employeeRequestSchema);
+
 const employeeSchema = new mongoose.Schema({
     companyId: { type: String, required: true, index: true },
     companyName: String,
@@ -89,6 +106,17 @@ app.get('/api/companies', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+app.post('/api/employee/request', async (req, res) => {
+    try {
+        const { companyId, name } = req.body;
+        if (!companyId || !name) return res.status(400).json({ success: false, message: 'بيانات طلب الموظف ناقصة' });
+        const company = await Company.findOne({ $or: [{ companyId }, { id: companyId }] }).lean();
+        if (!company) return res.status(404).json({ success: false, message: 'رمز الشركة غير مسجل' });
+        const request = await new EmployeeRequest({ ...req.body, salary: req.body.salary ? Number(req.body.salary) : undefined }).save();
+        res.status(201).json({ success: true, message: 'تم إرسال الطلب إلى قاعدة البيانات بانتظار الموافقة', requestId: request._id });
+    } catch (err) { res.status(500).json({ success: false, message: 'تعذر حفظ طلب الموظف في قاعدة البيانات', error: err.message }); }
+});
+
 app.post('/api/employee/register', upload.single('photo'), async (req, res) => {
     try {
         const photoPath = req.file ? `/uploads/${req.file.filename}` : (req.body.photo || '');
@@ -135,7 +163,7 @@ app.post('/api/mobile/login', async (req, res) => {
 // Mobile attendance: persists the event in the same MongoDB database.
 app.post('/api/attendance', async (req, res) => {
     try {
-        const { employeeId, fingerprintToken, latitude, longitude, timestamp } = req.body;
+        const { employeeId, fingerprintToken, latitude, longitude, timestamp, type } = req.body;
         if (!employeeId) return res.status(400).json({ success: false, message: 'معرف الموظف مطلوب' });
         const employee = await Employee.findById(employeeId).lean();
         if (!employee) return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
@@ -145,7 +173,8 @@ app.post('/api/attendance', async (req, res) => {
             fingerprintToken: fingerprintToken || '',
             latitude: latitude != null ? Number(latitude) : undefined,
             longitude: longitude != null ? Number(longitude) : undefined,
-            timestamp: timestamp ? new Date(timestamp) : new Date()
+            timestamp: timestamp ? new Date(timestamp) : new Date(),
+            type: type || 'attendance'
         }).save();
         res.status(201).json({ success: true, message: 'تم تسجيل الحضور وحفظه في MongoDB', attendanceId: attendance._id });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }

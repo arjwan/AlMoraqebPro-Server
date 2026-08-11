@@ -3,256 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المراقب برو - بوابة الحضور والانصراف الذكية</title>
+    <title>المراقب برو - الحضور والانصراف</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .attendance-card { background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15); padding: 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); width: 100%; max-width: 480px; text-align: center; position: relative; }
-        .server-status { display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); padding: 4px 12px; border-radius: 20px; font-size: 11px; color: #34d399; margin-bottom: 20px; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .attendance-card { background: rgba(30, 41, 59, .95); border: 1px solid rgba(255,255,255,.15); padding: 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,.6); width: 100%; max-width: 480px; text-align: center; }
+        .server-status { display: inline-flex; align-items: center; gap: 6px; background: rgba(16,185,129,.15); padding: 4px 12px; border-radius: 20px; font-size: 11px; color: #34d399; margin-bottom: 20px; border: 1px solid rgba(16,185,129,.3); }
         .status-dot { width: 7px; height: 7px; background: #34d399; border-radius: 50%; box-shadow: 0 0 6px #34d399; }
-        h2 { font-size: 22px; margin-bottom: 6px; color: #f1f5f9; }
-        .sub-info { font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
-        .shift-badge { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 6px 12px; border-radius: 10px; font-size: 12px; margin-bottom: 20px; font-weight: bold; }
-        .clock-display { font-size: 32px; font-weight: 900; color: #38bdf8; background: rgba(15, 23, 42, 0.6); padding: 15px; border-radius: 16px; border: 2px solid rgba(56, 189, 248, 0.2); margin-bottom: 25px; letter-spacing: 2px; }
-        
-        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 14px; font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 12px; transition: all 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px; color: white; }
-        .btn-attendance { background: linear-gradient(135deg, #059669 0%, #047857 100%); }
-        .btn-leave { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); }
-        .btn-services { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); }
-        
-        .biometric-selector { display: flex; gap: 10px; margin-bottom: 15px; }
-        .bio-option { flex: 1; padding: 10px; background: #334155; border: 2px solid #475569; border-radius: 10px; color: white; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .bio-option.active { background: #0284c7; border-color: #38bdf8; }
-
-        .location-status { font-size: 11px; color: #cbd5e1; margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
-        #nativeCameraInput { display: none; }
+        h2 { font-size: 22px; margin-bottom: 6px; } .sub-info { font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
+        .clock-display { font-size: 32px; font-weight: 900; color: #38bdf8; background: rgba(15,23,42,.6); padding: 15px; border-radius: 16px; border: 2px solid rgba(56,189,248,.2); margin-bottom: 25px; }
+        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 14px; font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 12px; color: white; }
+        .btn-attendance { background: linear-gradient(135deg,#059669,#047857); } .btn-leave { background: linear-gradient(135deg,#dc2626,#b91c1c); } .btn-services { background: linear-gradient(135deg,#0284c7,#0369a1); }
+        .location-status { font-size: 11px; color: #cbd5e1; margin-top: 15px; background: rgba(0,0,0,.3); padding: 10px; border-radius: 8px; }
     </style>
 </head>
 <body>
-
     <div class="attendance-card">
-        <div class="server-status">
-            <div class="status-dot"></div>
-            <span id="serverStatusText">متصل بالسيرفر المركزي واللوحة</span>
-        </div>
-
-        <h2>⏱️ البصمة الحقيقية للحضور والانصراف</h2>
-        <div class="sub-info" id="empDetails">الموظف: جاري التحميل... | الشركة: --</div>
-        <div class="shift-badge" id="shiftInfoText">🕒 الشفت الحالي: 08:00 ص - 04:00 م</div>
-
+        <div class="server-status"><div class="status-dot"></div><span id="serverStatusText">متصل بالسيرفر المركزي</span></div>
+        <h2>⏱️ الحضور والانصراف</h2>
+        <div class="sub-info" id="empDetails">جاري التحقق من الحساب...</div>
         <div class="clock-display" id="liveClock">00:00:00</div>
-
-        <div style="text-align: right; font-size: 11px; margin-bottom: 5px; color: #94a3b8;">اختر طريقة التحقق الحيوي:</div>
-        <div class="biometric-selector">
-            <button type="button" id="btnFaceMode" class="bio-option active" onclick="setBioMode('face')">📷 بصمة الوجه (كاميرا الهاتف)</button>
-            <button type="button" id="btnFingerMode" class="bio-option" onclick="setBioMode('fingerprint')">👆 بصمة الجهاز البيومترية</button>
-        </div>
-
-        <button type="button" class="action-btn btn-attendance" onclick="processAttendanceAction('حضور')">
-            🟢 تسجيل حضور فعلي (بصمة + GPS + التحقق من الشفت)
-        </button>
-
-        <button type="button" class="action-btn btn-leave" onclick="processAttendanceAction('انصراف')">
-            🔴 تسجيل انصراف فعلي (بصمة + GPS + نهاية الدوام)
-        </button>
-
-        <button type="button" class="action-btn btn-services" onclick="window.location.href='services.html'">
-            📁 الانتقال إلى صفحة الخدمات والطلبات
-        </button>
-
-        <div class="location-status" id="locStatusText">📍 جاري جلب الإحداثيات الحقيقية بدقة عالية...</div>
+        <button type="button" class="action-btn btn-attendance" onclick="recordAttendance('attendance')">🟢 تسجيل الحضور عبر GPS</button>
+        <button type="button" class="action-btn btn-leave" onclick="recordAttendance('departure')">🔴 تسجيل الانصراف عبر GPS</button>
+        <button type="button" class="action-btn btn-services" onclick="window.location.href='services.html'">📁 الانتقال إلى صفحة الخدمات والطلبات</button>
+        <div class="location-status" id="locStatusText">📍 جاري جلب الإحداثيات...</div>
     </div>
-
-    <input type="file" id="nativeCameraInput" accept="image/*" capture="user">
-
     <script>
-        const SERVER_URL = "https://almoraqebpro-server.onrender.com";
-        let currentBioMode = "face";
+        const SERVER_URL = window.location.origin;
         let cachedPosition = null;
 
-        // افتراض أوقات الشفت (يمكن جلبها من إعدادات لوحة المدير)
-        const currentShift = { start: "08:00", end: "16:00", gracePeriodMinutes: 30 };
-
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('liveClock').innerText = now.toLocaleTimeString('en-US', { hour12: true });
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        function setBioMode(mode) {
-            currentBioMode = mode;
-            document.getElementById('btnFaceMode').classList.toggle('active', mode === 'face');
-            document.getElementById('btnFingerMode').classList.toggle('active', mode === 'fingerprint');
-        }
+        function updateClock() { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString('en-US', { hour12: true }); }
+        setInterval(updateClock, 1000); updateClock();
 
         window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const user = urlParams.get('user') || localStorage.getItem('activeUser') || 'mohmmedali';
-            const company = urlParams.get('company') || localStorage.getItem('activeCompanyId') || 'B-2070';
-
-            localStorage.setItem('activeUser', user);
-            localStorage.setItem('activeCompanyId', company);
-            document.getElementById('empDetails').innerText = `الموظف: ${user} | الشركة: ${company}`;
-            
+            const employeeId = new URLSearchParams(window.location.search).get('employeeId') || localStorage.getItem('activeEmployeeId');
+            if (!employeeId) { window.location.replace('index.html'); return; }
+            document.getElementById('empDetails').innerText = `الموظف: ${localStorage.getItem('activeUser') || '--'} | الشركة: ${localStorage.getItem('activeCompanyId') || '--'}`;
             fetchRealGPS();
         });
 
         async function fetchRealGPS() {
             const locEl = document.getElementById('locStatusText');
-            return new Promise((resolve, reject) => {
-                if (!navigator.geolocation) {
-                    locEl.innerText = "❌ المتصفح لا يدعم تحديد الموقع الجغرافي";
-                    reject("No GPS");
-                    return;
-                }
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        cachedPosition = {
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude,
-                            accuracy: pos.coords.accuracy
-                        };
-                        locEl.innerHTML = `📍 <b>GPS حقيقي مؤكد:</b> خط عرض ${cachedPosition.lat.toFixed(4)}، خط طول ${cachedPosition.lng.toFixed(4)} <br><span style="color: #34d399;">(دقة الموقع: ضمن حدود ${Math.round(cachedPosition.accuracy)} متر)</span>`;
-                        resolve(cachedPosition);
-                    },
-                    (err) => {
-                        locEl.innerText = "⚠️ فشل جلب الموقع الحقيقي! يرجى تفعيل خدمة الـ GPS في هاتفك.";
-                        reject(err);
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
-            });
+            if (!navigator.geolocation) throw new Error('المتصفح لا يدعم تحديد الموقع الجغرافي');
+            return new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(
+                pos => {
+                    cachedPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
+                    locEl.innerHTML = `📍 GPS متصل: ${cachedPosition.lat.toFixed(4)}، ${cachedPosition.lng.toFixed(4)} <br><span style="color:#34d399;">دقة الموقع: ${Math.round(cachedPosition.accuracy)} متر</span>`;
+                    resolve(cachedPosition);
+                },
+                () => { locEl.innerText = '⚠️ فعّل خدمة GPS ثم حاول مرة أخرى.'; reject(new Error('تعذر جلب الموقع')); },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            ));
         }
 
-        async function verifyRealFingerprint() {
-            if (!window.PublicKeyCredential) {
-                alert("⚠️ متصفحك لا يدعم بصمة البيومتري.");
-                return false;
-            }
+        async function recordAttendance(type) {
+            const employeeId = localStorage.getItem('activeEmployeeId');
+            if (!employeeId) { window.location.replace('index.html'); return; }
             try {
-                const challenge = new Uint8Array([79, 52, 25, 18, 93, 102, 11]);
-                const publicKey = { challenge, timeout: 60000, userVerification: "required" };
-                const credential = await navigator.credentials.get({ publicKey });
-                return credential ? true : false;
-            } catch (err) {
-                alert("⚠️ لم تتم مطابقة بصمة الإصبع الحقيقية أو تم إلغاؤها.");
-                return false;
-            }
-        }
-
-        async function verifyRealFaceNative() {
-            return new Promise((resolve) => {
-                const fileInput = document.getElementById('nativeCameraInput');
-                fileInput.value = ""; 
-                fileInput.onchange = (e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                };
-                fileInput.click();
-            });
-        }
-
-        // التحقق من توافق الوقت مع الشفت وإرسال الإشعار الفوري
-        function evaluateShiftCompliance(actionType) {
-            const now = new Date();
-            const currentHours = now.getHours();
-            const currentMinutes = now.getMinutes();
-            const currentTimeMins = currentHours * 60 + currentMinutes;
-
-            const [startH, startM] = currentShift.start.split(':').map(Number);
-            const shiftStartMins = startH * 60 + startM;
-
-            const [endH, endM] = currentShift.end.split(':').map(Number);
-            const shiftEndMins = endH * 60 + endM;
-
-            let statusResult = "نجاح";
-            let messageText = "";
-
-            if (actionType === 'حضور') {
-                const maxAllowedMins = shiftStartMins + currentShift.gracePeriodMinutes;
-                if (currentTimeMins > maxAllowedMins) {
-                    statusResult = "فشل (متأخر)";
-                    messageText = `⚠️ تنبيه فشل الحضور: لقد تجاوزت وقت السماح للشفت المحدد (${currentShift.start}). وقتك الحالي متأخر.`;
-                } else {
-                    messageText = `✅ تم تسجيل الحضور بالنجاح في الوقت المحدد للشفت.`;
-                }
-            } else if (actionType === 'انصراف') {
-                if (currentTimeMins < shiftEndMins) {
-                    statusResult = "فشل (انصراف مبكر)";
-                    messageText = `⚠️ تنبيه فشل الانصراف: لم تنتهِ أوقات الدوام الرسمي للشفت بعد (${currentShift.end}). طُلب منك الالتزام حتى نهاية الوقت.`;
-                } else {
-                    messageText = `✅ تم تسجيل انصراف نهاية الدوام بنجاح بعد استكمال الوقت الرسمي.`;
-                }
-            }
-
-            return { statusResult, messageText };
-        }
-
-        async function processAttendanceAction(actionType) {
-            try {
-                let locationData;
-                try {
-                    locationData = await fetchRealGPS();
-                } catch (e) {
-                    alert("❌ لا يمكن تسجيل الحضور بدون إحداثيات GPS حقيقية ومفعلة!");
-                    return;
-                }
-
-                // تقييم الشفت والوقت وإعطاء الإشعار الفوري للموظف
-                const evaluation = evaluateShiftCompliance(actionType);
-                
-                // حفظ الإشعار في سجلات الإشعارات للموظف لكي يظهر في صفحة الخدمات
-                let notifications = JSON.parse(localStorage.getItem('employee_notifications') || '[]');
-                notifications.unshift({
-                    id: Date.now(),
-                    title: `إشعار ${actionType} - ${evaluation.statusResult}`,
-                    body: evaluation.messageText,
-                    time: new Date().toLocaleString(),
-                    type: evaluation.statusResult.includes('نجاح') ? 'success' : 'danger'
+                const position = await fetchRealGPS();
+                const response = await fetch(`${SERVER_URL}/api/attendance`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employeeId, latitude: position.lat, longitude: position.lng, timestamp: new Date().toISOString(), type })
                 });
-                localStorage.setItem('employee_notifications', JSON.stringify(notifications));
-
-                if (!evaluation.statusResult.includes('نجاح')) {
-                    alert(evaluation.messageText);
-                    // حتى لو فشل الوقت، هل نسمح بالبصمة أم نوقفها؟ النظام يسجل الحالة كفشل ويبلغ الإدارة
-                }
-
-                let isVerified = false;
-                if (currentBioMode === 'fingerprint') {
-                    isVerified = await verifyRealFingerprint();
-                } else {
-                    isVerified = await verifyRealFaceNative();
-                }
-
-                if (!isVerified) {
-                    alert("❌ لم يتم استكمال التحقق الحيوي (تم الغاء التقاط الصورة أو البصمة).");
-                    return;
-                }
-
-                const liveRecord = {
-                    companyId: localStorage.getItem('activeCompanyId') || "B-2070",
-                    employeeUsername: localStorage.getItem('activeUser') || "mohmmedali",
-                    type: actionType,
-                    status: evaluation.statusResult,
-                    verificationMethod: currentBioMode,
-                    gpsLocation: locationData,
-                    timestamp: new Date().toISOString(),
-                    verifiedReal: true
-                };
-
-                let masterLogs = JSON.parse(localStorage.getItem('admin_master_attendance_records') || '[]');
-                masterLogs.push(liveRecord);
-                localStorage.setItem('admin_master_attendance_records', JSON.stringify(masterLogs));
-
-                alert(`📌 نتيجة العملية: ${evaluation.messageText}\n\n✅ تم توثيق السجل وإرساله للوحة المدير.`);
-
-            } catch (err) {
-                console.error(err);
-                alert("⚠️ حدث خطأ أثناء تنفيذ عملية التسجيل.");
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'تعذر حفظ الحركة في السيرفر');
+                alert(type === 'attendance' ? '✅ تم تسجيل الحضور في السيرفر.' : '✅ تم تسجيل الانصراف في السيرفر.');
+            } catch (error) {
+                alert(`⚠️ ${error.message}`);
             }
         }
     </script>

@@ -23,14 +23,12 @@
         label { font-size: 12px; font-weight: 700; color: #334155; }
         input, select { width: 100%; padding: 11px 14px; border: 2px solid #e2e8f0; background: #f8fafc; border-radius: 14px; font-size: 14px; outline: none; }
         .submit-btn { grid-column: span 2; width: 100%; padding: 13px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 14px; font-size: 15px; font-weight: 800; cursor: pointer; }
-        .fingerprint-btn { grid-column: span 2; width: 100%; padding: 13px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; border: none; border-radius: 14px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
-        .fingerprint-btn:hover { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); }
         .alert-box { display: none; grid-column: span 2; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 13px; margin-top: 5px; }
         .alert-success { background: rgba(16, 185, 129, 0.15); color: #047857; border: 1px solid #10b981; }
         .alert-error { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border: 1px solid #ef4444; }
         .developer-container { grid-column: span 2; background: #0f172a; border-radius: 16px; padding: 20px; color: #f8fafc; margin-top: 5px; text-align: center; }
         .developer-footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(203, 213, 225, 0.6); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b; flex-wrap: wrap; gap: 10px; }
-        @media (max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } .input-group.full, .submit-btn, .fingerprint-btn, .alert-box, .developer-container { grid-column: span 1; } }
+        @media (max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } .input-group.full, .submit-btn, .alert-box, .developer-container { grid-column: span 1; } }
     </style>
 </head>
 <body>
@@ -43,7 +41,7 @@
 
         <div class="portal-header">
             <h1>☀️ المراقب برو</h1>
-            <p>منظومة الإدارة المتكاملة مع بصمة الهاتف الذكية</p>
+            <p>منظومة الإدارة المتكاملة المتصلة بالسيرفر المركزي</p>
         </div>
 
         <div class="switcher">
@@ -60,13 +58,6 @@
                     <input type="text" id="logComp" placeholder="مثال: B-2080" required>
                 </div>
                 
-                <!-- زر الدخول السريع ببصمة الهاتف -->
-                <button type="button" class="fingerprint-btn" onclick="loginWithBiometrics()">
-                    👆 تسجيل الدخول ببصمة الهاتف (دخول فوري)
-                </button>
-
-                <div style="grid-column: span 2; text-align: center; font-size: 12px; color: #64748b; margin: 5px 0;">أو باستخدام البيانات التقليدية (عند تغيير الهاتف):</div>
-
                 <div class="input-group full">
                     <label>اسم المستخدم:</label>
                     <input type="text" id="logUser" placeholder="أدخل اسم المستخدم">
@@ -75,9 +66,9 @@
                     <label>كلمة المرور:</label>
                     <input type="password" id="logPass" placeholder="أدخل كلمة المرور">
                 </div>
-                <button type="submit" class="submit-btn">🚀 دخول بالنظام التقليدي</button>
+                <button type="submit" class="submit-btn">🚀 تسجيل الدخول</button>
                 
-                <div id="logError" class="alert-box alert-error">⚠️ بيانات الدخول غير صحيحة أو البصمة غير مسجلة على هذا الجهاز!</div>
+                <div id="logError" class="alert-box alert-error">⚠️ بيانات الدخول غير صحيحة أو تعذر الاتصال بالسيرفر.</div>
             </form>
         </div>
 
@@ -167,7 +158,7 @@
     </div>
 
     <script>
-        const SERVER_URL = "https://almoraqebpro-server.onrender.com";
+        const SERVER_URL = window.location.origin;
         let gpsData = { lat: 33.3152, lng: 44.3661 };
 
         // --- نظام Offline-First الذكي ---
@@ -232,60 +223,6 @@
             if(val) { localStorage.setItem('activeCompanyId', val); document.getElementById('logComp').value = val; }
         }
 
-        // --- نظام تسجيل الدخول ببصمة الهاتف الذكية (WebAuthn) ---
-        async function loginWithBiometrics() {
-            let alertBox = document.getElementById('logError');
-            alertBox.style.display = 'block';
-            
-            // التحقق من توفر دعم بصمة الإصبع في المتصفح والهاتف
-            if (!window.PublicKeyCredential) {
-                alertBox.style.color = "#b91c1c";
-                alertBox.innerText = "⚠️ متصفحك لا يدعم بصمة البيومتري، يرجى استخدام اسم المستخدم وكلمة المرور.";
-                return;
-            }
-
-            try {
-                alertBox.style.color = "#0284c7";
-                alertBox.innerText = "👉 جاري تفعيل قارئ بصمة الهاتف... يرجى التحقق.";
-
-                // محاولة إجراء المصادقة البيومترية المحلية
-                const publicKey = {
-                    challenge: new Uint8Array([21, 31, 105, 78, 18, 45, 67, 89]),
-                    timeout: 60000,
-                    userVerification: "required"
-                };
-
-                // استدعاء مستشعر البصمة في الهاتف
-                await navigator.credentials.get({ publicKey });
-
-                // نجاح البصمة
-                let savedUser = localStorage.getItem('registered_device_user');
-                let comp = document.getElementById('logComp').value || localStorage.getItem('activeCompanyId') || 'DEFAULT';
-
-                if (!savedUser) {
-                    // إذا لم يتم ربط الهاتف مسبقاً، نطلب إدخال اسم المستخدم لأول مرة لربطه بالجهاز
-                    savedUser = prompt("أدخل اسم المستخدم الخاص بك لربط البصمة بهذا الهاتف لأول مرة:");
-                    if (savedUser) {
-                        localStorage.setItem('registered_device_user', savedUser);
-                    } else {
-                        alertBox.innerText = "⚠️ تم إلغاء الربط. يرجى إدخال البيانات يدوياً.";
-                        return;
-                    }
-                }
-
-                alertBox.style.color = "#047857";
-                alertBox.innerText = "✅ تمت مطابقة البصمة بنجاح! جاري تحويلك للبوابة...";
-                setTimeout(() => {
-                    window.location.href = `attachment.html?user=${savedUser}&auth=biometric`;
-                }, 900);
-
-            } catch (err) {
-                // في حال فشل البصمة أو تغيير الهاتف (عدم تطابق الجهاز أو إلغاء المستخدم)
-                alertBox.style.color = "#b91c1c";
-                alertBox.innerText = "⚠️ لم يتم التعرف على البصمة أو تم تغيير الهاتف! يرجى إدخال اسم المستخدم وكلمة المرور أدناه.";
-            }
-        }
-
         // --- إرسال طلب انضمام الموظف الجديد للإدارة ---
         async function executeRegister(e) {
             e.preventDefault();
@@ -304,11 +241,8 @@
                 status: 'pending'
             };
 
-            await safeApiCall('/api/employee/request', 'POST', employeeRequest);
-            
-            let pendingList = JSON.parse(localStorage.getItem(`pending_requests_${employeeRequest.companyId}`) || '[]');
-            pendingList.push(employeeRequest);
-            localStorage.setItem(`pending_requests_${employeeRequest.companyId}`, JSON.stringify(pendingList));
+            const result = await safeApiCall('/api/employee/request', 'POST', employeeRequest);
+            if (!result.success || result.offline) return;
             
             let successBox = document.getElementById('regSuccess');
             successBox.style.display = 'block';
@@ -319,28 +253,37 @@
             }, 2200);
         }
 
-        // --- تنفيذ الدخول بالنظام التقليدي (عند تغيير الهاتف أو عدم تفعيل البصمة) ---
-        function executeLogin(e) {
+        // التحقق من حساب الموظف من قاعدة البيانات قبل فتح بوابة الهاتف.
+        async function executeLogin(e) {
             e.preventDefault();
-            const comp = document.getElementById('logComp').value;
-            const user = document.getElementById('logUser').value;
+            const comp = document.getElementById('logComp').value.trim();
+            const user = document.getElementById('logUser').value.trim();
+            const password = document.getElementById('logPass').value;
             let alertBox = document.getElementById('logError');
             
             alertBox.style.display = 'block';
-            if((user === 'admin') && document.getElementById('logPass').value === 'admin123') {
+            alertBox.style.color = "#0284c7";
+            alertBox.innerText = "⏳ جاري التحقق من بيانات الدخول...";
+            try {
+                const response = await fetch(`${SERVER_URL}/api/mobile/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ companyId: comp, username: user, password })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'بيانات الدخول غير صحيحة');
+                const employee = result.employee;
+                localStorage.setItem('activeUser', employee.username);
+                localStorage.setItem('activeCompanyId', employee.companyId);
+                localStorage.setItem('activeEmployeeId', employee._id);
                 alertBox.style.color = "#047857";
-                alertBox.innerText = "✅ تم التحقق من حساب المدير بنجاح!";
+                alertBox.innerText = "✅ تم التحقق من الحساب بنجاح!";
                 setTimeout(() => {
-                    window.location.href = `admin.html?company=${comp}`;
-                }, 800);
-            } else {
-                alertBox.style.color = "#0284c7";
-                alertBox.innerText = "⏳ جاري التحقق من الحساب والانتقال للبوابة...";
-                // حفظ اسم المستخدم لهذا الجهاز لتفعيل البصمة في المرات القادمة
-                if(user) localStorage.setItem('registered_device_user', user);
-                setTimeout(() => {
-                    window.location.href = `attachment.html?user=${user}`;
+                    window.location.href = `attachment.html?employeeId=${encodeURIComponent(employee._id)}`;
                 }, 1000);
+            } catch (error) {
+                alertBox.style.color = "#b91c1c";
+                alertBox.innerText = `⚠️ ${error.message}`;
             }
         }
 
