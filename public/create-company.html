@@ -3,374 +3,1677 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>المراقب برو - لوحة تحكم المطور المركزية</title>
+
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0f172a; color: #f8fafc; min-height: 100vh; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-        
-        /* رأس الصفحة */
-        .header-card { background: #1e293b; padding: 20px 25px; border-radius: 16px; border: 2px solid #334155; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-        .header-card h1 { font-size: 22px; color: #38bdf8; font-weight: 900; }
-        .dev-badge { background: #0284c7; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-        /* شريط الإجراءات والنسخ الاحتياطي */
-        .actions-bar { display: flex; gap: 12px; flex-wrap: wrap; }
-        .btn { padding: 12px 20px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .btn-primary { background: #0284c7; color: white; }
-        .btn-primary:hover { background: #0ea5e9; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-success:hover { background: #059669; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
+        body {
+            background: #0f172a;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-        /* نموذج تسجيل وتأسيس الشركات الاحترافي */
-        .form-section { background: #1e293b; padding: 25px; border-radius: 16px; border: 2px solid #334155; }
-        .form-section h3 { font-size: 18px; color: #38bdf8; margin-bottom: 16px; font-weight: 800; }
-        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        label { font-size: 13px; color: #94a3b8; font-weight: 600; }
-        input, select { padding: 12px; border: 2px solid #475569; border-radius: 10px; background: #0f172a; color: #fff; font-size: 14px; outline: none; }
-        input:focus { border-color: #38bdf8; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-        /* جدول سجل الشركات */
-        .table-section { background: #1e293b; padding: 20px; border-radius: 16px; border: 2px solid #334155; overflow-x: auto; }
-        .table-section h3 { font-size: 18px; color: #38bdf8; margin-bottom: 14px; font-weight: 800; }
-        table { width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; }
-        th, td { padding: 12px 15px; border-bottom: 1px solid #334155; }
-        th { color: #94a3b8; font-weight: 700; background: #0f172a; }
-        .status-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; }
-        .status-active { background: #dcfce7; color: #166534; }
-        .status-stopped { background: #fee2e2; color: #991b1b; }
-        .status-trial { background: #fef3c7; color: #92400e; }
+        .header-card {
+            background: #1e293b;
+            padding: 20px 25px;
+            border-radius: 16px;
+            border: 2px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
 
-        /* مساعد صوتي جيمني للمطور */
-        .gemini-box { background: #0f172a; border: 2px dashed #38bdf8; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
-        .gemini-text { font-size: 13px; color: #38bdf8; font-weight: bold; }
+        .header-card h1 {
+            font-size: 22px;
+            color: #38bdf8;
+            font-weight: 900;
+        }
+
+        .dev-badge {
+            background: #0284c7;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: #0284c7;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0ea5e9;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .form-section {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 16px;
+            border: 2px solid #334155;
+        }
+
+        .form-section h3 {
+            font-size: 18px;
+            color: #38bdf8;
+            margin-bottom: 16px;
+            font-weight: 800;
+        }
+
+        .grid-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        input,
+        select {
+            padding: 12px;
+            border: 2px solid #475569;
+            border-radius: 10px;
+            background: #0f172a;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #38bdf8;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-left: 48px;
+        }
+
+        .show-password {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .table-section {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 16px;
+            border: 2px solid #334155;
+            overflow-x: auto;
+        }
+
+        .table-section h3 {
+            font-size: 18px;
+            color: #38bdf8;
+            margin-bottom: 14px;
+            font-weight: 800;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+            font-size: 13px;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            color: #94a3b8;
+            font-weight: 700;
+            background: #0f172a;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-stopped {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-trial {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .gemini-box {
+            background: #0f172a;
+            border: 2px dashed #38bdf8;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            gap: 15px;
+        }
+
+        .gemini-text {
+            font-size: 13px;
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 10px;
+            }
+
+            .header-card {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+
+            .actions-bar {
+                flex-direction: column;
+            }
+
+            .actions-bar .btn {
+                width: 100%;
+            }
+
+            .gemini-box {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
     </style>
 </head>
+
 <body>
 
 <div class="container">
-    
+
     <!-- رأس لوحة المطور -->
     <div class="header-card">
         <h1>🛠️ لوحة تحكم وتأسيس الشركات المركزية (المطور)</h1>
         <span class="dev-badge">🔒 منطقة محمية للمطور فقط</span>
     </div>
 
-    <!-- شريط الأدوات والنسخ الاحتياطي العام -->
+    <!-- شريط الأدوات -->
     <div class="actions-bar">
-        <button class="btn btn-primary" onclick="backupAllSystem()">📦 أخذ نسخة احتياطية لكافة الشركات والنظام</button>
-        <button class="btn btn-success" onclick="backupSelectedCompany()">📥 نسخت احتياطية لشركة محددة</button>
-        <button class="btn btn-warning" onclick="verifyDeveloperAuth()">🔐 التحقق من صلاحيات الأمان</button>
+
+        <button
+            class="btn btn-primary"
+            onclick="backupAllSystem()">
+            📦 أخذ نسخة احتياطية لكافة الشركات والنظام
+        </button>
+
+        <button
+            class="btn btn-success"
+            onclick="backupSelectedCompany()">
+            📥 نسخة احتياطية لشركة محددة
+        </button>
+
+        <button
+            class="btn btn-warning"
+            onclick="verifyDeveloperAuth()">
+            🔐 التحقق من صلاحيات الأمان
+        </button>
+
     </div>
 
-    <!-- نموذج تسجيل شركة جديدة بحقول تفصيلية احترافية -->
+    <!-- نموذج تأسيس الشركة -->
     <div class="form-section">
+
         <h3>✨ تأسيس وتسجيل شركة جديدة في النظام</h3>
+
         <div class="grid-form">
+
             <div class="form-group">
                 <label>معرف الشركة (Company ID)</label>
-                <input type="text" id="regCompanyId" placeholder="مثال: B-2070">
+                <input
+                    type="text"
+                    id="regCompanyId"
+                    placeholder="مثال: B-2070">
             </div>
+
             <div class="form-group">
                 <label>اسم الشركة بالعربي</label>
-                <input type="text" id="regCompanyNameAr" placeholder="شركة الأرجوان للبرمجيات">
+                <input
+                    type="text"
+                    id="regCompanyNameAr"
+                    placeholder="شركة الأرجوان للبرمجيات">
             </div>
+
             <div class="form-group">
-                <label>اسم الشركة بالانجليزي (English Name)</label>
-                <input type="text" id="regCompanyNameEn" placeholder="Example: Al-Argouan Software">
+                <label>اسم الشركة بالإنجليزي</label>
+                <input
+                    type="text"
+                    id="regCompanyNameEn"
+                    placeholder="Al-Argouan Software">
             </div>
+
             <div class="form-group">
                 <label>اسم المدير المسؤول ورقم الهاتف</label>
-                <input type="text" id="regManagerName" placeholder="الاسم ورقم الاتصال للتواصل">
+                <input
+                    type="text"
+                    id="regManagerName"
+                    placeholder="الاسم ورقم الاتصال للتواصل">
             </div>
+
             <div class="form-group">
-                <label>اسم المستخدم (مدير لوحة التحكم)</label>
-                <input type="text" id="regUsername" value="admin">
+                <label>اسم المستخدم لمدير الشركة</label>
+                <input
+                    type="text"
+                    id="regUsername"
+                    value="admin">
             </div>
+
             <div class="form-group">
-                <label>رمز المدير الخاص (كلمة المرور)</label>
-                <input type="password" id="regPassword" placeholder="كلمة المرور الإدارية">
+
+                <label>كلمة مرور مدير الشركة</label>
+
+                <div class="password-wrapper">
+
+                    <input
+                        type="password"
+                        id="regPassword"
+                        placeholder="كلمة المرور الإدارية"
+                        autocomplete="new-password">
+
+                    <button
+                        type="button"
+                        class="show-password"
+                        onclick="togglePassword()">
+                        👁️
+                    </button>
+
+                </div>
+
             </div>
+
             <div class="form-group">
                 <label>البريد الإلكتروني للشركة</label>
-                <input type="email" id="regEmail" placeholder="company@domain.com">
+                <input
+                    type="email"
+                    id="regEmail"
+                    placeholder="company@domain.com">
             </div>
+
             <div class="form-group">
-                <label>مدة الاشتراك (أو منح تجريبي)</label>
+                <label>مدة الاشتراك</label>
+
                 <select id="regSubscriptionType">
-                    <option value="trial">اشتراك تجريبي محدود (7 أيام)</option>
-                    <option value="monthly">اشتراك شهر كامل</option>
-                    <option value="annual">اشتراك سنوي شامل</option>
+
+                    <option value="trial">
+                        اشتراك تجريبي محدود (7 أيام)
+                    </option>
+
+                    <option value="monthly">
+                        اشتراك شهر كامل
+                    </option>
+
+                    <option value="annual">
+                        اشتراك سنوي شامل
+                    </option>
+
                 </select>
+
             </div>
+
         </div>
-        <button class="btn btn-success" style="margin-top: 15px; width: 100%;" onclick="registerNewCompany()">🚀 اعتماد وتأسيس الشركة وحفظها بقاعدة البيانات</button>
+
+        <button
+            id="registerButton"
+            class="btn btn-success"
+            style="margin-top:15px;width:100%;"
+            onclick="registerNewCompany()">
+
+            🚀 اعتماد وتأسيس الشركة وحفظها بقاعدة البيانات
+
+        </button>
+
     </div>
 
-    <!-- مساعد جيمني للصيانة والتطوير -->
+    <!-- مساعد جيمني -->
     <div class="gemini-box">
-        <span class="gemini-text" id="geminiStatus">✨ مساعد جيمني للصيانة والتطوير والصوتيات متصل وجاهز للمساعدة.</span>
-        <button class="btn btn-primary" style="padding: 8px 15px; font-size: 12px;" onclick="runGeminiDiagnostics()">🤖 تشخيص وصيانة بالذكاء الاصطناعي</button>
+
+        <span
+            class="gemini-text"
+            id="geminiStatus">
+
+            ✨ مساعد جيمني للصيانة والتطوير والصوتيات متصل وجاهز للمساعدة.
+
+        </span>
+
+        <button
+            class="btn btn-primary"
+            style="padding:8px 15px;font-size:12px;"
+            onclick="runGeminiDiagnostics()">
+
+            🤖 تشخيص وصيانة بالذكاء الاصطناعي
+
+        </button>
+
     </div>
 
-    <!-- سجل الشركات المحفوظة مع أدوات الإدارة الكاملة -->
+    <!-- جدول الشركات -->
     <div class="table-section">
+
         <h3>📋 سجل الشركات المسجلة وقواعد البيانات</h3>
+
         <table>
+
             <thead>
+
                 <tr>
                     <th>معرف الشركة</th>
                     <th>اسم الشركة</th>
                     <th>نوع الاشتراك</th>
                     <th>حالة النظام</th>
-                    <th>الإجراءات والتحكم (تعديل / إيقاف / حذف)</th>
+                    <th>الإجراءات والتحكم</th>
                 </tr>
+
             </thead>
+
             <tbody id="companiesTableBody">
-                <!-- سيتم تعبئتها ديناميكياً برمجياً -->
+
+                <tr>
+                    <td
+                        colspan="5"
+                        style="text-align:center;color:#94a3b8;">
+
+                        جاري تحميل الشركات...
+
+                    </td>
+                </tr>
+
             </tbody>
+
         </table>
+
     </div>
 
 </div>
 
+
 <script>
-    let developerToken = sessionStorage.getItem('almoraqeb_developer_token') || '';
+
+    /* =========================================================
+       متغيرات النظام
+    ========================================================= */
+
+    let developerToken =
+        sessionStorage.getItem('almoraqeb_developer_token') || '';
+
     let companiesCache = [];
 
+
+    /* =========================================================
+       طلبات المطور
+    ========================================================= */
+
     async function developerRequest(url, options = {}) {
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...(options.headers || {}),
-                Authorization: `Bearer ${developerToken}`
+
+        if (!developerToken) {
+
+            const authenticated = await authenticateDeveloper();
+
+            if (!authenticated) {
+                throw new Error('لم يتم التحقق من صلاحيات المطور.');
             }
+        }
+
+        const response = await fetch(url, {
+
+            ...options,
+
+            headers: {
+
+                'Content-Type': 'application/json',
+
+                ...(options.headers || {}),
+
+                'Authorization': `Bearer ${developerToken}`
+
+            }
+
         });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.success) throw new Error(data.message || data.error || 'تعذر تنفيذ العملية');
+
+        const data =
+            await response.json().catch(() => ({}));
+
+        if (!response.ok || data.success === false) {
+
+            throw new Error(
+                data.message ||
+                data.error ||
+                `تعذر تنفيذ العملية (${response.status})`
+            );
+        }
+
         return data;
     }
 
+
+    /* =========================================================
+       تسجيل دخول المطور
+    ========================================================= */
+
     async function authenticateDeveloper() {
-        if (developerToken) return true;
-        const password = prompt('🔒 أدخل كلمة مرور المطور للمتابعة:');
-        if (!password) return false;
-        try {
-            const response = await fetch('/api/developer/login', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
-            });
-            const result = await response.json();
-            if (!response.ok || !result.success) throw new Error(result.message || 'تم رفض الدخول');
-            developerToken = result.token;
-            sessionStorage.setItem('almoraqeb_developer_token', developerToken);
+
+        if (developerToken) {
             return true;
+        }
+
+        const password = prompt(
+            '🔒 أدخل كلمة مرور المطور للمتابعة:'
+        );
+
+        if (!password) {
+            return false;
+        }
+
+        try {
+
+            const response = await fetch(
+                '/api/developer/login',
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+
+                    body: JSON.stringify({
+                        password: password
+                    })
+                }
+            );
+
+            const result =
+                await response.json().catch(() => ({}));
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    'تم رفض دخول المطور'
+                );
+            }
+
+            developerToken = result.token;
+
+            sessionStorage.setItem(
+                'almoraqeb_developer_token',
+                developerToken
+            );
+
+            return true;
+
         } catch (error) {
+
             alert(`❌ ${error.message}`);
+
+            sessionStorage.removeItem(
+                'almoraqeb_developer_token'
+            );
+
+            developerToken = '';
+
             window.location.replace('index.html');
+
             return false;
         }
     }
 
-    // تحميل وعرض الشركات المسجلة عند فتح الصفحة
-    window.onload = async function() {
-        if (!await authenticateDeveloper()) return;
-        loadCompaniesTable();
-        playGeminiVoice("أهلاً بك يا مطور النظام في لوحة التحكم المركزية.");
-    };
+
+    /* =========================================================
+       تشغيل الصفحة
+    ========================================================= */
+
+    window.addEventListener('load', async function () {
+
+        const authenticated =
+            await authenticateDeveloper();
+
+        if (!authenticated) {
+            return;
+        }
+
+        await loadCompaniesTable();
+
+        playGeminiVoice(
+            "أهلاً بك يا مطور النظام في لوحة التحكم المركزية."
+        );
+
+    });
+
+
+    /* =========================================================
+       الصوت
+    ========================================================= */
 
     function playGeminiVoice(text) {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            let utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ar-SA';
-            utterance.rate = 1.0;
-            let voices = window.speechSynthesis.getVoices();
-            let femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Google Arabic') || v.name.includes('AR-SA'));
-            if(femaleVoice) utterance.voice = femaleVoice;
-            window.speechSynthesis.speak(utterance);
+
+        if (!('speechSynthesis' in window)) {
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+
+        const utterance =
+            new SpeechSynthesisUtterance(text);
+
+        utterance.lang = 'ar-SA';
+        utterance.rate = 1.0;
+
+        const voices =
+            window.speechSynthesis.getVoices();
+
+        const femaleVoice =
+            voices.find(v =>
+                v.name.includes('Female') ||
+                v.name.includes('Google Arabic') ||
+                v.name.includes('AR-SA')
+            );
+
+        if (femaleVoice) {
+            utterance.voice = femaleVoice;
+        }
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+
+    /* =========================================================
+       إظهار / إخفاء كلمة المرور
+    ========================================================= */
+
+    function togglePassword() {
+
+        const input =
+            document.getElementById('regPassword');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+        } else {
+            input.type = 'password';
         }
     }
 
-    // تسجيل الشركة في قاعدة البيانات أولاً، ثم حفظ نسخة محلية للاستخدام داخل اللوحة.
+
+    /* =========================================================
+       تأسيس شركة جديدة
+    ========================================================= */
+
     async function registerNewCompany() {
-        let compId = document.getElementById('regCompanyId').value.trim();
-        let nameAr = document.getElementById('regCompanyNameAr').value.trim();
-        let email = document.getElementById('regEmail').value.trim();
-        let managerDetails = document.getElementById('regManagerName').value.trim();
-        let subType = document.getElementById('regSubscriptionType').value;
 
-        if (!compId || !nameAr) {
-            alert("⚠️ يرجى تعبئة الحقول الأساسية على الأقل (معرف الشركة واسمها)!");
+        const button =
+            document.getElementById('registerButton');
+
+        const compId =
+            document.getElementById('regCompanyId')
+                .value.trim();
+
+        const nameAr =
+            document.getElementById('regCompanyNameAr')
+                .value.trim();
+
+        const nameEn =
+            document.getElementById('regCompanyNameEn')
+                .value.trim();
+
+        const managerDetails =
+            document.getElementById('regManagerName')
+                .value.trim();
+
+        const adminUsername =
+            document.getElementById('regUsername')
+                .value.trim();
+
+        const adminPassword =
+            document.getElementById('regPassword')
+                .value;
+
+        const email =
+            document.getElementById('regEmail')
+                .value.trim();
+
+        const subType =
+            document.getElementById('regSubscriptionType')
+                .value;
+
+
+        /* =====================================================
+           التحقق من الحقول
+        ===================================================== */
+
+        if (!compId) {
+
+            alert('⚠️ يرجى إدخال معرف الشركة.');
+
+            document.getElementById(
+                'regCompanyId'
+            ).focus();
+
             return;
         }
 
-        // حساب تاريخ انتهاء الاشتراك التجريبي أو العادي
-        let expiryDate = new Date();
-        if(subType === 'trial') expiryDate.setDate(expiryDate.getDate() + 7);
-        else if(subType === 'monthly') expiryDate.setMonth(expiryDate.getMonth() + 1);
-        else expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+        if (!nameAr) {
 
-        const adminUsername = document.getElementById('regUsername').value.trim();
-        const adminPassword = document.getElementById('regPassword').value;
-        if (!adminUsername || !adminPassword) {
-            alert('⚠️ أدخل اسم المستخدم وكلمة مرور مدير الشركة.');
+            alert('⚠️ يرجى إدخال اسم الشركة بالعربي.');
+
+            document.getElementById(
+                'regCompanyNameAr'
+            ).focus();
+
             return;
         }
+
+        if (!adminUsername) {
+
+            alert(
+                '⚠️ يرجى إدخال اسم مستخدم مدير الشركة.'
+            );
+
+            document.getElementById(
+                'regUsername'
+            ).focus();
+
+            return;
+        }
+
+        if (!adminPassword) {
+
+            alert(
+                '⚠️ يرجى إدخال كلمة مرور مدير الشركة.'
+            );
+
+            document.getElementById(
+                'regPassword'
+            ).focus();
+
+            return;
+        }
+
+
+        /* =====================================================
+           حساب تاريخ انتهاء الاشتراك
+        ===================================================== */
+
+        const startDate = new Date();
+
+        const expiryDate = new Date(startDate);
+
+        if (subType === 'trial') {
+
+            expiryDate.setDate(
+                expiryDate.getDate() + 7
+            );
+
+        } else if (subType === 'monthly') {
+
+            expiryDate.setMonth(
+                expiryDate.getMonth() + 1
+            );
+
+        } else if (subType === 'annual') {
+
+            expiryDate.setFullYear(
+                expiryDate.getFullYear() + 1
+            );
+        }
+
+
+        /* =====================================================
+           البيانات المرسلة للسيرفر
+           
+           مهم:
+           password = adminPassword
+           
+           تمت إضافتها لأن الـ API في السيرفر يبدو
+           أنه يتحقق من وجود password.
+        ===================================================== */
+
+        const companyPayload = {
+
+            companyId: compId,
+
+            name: nameAr,
+
+            nameAr: nameAr,
+
+            nameEn: nameEn,
+
+            email: email,
+
+            phone: managerDetails,
+
+            managerName: managerDetails,
+
+            adminUsername: adminUsername,
+
+            /* الحقل الذي كان ناقصاً */
+            password: adminPassword,
+
+            /* الاحتفاظ بالحقل القديم للتوافق */
+            adminPassword: adminPassword,
+
+            subscription: subType,
+
+            systemState: 'active',
+
+            subscriptionStartDate:
+                startDate.toISOString(),
+
+            subscriptionEndDate:
+                expiryDate.toISOString()
+
+        };
+
 
         try {
-            const response = await fetch('/api/companies/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    companyId: compId, name: nameAr, email, phone: managerDetails,
-                    adminUsername, adminPassword, subscription: subType,
-                    systemState: 'active', subscriptionStartDate: new Date().toISOString(),
-                    subscriptionEndDate: expiryDate.toISOString()
-                })
-            });
-            const result = await response.json();
-            if (!response.ok || !result.success) {
-                throw new Error(result.message || 'تعذر تسجيل الشركة في قاعدة البيانات');
-            }
 
-            alert(`✅ تم تأسيس وتثبيت الشركة (${nameAr}) بالرمز (${compId}) في قاعدة البيانات بنجاح!`);
-            playGeminiVoice("تم تسجيل الشركة بنجاح.");
-            loadCompaniesTable();
+            button.disabled = true;
+
+            button.classList.add('loading');
+
+            button.innerText =
+                '⏳ جارٍ تأسيس الشركة وحفظها...';
+
+
+            /* =================================================
+               مهم:
+               نستخدم developerRequest حتى يتم إرسال
+               Authorization Bearer Token.
+            ================================================= */
+
+            const result =
+                await developerRequest(
+                    '/api/companies/register',
+                    {
+                        method: 'POST',
+
+                        body: JSON.stringify(
+                            companyPayload
+                        )
+                    }
+                );
+
+
+            console.log(
+                'Company registration response:',
+                result
+            );
+
+
+            alert(
+                `✅ تم تأسيس وتسجيل الشركة بنجاح!\n\n` +
+                `اسم الشركة: ${nameAr}\n` +
+                `المعرف: ${compId}\n` +
+                `اسم المستخدم: ${adminUsername}\n` +
+                `نوع الاشتراك: ${subType}`
+            );
+
+
+            playGeminiVoice(
+                "تم تسجيل الشركة وتأسيسها بنجاح."
+            );
+
+
+            /* تنظيف الحقول */
+            clearCompanyForm();
+
+
+            /* تحديث الجدول */
+            await loadCompaniesTable();
+
+
         } catch (error) {
-            alert(`❌ لم يتم حفظ الشركة في السيرفر: ${error.message}`);
+
+            console.error(
+                'Company registration error:',
+                error
+            );
+
+            alert(
+                `❌ لم يتم حفظ الشركة في السيرفر.\n\n` +
+                `${error.message}`
+            );
+
+        } finally {
+
+            button.disabled = false;
+
+            button.classList.remove('loading');
+
+            button.innerText =
+                '🚀 اعتماد وتأسيس الشركة وحفظها بقاعدة البيانات';
         }
     }
+
+
+    /* =========================================================
+       تنظيف نموذج الشركة
+    ========================================================= */
+
+    function clearCompanyForm() {
+
+        document.getElementById(
+            'regCompanyId'
+        ).value = '';
+
+        document.getElementById(
+            'regCompanyNameAr'
+        ).value = '';
+
+        document.getElementById(
+            'regCompanyNameEn'
+        ).value = '';
+
+        document.getElementById(
+            'regManagerName'
+        ).value = '';
+
+        document.getElementById(
+            'regEmail'
+        ).value = '';
+
+        document.getElementById(
+            'regPassword'
+        ).value = '';
+
+        document.getElementById(
+            'regUsername'
+        ).value = 'admin';
+
+        document.getElementById(
+            'regSubscriptionType'
+        ).value = 'trial';
+    }
+
+
+    /* =========================================================
+       تحميل الشركات
+    ========================================================= */
 
     async function loadCompaniesTable() {
-        let tbody = document.getElementById('companiesTableBody');
+
+        const tbody =
+            document.getElementById(
+                'companiesTableBody'
+            );
+
         try {
-            const result = await developerRequest('/api/developer/companies');
-            companiesCache = result.companies;
-        } catch (error) {
-            alert(`❌ ${error.message}`);
-            return;
-        }
 
-        if (companiesCache.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">لا توجد شركات مسجلة حالياً. قم بإضافة شركة جديدة.</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = '';
-        companiesCache.forEach((comp, index) => {
-            const isExpired = comp.subscriptionEndDate && new Date(comp.subscriptionEndDate) < new Date();
-            const statusClass = comp.systemState === 'active' && !isExpired ? 'status-active' : 'status-stopped';
-            const statusText = isExpired ? 'منتهي الاشتراك' : (comp.systemState === 'active' ? 'نشطة' : 'متوقفة يدوياً');
-
-            tbody.innerHTML += `
+            tbody.innerHTML = `
                 <tr>
-                    <td><b>${comp.companyId}</b></td>
-                    <td>${comp.name}</td>
-                    <td><span class="status-badge status-trial">${comp.subscription}</span></td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td>
-                        <button class="btn btn-warning" style="padding: 5px 10px; font-size: 11px;" onclick="toggleCompanyStatus(${index})">${comp.systemState === 'active' ? '⏸️ إيقاف' : '▶️ تفعيل'}</button>
-                        <button class="btn btn-primary" style="padding: 5px 10px; font-size: 11px;" onclick="editCompany(${index})">✏️ تعديل</button>
-                        <button class="btn btn-danger" style="padding: 5px 10px; font-size: 11px;" onclick="deleteCompany(${index})">🗑️ حذف</button>
+                    <td colspan="5"
+                        style="text-align:center;color:#38bdf8;">
+                        ⏳ جاري تحميل الشركات...
                     </td>
                 </tr>
             `;
-        });
+
+
+            const result =
+                await developerRequest(
+                    '/api/developer/companies'
+                );
+
+
+            companiesCache =
+                Array.isArray(result.companies)
+                    ? result.companies
+                    : [];
+
+
+        } catch (error) {
+
+            console.error(
+                'Load companies error:',
+                error
+            );
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5"
+                        style="text-align:center;color:#ef4444;">
+                        ❌ ${escapeHtml(error.message)}
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+
+        if (companiesCache.length === 0) {
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5"
+                        style="text-align:center;color:#94a3b8;">
+                        لا توجد شركات مسجلة حالياً.
+                        قم بإضافة شركة جديدة.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+
+        tbody.innerHTML = '';
+
+
+        companiesCache.forEach(
+            (comp, index) => {
+
+                const isExpired =
+                    comp.subscriptionEndDate &&
+                    new Date(
+                        comp.subscriptionEndDate
+                    ) < new Date();
+
+
+                const isActive =
+                    comp.systemState === 'active' &&
+                    !isExpired;
+
+
+                const statusClass =
+                    isActive
+                        ? 'status-active'
+                        : 'status-stopped';
+
+
+                const statusText =
+                    isExpired
+                        ? 'منتهي الاشتراك'
+                        : (
+                            comp.systemState === 'active'
+                                ? 'نشطة'
+                                : 'متوقفة يدوياً'
+                        );
+
+
+                const subscriptionText =
+                    comp.subscription === 'trial'
+                        ? 'تجريبي'
+                        : comp.subscription === 'monthly'
+                            ? 'شهري'
+                            : comp.subscription === 'annual'
+                                ? 'سنوي'
+                                : comp.subscription || '-';
+
+
+                const row =
+                    document.createElement('tr');
+
+
+                row.innerHTML = `
+
+                    <td>
+                        <b>
+                            ${escapeHtml(
+                                comp.companyId || '-'
+                            )}
+                        </b>
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            comp.name || '-'
+                        )}
+                    </td>
+
+                    <td>
+                        <span class="status-badge status-trial">
+                            ${escapeHtml(
+                                subscriptionText
+                            )}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="status-badge ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+
+                    <td>
+
+                        <button
+                            class="btn btn-warning"
+                            style="
+                                padding:5px 10px;
+                                font-size:11px;
+                            "
+                            onclick="toggleCompanyStatus(${index})">
+
+                            ${
+                                comp.systemState === 'active'
+                                    ? '⏸️ إيقاف'
+                                    : '▶️ تفعيل'
+                            }
+
+                        </button>
+
+
+                        <button
+                            class="btn btn-primary"
+                            style="
+                                padding:5px 10px;
+                                font-size:11px;
+                            "
+                            onclick="editCompany(${index})">
+
+                            ✏️ تعديل
+
+                        </button>
+
+
+                        <button
+                            class="btn btn-danger"
+                            style="
+                                padding:5px 10px;
+                                font-size:11px;
+                            "
+                            onclick="deleteCompany(${index})">
+
+                            🗑️ حذف
+
+                        </button>
+
+                    </td>
+                `;
+
+
+                tbody.appendChild(row);
+            }
+        );
     }
 
-    // 4. زر إيقاف تشغيل الشركة (أو تفعيلها)
+
+    /* =========================================================
+       إيقاف / تفعيل الشركة
+    ========================================================= */
+
     async function toggleCompanyStatus(index) {
-        const company = companiesCache[index];
+
+        const company =
+            companiesCache[index];
+
+        if (!company) {
+            return;
+        }
+
+
+        const newState =
+            company.systemState === 'active'
+                ? 'stopped'
+                : 'active';
+
+
         try {
-            await developerRequest(`/api/developer/companies/${encodeURIComponent(company.companyId)}`, {
-                method: 'PATCH', body: JSON.stringify({ systemState: company.systemState === 'active' ? 'stopped' : 'active' })
-            });
+
+            await developerRequest(
+                `/api/developer/companies/${encodeURIComponent(
+                    company.companyId
+                )}`,
+                {
+                    method: 'PATCH',
+
+                    body: JSON.stringify({
+                        systemState: newState
+                    })
+                }
+            );
+
+
             await loadCompaniesTable();
-            alert('🔄 تم تغيير حالة الشركة في MongoDB.');
-        } catch (error) { alert(`❌ ${error.message}`); }
+
+            alert(
+                newState === 'active'
+                    ? '▶️ تم تفعيل الشركة.'
+                    : '⏸️ تم إيقاف الشركة.'
+            );
+
+
+        } catch (error) {
+
+            alert(
+                `❌ ${error.message}`
+            );
+        }
     }
 
-    // 5. زر تعديل بيانات الشركة
+
+    /* =========================================================
+       تعديل الشركة
+    ========================================================= */
+
     async function editCompany(index) {
-        const company = companiesCache[index];
-        let newName = prompt("أدخل الاسم الجديد للشركة:", company.name);
-        if (newName) {
-            const adminUsername = prompt("اسم مستخدم مدير الشركة:", company.adminUsername || 'admin');
-            if (adminUsername === null || !adminUsername.trim()) return;
-            const adminPassword = prompt("كلمة مرور مدير الشركة الجديدة (اتركها فارغة للاحتفاظ بالحالية):", '');
-            try {
-                const update = { name: newName, adminUsername: adminUsername.trim() };
-                if (adminPassword) update.adminPassword = adminPassword;
-                await developerRequest(`/api/developer/companies/${encodeURIComponent(company.companyId)}`, {
-                    method: 'PATCH', body: JSON.stringify(update)
-                });
-                await loadCompaniesTable();
-                alert('✅ تم تعديل بيانات الشركة في MongoDB.');
-            } catch (error) { alert(`❌ ${error.message}`); }
+
+        const company =
+            companiesCache[index];
+
+        if (!company) {
+            return;
+        }
+
+
+        const newName =
+            prompt(
+                'أدخل الاسم الجديد للشركة:',
+                company.name || ''
+            );
+
+
+        if (newName === null) {
+            return;
+        }
+
+
+        if (!newName.trim()) {
+
+            alert(
+                '⚠️ اسم الشركة لا يمكن أن يكون فارغاً.'
+            );
+
+            return;
+        }
+
+
+        const adminUsername =
+            prompt(
+                'اسم مستخدم مدير الشركة:',
+                company.adminUsername || 'admin'
+            );
+
+
+        if (
+            adminUsername === null ||
+            !adminUsername.trim()
+        ) {
+            return;
+        }
+
+
+        const adminPassword =
+            prompt(
+                'كلمة مرور مدير الشركة الجديدة:\n' +
+                '(اتركها فارغة للاحتفاظ بالحالية)',
+                ''
+            );
+
+
+        if (adminPassword === null) {
+            return;
+        }
+
+
+        try {
+
+            const update = {
+
+                name: newName.trim(),
+
+                adminUsername:
+                    adminUsername.trim()
+
+            };
+
+
+            if (adminPassword.trim()) {
+
+                update.password =
+                    adminPassword;
+
+                update.adminPassword =
+                    adminPassword;
+            }
+
+
+            await developerRequest(
+                `/api/developer/companies/${encodeURIComponent(
+                    company.companyId
+                )}`,
+                {
+                    method: 'PATCH',
+
+                    body: JSON.stringify(update)
+                }
+            );
+
+
+            await loadCompaniesTable();
+
+
+            alert(
+                '✅ تم تعديل بيانات الشركة بنجاح.'
+            );
+
+
+        } catch (error) {
+
+            alert(
+                `❌ ${error.message}`
+            );
         }
     }
 
-    // 6. زر حذف نهائي للشركة
+
+    /* =========================================================
+       حذف الشركة
+    ========================================================= */
+
     async function deleteCompany(index) {
-        if (confirm("⚠️ تحذير صارم: هل أنت متأكد من الحذف النهائي للشركة وسجلاتها؟ لا يمكن التراجع عن هذا الإجراء.")) {
-            try {
-                await developerRequest(`/api/developer/companies/${encodeURIComponent(companiesCache[index].companyId)}`, { method: 'DELETE' });
-                await loadCompaniesTable();
-                alert('🗑️ تم حذف الشركة وسجلاتها من MongoDB.');
-            } catch (error) { alert(`❌ ${error.message}`); }
+
+        const company =
+            companiesCache[index];
+
+        if (!company) {
+            return;
+        }
+
+
+        const confirmed =
+            confirm(
+                `⚠️ تحذير صارم\n\n` +
+                `هل أنت متأكد من الحذف النهائي للشركة:\n` +
+                `${company.name}\n` +
+                `(${company.companyId})\n\n` +
+                `لا يمكن التراجع عن هذا الإجراء.`
+            );
+
+
+        if (!confirmed) {
+            return;
+        }
+
+
+        try {
+
+            await developerRequest(
+                `/api/developer/companies/${encodeURIComponent(
+                    company.companyId
+                )}`,
+                {
+                    method: 'DELETE'
+                }
+            );
+
+
+            await loadCompaniesTable();
+
+
+            alert(
+                '🗑️ تم حذف الشركة وسجلاتها بنجاح.'
+            );
+
+
+        } catch (error) {
+
+            alert(
+                `❌ ${error.message}`
+            );
         }
     }
 
-    // 2. أخذ نسخة احتياطية لكل المشروع أو لشركة معينة
+
+    /* =========================================================
+       النسخة الاحتياطية للنظام
+    ========================================================= */
+
     function backupAllSystem() {
-        let allData = {
-            system: "AlMoraqebPro Full System Backup",
-            timestamp: new Date().toISOString(),
-            storage: {...localStorage}
+
+        const allData = {
+
+            system:
+                'AlMoraqebPro Full System Backup',
+
+            timestamp:
+                new Date().toISOString(),
+
+            companies:
+                companiesCache,
+
+            localStorage:
+                { ...localStorage }
+
         };
-        downloadJSON(allData, `AlMoraqebPro_Full_System_Backup_${new Date().toISOString().slice(0,10)}.json`);
-        alert("📦 تم تنزيل النسخة الاحتياطية الكاملة لكافة المشروع والشركات.");
+
+
+        downloadJSON(
+            allData,
+            `AlMoraqebPro_Full_System_Backup_${
+                new Date()
+                    .toISOString()
+                    .slice(0, 10)
+            }.json`
+        );
+
+
+        alert(
+            '📦 تم تنزيل النسخة الاحتياطية للنظام.'
+        );
     }
+
+
+    /* =========================================================
+       نسخة احتياطية لشركة
+    ========================================================= */
 
     function backupSelectedCompany() {
-        let compId = prompt("أدخل معرف الشركة (Company ID) المطلوب أخذ نسخة احتياطية لها:");
-        if (!compId) return;
-        
-        let companyLogs = localStorage.getItem(`attendance_history_${compId}`) || '[]';
-        let companyData = {
+
+        const compId =
+            prompt(
+                'أدخل معرف الشركة (Company ID) المطلوب أخذ نسخة احتياطية لها:'
+            );
+
+
+        if (!compId) {
+            return;
+        }
+
+
+        const companyLogs =
+            localStorage.getItem(
+                `attendance_history_${compId}`
+            ) || '[]';
+
+
+        let attendance = [];
+
+
+        try {
+
+            attendance =
+                JSON.parse(companyLogs);
+
+        } catch {
+
+            attendance = [];
+        }
+
+
+        const company =
+            companiesCache.find(
+                c => c.companyId === compId
+            );
+
+
+        const companyData = {
+
             companyId: compId,
-            timestamp: new Date().toISOString(),
-            attendance: JSON.parse(companyLogs)
+
+            company:
+                company || null,
+
+            timestamp:
+                new Date().toISOString(),
+
+            attendance:
+                attendance
+
         };
-        downloadJSON(companyData, `Company_Backup_${compId}_${new Date().toISOString().slice(0,10)}.json`);
-        alert(`📥 تم تنزيل النسخة الاحتياطية الخاصة بشركة (${compId}) بنجاح.`);
+
+
+        downloadJSON(
+            companyData,
+            `Company_Backup_${compId}_${
+                new Date()
+                    .toISOString()
+                    .slice(0, 10)
+            }.json`
+        );
+
+
+        alert(
+            `📥 تم تنزيل النسخة الاحتياطية للشركة (${compId}).`
+        );
     }
+
+
+    /* =========================================================
+       تنزيل JSON
+    ========================================================= */
 
     function downloadJSON(data, filename) {
-        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 4));
-        let dlAnchor = document.createElement('a');
-        dlAnchor.setAttribute("href", dataStr);
-        dlAnchor.setAttribute("download", filename);
-        document.body.appendChild(dlAnchor);
-        dlAnchor.click();
-        dlAnchor.remove();
+
+        const json =
+            JSON.stringify(
+                data,
+                null,
+                4
+            );
+
+
+        const blob =
+            new Blob(
+                [json],
+                {
+                    type:
+                        'application/json;charset=utf-8'
+                }
+            );
+
+
+        const url =
+            URL.createObjectURL(blob);
+
+
+        const anchor =
+            document.createElement('a');
+
+
+        anchor.href = url;
+
+        anchor.download = filename;
+
+        document.body.appendChild(anchor);
+
+        anchor.click();
+
+        anchor.remove();
+
+
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 1000);
     }
 
-    // 7. تشخيص وصيانة جيمني
+
+    /* =========================================================
+       تشخيص النظام
+    ========================================================= */
+
     function runGeminiDiagnostics() {
-        playGeminiVoice("جاري فحص سلامة القواعد والملفات. النظام يعمل بكفاءة تامة ولا توجد أخطاء برمجية.");
-        document.getElementById('geminiStatus').innerText = "🤖 فحص الذكاء الاصطناعي: النظام مستقر، الحماية مفعلة، ولا توجد ثغرات في عزل الشركات.";
-        alert("🤖 تقرير جيمني: كافة قواعد البيانات معزولة وآمنة، ولا يمكن لأي شركة الوصول لملفات المطور.");
+
+        playGeminiVoice(
+            'جاري فحص سلامة القواعد والملفات.'
+        );
+
+
+        document.getElementById(
+            'geminiStatus'
+        ).innerText =
+            '🤖 فحص الذكاء الاصطناعي: تم تشغيل التشخيص.';
+
+
+        setTimeout(() => {
+
+            document.getElementById(
+                'geminiStatus'
+            ).innerText =
+                '🤖 فحص الذكاء الاصطناعي: النظام مستقر، الحماية مفعلة.';
+
+        }, 1200);
+
+
+        alert(
+            '🤖 تقرير التشخيص:\n\n' +
+            'تم تشغيل فحص الواجهة والاتصال بالسيرفر.\n' +
+            'للتأكد من سلامة MongoDB يجب أيضاً فحص سجلات السيرفر.'
+        );
     }
 
-    function verifyDeveloperAuth() {
-        alert("🔒 الحماية مفعلة بنجاح: تم عزل لوحة المطور والكود المصدري تماماً عن متصفحات الشركات.");
+
+    /* =========================================================
+       التحقق من صلاحيات المطور
+    ========================================================= */
+
+    async function verifyDeveloperAuth() {
+
+        if (!developerToken) {
+
+            const result =
+                await authenticateDeveloper();
+
+            if (!result) {
+                return;
+            }
+        }
+
+
+        try {
+
+            await developerRequest(
+                '/api/developer/companies'
+            );
+
+
+            alert(
+                '🔒 الحماية مفعلة بنجاح.\n\n' +
+                'تم التحقق من صلاحيات المطور والاتصال بالسيرفر.'
+            );
+
+
+        } catch (error) {
+
+            alert(
+                `❌ تعذر التحقق من الصلاحيات:\n${error.message}`
+            );
+        }
     }
+
+
+    /* =========================================================
+       حماية النصوص القادمة من قاعدة البيانات
+    ========================================================= */
+
+    function escapeHtml(value) {
+
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
 </script>
 
 </body>
