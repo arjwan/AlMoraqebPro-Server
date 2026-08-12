@@ -11,44 +11,32 @@ const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
 const DEVELOPER_PASSWORD = process.env.DEVELOPER_PASSWORD;
 const SESSION_SECRET =
-    process.env.SESSION_SECRET || DEVELOPER_PASSWORD || '';
+    process.env.SESSION_SECRET ||
+    DEVELOPER_PASSWORD ||
+    'CHANGE_THIS_SESSION_SECRET';
 
 if (!MONGO_URI) {
-    console.error(
-        '❌ MONGO_URI is not configured. The server will not start without MongoDB.'
-    );
+    console.error('❌ MONGO_URI is not configured.');
     process.exit(1);
 }
 
-app.use(cors());
-
-app.use(express.json({
-    limit: '50mb'
-}));
-
-app.use(express.urlencoded({
-    extended: true,
-    limit: '50mb'
-}));
-
-if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads', {
-        recursive: true
-    });
+if (!DEVELOPER_PASSWORD) {
+    console.warn('⚠️ DEVELOPER_PASSWORD is not configured.');
 }
 
-app.use(
-    '/uploads',
-    express.static(path.join(__dirname, 'uploads'))
-);
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-app.use(
-    express.static(path.join(__dirname, 'public'))
-);
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads', { recursive: true });
+}
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 /* =========================================================
-   COMPANY
+   SCHEMAS
 ========================================================= */
 
 const companySchema = new mongoose.Schema({
@@ -56,12 +44,20 @@ const companySchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        index: true
+        index: true,
+        trim: true
     },
 
     name: {
         type: String,
-        required: true
+        required: true,
+        trim: true
+    },
+
+    englishName: {
+        type: String,
+        default: '',
+        trim: true
     },
 
     password: {
@@ -69,12 +65,38 @@ const companySchema = new mongoose.Schema({
         required: true
     },
 
-    phone: String,
+    adminUsername: {
+        type: String,
+        default: 'admin',
+        trim: true
+    },
 
-    address: String,
+    adminPassword: {
+        type: String,
+        default: ''
+    },
+
+    email: {
+        type: String,
+        default: ''
+    },
+
+    managerName: {
+        type: String,
+        default: ''
+    },
+
+    phone: {
+        type: String,
+        default: ''
+    },
+
+    address: {
+        type: String,
+        default: ''
+    },
 
     latitude: Number,
-
     longitude: Number,
 
     gpsRadius: {
@@ -82,24 +104,47 @@ const companySchema = new mongoose.Schema({
         default: 200
     },
 
+    subscription: {
+        type: String,
+        enum: ['trial', 'monthly', 'annual'],
+        default: 'trial'
+    },
+
+    subscriptionStartDate: {
+        type: Date,
+        default: Date.now
+    },
+
+    subscriptionEndDate: {
+        type: Date,
+        default: null
+    },
+
+    systemState: {
+        type: String,
+        enum: ['active', 'stopped'],
+        default: 'active',
+        index: true
+    },
+
     active: {
         type: Boolean,
-        default: true
+        default: true,
+        index: true
     },
 
     createdAt: {
         type: Date,
         default: Date.now
+    },
+
+    updatedAt: {
+        type: Date,
+        default: Date.now
     }
 });
 
-
-/* =========================================================
-   EMPLOYEE
-========================================================= */
-
 const employeeSchema = new mongoose.Schema({
-
     employeeId: {
         type: String,
         required: true,
@@ -119,27 +164,16 @@ const employeeSchema = new mongoose.Schema({
     },
 
     username: String,
-
     password: String,
 
     credentialsStatus: {
         type: String,
-        enum: [
-            'pending',
-            'active',
-            'disabled'
-        ],
+        enum: ['pending', 'active', 'disabled'],
         default: 'pending'
     },
 
     phone: String,
-
     jobTitle: String,
-
-
-    /* =====================================================
-       DEVICE BINDING
-    ===================================================== */
 
     deviceId: {
         type: String,
@@ -152,29 +186,6 @@ const employeeSchema = new mongoose.Schema({
         default: null
     },
 
-
-    /* =====================================================
-       FINGERPRINT BINDING
-
-       We never store the raw fingerprint token.
-
-       The mobile application sends fingerprintToken
-       after successful local biometric authentication.
-
-       The server stores only SHA-256 hash.
-    ===================================================== */
-
-    fingerprintTokenHash: {
-        type: String,
-        default: null
-    },
-
-    fingerprintBoundAt: {
-        type: Date,
-        default: null
-    },
-
-
     active: {
         type: Boolean,
         default: true
@@ -186,13 +197,7 @@ const employeeSchema = new mongoose.Schema({
     }
 });
 
-
-/* =========================================================
-   EMPLOYEE REQUEST
-========================================================= */
-
 const employeeRequestSchema = new mongoose.Schema({
-
     requestId: {
         type: String,
         required: true,
@@ -212,7 +217,6 @@ const employeeRequestSchema = new mongoose.Schema({
     },
 
     phone: String,
-
     jobTitle: String,
 
     deviceId: {
@@ -221,16 +225,11 @@ const employeeRequestSchema = new mongoose.Schema({
     },
 
     username: String,
-
     password: String,
 
     status: {
         type: String,
-        enum: [
-            'pending',
-            'approved',
-            'rejected'
-        ],
+        enum: ['pending', 'approved', 'rejected'],
         default: 'pending',
         index: true
     },
@@ -243,17 +242,10 @@ const employeeRequestSchema = new mongoose.Schema({
     },
 
     approvedAt: Date,
-
     rejectedAt: Date
 });
 
-
-/* =========================================================
-   ATTENDANCE
-========================================================= */
-
 const attendanceSchema = new mongoose.Schema({
-
     employeeId: {
         type: String,
         required: true,
@@ -272,16 +264,12 @@ const attendanceSchema = new mongoose.Schema({
         index: true
     },
 
-    /*
-     * We keep the token hash only.
-     */
-    fingerprintTokenHash: {
+    fingerprintToken: {
         type: String,
         required: true
     },
 
     latitude: Number,
-
     longitude: Number,
 
     timestamp: {
@@ -292,12 +280,7 @@ const attendanceSchema = new mongoose.Schema({
 
     type: {
         type: String,
-        enum: [
-            'check-in',
-            'check-out',
-            'in',
-            'out'
-        ],
+        enum: ['check-in', 'check-out', 'in', 'out'],
         default: 'check-in'
     },
 
@@ -307,13 +290,7 @@ const attendanceSchema = new mongoose.Schema({
     }
 });
 
-
-/* =========================================================
-   SERVICE REQUEST
-========================================================= */
-
 const serviceRequestSchema = new mongoose.Schema({
-
     requestId: {
         type: String,
         required: true,
@@ -341,28 +318,19 @@ const serviceRequestSchema = new mongoose.Schema({
 
     type: {
         type: String,
-        enum: [
-            'loan',
-            'leave'
-        ],
+        enum: ['loan', 'leave'],
         required: true
     },
 
     amount: Number,
-
     reason: String,
 
     startDate: Date,
-
     endDate: Date,
 
     status: {
         type: String,
-        enum: [
-            'pending',
-            'approved',
-            'rejected'
-        ],
+        enum: ['pending', 'approved', 'rejected'],
         default: 'pending',
         index: true
     },
@@ -377,13 +345,7 @@ const serviceRequestSchema = new mongoose.Schema({
     reviewedAt: Date
 });
 
-
-/* =========================================================
-   NOTIFICATION
-========================================================= */
-
 const notificationSchema = new mongoose.Schema({
-
     employeeId: {
         type: String,
         required: true,
@@ -397,7 +359,6 @@ const notificationSchema = new mongoose.Schema({
     },
 
     message: String,
-
     audioUrl: String,
 
     createdAt: {
@@ -412,29 +373,21 @@ const notificationSchema = new mongoose.Schema({
     }
 });
 
-
-/* =========================================================
-   MODELS
-========================================================= */
-
-const Company =
-    mongoose.model('Company', companySchema);
-
-const Employee =
-    mongoose.model('Employee', employeeSchema);
-
-const EmployeeRequest =
-    mongoose.model('EmployeeRequest', employeeRequestSchema);
-
-const Attendance =
-    mongoose.model('Attendance', attendanceSchema);
-
-const ServiceRequest =
-    mongoose.model('ServiceRequest', serviceRequestSchema);
-
-const Notification =
-    mongoose.model('Notification', notificationSchema);
-
+const Company = mongoose.model('Company', companySchema);
+const Employee = mongoose.model('Employee', employeeSchema);
+const EmployeeRequest = mongoose.model(
+    'EmployeeRequest',
+    employeeRequestSchema
+);
+const Attendance = mongoose.model('Attendance', attendanceSchema);
+const ServiceRequest = mongoose.model(
+    'ServiceRequest',
+    serviceRequestSchema
+);
+const Notification = mongoose.model(
+    'Notification',
+    notificationSchema
+);
 
 /* =========================================================
    MONGODB
@@ -444,148 +397,56 @@ mongoose.connect(MONGO_URI)
     .then(() => {
         console.log('✅ MongoDB connected successfully');
     })
-    .catch(error => {
-        console.error(
-            '❌ MongoDB connection error:',
-            error
-        );
+    .catch((error) => {
+        console.error('❌ MongoDB connection error:', error);
     });
-
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
 function generateId(prefix = '') {
-    return prefix +
-        crypto.randomBytes(8).toString('hex');
+    return prefix + crypto.randomBytes(8).toString('hex');
 }
-
 
 function normalizeCompanyId(value) {
     return String(value || '').trim();
 }
 
-
 function normalizeDeviceId(value) {
     return String(value || '').trim();
 }
 
-
-function normalizeFingerprintToken(value) {
-    return String(value || '').trim();
-}
-
-
-/*
- * Never store the fingerprint token itself.
- */
-function hashFingerprintToken(token) {
-
-    return crypto
-        .createHash('sha256')
-        .update(String(token))
-        .digest('hex');
-}
-
-
-/*
- * Constant-time comparison.
- */
-function fingerprintMatches(
-    fingerprintToken,
-    fingerprintTokenHash
-) {
-
-    if (
-        !fingerprintToken ||
-        !fingerprintTokenHash
-    ) {
-        return false;
-    }
-
-    const incomingHash =
-        hashFingerprintToken(
-            fingerprintToken
-        );
-
-    const a =
-        Buffer.from(
-            incomingHash,
-            'utf8'
-        );
-
-    const b =
-        Buffer.from(
-            fingerprintTokenHash,
-            'utf8'
-        );
-
-    if (a.length !== b.length) {
-        return false;
-    }
-
-    return crypto.timingSafeEqual(a, b);
-}
-
-
-function isValidCoordinates(
-    latitude,
-    longitude
-) {
-
-    return Number.isFinite(
-        Number(latitude)
-    ) &&
-        Number.isFinite(
-            Number(longitude)
-        ) &&
+function isValidCoordinates(latitude, longitude) {
+    return (
+        Number.isFinite(Number(latitude)) &&
+        Number.isFinite(Number(longitude)) &&
         Number(latitude) >= -90 &&
         Number(latitude) <= 90 &&
         Number(longitude) >= -180 &&
-        Number(longitude) <= 180;
+        Number(longitude) <= 180
+    );
 }
 
-
-function distanceInMeters(
-    lat1,
-    lon1,
-    lat2,
-    lon2
-) {
-
+function distanceInMeters(lat1, lon1, lat2, lon2) {
     const R = 6371000;
 
-    const p1 =
-        Number(lat1) *
-        Math.PI /
-        180;
-
-    const p2 =
-        Number(lat2) *
-        Math.PI /
-        180;
+    const p1 = Number(lat1) * Math.PI / 180;
+    const p2 = Number(lat2) * Math.PI / 180;
 
     const dp =
-        (Number(lat2) -
-            Number(lat1)) *
-        Math.PI /
-        180;
+        (Number(lat2) - Number(lat1)) *
+        Math.PI / 180;
 
     const dl =
-        (Number(lon2) -
-            Number(lon1)) *
-        Math.PI /
-        180;
+        (Number(lon2) - Number(lon1)) *
+        Math.PI / 180;
 
     const a =
-        Math.sin(dp / 2) *
-        Math.sin(dp / 2) +
-
+        Math.sin(dp / 2) ** 2 +
         Math.cos(p1) *
         Math.cos(p2) *
-        Math.sin(dl / 2) *
-        Math.sin(dl / 2);
+        Math.sin(dl / 2) ** 2;
 
     const c =
         2 *
@@ -597,34 +458,110 @@ function distanceInMeters(
     return R * c;
 }
 
+/* =========================================================
+   DEVELOPER AUTHENTICATION
+========================================================= */
+
+function createDeveloperToken() {
+    const timestamp = Date.now().toString();
+
+    const signature = crypto
+        .createHmac('sha256', SESSION_SECRET)
+        .update(timestamp)
+        .digest('hex');
+
+    return `${timestamp}.${signature}`;
+}
+
+function verifyDeveloperToken(token) {
+    if (!token || !SESSION_SECRET) {
+        return false;
+    }
+
+    const parts = String(token).split('.');
+
+    if (parts.length !== 2) {
+        return false;
+    }
+
+    const timestamp = parts[0];
+    const signature = parts[1];
+
+    const timestampNumber = Number(timestamp);
+
+    if (!Number.isFinite(timestampNumber)) {
+        return false;
+    }
+
+    /*
+     * Token صالح لمدة 24 ساعة.
+     */
+    const maxAge = 24 * 60 * 60 * 1000;
+
+    if (
+        Date.now() - timestampNumber < 0 ||
+        Date.now() - timestampNumber > maxAge
+    ) {
+        return false;
+    }
+
+    const expected = crypto
+        .createHmac('sha256', SESSION_SECRET)
+        .update(timestamp)
+        .digest('hex');
+
+    try {
+        return crypto.timingSafeEqual(
+            Buffer.from(signature),
+            Buffer.from(expected)
+        );
+    } catch {
+        return false;
+    }
+}
 
 function developerAuthenticated(req) {
+    if (!DEVELOPER_PASSWORD) {
+        return false;
+    }
 
+    /*
+     * أولاً Bearer Token
+     */
+    const authorization =
+        req.headers.authorization || '';
+
+    if (authorization.startsWith('Bearer ')) {
+        const token =
+            authorization.substring(7).trim();
+
+        if (verifyDeveloperToken(token)) {
+            return true;
+        }
+    }
+
+    /*
+     * دعم الطريقة القديمة أيضًا.
+     */
     const password =
         req.headers['x-developer-password'] ||
         req.headers['x-admin-password'] ||
         req.body?.developerPassword;
 
-    if (!DEVELOPER_PASSWORD) {
-        return false;
-    }
-
     return password === DEVELOPER_PASSWORD;
 }
-
 
 /* =========================================================
    HEALTH
 ========================================================= */
 
 app.get('/api/health', async (req, res) => {
-
     try {
-
         const dbState =
             mongoose.connection.readyState;
 
         res.json({
+            success: true,
             ok: true,
             mongodb: dbState === 1,
             mongoState: dbState,
@@ -632,274 +569,353 @@ app.get('/api/health', async (req, res) => {
         });
 
     } catch (error) {
-
         res.status(500).json({
+            success: false,
             ok: false,
             error: error.message
         });
     }
 });
 
-
 /* =========================================================
-   COMPANY REGISTER
+   DEVELOPER LOGIN
 ========================================================= */
 
-app.post(
-    '/api/companies/register',
-    async (req, res) => {
+app.post('/api/developer/login', async (req, res) => {
+    try {
+        const password =
+            String(req.body?.password || '');
 
-        try {
+        if (!DEVELOPER_PASSWORD) {
+            return res.status(500).json({
+                success: false,
+                message:
+                    'DEVELOPER_PASSWORD is not configured on server'
+            });
+        }
 
-            const {
-                companyId,
-                name,
-                password,
-                phone,
-                address,
-                latitude,
-                longitude,
-                gpsRadius
-            } = req.body;
+        if (!password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Developer password is required'
+            });
+        }
 
-            const normalizedCompanyId =
-                normalizeCompanyId(companyId);
+        if (password !== DEVELOPER_PASSWORD) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid developer password'
+            });
+        }
 
-            if (
-                !normalizedCompanyId ||
-                !name ||
-                !password
-            ) {
+        const token = createDeveloperToken();
 
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        'companyId, name and password are required'
-                });
-            }
+        res.json({
+            success: true,
+            message: 'Developer authenticated successfully',
+            token,
+            expiresIn: '24h'
+        });
 
-            const exists =
-                await Company.findOne({
-                    companyId:
-                        normalizedCompanyId
-                });
+    } catch (error) {
+        console.error(
+            'Developer login error:',
+            error
+        );
 
-            if (exists) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
 
-                return res.status(409).json({
-                    success: false,
-                    message:
-                        'Company already exists'
-                });
-            }
+/* =========================================================
+   COMPANIES REGISTER
+========================================================= */
 
-            const validGPS =
+app.post('/api/companies/register', async (req, res) => {
+    try {
+        const {
+            companyId,
+            name,
+            englishName,
+            password,
+            adminUsername,
+            adminPassword,
+            email,
+            managerName,
+            phone,
+            address,
+            latitude,
+            longitude,
+            gpsRadius,
+            subscription,
+            subscriptionStartDate,
+            subscriptionEndDate
+        } = req.body;
+
+        const normalizedCompanyId =
+            normalizeCompanyId(companyId);
+
+        if (
+            !normalizedCompanyId ||
+            !String(name || '').trim()
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'companyId and name are required'
+            });
+        }
+
+        if (!password && !adminPassword) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'Company password or adminPassword is required'
+            });
+        }
+
+        const exists = await Company.findOne({
+            companyId: normalizedCompanyId
+        });
+
+        if (exists) {
+            return res.status(409).json({
+                success: false,
+                message:
+                    'Company already exists'
+            });
+        }
+
+        const finalPassword =
+            String(
+                adminPassword ||
+                password ||
+                ''
+            );
+
+        const company = new Company({
+            companyId: normalizedCompanyId,
+
+            name: String(name).trim(),
+
+            englishName:
+                String(englishName || '').trim(),
+
+            password: finalPassword,
+
+            adminUsername:
+                String(
+                    adminUsername || 'admin'
+                ).trim(),
+
+            adminPassword:
+                finalPassword,
+
+            email:
+                String(email || '').trim(),
+
+            managerName:
+                String(managerName || '').trim(),
+
+            phone:
+                String(phone || '').trim(),
+
+            address:
+                String(address || '').trim(),
+
+            latitude:
                 isValidCoordinates(
                     latitude,
                     longitude
-                );
+                )
+                    ? Number(latitude)
+                    : undefined,
 
-            const company =
-                new Company({
+            longitude:
+                isValidCoordinates(
+                    latitude,
+                    longitude
+                )
+                    ? Number(longitude)
+                    : undefined,
 
-                    companyId:
-                        normalizedCompanyId,
+            gpsRadius:
+                Number(gpsRadius) > 0
+                    ? Number(gpsRadius)
+                    : 200,
 
-                    name,
+            subscription:
+                ['trial', 'monthly', 'annual']
+                    .includes(subscription)
+                    ? subscription
+                    : 'trial',
 
-                    password,
+            subscriptionStartDate:
+                subscriptionStartDate
+                    ? new Date(subscriptionStartDate)
+                    : new Date(),
 
-                    phone,
+            subscriptionEndDate:
+                subscriptionEndDate
+                    ? new Date(subscriptionEndDate)
+                    : null,
 
-                    address,
+            systemState: 'active',
+            active: true
+        });
 
-                    latitude:
-                        validGPS
-                            ? Number(latitude)
-                            : undefined,
+        await company.save();
 
-                    longitude:
-                        validGPS
-                            ? Number(longitude)
-                            : undefined,
+        res.status(201).json({
+            success: true,
+            message:
+                'Company registered successfully',
+            company
+        });
 
-                    gpsRadius:
-                        Number(gpsRadius) > 0
-                            ? Number(gpsRadius)
-                            : 200
-                });
+    } catch (error) {
+        console.error(
+            'Company register error:',
+            error
+        );
 
-            await company.save();
-
-            res.status(201).json({
-                success: true,
-                message:
-                    'Company registered successfully',
-                company
-            });
-
-        } catch (error) {
-
-            console.error(
-                'Company register error:',
-                error
-            );
-
-            res.status(500).json({
-                success: false,
-                message: error.message
-            });
-        }
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
-);
-
+});
 
 /* =========================================================
    COMPANY LOGIN
 ========================================================= */
 
-app.post(
-    '/api/company/login',
-    async (req, res) => {
+app.post('/api/company/login', async (req, res) => {
+    try {
+        const {
+            companyId,
+            username,
+            password
+        } = req.body;
 
-        try {
+        const normalizedCompanyId =
+            normalizeCompanyId(companyId);
 
-            const {
-                companyId,
-                password
-            } = req.body;
+        const company = await Company.findOne({
+            companyId: normalizedCompanyId,
+            active: true,
+            systemState: 'active'
+        });
 
-            const company =
-                await Company.findOne({
-                    companyId:
-                        normalizeCompanyId(
-                            companyId
-                        ),
-                    password
-                });
-
-            if (!company) {
-
-                return res.status(401).json({
-                    success: false,
-                    message:
-                        'Invalid company credentials'
-                });
-            }
-
-            if (!company.active) {
-
-                return res.status(403).json({
-                    success: false,
-                    message:
-                        'Company is disabled'
-                });
-            }
-
-            res.json({
-                success: true,
-                company
-            });
-
-        } catch (error) {
-
-            res.status(500).json({
+        if (!company) {
+            return res.status(401).json({
                 success: false,
-                message: error.message
+                message:
+                    'Company not found or inactive'
             });
         }
-    }
-);
 
+        const validPassword =
+            password === company.password ||
+            password === company.adminPassword;
+
+        const validUsername =
+            !username ||
+            username === company.adminUsername;
+
+        if (!validPassword || !validUsername) {
+            return res.status(401).json({
+                success: false,
+                message:
+                    'Invalid company credentials'
+            });
+        }
+
+        res.json({
+            success: true,
+            company
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
 
 /* =========================================================
-   COMPANIES
+   PUBLIC COMPANIES
 ========================================================= */
 
-app.get(
-    '/api/companies',
-    async (req, res) => {
+app.get('/api/companies', async (req, res) => {
+    try {
+        const companies = await Company.find({})
+            .sort({ createdAt: -1 })
+            .lean();
 
-        try {
+        res.json({
+            success: true,
+            companies
+        });
 
-            const companies =
-                await Company.find({})
-                    .sort({
-                        createdAt: -1
-                    })
-                    .lean();
-
-            res.json({
-                success: true,
-                companies
-            });
-
-        } catch (error) {
-
-            res.status(500).json({
-                success: false,
-                message: error.message
-            });
-        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
-);
-
+});
 
 /* =========================================================
-   DEVELOPER COMPANIES
+   DEVELOPER - LIST COMPANIES
 ========================================================= */
 
-app.get(
-    '/api/developer/companies',
-    async (req, res) => {
-
-        try {
-
-            if (!developerAuthenticated(req)) {
-
-                return res.status(401).json({
-                    success: false,
-                    message:
-                        'Developer authentication required'
-                });
-            }
-
-            const companies =
-                await Company.find({})
-                    .sort({
-                        createdAt: -1
-                    })
-                    .lean();
-
-            res.json({
-                success: true,
-                companies
-            });
-
-        } catch (error) {
-
-            console.error(
-                'Developer companies error:',
-                error
-            );
-
-            res.status(500).json({
+app.get('/api/developer/companies', async (req, res) => {
+    try {
+        if (!developerAuthenticated(req)) {
+            return res.status(401).json({
                 success: false,
-                message: error.message
+                message:
+                    'Developer authentication required'
             });
         }
-    }
-);
 
+        const companies =
+            await Company.find({})
+                .sort({ createdAt: -1 })
+                .lean();
+
+        res.json({
+            success: true,
+            companies
+        });
+
+    } catch (error) {
+        console.error(
+            'Developer companies error:',
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/* =========================================================
+   DEVELOPER - UPDATE COMPANY
+========================================================= */
 
 app.patch(
     '/api/developer/companies/:companyId',
     async (req, res) => {
-
         try {
-
             if (!developerAuthenticated(req)) {
-
                 return res.status(401).json({
                     success: false,
                     message:
@@ -914,25 +930,33 @@ app.patch(
 
             const allowed = [
                 'name',
+                'englishName',
                 'password',
+                'adminUsername',
+                'adminPassword',
+                'email',
+                'managerName',
                 'phone',
                 'address',
                 'latitude',
                 'longitude',
                 'gpsRadius',
+                'subscription',
+                'subscriptionStartDate',
+                'subscriptionEndDate',
+                'systemState',
                 'active'
             ];
 
             const update = {};
 
             for (const key of allowed) {
-
                 if (
-                    Object.prototype
-                        .hasOwnProperty
-                        .call(req.body, key)
+                    Object.prototype.hasOwnProperty.call(
+                        req.body,
+                        key
+                    )
                 ) {
-
                     update[key] =
                         req.body[key];
                 }
@@ -959,14 +983,81 @@ app.patch(
                     Number(update.gpsRadius);
             }
 
+            if (
+                update.subscriptionStartDate
+            ) {
+                update.subscriptionStartDate =
+                    new Date(
+                        update.subscriptionStartDate
+                    );
+            }
+
+            if (
+                update.subscriptionEndDate
+            ) {
+                update.subscriptionEndDate =
+                    new Date(
+                        update.subscriptionEndDate
+                    );
+            }
+
+            /*
+             * إبقاء password و adminPassword متزامنين
+             * عندما يتم تغيير أحدهما.
+             */
+
+            if (
+                update.adminPassword !== undefined
+            ) {
+                update.password =
+                    String(
+                        update.adminPassword
+                    );
+
+                update.adminPassword =
+                    String(
+                        update.adminPassword
+                    );
+            } else if (
+                update.password !== undefined
+            ) {
+                update.adminPassword =
+                    String(
+                        update.password
+                    );
+            }
+
+            if (
+                update.systemState !== undefined
+            ) {
+                update.systemState =
+                    update.systemState === 'active'
+                        ? 'active'
+                        : 'stopped';
+
+                update.active =
+                    update.systemState === 'active';
+            }
+
+            if (
+                update.active !== undefined &&
+                update.systemState === undefined
+            ) {
+                update.active =
+                    Boolean(update.active);
+
+                update.systemState =
+                    update.active
+                        ? 'active'
+                        : 'stopped';
+            }
+
+            update.updatedAt = new Date();
+
             const company =
                 await Company.findOneAndUpdate(
-                    {
-                        companyId
-                    },
-                    {
-                        $set: update
-                    },
+                    { companyId },
+                    { $set: update },
                     {
                         new: true,
                         runValidators: true
@@ -974,7 +1065,6 @@ app.patch(
                 );
 
             if (!company) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -990,7 +1080,6 @@ app.patch(
             });
 
         } catch (error) {
-
             console.error(
                 'Developer company update error:',
                 error
@@ -1004,15 +1093,15 @@ app.patch(
     }
 );
 
+/* =========================================================
+   DEVELOPER - COMPANY STATUS
+========================================================= */
 
 app.patch(
     '/api/developer/companies/:companyId/status',
     async (req, res) => {
-
         try {
-
             if (!developerAuthenticated(req)) {
-
                 return res.status(401).json({
                     success: false,
                     message:
@@ -1031,12 +1120,15 @@ app.patch(
 
             const company =
                 await Company.findOneAndUpdate(
-                    {
-                        companyId
-                    },
+                    { companyId },
                     {
                         $set: {
-                            active
+                            active,
+                            systemState:
+                                active
+                                    ? 'active'
+                                    : 'stopped',
+                            updatedAt: new Date()
                         }
                     },
                     {
@@ -1045,7 +1137,6 @@ app.patch(
                 );
 
             if (!company) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -1055,15 +1146,13 @@ app.patch(
 
             res.json({
                 success: true,
-                message:
-                    active
-                        ? 'Company activated successfully'
-                        : 'Company disabled successfully',
+                message: active
+                    ? 'Company activated successfully'
+                    : 'Company disabled successfully',
                 company
             });
 
         } catch (error) {
-
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -1072,15 +1161,15 @@ app.patch(
     }
 );
 
+/* =========================================================
+   DEVELOPER - DELETE COMPANY
+========================================================= */
 
 app.delete(
     '/api/developer/companies/:companyId',
     async (req, res) => {
-
         try {
-
             if (!developerAuthenticated(req)) {
-
                 return res.status(401).json({
                     success: false,
                     message:
@@ -1099,7 +1188,6 @@ app.delete(
                 });
 
             if (!company) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -1137,7 +1225,6 @@ app.delete(
             });
 
         } catch (error) {
-
             console.error(
                 'Company delete error:',
                 error
@@ -1151,116 +1238,99 @@ app.delete(
     }
 );
 
-
 /* =========================================================
    EMPLOYEE REQUEST
 ========================================================= */
 
-app.post(
-    '/api/employee/request',
-    async (req, res) => {
+app.post('/api/employee/request', async (req, res) => {
+    try {
+        const {
+            companyId,
+            name,
+            phone,
+            jobTitle,
+            deviceId
+        } = req.body;
 
-        try {
+        const normalizedCompanyId =
+            normalizeCompanyId(companyId);
 
-            const {
-                companyId,
-                name,
-                phone,
-                jobTitle,
-                deviceId
-            } = req.body;
+        const normalizedDeviceId =
+            normalizeDeviceId(deviceId);
 
-            const normalizedCompanyId =
-                normalizeCompanyId(
-                    companyId
-                );
-
-            const normalizedDeviceId =
-                normalizeDeviceId(
-                    deviceId
-                );
-
-            if (
-                !normalizedCompanyId ||
-                !name
-            ) {
-
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        'companyId and name are required'
-                });
-            }
-
-            const company =
-                await Company.findOne({
-                    companyId:
-                        normalizedCompanyId,
-                    active: true
-                });
-
-            if (!company) {
-
-                return res.status(404).json({
-                    success: false,
-                    message:
-                        'Company not found or inactive'
-                });
-            }
-
-            const request =
-                new EmployeeRequest({
-
-                    requestId:
-                        generateId('REQ-'),
-
-                    companyId:
-                        normalizedCompanyId,
-
-                    name,
-
-                    phone,
-
-                    jobTitle,
-
-                    deviceId:
-                        normalizedDeviceId ||
-                        null,
-
-                    status: 'pending'
-                });
-
-            await request.save();
-
-            res.status(201).json({
-                success: true,
-                message:
-                    'Employee request submitted successfully',
-                request
-            });
-
-        } catch (error) {
-
-            console.error(
-                'Employee request error:',
-                error
-            );
-
-            res.status(500).json({
+        if (
+            !normalizedCompanyId ||
+            !name
+        ) {
+            return res.status(400).json({
                 success: false,
-                message: error.message
+                message:
+                    'companyId and name are required'
             });
         }
-    }
-);
 
+        const company =
+            await Company.findOne({
+                companyId:
+                    normalizedCompanyId,
+                active: true,
+                systemState: 'active'
+            });
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message:
+                    'Company not found or inactive'
+            });
+        }
+
+        const request =
+            new EmployeeRequest({
+                requestId:
+                    generateId('REQ-'),
+
+                companyId:
+                    normalizedCompanyId,
+
+                name,
+
+                phone,
+
+                jobTitle,
+
+                deviceId:
+                    normalizedDeviceId || null,
+
+                status: 'pending'
+            });
+
+        await request.save();
+
+        res.status(201).json({
+            success: true,
+            message:
+                'Employee request submitted successfully',
+            request
+        });
+
+    } catch (error) {
+        console.error(
+            'Employee request error:',
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
 
 app.get(
     '/api/employee/requests/:companyId/pending',
     async (req, res) => {
-
         try {
-
             const companyId =
                 normalizeCompanyId(
                     req.params.companyId
@@ -1271,9 +1341,7 @@ app.get(
                     companyId,
                     status: 'pending'
                 })
-                    .sort({
-                        createdAt: -1
-                    })
+                    .sort({ createdAt: -1 })
                     .lean();
 
             res.json({
@@ -1282,7 +1350,6 @@ app.get(
             });
 
         } catch (error) {
-
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -1291,7 +1358,6 @@ app.get(
     }
 );
 
-
 /* =========================================================
    APPROVE EMPLOYEE
 ========================================================= */
@@ -1299,9 +1365,7 @@ app.get(
 app.post(
     '/api/employee/request/:requestId/approve',
     async (req, res) => {
-
         try {
-
             const request =
                 await EmployeeRequest.findOne({
                     requestId:
@@ -1309,7 +1373,6 @@ app.post(
                 });
 
             if (!request) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -1317,10 +1380,7 @@ app.post(
                 });
             }
 
-            if (
-                request.status !== 'pending'
-            ) {
-
+            if (request.status !== 'pending') {
                 return res.status(400).json({
                     success: false,
                     message:
@@ -1331,16 +1391,13 @@ app.post(
             const existingEmployee =
                 await Employee.findOne({
                     $or: [
-
                         {
                             employeeId:
                                 request.requestId
                         },
-
                         {
                             companyId:
                                 request.companyId,
-
                             phone:
                                 request.phone
                         }
@@ -1348,7 +1405,6 @@ app.post(
                 });
 
             if (existingEmployee) {
-
                 return res.status(409).json({
                     success: false,
                     message:
@@ -1363,7 +1419,6 @@ app.post(
 
             const employee =
                 new Employee({
-
                     employeeId,
 
                     companyId:
@@ -1379,7 +1434,6 @@ app.post(
                         request.jobTitle,
 
                     username: null,
-
                     password: null,
 
                     credentialsStatus:
@@ -1394,27 +1448,12 @@ app.post(
                             ? new Date()
                             : null,
 
-                    /*
-                     * Fingerprint is NOT copied
-                     * from request.
-                     *
-                     * It is bound later from the
-                     * employee's own device.
-                     */
-                    fingerprintTokenHash:
-                        null,
-
-                    fingerprintBoundAt:
-                        null,
-
                     active: true
                 });
 
             await employee.save();
 
-            request.status =
-                'approved';
-
+            request.status = 'approved';
             request.employeeId =
                 employeeId;
 
@@ -1431,12 +1470,9 @@ app.post(
 
             res.json({
                 success: true,
-
                 message:
-                    'Employee approved. Credentials must now be assigned by the manager.',
-
+                    'Employee approved. Credentials can now be assigned.',
                 employee: {
-
                     employeeId:
                         employee.employeeId,
 
@@ -1449,16 +1485,12 @@ app.post(
                     deviceId:
                         employee.deviceId,
 
-                    fingerprintBound:
-                        false,
-
                     credentialsStatus:
                         employee.credentialsStatus
                 }
             });
 
         } catch (error) {
-
             console.error(
                 'Approve employee error:',
                 error
@@ -1472,7 +1504,6 @@ app.post(
     }
 );
 
-
 /* =========================================================
    REJECT EMPLOYEE
 ========================================================= */
@@ -1480,9 +1511,7 @@ app.post(
 app.post(
     '/api/employee/request/:requestId/reject',
     async (req, res) => {
-
         try {
-
             const request =
                 await EmployeeRequest.findOne({
                     requestId:
@@ -1490,7 +1519,6 @@ app.post(
                 });
 
             if (!request) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -1498,9 +1526,15 @@ app.post(
                 });
             }
 
-            request.status =
-                'rejected';
+            if (request.status !== 'pending') {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        'Request already processed'
+                });
+            }
 
+            request.status = 'rejected';
             request.rejectedAt =
                 new Date();
 
@@ -1514,7 +1548,6 @@ app.post(
             });
 
         } catch (error) {
-
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -1523,7 +1556,6 @@ app.post(
     }
 );
 
-
 /* =========================================================
    EMPLOYEE CREDENTIALS
 ========================================================= */
@@ -1531,9 +1563,7 @@ app.post(
 app.patch(
     '/api/employees/:employeeId/credentials',
     async (req, res) => {
-
         try {
-
             const {
                 companyId,
                 username,
@@ -1545,7 +1575,6 @@ app.patch(
                 !username ||
                 !password
             ) {
-
                 return res.status(400).json({
                     success: false,
                     message:
@@ -1555,7 +1584,6 @@ app.patch(
 
             const employee =
                 await Employee.findOne({
-
                     employeeId:
                         req.params.employeeId,
 
@@ -1566,7 +1594,6 @@ app.patch(
                 });
 
             if (!employee) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -1576,11 +1603,11 @@ app.patch(
 
             const duplicate =
                 await Employee.findOne({
-
                     companyId:
                         employee.companyId,
 
-                    username,
+                    username:
+                        String(username).trim(),
 
                     employeeId: {
                         $ne:
@@ -1589,7 +1616,6 @@ app.patch(
                 });
 
             if (duplicate) {
-
                 return res.status(409).json({
                     success: false,
                     message:
@@ -1612,9 +1638,7 @@ app.patch(
                 success: true,
                 message:
                     'Employee credentials assigned successfully',
-
                 employee: {
-
                     employeeId:
                         employee.employeeId,
 
@@ -1631,15 +1655,11 @@ app.patch(
                         employee.credentialsStatus,
 
                     deviceId:
-                        employee.deviceId,
-
-                    fingerprintBound:
-                        !!employee.fingerprintTokenHash
+                        employee.deviceId
                 }
             });
 
         } catch (error) {
-
             console.error(
                 'Employee credentials error:',
                 error
@@ -1653,355 +1673,118 @@ app.patch(
     }
 );
 
-
 /* =========================================================
-   MOBILE LOGIN
+   MOBILE LOGIN + DEVICE ID
 ========================================================= */
 
-app.post(
-    '/api/mobile/login',
-    async (req, res) => {
+app.post('/api/mobile/login', async (req, res) => {
+    try {
+        const {
+            companyId,
+            username,
+            password,
+            deviceId
+        } = req.body;
 
-        try {
+        const normalizedCompanyId =
+            normalizeCompanyId(companyId);
 
-            const {
-                companyId,
-                username,
-                password,
-                deviceId
-            } = req.body;
+        const normalizedDeviceId =
+            normalizeDeviceId(deviceId);
 
-            const normalizedCompanyId =
-                normalizeCompanyId(
-                    companyId
-                );
-
-            const normalizedDeviceId =
-                normalizeDeviceId(
-                    deviceId
-                );
-
-            if (
-                !normalizedCompanyId ||
-                !username ||
-                !password ||
-                !normalizedDeviceId
-            ) {
-
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        'companyId, username, password and deviceId are required'
-                });
-            }
-
-            const employee =
-                await Employee.findOne({
-
-                    companyId:
-                        normalizedCompanyId,
-
-                    username,
-
-                    password,
-
-                    active: true,
-
-                    credentialsStatus:
-                        'active'
-                });
-
-            if (!employee) {
-
-                return res.status(401).json({
-                    success: false,
-                    message:
-                        'Invalid employee credentials'
-                });
-            }
-
-            if (
-                employee.deviceId &&
-                employee.deviceId !==
-                    normalizedDeviceId
-            ) {
-
-                return res.status(403).json({
-                    success: false,
-                    message:
-                        'This employee is already bound to another device'
-                });
-            }
-
-            if (!employee.deviceId) {
-
-                employee.deviceId =
-                    normalizedDeviceId;
-
-                employee.deviceBoundAt =
-                    new Date();
-
-                await employee.save();
-            }
-
-            res.json({
-
-                success: true,
-
-                message:
-                    'Login successful',
-
-                employee: {
-
-                    employeeId:
-                        employee.employeeId,
-
-                    companyId:
-                        employee.companyId,
-
-                    name:
-                        employee.name,
-
-                    username:
-                        employee.username,
-
-                    deviceId:
-                        employee.deviceId,
-
-                    fingerprintBound:
-                        !!employee.fingerprintTokenHash
-                }
-            });
-
-        } catch (error) {
-
-            console.error(
-                'Mobile login error:',
-                error
-            );
-
-            res.status(500).json({
+        if (
+            !normalizedCompanyId ||
+            !username ||
+            !password ||
+            !normalizedDeviceId
+        ) {
+            return res.status(400).json({
                 success: false,
-                message: error.message
+                message:
+                    'companyId, username, password and deviceId are required'
             });
         }
-    }
-);
 
+        const employee =
+            await Employee.findOne({
+                companyId:
+                    normalizedCompanyId,
 
-/* =========================================================
-   FINGERPRINT BINDING
-=========================================================
+                username,
 
-   The mobile application should call this after the
-   employee successfully authenticates with the device
-   fingerprint.
+                password,
 
-   First time:
-      device + fingerprint are bound to employee.
+                active: true,
 
-   Later:
-      the fingerprint must match the saved hash.
+                credentialsStatus:
+                    'active'
+            });
 
-========================================================= */
+        if (!employee) {
+            return res.status(401).json({
+                success: false,
+                message:
+                    'Invalid employee credentials'
+            });
+        }
 
-app.post(
-    '/api/mobile/fingerprint/bind',
-    async (req, res) => {
+        if (
+            employee.deviceId &&
+            employee.deviceId !==
+                normalizedDeviceId
+        ) {
+            return res.status(403).json({
+                success: false,
+                message:
+                    'This employee is already bound to another device'
+            });
+        }
 
-        try {
+        if (!employee.deviceId) {
+            employee.deviceId =
+                normalizedDeviceId;
 
-            const {
-                employeeId,
-                deviceId,
-                fingerprintToken
-            } = req.body;
-
-            const normalizedDeviceId =
-                normalizeDeviceId(
-                    deviceId
-                );
-
-            const normalizedFingerprint =
-                normalizeFingerprintToken(
-                    fingerprintToken
-                );
-
-            if (
-                !employeeId ||
-                !normalizedDeviceId ||
-                !normalizedFingerprint
-            ) {
-
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        'employeeId, deviceId and fingerprintToken are required'
-                });
-            }
-
-            const employee =
-                await Employee.findOne({
-                    employeeId,
-                    active: true
-                });
-
-            if (!employee) {
-
-                return res.status(404).json({
-                    success: false,
-                    message:
-                        'Employee not found or inactive'
-                });
-            }
-
-            if (
-                !employee.deviceId ||
-                employee.deviceId !==
-                    normalizedDeviceId
-            ) {
-
-                return res.status(403).json({
-                    success: false,
-                    message:
-                        'Device is not bound to this employee'
-                });
-            }
-
-
-            /*
-             * If fingerprint already exists,
-             * do NOT replace it silently.
-             */
-            if (
-                employee.fingerprintTokenHash
-            ) {
-
-                if (
-                    !fingerprintMatches(
-                        normalizedFingerprint,
-                        employee.fingerprintTokenHash
-                    )
-                ) {
-
-                    return res.status(403).json({
-                        success: false,
-                        message:
-                            'Fingerprint does not match the fingerprint already bound to this employee'
-                    });
-                }
-
-                return res.json({
-                    success: true,
-                    message:
-                        'Fingerprint already bound and verified',
-                    fingerprintBound:
-                        true
-                });
-            }
-
-
-            /*
-             * First successful fingerprint binding.
-             */
-            employee.fingerprintTokenHash =
-                hashFingerprintToken(
-                    normalizedFingerprint
-                );
-
-            employee.fingerprintBoundAt =
+            employee.deviceBoundAt =
                 new Date();
 
             await employee.save();
-
-            res.json({
-                success: true,
-                message:
-                    'Fingerprint bound to employee successfully',
-                fingerprintBound:
-                    true
-            });
-
-        } catch (error) {
-
-            console.error(
-                'Fingerprint binding error:',
-                error
-            );
-
-            res.status(500).json({
-                success: false,
-                message: error.message
-            });
         }
-    }
-);
 
+        res.json({
+            success: true,
+            message:
+                'Login successful',
 
-/* =========================================================
-   FINGERPRINT RESET
-========================================================= */
+            employee: {
+                employeeId:
+                    employee.employeeId,
 
-app.post(
-    '/api/employees/:employeeId/fingerprint/reset',
-    async (req, res) => {
+                companyId:
+                    employee.companyId,
 
-        try {
+                name:
+                    employee.name,
 
-            const {
-                companyId
-            } = req.body;
+                username:
+                    employee.username,
 
-            const employee =
-                await Employee.findOne({
-
-                    employeeId:
-                        req.params.employeeId,
-
-                    companyId:
-                        normalizeCompanyId(
-                            companyId
-                        )
-                });
-
-            if (!employee) {
-
-                return res.status(404).json({
-                    success: false,
-                    message:
-                        'Employee not found'
-                });
+                deviceId:
+                    employee.deviceId
             }
+        });
 
-            employee.fingerprintTokenHash =
-                null;
+    } catch (error) {
+        console.error(
+            'Mobile login error:',
+            error
+        );
 
-            employee.fingerprintBoundAt =
-                null;
-
-            await employee.save();
-
-            res.json({
-                success: true,
-                message:
-                    'Employee fingerprint binding reset successfully'
-            });
-
-        } catch (error) {
-
-            console.error(
-                'Fingerprint reset error:',
-                error
-            );
-
-            res.status(500).json({
-                success: false,
-                message: error.message
-            });
-        }
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
-);
-
+});
 
 /* =========================================================
    DEVICE RESET
@@ -2010,27 +1793,21 @@ app.post(
 app.post(
     '/api/employees/:employeeId/device/reset',
     async (req, res) => {
-
         try {
-
-            const {
-                companyId
-            } = req.body;
+            const companyId =
+                normalizeCompanyId(
+                    req.body.companyId
+                );
 
             const employee =
                 await Employee.findOne({
-
                     employeeId:
                         req.params.employeeId,
 
-                    companyId:
-                        normalizeCompanyId(
-                            companyId
-                        )
+                    companyId
                 });
 
             if (!employee) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -2038,35 +1815,18 @@ app.post(
                 });
             }
 
-            employee.deviceId =
-                null;
-
-            employee.deviceBoundAt =
-                null;
-
-            /*
-             * When the device is reset,
-             * fingerprint binding is also reset.
-             *
-             * This prevents an old device fingerprint
-             * from being reused on the new device.
-             */
-            employee.fingerprintTokenHash =
-                null;
-
-            employee.fingerprintBoundAt =
-                null;
+            employee.deviceId = null;
+            employee.deviceBoundAt = null;
 
             await employee.save();
 
             res.json({
                 success: true,
                 message:
-                    'Employee device and fingerprint binding reset successfully'
+                    'Employee device binding reset successfully'
             });
 
         } catch (error) {
-
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -2074,7 +1834,6 @@ app.post(
         }
     }
 );
-
 
 /* =========================================================
    EMPLOYEES
@@ -2083,42 +1842,23 @@ app.post(
 app.get(
     '/api/employees/:companyId',
     async (req, res) => {
-
         try {
-
             const employees =
                 await Employee.find({
-
                     companyId:
                         normalizeCompanyId(
                             req.params.companyId
                         )
                 })
-                    .sort({
-                        createdAt: -1
-                    })
+                    .sort({ createdAt: -1 })
                     .lean();
-
-            /*
-             * Never return fingerprint hash
-             * to the frontend.
-             */
-            const safeEmployees =
-                employees.map(employee => {
-
-                    delete employee.fingerprintTokenHash;
-
-                    return employee;
-                });
 
             res.json({
                 success: true,
-                employees:
-                    safeEmployees
+                employees
             });
 
         } catch (error) {
-
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -2127,13 +1867,10 @@ app.get(
     }
 );
 
-
 app.get(
     '/api/employees/:employeeId',
     async (req, res) => {
-
         try {
-
             const employee =
                 await Employee.findOne({
                     employeeId:
@@ -2141,7 +1878,6 @@ app.get(
                 }).lean();
 
             if (!employee) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -2149,15 +1885,12 @@ app.get(
                 });
             }
 
-            delete employee.fingerprintTokenHash;
-
             res.json({
                 success: true,
                 employee
             });
 
         } catch (error) {
-
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -2166,383 +1899,193 @@ app.get(
     }
 );
 
-
 /* =========================================================
-   ATTENDANCE
-   DEVICE + FINGERPRINT + GPS
+   ATTENDANCE / FINGERPRINT / GPS
 ========================================================= */
 
-app.post(
-    '/api/attendance',
-    async (req, res) => {
+app.post('/api/attendance', async (req, res) => {
+    try {
+        const {
+            employeeId,
+            deviceId,
+            fingerprintToken,
+            latitude,
+            longitude,
+            timestamp,
+            type
+        } = req.body;
 
-        try {
+        const normalizedDeviceId =
+            normalizeDeviceId(deviceId);
 
-            const {
-                employeeId,
-                deviceId,
-                fingerprintToken,
+        if (
+            !employeeId ||
+            !normalizedDeviceId ||
+            !fingerprintToken
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'employeeId, deviceId and fingerprintToken are required'
+            });
+        }
+
+        if (
+            !isValidCoordinates(
                 latitude,
-                longitude,
-                timestamp,
-                type
-            } = req.body;
+                longitude
+            )
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'Valid GPS coordinates are required'
+            });
+        }
 
-            const normalizedDeviceId =
-                normalizeDeviceId(
-                    deviceId
-                );
+        const employee =
+            await Employee.findOne({
+                employeeId,
+                active: true
+            });
 
-            const normalizedFingerprint =
-                normalizeFingerprintToken(
-                    fingerprintToken
-                );
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message:
+                    'Employee not found or inactive'
+            });
+        }
 
+        if (
+            !employee.deviceId ||
+            employee.deviceId !==
+                normalizedDeviceId
+        ) {
+            return res.status(403).json({
+                success: false,
+                message:
+                    'Device is not bound to this employee'
+            });
+        }
 
-            /* -------------------------------------------------
-               REQUIRED DATA
-            ------------------------------------------------- */
+        const company =
+            await Company.findOne({
+                companyId:
+                    employee.companyId,
 
-            if (
-                !employeeId ||
-                !normalizedDeviceId ||
-                !normalizedFingerprint
-            ) {
+                active: true,
 
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        'employeeId, deviceId and fingerprintToken are required'
-                });
-            }
+                systemState: 'active'
+            });
 
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message:
+                    'Company not found or inactive'
+            });
+        }
 
-            /* -------------------------------------------------
-               GPS
-            ------------------------------------------------- */
-
-            if (
-                !isValidCoordinates(
+        if (
+            isValidCoordinates(
+                company.latitude,
+                company.longitude
+            )
+        ) {
+            const distance =
+                distanceInMeters(
+                    company.latitude,
+                    company.longitude,
                     latitude,
                     longitude
-                )
-            ) {
+                );
 
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        'Valid GPS coordinates are required'
-                });
-            }
+            const radius =
+                Number(company.gpsRadius) > 0
+                    ? Number(company.gpsRadius)
+                    : 200;
 
-
-            /* -------------------------------------------------
-               EMPLOYEE
-            ------------------------------------------------- */
-
-            const employee =
-                await Employee.findOne({
-
-                    employeeId,
-
-                    active: true
-                });
-
-            if (!employee) {
-
-                return res.status(404).json({
-                    success: false,
-                    message:
-                        'Employee not found or inactive'
-                });
-            }
-
-
-            /* -------------------------------------------------
-               DEVICE VERIFICATION
-            ------------------------------------------------- */
-
-            if (
-                !employee.deviceId ||
-                employee.deviceId !==
-                    normalizedDeviceId
-            ) {
-
+            if (distance > radius) {
                 return res.status(403).json({
                     success: false,
                     message:
-                        'Device is not bound to this employee'
+                        'Employee is outside the allowed company location',
+                    distance,
+                    allowedRadius:
+                        radius
                 });
             }
-
-
-            /* -------------------------------------------------
-               COMPANY
-            ------------------------------------------------- */
-
-            const company =
-                await Company.findOne({
-
-                    companyId:
-                        employee.companyId,
-
-                    active: true
-                });
-
-            if (!company) {
-
-                return res.status(404).json({
-                    success: false,
-                    message:
-                        'Company not found or inactive'
-                });
-            }
-
-
-            /* -------------------------------------------------
-               FINGERPRINT VERIFICATION
-            -------------------------------------------------
-
-               If no fingerprint has been bound yet,
-               bind this token on the first valid attendance.
-
-               IMPORTANT:
-               The mobile application must only send
-               fingerprintToken AFTER successful local
-               biometric authentication.
-            */
-
-            if (
-                !employee.fingerprintTokenHash
-            ) {
-
-                employee.fingerprintTokenHash =
-                    hashFingerprintToken(
-                        normalizedFingerprint
-                    );
-
-                employee.fingerprintBoundAt =
-                    new Date();
-
-                await employee.save();
-
-                console.log(
-                    `🔐 Fingerprint bound for employee ${employee.employeeId}`
-                );
-
-            } else {
-
-                const fingerprintValid =
-                    fingerprintMatches(
-
-                        normalizedFingerprint,
-
-                        employee.fingerprintTokenHash
-                    );
-
-                if (!fingerprintValid) {
-
-                    return res.status(403).json({
-                        success: false,
-                        message:
-                            'Fingerprint verification failed'
-                    });
-                }
-            }
-
-
-            /* -------------------------------------------------
-               GPS COMPANY RADIUS
-            ------------------------------------------------- */
-
-            if (
-                isValidCoordinates(
-                    company.latitude,
-                    company.longitude
-                )
-            ) {
-
-                const distance =
-                    distanceInMeters(
-
-                        company.latitude,
-
-                        company.longitude,
-
-                        latitude,
-
-                        longitude
-                    );
-
-                const radius =
-                    Number(
-                        company.gpsRadius
-                    ) > 0
-
-                        ? Number(
-                            company.gpsRadius
-                        )
-
-                        : 200;
-
-
-                if (distance > radius) {
-
-                    return res.status(403).json({
-
-                        success: false,
-
-                        message:
-                            'Employee is outside the allowed company location',
-
-                        distance:
-
-                            Math.round(
-                                distance * 100
-                            ) / 100,
-
-                        allowedRadius:
-                            radius
-                    });
-                }
-            }
-
-
-            /* -------------------------------------------------
-               ATTENDANCE
-            ------------------------------------------------- */
-
-            const attendance =
-                new Attendance({
-
-                    employeeId:
-                        employee.employeeId,
-
-                    companyId:
-                        employee.companyId,
-
-                    deviceId:
-                        normalizedDeviceId,
-
-                    fingerprintTokenHash:
-                        hashFingerprintToken(
-                            normalizedFingerprint
-                        ),
-
-                    latitude:
-                        Number(latitude),
-
-                    longitude:
-                        Number(longitude),
-
-                    timestamp:
-                        timestamp
-                            ? new Date(timestamp)
-                            : new Date(),
-
-                    type:
-                        type ||
-                        'check-in'
-                });
-
-            await attendance.save();
-
-
-            res.status(201).json({
-
-                success: true,
-
-                message:
-                    'Attendance recorded successfully',
-
-                attendance: {
-
-                    _id:
-                        attendance._id,
-
-                    employeeId:
-                        attendance.employeeId,
-
-                    companyId:
-                        attendance.companyId,
-
-                    deviceId:
-                        attendance.deviceId,
-
-                    latitude:
-                        attendance.latitude,
-
-                    longitude:
-                        attendance.longitude,
-
-                    timestamp:
-                        attendance.timestamp,
-
-                    type:
-                        attendance.type
-                }
-            });
-
-        } catch (error) {
-
-            console.error(
-                'Attendance error:',
-                error
-            );
-
-            res.status(500).json({
-                success: false,
-                message: error.message
-            });
         }
+
+        const attendance =
+            new Attendance({
+                employeeId:
+                    employee.employeeId,
+
+                companyId:
+                    employee.companyId,
+
+                deviceId:
+                    normalizedDeviceId,
+
+                fingerprintToken,
+
+                latitude:
+                    Number(latitude),
+
+                longitude:
+                    Number(longitude),
+
+                timestamp:
+                    timestamp
+                        ? new Date(timestamp)
+                        : new Date(),
+
+                type:
+                    type || 'check-in'
+            });
+
+        await attendance.save();
+
+        res.status(201).json({
+            success: true,
+            message:
+                'Attendance recorded successfully',
+            attendance
+        });
+
+    } catch (error) {
+        console.error(
+            'Attendance error:',
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
-);
-
-
-/* =========================================================
-   EMPLOYEE ATTENDANCE
-========================================================= */
+});
 
 app.get(
     '/api/employees/:employeeId/attendance',
     async (req, res) => {
-
         try {
-
             const attendance =
                 await Attendance.find({
-
                     employeeId:
                         req.params.employeeId
-
                 })
-                    .sort({
-                        timestamp: -1
-                    })
+                    .sort({ timestamp: -1 })
                     .lean();
-
-
-            /*
-             * Remove fingerprint hashes
-             * from API response.
-             */
-            const safeAttendance =
-                attendance.map(item => {
-
-                    delete item.fingerprintTokenHash;
-
-                    return item;
-                });
-
 
             res.json({
                 success: true,
-                attendance:
-                    safeAttendance
+                attendance
             });
 
         } catch (error) {
-
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -2550,65 +2093,39 @@ app.get(
         }
     }
 );
-
-
-/* =========================================================
-   ADMIN ATTENDANCE
-========================================================= */
 
 app.get(
     '/api/admin/attendance',
     async (req, res) => {
-
         try {
-
-            const {
-                companyId,
-                employeeId
-            } = req.query;
-
             const query = {};
 
-            if (companyId) {
-
+            if (req.query.companyId) {
                 query.companyId =
                     normalizeCompanyId(
-                        companyId
+                        req.query.companyId
                     );
             }
 
-            if (employeeId) {
-
+            if (req.query.employeeId) {
                 query.employeeId =
-                    String(employeeId);
+                    String(
+                        req.query.employeeId
+                    );
             }
 
             const attendance =
                 await Attendance.find(query)
-                    .sort({
-                        timestamp: -1
-                    })
+                    .sort({ timestamp: -1 })
                     .limit(1000)
                     .lean();
 
-
-            const safeAttendance =
-                attendance.map(item => {
-
-                    delete item.fingerprintTokenHash;
-
-                    return item;
-                });
-
-
             res.json({
                 success: true,
-                attendance:
-                    safeAttendance
+                attendance
             });
 
         } catch (error) {
-
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -2617,17 +2134,14 @@ app.get(
     }
 );
 
-
 /* =========================================================
-   SERVICE REQUESTS
+   LOAN / LEAVE REQUESTS
 ========================================================= */
 
 app.post(
     '/api/employee/service-request',
     async (req, res) => {
-
         try {
-
             const {
                 employeeId,
                 deviceId,
@@ -2639,16 +2153,13 @@ app.post(
             } = req.body;
 
             const normalizedDeviceId =
-                normalizeDeviceId(
-                    deviceId
-                );
+                normalizeDeviceId(deviceId);
 
             if (
                 !employeeId ||
                 !normalizedDeviceId ||
                 !type
             ) {
-
                 return res.status(400).json({
                     success: false,
                     message:
@@ -2657,12 +2168,9 @@ app.post(
             }
 
             if (
-                ![
-                    'loan',
-                    'leave'
-                ].includes(type)
+                !['loan', 'leave']
+                    .includes(type)
             ) {
-
                 return res.status(400).json({
                     success: false,
                     message:
@@ -2672,14 +2180,11 @@ app.post(
 
             const employee =
                 await Employee.findOne({
-
                     employeeId,
-
                     active: true
                 });
 
             if (!employee) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -2691,7 +2196,6 @@ app.post(
                 employee.deviceId !==
                 normalizedDeviceId
             ) {
-
                 return res.status(403).json({
                     success: false,
                     message:
@@ -2700,14 +2204,12 @@ app.post(
             }
 
             if (type === 'loan') {
-
                 if (
                     !Number.isFinite(
                         Number(amount)
                     ) ||
                     Number(amount) <= 0
                 ) {
-
                     return res.status(400).json({
                         success: false,
                         message:
@@ -2717,12 +2219,10 @@ app.post(
             }
 
             if (type === 'leave') {
-
                 if (
                     !startDate ||
                     !endDate
                 ) {
-
                     return res.status(400).json({
                         success: false,
                         message:
@@ -2733,7 +2233,6 @@ app.post(
 
             const request =
                 new ServiceRequest({
-
                     requestId:
                         generateId('SR-'),
 
@@ -2765,8 +2264,7 @@ app.post(
                             ? new Date(endDate)
                             : undefined,
 
-                    status:
-                        'pending'
+                    status: 'pending'
                 });
 
             await request.save();
@@ -2779,7 +2277,6 @@ app.post(
             });
 
         } catch (error) {
-
             console.error(
                 'Service request error:',
                 error
@@ -2793,17 +2290,13 @@ app.post(
     }
 );
 
-
 app.get(
     '/api/admin/service-requests',
     async (req, res) => {
-
         try {
-
             const query = {};
 
             if (req.query.companyId) {
-
                 query.companyId =
                     normalizeCompanyId(
                         req.query.companyId
@@ -2811,18 +2304,13 @@ app.get(
             }
 
             if (req.query.status) {
-
                 query.status =
                     req.query.status;
             }
 
             const requests =
-                await ServiceRequest.find(
-                    query
-                )
-                    .sort({
-                        createdAt: -1
-                    })
+                await ServiceRequest.find(query)
+                    .sort({ createdAt: -1 })
                     .lean();
 
             res.json({
@@ -2831,7 +2319,6 @@ app.get(
             });
 
         } catch (error) {
-
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -2840,25 +2327,19 @@ app.get(
     }
 );
 
-
 app.patch(
     '/api/admin/service-requests/:requestId',
     async (req, res) => {
-
         try {
-
             const {
                 status,
                 managerNote
             } = req.body;
 
             if (
-                ![
-                    'approved',
-                    'rejected'
-                ].includes(status)
+                !['approved', 'rejected']
+                    .includes(status)
             ) {
-
                 return res.status(400).json({
                     success: false,
                     message:
@@ -2873,7 +2354,6 @@ app.patch(
                 });
 
             if (!request) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -2881,11 +2361,7 @@ app.patch(
                 });
             }
 
-            if (
-                request.status !==
-                'pending'
-            ) {
-
+            if (request.status !== 'pending') {
                 return res.status(400).json({
                     success: false,
                     message:
@@ -2912,7 +2388,6 @@ app.patch(
             });
 
         } catch (error) {
-
             console.error(
                 'Service request review error:',
                 error
@@ -2926,7 +2401,6 @@ app.patch(
     }
 );
 
-
 /* =========================================================
    NOTIFICATIONS
 ========================================================= */
@@ -2934,9 +2408,7 @@ app.patch(
 app.post(
     '/api/admin/notifications',
     async (req, res) => {
-
         try {
-
             const {
                 employeeId,
                 companyId,
@@ -2948,7 +2420,6 @@ app.post(
                 !employeeId ||
                 !companyId
             ) {
-
                 return res.status(400).json({
                     success: false,
                     message:
@@ -2958,7 +2429,6 @@ app.post(
 
             const employee =
                 await Employee.findOne({
-
                     employeeId,
 
                     companyId:
@@ -2970,7 +2440,6 @@ app.post(
                 });
 
             if (!employee) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -2982,7 +2451,6 @@ app.post(
                 !message &&
                 !audioUrl
             ) {
-
                 return res.status(400).json({
                     success: false,
                     message:
@@ -2992,7 +2460,6 @@ app.post(
 
             const notification =
                 new Notification({
-
                     employeeId,
 
                     companyId:
@@ -3017,7 +2484,6 @@ app.post(
             });
 
         } catch (error) {
-
             console.error(
                 'Notification create error:',
                 error
@@ -3031,13 +2497,10 @@ app.post(
     }
 );
 
-
 app.get(
     '/api/employee/notifications',
     async (req, res) => {
-
         try {
-
             const {
                 employeeId,
                 deviceId
@@ -3052,7 +2515,6 @@ app.get(
                 !employeeId ||
                 !normalizedDeviceId
             ) {
-
                 return res.status(400).json({
                     success: false,
                     message:
@@ -3062,14 +2524,11 @@ app.get(
 
             const employee =
                 await Employee.findOne({
-
                     employeeId,
-
                     active: true
                 });
 
             if (!employee) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -3081,7 +2540,6 @@ app.get(
                 employee.deviceId !==
                 normalizedDeviceId
             ) {
-
                 return res.status(403).json({
                     success: false,
                     message:
@@ -3093,9 +2551,7 @@ app.get(
                 await Notification.find({
                     employeeId
                 })
-                    .sort({
-                        createdAt: -1
-                    })
+                    .sort({ createdAt: -1 })
                     .lean();
 
             res.json({
@@ -3104,7 +2560,6 @@ app.get(
             });
 
         } catch (error) {
-
             console.error(
                 'Employee notifications error:',
                 error
@@ -3118,13 +2573,10 @@ app.get(
     }
 );
 
-
 app.patch(
     '/api/employee/notifications/:id/read',
     async (req, res) => {
-
         try {
-
             const {
                 employeeId,
                 deviceId
@@ -3132,14 +2584,11 @@ app.patch(
 
             const employee =
                 await Employee.findOne({
-
                     employeeId,
-
                     active: true
                 });
 
             if (!employee) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -3153,7 +2602,6 @@ app.patch(
                     deviceId
                 )
             ) {
-
                 return res.status(403).json({
                     success: false,
                     message:
@@ -3163,27 +2611,23 @@ app.patch(
 
             const notification =
                 await Notification.findOneAndUpdate(
-
                     {
                         _id:
                             req.params.id,
 
                         employeeId
                     },
-
                     {
                         $set: {
                             read: true
                         }
                     },
-
                     {
                         new: true
                     }
                 );
 
             if (!notification) {
-
                 return res.status(404).json({
                     success: false,
                     message:
@@ -3197,12 +2641,6 @@ app.patch(
             });
 
         } catch (error) {
-
-            console.error(
-                'Notification read error:',
-                error
-            );
-
             res.status(500).json({
                 success: false,
                 message: error.message
@@ -3211,60 +2649,42 @@ app.patch(
     }
 );
 
-
 /* =========================================================
-   ERROR HANDLER
+   ERROR HANDLERS
 ========================================================= */
 
 app.use((req, res) => {
-
-    if (
-        req.path.startsWith('/api/')
-    ) {
-
+    if (req.path.startsWith('/api/')) {
         return res.status(404).json({
             success: false,
             message:
                 'API endpoint not found',
-            path:
-                req.path
+            path: req.path
         });
     }
 
-    res.status(404).send(
-        'Not Found'
-    );
+    res.status(404).send('Not Found');
 });
 
+app.use((err, req, res, next) => {
+    console.error(
+        'Unhandled server error:',
+        err
+    );
 
-app.use(
-    (err, req, res, next) => {
-
-        console.error(
-            'Unhandled server error:',
-            err
-        );
-
-        res.status(500).json({
-            success: false,
-            message:
-                'Internal server error'
-        });
-    }
-);
-
+    res.status(500).json({
+        success: false,
+        message:
+            'Internal server error'
+    });
+});
 
 /* =========================================================
-   START SERVER
+   START
 ========================================================= */
 
-app.listen(
-    PORT,
-    () => {
-
-        console.log(
-            `🚀 AlMoraqebPro Server running on port ${PORT}`
-        );
-
-    }
-);
+app.listen(PORT, () => {
+    console.log(
+        `🚀 AlMoraqebPro Server running on port ${PORT}`
+    );
+});
