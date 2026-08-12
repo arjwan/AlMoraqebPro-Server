@@ -532,157 +532,2087 @@
 <input type="file" id="nativeCameraInput" style="display:none;" accept="image/*" capture="user">
 <input type="file" id="restoreFilePicker" style="display:none" accept=".json" onchange="processRestoreFile(event)">
 
-<script>
-    window.onload = function() {
-        if(!localStorage.getItem('company_registration_requests')) {
-            localStorage.setItem('company_registration_requests', JSON.stringify([
-                { companyId: "B-2070", fullName: "علي حسن", email: "ali@domain.com", salary: "1,100,000 د.ع", specialty: "مبرمج نظم", workLocation: "فرع البصرة", username: "ali_h" }
-            ]));
+   <script>
+/* =========================================================
+   AlMoraqebPro Admin Dashboard
+   MongoDB = مصدر البيانات
+   localStorage = جلسة الواجهة فقط
+   ========================================================= */
+
+const API_BASE = window.location.origin;
+
+let employeesCache = [];
+let requestsCache = [];
+let attendanceCache = [];
+
+/* =========================================================
+   عند تحميل لوحة التحكم
+   ========================================================= */
+
+window.addEventListener("load", async function () {
+
+    loadSavedSystemId();
+
+    // لا ننشئ أي بيانات وهمية في localStorage
+    localStorage.removeItem("company_registration_requests");
+
+    await Promise.allSettled([
+        loadEmployeesFromMongoDB(),
+        loadEmployeeRequestsFromMongoDB(),
+        loadCompanyInfo(),
+        loadAttendanceFromMongoDB()
+    ]);
+
+    renderSalaryCards();
+    generateAdvancedReport();
+    updatePendingBadge();
+    updateDashboardStats();
+});
+
+
+/* =========================================================
+   الجلسة ومعرف الشركة
+   ========================================================= */
+
+function getAdminSession() {
+    try {
+        return JSON.parse(
+            localStorage.getItem("almoraqeb_admin_session") || "{}"
+        );
+    } catch {
+        return {};
+    }
+}
+
+function getActiveCompanyId() {
+
+    const params = new URLSearchParams(window.location.search);
+
+    const queryCompanyId =
+        (params.get("company") || "").trim();
+
+    if (queryCompanyId) {
+        return queryCompanyId;
+    }
+
+    const session = getAdminSession();
+
+    if (session.companyId) {
+        return String(session.companyId).trim();
+    }
+
+    return (
+        localStorage.getItem("companyId") ||
+        localStorage.getItem("activeCompanyId") ||
+        ""
+    ).trim();
+}
+
+
+function loadSavedSystemId() {
+
+    const companyId = getActiveCompanyId();
+
+    const label = document.getElementById("systemIdLabel");
+    const stat = document.getElementById("statCompanyName");
+    const input = document.getElementById("newEmpCompanyId");
+
+    if (label) {
+        label.textContent = companyId || "غير محدد";
+    }
+
+    if (stat) {
+        stat.textContent = companyId || "غير محدد";
+    }
+
+    if (input) {
+        input.value = companyId;
+    }
+}
+
+
+function editCompanyId() {
+
+    const currentId = getActiveCompanyId();
+
+    const newId = prompt(
+        "أدخل رمز الشركة المسجل في MongoDB:",
+        currentId
+    );
+
+    if (!newId) return;
+
+    const cleanId = newId.trim();
+
+    if (!cleanId) return;
+
+    /*
+       هذا لا ينشئ شركة جديدة.
+       فقط يغيّر شركة لوحة الإدارة الحالية.
+    */
+
+    localStorage.setItem("activeCompanyId", cleanId);
+    localStorage.setItem("companyId", cleanId);
+
+    const session = getAdminSession();
+
+    session.companyId = cleanId;
+
+    localStorage.setItem(
+        "almoraqeb_admin_session",
+        JSON.stringify(session)
+    );
+
+    window.location.href =
+        `admin.html?company=${encodeURIComponent(cleanId)}`;
+}
+
+
+/* =========================================================
+   أدوات عامة
+   ========================================================= */
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+function formatMoney(value) {
+
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return "—";
+    }
+
+    return number.toLocaleString("en-US") + " د.ع";
+}
+
+
+function formatDate(value) {
+
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return escapeHtml(value);
+    }
+
+    return date.toLocaleString("ar-IQ", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
+
+/* =========================================================
+   معلومات الشركة من MongoDB
+   ========================================================= */
+
+async function loadCompanyInfo() {
+
+    const companyId = getActiveCompanyId();
+
+    if (!companyId) return;
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE}/api/companies`,
+            {
+                cache: "no-store"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
         }
+
+        const data = await response.json();
+
+        const companies =
+            Array.isArray(data.companies)
+                ? data.companies
+                : [];
+
+        const company = companies.find(
+            item =>
+                String(item.companyId || "").trim() === companyId
+        );
+
+        if (!company) {
+
+            console.warn(
+                "الشركة غير موجودة في MongoDB:",
+                companyId
+            );
+
+            return;
+        }
+
+        const session = getAdminSession();
+
+        session.companyId = company.companyId;
+        session.companyName = company.name || "";
+
+        localStorage.setItem(
+            "almoraqeb_admin_session",
+            JSON.stringify(session)
+        );
+
+        document.getElementById("systemIdLabel").textContent =
+            company.companyId;
+
+        document.getElementById("statCompanyName").textContent =
+            company.companyId;
+
+    } catch (error) {
+
+        console.error(
+            "❌ تعذر جلب بيانات الشركة:",
+            error
+        );
+    }
+}
+
+
+/* =========================================================
+   الموظفون - MongoDB
+   ========================================================= */
+
+async function loadEmployeesFromMongoDB() {
+
+    const companyId = getActiveCompanyId();
+
+    if (!companyId) {
+        employeesCache = [];
+        renderEmployees();
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE}/api/employees?companyId=${encodeURIComponent(companyId)}`,
+            {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json"
+                },
+                cache: "no-store"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message ||
+                data.error ||
+                "فشل جلب الموظفين"
+            );
+        }
+
+        employeesCache =
+            Array.isArray(data.employees)
+                ? data.employees
+                : [];
 
         renderEmployees();
+
+        updateDashboardStats();
+
+    } catch (error) {
+
+        console.error(
+            "❌ خطأ في جلب الموظفين من MongoDB:",
+            error
+        );
+
+        employeesCache = [];
+
+        renderEmployeesError(error.message);
+    }
+}
+
+
+/* =========================================================
+   عرض الموظفين
+   ========================================================= */
+
+function renderEmployees() {
+
+    const body =
+        document.getElementById("empTableBody");
+
+    if (!body) return;
+
+    const searchInput =
+        document.getElementById("searchInput");
+
+    const search =
+        searchInput
+            ? searchInput.value.trim().toLowerCase()
+            : "";
+
+    const filtered = employeesCache.filter(employee => {
+
+        if (!search) return true;
+
+        return [
+            employee.name,
+            employee.email,
+            employee.username,
+            employee.specialty,
+            employee.workplace,
+            employee.companyId
+        ]
+            .filter(Boolean)
+            .some(value =>
+                String(value)
+                    .toLowerCase()
+                    .includes(search)
+            );
+    });
+
+
+    if (!filtered.length) {
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="8"
+                    style="text-align:center;padding:25px;color:#64748b;">
+                    📭 لا توجد بيانات موظفين في MongoDB
+                </td>
+            </tr>
+        `;
+
+        updateDashboardStats();
+
+        return;
+    }
+
+
+    body.innerHTML = filtered.map(
+        (employee, index) => {
+
+            return `
+                <tr>
+
+                    <td>${index + 1}</td>
+
+                    <td>
+                        <b>
+                            ${escapeHtml(employee.companyId || "—")}
+                        </b>
+                    </td>
+
+                    <td>
+                        ${escapeHtml(employee.name || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(employee.email || "—")}
+                    </td>
+
+                    <td>
+                        ${formatMoney(employee.salary)}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(employee.specialty || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(employee.username || "—")}
+                    </td>
+
+                    <td>
+
+                        <button
+                            class="btn btn-primary"
+                            style="padding:5px 9px;font-size:11px;"
+                            onclick="viewEmployee('${employee._id}')">
+                            👁️ عرض
+                        </button>
+
+                        <button
+                            class="btn btn-danger"
+                            style="padding:5px 9px;font-size:11px;"
+                            onclick="showEmployeeAttendance('${employee._id}')">
+                            📍 البصمات
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+        }
+    ).join("");
+
+    updateDashboardStats();
+}
+
+
+function renderEmployeesError(message) {
+
+    const body =
+        document.getElementById("empTableBody");
+
+    if (!body) return;
+
+    body.innerHTML = `
+        <tr>
+            <td colspan="8"
+                style="text-align:center;color:#ef4444;padding:25px;">
+                ❌ تعذر تحميل الموظفين من MongoDB
+                <br>
+                <small>${escapeHtml(message)}</small>
+            </td>
+        </tr>
+    `;
+}
+
+
+function filterEmployees() {
+    renderEmployees();
+}
+
+
+/* =========================================================
+   عرض موظف
+   ========================================================= */
+
+function viewEmployee(employeeId) {
+
+    const employee =
+        employeesCache.find(
+            item => String(item._id) === String(employeeId)
+        );
+
+    if (!employee) {
+        alert("❌ الموظف غير موجود");
+        return;
+    }
+
+    const loans =
+        Array.isArray(employee.loans)
+            ? employee.loans
+            : [];
+
+    let loanText = "لا توجد سلف";
+
+    if (loans.length) {
+
+        loanText = loans.map(
+            loan =>
+                `المبلغ: ${formatMoney(loan.loanAmount)} - المتبقي: ${formatMoney(loan.remainingAmount)}`
+        ).join("\n");
+    }
+
+    alert(
+        `👤 بيانات الموظف
+
+الاسم: ${employee.name || "—"}
+رمز الشركة: ${employee.companyId || "—"}
+البريد: ${employee.email || "—"}
+اسم المستخدم: ${employee.username || "—"}
+الاختصاص: ${employee.specialty || "—"}
+مكان العمل: ${employee.workplace || "—"}
+الراتب: ${formatMoney(employee.salary)}
+
+السلف:
+${loanText}`
+    );
+}
+
+
+/* =========================================================
+   طلبات التسجيل - MongoDB
+   ========================================================= */
+
+async function loadEmployeeRequestsFromMongoDB() {
+
+    const companyId = getActiveCompanyId();
+
+    if (!companyId) {
+
+        requestsCache = [];
+
         renderRequests();
-        renderSalaryCards();
-        loadSavedSystemId();
-        renderGpsSection();
-        generateAdvancedReport();
+
+        return;
+    }
+
+    const body =
+        document.getElementById("reqTableBody");
+
+    if (body) {
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="7"
+                    style="text-align:center;padding:25px;">
+                    ⏳ جاري جلب الطلبات من MongoDB...
+                </td>
+            </tr>
+        `;
+    }
+
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE}/api/employee/requests/${encodeURIComponent(companyId)}/pending`,
+            {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json"
+                },
+                cache: "no-store"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message ||
+                data.error ||
+                "فشل جلب الطلبات"
+            );
+        }
+
+        requestsCache =
+            Array.isArray(data.requests)
+                ? data.requests
+                : [];
+
+        renderRequests();
+
         updatePendingBadge();
 
-        // استدعاء دالة جلب طلبات الموظفين عند تحميل الصفحة بناءً على معرف الشركة النشط
-        const currentCompanyId = getActiveCompanyId();
-        if (currentCompanyId) {
-            loadEmployeeRequests(currentCompanyId);
+    } catch (error) {
+
+        console.error(
+            "❌ خطأ في طلبات التسجيل:",
+            error
+        );
+
+        requestsCache = [];
+
+        if (body) {
+
+            body.innerHTML = `
+                <tr>
+                    <td colspan="7"
+                        style="text-align:center;color:#ef4444;padding:25px;">
+                        ❌ تعذر الاتصال بالسيرفر
+                        <br>
+                        <small>${escapeHtml(error.message)}</small>
+                    </td>
+                </tr>
+            `;
         }
+    }
+}
+
+
+/* =========================================================
+   عرض الطلبات
+   ========================================================= */
+
+function renderRequests() {
+
+    const body =
+        document.getElementById("reqTableBody");
+
+    if (!body) return;
+
+
+    if (!requestsCache.length) {
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="7"
+                    style="text-align:center;color:#64748b;padding:25px;">
+                    📭 لا توجد طلبات تسجيل معلقة حالياً
+                </td>
+            </tr>
+        `;
+
+        updatePendingBadge();
+
+        return;
+    }
+
+
+    body.innerHTML = requestsCache.map(
+        (request, index) => {
+
+            return `
+                <tr>
+
+                    <td>${index + 1}</td>
+
+                    <td>
+                        <b>
+                            ${escapeHtml(
+                                request.companyId ||
+                                getActiveCompanyId()
+                            )}
+                        </b>
+                    </td>
+
+                    <td>
+                        <b>
+                            ${escapeHtml(request.name || "—")}
+                        </b>
+                    </td>
+
+                    <td>
+                        ${escapeHtml(request.email || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            request.jobTitle ||
+                            request.specialty ||
+                            "—"
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            request.workLocation ||
+                            "—"
+                        )}
+                    </td>
+
+                    <td>
+
+                        <button
+                            class="btn btn-success"
+                            style="padding:6px 10px;font-size:12px;"
+                            onclick="approveEmployeeRequest('${request._id}')">
+                            ✅ اعتماد
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+        }
+    ).join("");
+
+    updatePendingBadge();
+}
+
+
+/* =========================================================
+   اعتماد الموظف
+   ========================================================= */
+
+async function approveEmployeeRequest(requestId) {
+
+    if (!requestId) {
+        alert("❌ معرف الطلب غير موجود");
+        return;
+    }
+
+    const request =
+        requestsCache.find(
+            item =>
+                String(item._id) === String(requestId)
+        );
+
+    if (!request) {
+        alert("❌ لم يتم العثور على الطلب");
+        return;
+    }
+
+
+    const confirmApproval = confirm(
+        `هل تريد اعتماد الموظف:
+
+${request.name || "—"}
+
+ونقله إلى قائمة الموظفين في MongoDB؟`
+    );
+
+    if (!confirmApproval) return;
+
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE}/api/employee/request/${encodeURIComponent(requestId)}/approve`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    username: request.username || "",
+                    password: request.password || ""
+                })
+            }
+        );
+
+        const data = await response.json();
+
+
+        if (!response.ok || !data.success) {
+
+            throw new Error(
+                data.message ||
+                data.error ||
+                "فشل اعتماد الموظف"
+            );
+        }
+
+
+        alert(
+            "✅ تم اعتماد الموظف بنجاح\n\n" +
+            "تم إنشاء سجل الموظف في MongoDB."
+        );
+
+
+        await loadEmployeeRequestsFromMongoDB();
+
+        await loadEmployeesFromMongoDB();
+
+        updatePendingBadge();
+
+        updateDashboardStats();
+
+    } catch (error) {
+
+        console.error(
+            "❌ خطأ في اعتماد الموظف:",
+            error
+        );
+
+        alert(
+            "❌ تعذر اعتماد الموظف\n\n" +
+            error.message
+        );
+    }
+}
+
+
+/* =========================================================
+   عداد الطلبات
+   ========================================================= */
+
+function updatePendingBadge() {
+
+    const count =
+        requestsCache.length;
+
+    const badge =
+        document.getElementById("reqBadgeCount");
+
+    if (badge) {
+        badge.textContent = count;
+    }
+
+    const pending =
+        document.getElementById("pendingLogsCount");
+
+    if (pending) {
+        pending.textContent = count;
+    }
+}
+
+
+/* =========================================================
+   إحصائيات لوحة التحكم
+   ========================================================= */
+
+function updateDashboardStats() {
+
+    const total =
+        document.getElementById("totalEmpCount");
+
+    if (total) {
+        total.textContent =
+            employeesCache.length;
+    }
+
+    updatePendingBadge();
+}
+
+
+/* =========================================================
+   فتح الأقسام
+   ========================================================= */
+
+async function openSection(sectionId) {
+
+    const hub =
+        document.getElementById("dashboardHub");
+
+    if (hub) {
+        hub.style.display = "none";
+    }
+
+
+    document
+        .querySelectorAll(".content-section")
+        .forEach(section => {
+            section.classList.remove("active");
+        });
+
+
+    const target =
+        document.getElementById(sectionId);
+
+    if (!target) return;
+
+    target.classList.add("active");
+
+
+    if (sectionId === "employeesSection") {
+
+        await loadEmployeesFromMongoDB();
+
+    }
+
+    if (sectionId === "requestsSection") {
+
+        await loadEmployeeRequestsFromMongoDB();
+
+    }
+
+    if (sectionId === "gpsSection") {
+
+        await loadAttendanceFromMongoDB();
+
+    }
+
+    if (sectionId === "reportsSection") {
+
+        generateAdvancedReport();
+
+    }
+
+    if (sectionId === "salariesSection") {
+
+        renderSalaryCards();
+
+    }
+}
+
+
+function closeSections() {
+
+    document
+        .querySelectorAll(".content-section")
+        .forEach(section => {
+            section.classList.remove("active");
+        });
+
+
+    const hub =
+        document.getElementById("dashboardHub");
+
+    if (hub) {
+        hub.style.display = "block";
+    }
+
+
+    updatePendingBadge();
+
+    updateDashboardStats();
+}
+
+
+/* =========================================================
+   تسجيل موظف من لوحة المدير
+   ========================================================= */
+
+async function saveNewEmployeeFromForm(event) {
+
+    event.preventDefault();
+
+
+    const companyId =
+        document.getElementById("newEmpCompanyId").value.trim();
+
+    const name =
+        document.getElementById("newEmpName").value.trim();
+
+    const email =
+        document.getElementById("newEmpEmail").value.trim();
+
+    const salary =
+        document.getElementById("newEmpSalary").value
+            .replace(/[^\d.]/g, "");
+
+    const specialty =
+        document.getElementById("newEmpSpecialty").value.trim();
+
+    const workplace =
+        document.getElementById("newEmpWorkLocation").value.trim();
+
+    const username =
+        document.getElementById("newEmpUser").value.trim();
+
+    const password =
+        document.getElementById("newEmpPassword").value;
+
+
+    if (
+        !companyId ||
+        !name ||
+        !email ||
+        !username ||
+        !password
+    ) {
+
+        alert(
+            "⚠️ يرجى إكمال بيانات الموظف الأساسية."
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE}/api/employee/register`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+
+                body: JSON.stringify({
+
+                    companyId,
+
+                    companyName:
+                        getAdminSession().companyName || "",
+
+                    name,
+
+                    email,
+
+                    salary:
+                        salary
+                            ? Number(salary)
+                            : undefined,
+
+                    specialty,
+
+                    workplace,
+
+                    username,
+
+                    password
+                })
+            }
+        );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok || !data.success) {
+
+            throw new Error(
+                data.message ||
+                data.error ||
+                "تعذر تسجيل الموظف"
+            );
+        }
+
+
+        alert(
+            "✅ تم حفظ الموظف مباشرة في MongoDB بنجاح."
+        );
+
+
+        document
+            .getElementById("addEmployeeForm")
+            .reset();
+
+
+        document
+            .getElementById("newEmpCompanyId")
+            .value = companyId;
+
+
+        await loadEmployeesFromMongoDB();
+
+        openSection("employeesSection");
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ خطأ في تسجيل الموظف:",
+            error
+        );
+
+        alert(
+            "❌ تعذر حفظ الموظف\n\n" +
+            error.message
+        );
+    }
+}
+
+
+/* =========================================================
+   الحضور والبصمات - MongoDB
+   ========================================================= */
+
+async function loadAttendanceFromMongoDB() {
+
+    const body =
+        document.getElementById("gpsTableBody");
+
+    if (!body) return;
+
+
+    body.innerHTML = `
+        <tr>
+            <td colspan="7"
+                style="text-align:center;padding:20px;">
+                ⏳ جاري تحميل سجلات البصمة...
+            </td>
+        </tr>
+    `;
+
+
+    if (!employeesCache.length) {
+
+        await loadEmployeesFromMongoDB();
+    }
+
+
+    const allAttendance = [];
+
+
+    try {
+
+        for (const employee of employeesCache) {
+
+            if (!employee._id) continue;
+
+
+            const response = await fetch(
+                `${API_BASE}/api/employees/${encodeURIComponent(employee._id)}/attendance`,
+                {
+                    cache: "no-store"
+                }
+            );
+
+
+            if (!response.ok) continue;
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                data.success &&
+                Array.isArray(data.attendance)
+            ) {
+
+                data.attendance.forEach(record => {
+
+                    allAttendance.push({
+                        ...record,
+                        employee
+                    });
+
+                });
+            }
+        }
+
+
+        allAttendance.sort(
+            (a, b) =>
+                new Date(b.timestamp) -
+                new Date(a.timestamp)
+        );
+
+
+        attendanceCache =
+            allAttendance;
+
+
+        renderGpsSection();
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ خطأ في تحميل البصمات:",
+            error
+        );
+
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="7"
+                    style="text-align:center;color:#ef4444;padding:20px;">
+                    ❌ تعذر تحميل سجلات البصمة
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
+/* =========================================================
+   عرض GPS
+   ========================================================= */
+
+function renderGpsSection() {
+
+    const body =
+        document.getElementById("gpsTableBody");
+
+    if (!body) return;
+
+
+    if (!attendanceCache.length) {
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="7"
+                    style="text-align:center;color:#64748b;padding:20px;">
+                    📍 لا توجد سجلات بصمة محفوظة في MongoDB
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+
+    body.innerHTML =
+        attendanceCache.map(
+            (record, index) => {
+
+                const employee =
+                    record.employee || {};
+
+
+                const latitude =
+                    record.latitude != null
+                        ? Number(record.latitude).toFixed(6)
+                        : "—";
+
+
+                const longitude =
+                    record.longitude != null
+                        ? Number(record.longitude).toFixed(6)
+                        : "—";
+
+
+                return `
+                    <tr>
+
+                        <td>${index + 1}</td>
+
+                        <td>
+                            ${escapeHtml(
+                                employee.name || "—"
+                            )}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(
+                                record.companyId ||
+                                employee.companyId ||
+                                "—"
+                            )}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(
+                                record.type || "attendance"
+                            )}
+                        </td>
+
+                        <td>
+                            ${record.fingerprintToken
+                                ? "🔐 بصمة"
+                                : "📱 جهاز"}
+                        </td>
+
+                        <td>
+                            ${latitude},
+                            ${longitude}
+                        </td>
+
+                        <td>
+                            ${formatDate(
+                                record.timestamp
+                            )}
+                        </td>
+
+                    </tr>
+                `;
+            }
+        ).join("");
+}
+
+
+/* =========================================================
+   فتح سجلات موظف
+   ========================================================= */
+
+async function showEmployeeAttendance(employeeId) {
+
+    openSection("gpsSection");
+
+    await loadAttendanceFromMongoDB();
+
+    const employeeRecords =
+        attendanceCache.filter(
+            record =>
+                String(record.employee?._id) ===
+                String(employeeId)
+        );
+
+    if (!employeeRecords.length) {
+
+        alert(
+            "📍 لا توجد بصمات محفوظة لهذا الموظف."
+        );
+
+        return;
+    }
+
+
+    const employee =
+        employeeRecords[0].employee;
+
+
+    alert(
+        `📍 سجلات الموظف
+
+الاسم: ${employee.name}
+
+عدد الحركات:
+${employeeRecords.length}
+
+آخر حركة:
+${formatDate(employeeRecords[0].timestamp)}`
+    );
+}
+
+
+/* =========================================================
+   تسجيل حضور المدير للاختبار
+   ========================================================= */
+
+async function triggerAdminRealAttendance(type) {
+
+    if (!employeesCache.length) {
+
+        await loadEmployeesFromMongoDB();
+    }
+
+
+    if (!employeesCache.length) {
+
+        alert(
+            "⚠️ لا يوجد موظفون مسجلون في MongoDB."
+        );
+
+        return;
+    }
+
+
+    const employee =
+        employeesCache[0];
+
+
+    if (!navigator.geolocation) {
+
+        alert(
+            "❌ المتصفح لا يدعم تحديد الموقع."
+        );
+
+        return;
+    }
+
+
+    navigator.geolocation.getCurrentPosition(
+
+        async position => {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_BASE}/api/attendance`,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+
+                            body: JSON.stringify({
+
+                                employeeId:
+                                    employee._id,
+
+                                fingerprintToken:
+                                    "admin-test",
+
+                                latitude:
+                                    position.coords.latitude,
+
+                                longitude:
+                                    position.coords.longitude,
+
+                                timestamp:
+                                    new Date().toISOString(),
+
+                                type
+                            })
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok || !data.success) {
+
+                    throw new Error(
+                        data.message ||
+                        data.error ||
+                        "فشل تسجيل الحركة"
+                    );
+                }
+
+
+                alert(
+                    `✅ تم تسجيل ${type} وحفظها في MongoDB`
+                );
+
+
+                await loadAttendanceFromMongoDB();
+
+            } catch (error) {
+
+                alert(
+                    "❌ تعذر تسجيل الحركة\n\n" +
+                    error.message
+                );
+            }
+        },
+
+        error => {
+
+            alert(
+                "❌ تعذر الحصول على موقع GPS.\n\n" +
+                error.message
+            );
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+
+/* =========================================================
+   التقارير
+   ========================================================= */
+
+function generateAdvancedReport() {
+
+    const body =
+        document.getElementById(
+            "advancedReportTableBody"
+        );
+
+    if (!body) return;
+
+
+    if (!attendanceCache.length) {
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="5"
+                    style="text-align:center;color:#64748b;padding:20px;">
+                    لا توجد حركات مسجلة
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+
+    body.innerHTML =
+        attendanceCache.map(
+            (record, index) => {
+
+                const employee =
+                    record.employee || {};
+
+
+                return `
+                    <tr>
+
+                        <td>${index + 1}</td>
+
+                        <td>
+                            ${formatDate(record.timestamp)}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(
+                                employee.name || "—"
+                            )}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(
+                                employee.specialty ||
+                                employee.workplace ||
+                                "—"
+                            )}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(
+                                record.type || "attendance"
+                            )}
+                        </td>
+
+                    </tr>
+                `;
+            }
+        ).join("");
+}
+
+
+/* =========================================================
+   الرواتب
+   ========================================================= */
+
+function renderSalaryCards() {
+
+    const area =
+        document.getElementById("salaryCardsArea");
+
+    const printBody =
+        document.getElementById(
+            "printSalaryTableBody"
+        );
+
+    if (!area) return;
+
+
+    if (!employeesCache.length) {
+
+        area.innerHTML = `
+            <div style="padding:20px;text-align:center;color:#64748b;">
+                📭 لا توجد بيانات موظفين في MongoDB
+            </div>
+        `;
+
+        if (printBody) {
+            printBody.innerHTML = "";
+        }
+
+        return;
+    }
+
+
+    area.innerHTML =
+        employeesCache.map(
+            employee => {
+
+                const salary =
+                    Number(employee.salary) || 0;
+
+                const loans =
+                    Array.isArray(employee.loans)
+                        ? employee.loans
+                        : [];
+
+                const deductions =
+                    loans.reduce(
+                        (sum, loan) =>
+                            sum +
+                            (
+                                Number(
+                                    loan.monthlyInstallment
+                                ) || 0
+                            ),
+                        0
+                    );
+
+                const net =
+                    Math.max(
+                        salary - deductions,
+                        0
+                    );
+
+
+                return `
+                    <div class="salary-emp-card">
+
+                        <div class="salary-card-header">
+
+                            <strong>
+                                👤
+                                ${escapeHtml(
+                                    employee.name || "—"
+                                )}
+                            </strong>
+
+                            <span>
+                                ${escapeHtml(
+                                    employee.companyId || "—"
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div class="salary-field-row">
+
+                            <label>
+                                الراتب الأساسي
+                            </label>
+
+                            <input
+                                type="text"
+                                value="${salary.toLocaleString("en-US")}"
+                                readonly
+                            >
+
+                        </div>
+
+
+                        <div class="salary-field-row">
+
+                            <label>
+                                خصم السلف
+                            </label>
+
+                            <input
+                                type="text"
+                                value="${deductions.toLocaleString("en-US")}"
+                                readonly
+                            >
+
+                        </div>
+
+
+                        <div class="net-salary-box">
+
+                            الصافي:
+                            ${formatMoney(net)}
+
+                        </div>
+
+                    </div>
+                `;
+            }
+        ).join("");
+
+
+    if (printBody) {
+
+        printBody.innerHTML =
+            employeesCache.map(
+                employee => {
+
+                    const salary =
+                        Number(employee.salary) || 0;
+
+                    const loans =
+                        Array.isArray(employee.loans)
+                            ? employee.loans
+                            : [];
+
+                    const deductions =
+                        loans.reduce(
+                            (sum, loan) =>
+                                sum +
+                                (
+                                    Number(
+                                        loan.monthlyInstallment
+                                    ) || 0
+                                ),
+                            0
+                        );
+
+                    const net =
+                        Math.max(
+                            salary - deductions,
+                            0
+                        );
+
+
+                    return `
+                        <tr>
+
+                            <td>
+                                ${escapeHtml(
+                                    employee.name || "—"
+                                )}
+                            </td>
+
+                            <td>
+                                ${escapeHtml(
+                                    employee.companyId || "—"
+                                )}
+                            </td>
+
+                            <td>
+                                ${escapeHtml(
+                                    employee.workplace || "—"
+                                )}
+                            </td>
+
+                            <td>
+                                ${formatMoney(salary)}
+                            </td>
+
+                            <td>
+                                ${formatMoney(net)}
+                            </td>
+
+                        </tr>
+                    `;
+                }
+            ).join("");
+    }
+}
+
+
+function addNewSalaryCard() {
+
+    renderSalaryCards();
+
+    alert(
+        "✅ تم تحديث كشف الرواتب من بيانات MongoDB."
+    );
+}
+
+
+/* =========================================================
+   الفروع والشفتات
+   ========================================================= */
+
+function loadBranches() {
+    // سيتم ربطها لاحقاً بموديل الفروع في MongoDB.
+}
+
+
+function loadShifts() {
+    // سيتم ربطها لاحقاً بموديل الشفتات في MongoDB.
+}
+
+
+/* =========================================================
+   النسخة الاحتياطية المحلية
+   ========================================================= */
+
+function backupData() {
+
+    const backup = {
+
+        exportedAt:
+            new Date().toISOString(),
+
+        companyId:
+            getActiveCompanyId(),
+
+        employees:
+            employeesCache,
+
+        requests:
+            requestsCache,
+
+        attendance:
+            attendanceCache.map(record => {
+
+                const copy = {
+                    ...record
+                };
+
+                delete copy.employee;
+
+                return copy;
+            })
     };
 
-    function editCompanyId() {
-        let currentId = document.getElementById('systemIdLabel').innerText;
-        let newId = prompt("أدخل رمز الشركة الجديد (مثال B-2070):", currentId);
-        if(!newId) return;
-        document.getElementById('systemIdLabel').innerText = newId;
-        document.getElementById('statCompanyName').innerText = newId;
-        localStorage.setItem('custom_company_id', newId);
-        alert("✅ تم تحديث رمز الشركة بنجاح!");
+
+    const blob =
+        new Blob(
+            [
+                JSON.stringify(
+                    backup,
+                    null,
+                    2
+                )
+            ],
+            {
+                type: "application/json"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const link =
+        document.createElement("a");
+
+
+    link.href = url;
+
+    link.download =
+        `AlMoraqebPro-backup-${Date.now()}.json`;
+
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    URL.revokeObjectURL(url);
+
+
+    alert(
+        "✅ تم إنشاء نسخة احتياطية من البيانات الظاهرة في لوحة الإدارة."
+    );
+}
+
+
+/* =========================================================
+   استعادة نسخة
+   ========================================================= */
+
+function restoreDataPrompt() {
+
+    const picker =
+        document.getElementById(
+            "restoreFilePicker"
+        );
+
+    if (!picker) return;
+
+    if (
+        confirm(
+            "⚠️ الاستعادة المحلية لا تكتب البيانات إلى MongoDB.\n\nهل تريد فتح ملف النسخة؟"
+        )
+    ) {
+
+        picker.click();
     }
+}
 
-    function getActiveCompanyId() {
-        const queryCompanyId = new URLSearchParams(window.location.search).get('company')?.trim();
-        return queryCompanyId || localStorage.getItem('activeCompanyId') || localStorage.getItem('custom_company_id') || '';
-    }
 
-    function loadSavedSystemId() {
-        const savedId = getActiveCompanyId();
-        document.getElementById('systemIdLabel').innerText = savedId || 'غير محدد';
-        document.getElementById('statCompanyName').innerText = savedId || 'غير محدد';
-        const companyInput = document.getElementById('newEmpCompanyId');
-        if (companyInput) companyInput.value = savedId;
-        if (savedId) {
-            localStorage.setItem('activeCompanyId', savedId);
-            localStorage.setItem('custom_company_id', savedId);
-        }
-    }
+function processRestoreFile(event) {
 
-    function openSection(secId) {
-        document.getElementById('dashboardHub').style.display = 'none';
-        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-        let target = document.getElementById(secId);
-        if(target) {
-            target.classList.add('active');
-            if(secId === 'salariesSection') renderSalaryCards();
-            if(secId === 'employeesSection') renderEmployees();
-            if(secId === 'requestsSection') renderRequests();
-            if(secId === 'gpsSection') renderGpsSection();
-            if(secId === 'reportsSection') generateAdvancedReport();
-        }
-    }
+    const file =
+        event.target.files?.[0];
 
-    function closeSections() {
-        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-        document.getElementById('dashboardHub').style.display = 'block';
-        renderRequests();
-        renderEmployees();
-        updatePendingBadge();
-    }
+    if (!file) return;
 
-    function toggleTheme() {
-        document.body.classList.toggle('dark-mode');
-        let icon = document.getElementById('theme-icon');
-        icon.className = document.body.classList.contains('dark-mode') ? 'fas fa-sun' : 'fas fa-moon';
-    }
 
-    /* ========================================================
-        تطوير وتفعيل الأزرار الأربعة العلوية
-        ======================================================== */
+    const reader =
+        new FileReader();
 
-    function checkServerStatus() {
-        let startTime = new Date().getTime();
-        setTimeout(() => {
-            let latency = new Date().getTime() - startTime;
-            alert(`🌐 حالة السيرفر: متصل بنجاح وسليم.\n- استجابة السيرفر (Ping): ${latency + 12}ms\n- وضع التشغيل: حر بدون قيود حماية.`);
-        }, 200);
-    }
 
-    function restoreDataPrompt() {
-        if(confirm("⚠️ تحذير: استعادة البيانات ستؤدي إلى استبدال البيانات الحالية بالبيانات الموجودة في ملف النسخة الاحتياطية. هل تريد المتابعة لاختيار الملف؟")) {
-            document.getElementById('restoreFilePicker').click();
-        }
-    }
+    reader.onload =
+        function () {
 
-    function processRestoreFile(event) {
-        let file = event.target.files[0];
-        if(!file) return;
-        let reader = new FileReader();
-        reader.onload = function(e) {
             try {
-                let backupDataObj = JSON.parse(e.target.result);
-                for(let key in backupDataObj) {
-                    localStorage.setItem(key, JSON.stringify(backupDataObj[key]));
-                }
-                alert("✅ تمت استعادة كافة بيانات النظام والنسخة الاحتياطية بنجاح!");
-                location.reload();
-            } catch(err) {
-                alert("❌ حدث خطأ أثناء قراءة ملف النسخة الاحتياطية. تأكد من سلامة الملف.");
+
+                const data =
+                    JSON.parse(
+                        reader.result
+                    );
+
+
+                alert(
+                    "تمت قراءة النسخة الاحتياطية.\n\n" +
+                    "هذه النسخة لا تُكتب مباشرة إلى MongoDB من المتصفح."
+                );
+
+
+                console.log(
+                    "Backup:",
+                    data
+                );
+
+            } catch {
+
+                alert(
+                    "❌ ملف النسخة الاحتياطية غير صالح."
+                );
             }
         };
-        reader.readAsText(file);
+
+
+    reader.readAsText(file);
+}
+
+
+/* =========================================================
+   فحص السيرفر الحقيقي
+   ========================================================= */
+
+async function checkServerStatus() {
+
+    const start =
+        performance.now();
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_BASE}/api/ping`,
+                {
+                    cache: "no-store"
+                }
+            );
+
+
+        const elapsed =
+            Math.round(
+                performance.now() - start
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+            throw new Error(
+                data.message ||
+                "السيرفر غير متاح"
+            );
+        }
+
+
+        alert(
+            `🌐 حالة السيرفر
+
+✅ متصل
+
+قاعدة البيانات:
+${data.database || "MongoDB"}
+
+الاستجابة:
+${elapsed} ms`
+        );
+
+    } catch (error) {
+
+        alert(
+            "❌ السيرفر غير متاح\n\n" +
+            error.message
+        );
+    }
+}
+
+
+/* =========================================================
+   تسجيل الخروج
+   ========================================================= */
+
+function logoutSystem() {
+
+    if (
+        !confirm(
+            "هل تريد تسجيل الخروج من لوحة الإدارة؟"
+        )
+    ) {
+        return;
     }
 
-    // دالة جلب طلبات الموظفين وعرضها في الجدول المخصص
-    async function loadEmployeeRequests(companyId) {
-        try {
-            const response = await fetch(`/api/employee/requests/${companyId}`);
-            const data = await response.json();
-            
-            if (data.success) {
-                const tableBody = document.querySelector("#employeeRequestsTableBody");
-                
-                if (!tableBody) {
-                    return;
-                }
 
-                tableBody.innerHTML = "";
+    localStorage.removeItem(
+        "almoraqeb_admin_session"
+    );
 
-                if (data.requests && data.requests.length > 0) {
-                    data.requests.forEach((req, index) => {
-                        const row = document.createElement("tr");
-                        
-                        row.innerHTML = `
-                            <td>${index + 1}</td>
-                            <td>${req.name || ''}</td>
-                            <td>${req.phone || ''}</td>
-                            <td>${req.date || ''}</td>
-                        `;
-                        
-                        tableBody.appendChild(row);
-                    });
-                } else {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="text-center">لا توجد طلبات معلقة حالياً</td></tr>`;
-                }
-            }
-        } catch (error) {
-            console.error("خطأ في جلب طلبات الموظفين:", error);
+    localStorage.removeItem(
+        "activeCompanyId"
+    );
+
+    localStorage.removeItem(
+        "companyId"
+    );
+
+    localStorage.removeItem(
+        "companyName"
+    );
+
+    window.location.href =
+        "admin_login.html";
+}
+
+
+/* =========================================================
+   الوضع الليلي
+   ========================================================= */
+
+function toggleTheme() {
+
+    document.body.classList.toggle(
+        "dark-mode"
+    );
+
+
+    const icon =
+        document.getElementById(
+            "theme-icon"
+        );
+
+
+    if (icon) {
+
+        icon.className =
+            document.body.classList.contains(
+                "dark-mode"
+            )
+                ? "fas fa-sun"
+                : "fas fa-moon";
+    }
+
+
+    localStorage.setItem(
+        "almoraqeb_dark_mode",
+        document.body.classList.contains(
+            "dark-mode"
+        )
+            ? "1"
+            : "0"
+    );
+}
+
+
+function loadTheme() {
+
+    if (
+        localStorage.getItem(
+            "almoraqeb_dark_mode"
+        ) === "1"
+    ) {
+
+        document.body.classList.add(
+            "dark-mode"
+        );
+
+
+        const icon =
+            document.getElementById(
+                "theme-icon"
+            );
+
+
+        if (icon) {
+            icon.className =
+                "fas fa-sun";
         }
     }
+}
+
+
+/* =========================================================
+   تشغيل الثيم
+   ========================================================= */
+
+loadTheme();
+
+
+/* =========================================================
+   توافق مع الدالة القديمة
+   ========================================================= */
+
+async function loadEmployeeRequests(companyId) {
+
+    if (companyId) {
+
+        localStorage.setItem(
+            "activeCompanyId",
+            companyId
+        );
+    }
+
+    await loadEmployeeRequestsFromMongoDB();
+}
+
+
+/* =========================================================
+   تحديث يدوي كامل
+   ========================================================= */
+
+async function refreshAdminDashboard() {
+
+    await Promise.allSettled([
+        loadCompanyInfo(),
+        loadEmployeesFromMongoDB(),
+        loadEmployeeRequestsFromMongoDB(),
+        loadAttendanceFromMongoDB()
+    ]);
+
+    renderSalaryCards();
+    generateAdvancedReport();
+    updateDashboardStats();
+}
+
+
+/* =========================================================
+   منع أخطاء الدوال القديمة
+   ========================================================= */
+
+function updatePendingBadgeSafe() {
+    updatePendingBadge();
+}
+
 </script>
 </body>
 </html>
