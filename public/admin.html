@@ -524,6 +524,13 @@
                 <tbody id="reqTableBody"></tbody>
             </table>
         </div>
+        <h3 style="margin:24px 0 10px;">💼 طلبات السلفة والإجازة</h3>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>الموظف</th><th>نوع الطلب</th><th>التفاصيل</th><th>التاريخ المطلوب</th><th>وقت الإرسال</th><th>الحالة</th></tr></thead>
+                <tbody id="serviceReqTableBody"></tbody>
+            </table>
+        </div>
     </div>
 
 </div>
@@ -544,12 +551,15 @@ const API_BASE = window.location.origin;
 let employeesCache = [];
 let requestsCache = [];
 let attendanceCache = [];
+let serviceRequestsCache = [];
 
 /* =========================================================
    عند تحميل لوحة التحكم
    ========================================================= */
 
 window.addEventListener("load", async function () {
+
+    if (!await verifyAdminSession()) return;
 
     loadSavedSystemId();
 
@@ -559,6 +569,7 @@ window.addEventListener("load", async function () {
     await Promise.allSettled([
         loadEmployeesFromMongoDB(),
         loadEmployeeRequestsFromMongoDB(),
+        loadServiceRequestsFromMongoDB(),
         loadCompanyInfo(),
         loadAttendanceFromMongoDB()
     ]);
@@ -581,6 +592,30 @@ function getAdminSession() {
         );
     } catch {
         return {};
+    }
+}
+
+function getAdminToken() {
+    return sessionStorage.getItem("almoraqeb_admin_token") || "";
+}
+
+async function verifyAdminSession() {
+    const token = getAdminToken();
+    if (!token) {
+        window.location.replace("admin_login.html");
+        return false;
+    }
+    try {
+        const response = await fetch(`${API_BASE}/api/admin/session`, {
+            headers: { Authorization: `Bearer ${token}` }, cache: "no-store"
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success || String(data.companyId) !== getActiveCompanyId()) throw new Error();
+        return true;
+    } catch {
+        sessionStorage.removeItem("almoraqeb_admin_token");
+        window.location.replace("admin_login.html");
+        return false;
     }
 }
 
@@ -957,6 +992,13 @@ function renderEmployees() {
                             📍 البصمات
                         </button>
 
+                        <button
+                            class="btn btn-warning"
+                            style="padding:5px 9px;font-size:11px;"
+                            onclick="resetEmployeeDevice('${employee._id}')">
+                            📱 إعادة ربط الجهاز
+                        </button>
+
                     </td>
 
                 </tr>
@@ -965,6 +1007,22 @@ function renderEmployees() {
     ).join("");
 
     updateDashboardStats();
+}
+
+async function resetEmployeeDevice(employeeId) {
+    if (!confirm("سيتم فك ارتباط جهاز الموظف الحالي. هل تريد المتابعة؟")) return;
+    try {
+        const response = await fetch(`${API_BASE}/api/employees/${encodeURIComponent(employeeId)}/device/reset`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${getAdminToken()}` }
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "تعذر إعادة ربط الجهاز");
+        alert(`✅ ${data.message}`);
+        await loadEmployeesFromMongoDB();
+    } catch (error) {
+        alert(`❌ ${error.message}`);
+    }
 }
 
 
@@ -1226,6 +1284,34 @@ function renderRequests() {
     updatePendingBadge();
 }
 
+async function loadServiceRequestsFromMongoDB() {
+    const body = document.getElementById("serviceReqTableBody");
+    if (!body) return;
+    try {
+        const response = await fetch(`${API_BASE}/api/admin/service-requests`, {
+            headers: { Authorization: `Bearer ${getAdminToken()}` }, cache: "no-store"
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "تعذر جلب طلبات الخدمات");
+        serviceRequestsCache = Array.isArray(data.requests) ? data.requests : [];
+        if (!serviceRequestsCache.length) {
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b;">📭 لا توجد طلبات سلفة أو إجازة</td></tr>';
+            return;
+        }
+        body.innerHTML = serviceRequestsCache.map(request => `
+            <tr>
+                <td>${escapeHtml(request.employeeName)}</td>
+                <td>${request.type === 'loan' ? '💰 سلفة' : '📝 إجازة'}</td>
+                <td>${escapeHtml(request.type === 'loan' ? `${formatMoney(request.amount)} — ${request.reason || '—'}` : request.reason || '—')}</td>
+                <td>${formatDate(request.requestedDate)}</td>
+                <td>${formatDate(request.createdAt)}</td>
+                <td>${request.status === 'pending' ? 'بانتظار المراجعة' : escapeHtml(request.status)}</td>
+            </tr>`).join('');
+    } catch (error) {
+        body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:#ef4444;">❌ ${escapeHtml(error.message)}</td></tr>`;
+    }
+}
+
 
 /* =========================================================
    اعتماد الموظف
@@ -1400,7 +1486,7 @@ async function openSection(sectionId) {
 
     if (sectionId === "requestsSection") {
 
-        await loadEmployeeRequestsFromMongoDB();
+        await Promise.all([loadEmployeeRequestsFromMongoDB(), loadServiceRequestsFromMongoDB()]);
 
     }
 
@@ -2488,6 +2574,10 @@ function logoutSystem() {
 
     localStorage.removeItem(
         "companyName"
+    );
+
+    sessionStorage.removeItem(
+        "almoraqeb_admin_token"
     );
 
     window.location.href =

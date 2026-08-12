@@ -138,22 +138,47 @@
 </div>
 
 <script>
-    // --- نظام الحماية والأمان (منع الشركات من الوصول للوحة المطور والكود) ---
-    (function enforceDeveloperSecurity() {
-        let isDevMode = localStorage.getItem('developer_authenticated');
-        if (isDevMode !== 'true') {
-            let pass = prompt("🔒 هذه لوحة المطورين المركزية المحمية.\nالرجاء إدخال رمز المطور السري للمتابعة:");
-            if (pass === "dev2026_secure") {
-                localStorage.setItem('developer_authenticated', 'true');
-            } else {
-                alert("❌ غير مسموح بالوصول! هذه لوحة خاصة بالمطور.");
-                window.location.href = "index.html"; // طرد أي شركة تحاول الوصول
+    let developerToken = sessionStorage.getItem('almoraqeb_developer_token') || '';
+    let companiesCache = [];
+
+    async function developerRequest(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+                Authorization: `Bearer ${developerToken}`
             }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success) throw new Error(data.message || data.error || 'تعذر تنفيذ العملية');
+        return data;
+    }
+
+    async function authenticateDeveloper() {
+        if (developerToken) return true;
+        const password = prompt('🔒 أدخل كلمة مرور المطور للمتابعة:');
+        if (!password) return false;
+        try {
+            const response = await fetch('/api/developer/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'تم رفض الدخول');
+            developerToken = result.token;
+            sessionStorage.setItem('almoraqeb_developer_token', developerToken);
+            return true;
+        } catch (error) {
+            alert(`❌ ${error.message}`);
+            window.location.replace('index.html');
+            return false;
         }
-    })();
+    }
 
     // تحميل وعرض الشركات المسجلة عند فتح الصفحة
-    window.onload = function() {
+    window.onload = async function() {
+        if (!await authenticateDeveloper()) return;
         loadCompaniesTable();
         playGeminiVoice("أهلاً بك يا مطور النظام في لوحة التحكم المركزية.");
     };
@@ -190,35 +215,29 @@
         else if(subType === 'monthly') expiryDate.setMonth(expiryDate.getMonth() + 1);
         else expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
-        let newComp = {
-            id: compId,
-            name: nameAr,
-            subscription: subType,
-            expiry: expiryDate.toISOString(),
-            status: 'active', // active, stopped, trial
-            passcode: document.getElementById('regPassword').value || '1234'
-        };
+        const adminUsername = document.getElementById('regUsername').value.trim();
+        const adminPassword = document.getElementById('regPassword').value;
+        if (!adminUsername || !adminPassword) {
+            alert('⚠️ أدخل اسم المستخدم وكلمة مرور مدير الشركة.');
+            return;
+        }
 
         try {
             const response = await fetch('/api/companies/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ companyId: compId, name: nameAr, email, phone: managerDetails })
+                body: JSON.stringify({
+                    companyId: compId, name: nameAr, email, phone: managerDetails,
+                    adminUsername, adminPassword, subscription: subType,
+                    systemState: 'active', subscriptionStartDate: new Date().toISOString(),
+                    subscriptionEndDate: expiryDate.toISOString()
+                })
             });
             const result = await response.json();
             if (!response.ok || !result.success) {
                 throw new Error(result.message || 'تعذر تسجيل الشركة في قاعدة البيانات');
             }
 
-            let companies = JSON.parse(localStorage.getItem('all_registered_companies') || '[]');
-            const existingIndex = companies.findIndex(company => company.id === compId);
-            if (existingIndex >= 0) companies[existingIndex] = { ...companies[existingIndex], ...newComp };
-            else companies.push(newComp);
-            localStorage.setItem('all_registered_companies', JSON.stringify(companies));
-
-            // هذا هو الرمز المعتمد الذي ستستخدمه لوحة الشركة بعد إعادة التوجيه.
-            localStorage.setItem('activeCompanyId', compId);
-            localStorage.setItem('custom_company_id', compId);
             alert(`✅ تم تأسيس وتثبيت الشركة (${nameAr}) بالرمز (${compId}) في قاعدة البيانات بنجاح!`);
             playGeminiVoice("تم تسجيل الشركة بنجاح.");
             loadCompaniesTable();
@@ -229,43 +248,33 @@
 
     async function loadCompaniesTable() {
         let tbody = document.getElementById('companiesTableBody');
-        let companies = JSON.parse(localStorage.getItem('all_registered_companies') || '[]');
-
         try {
-            const response = await fetch('/api/companies');
-            const result = await response.json();
-            if (!response.ok || !result.success) throw new Error('تعذر تحميل الشركات من الخادم');
-            companies = result.companies.map(company => ({
-                ...company,
-                id: company.companyId || company.id,
-                subscription: company.subscription || 'غير محدد',
-                expiry: company.expiry || null,
-                status: company.status || 'active'
-            }));
-            localStorage.setItem('all_registered_companies', JSON.stringify(companies));
+            const result = await developerRequest('/api/developer/companies');
+            companiesCache = result.companies;
         } catch (error) {
-            console.warn('سيتم عرض النسخة المحلية مؤقتاً:', error);
+            alert(`❌ ${error.message}`);
+            return;
         }
 
-        if (companies.length === 0) {
+        if (companiesCache.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">لا توجد شركات مسجلة حالياً. قم بإضافة شركة جديدة.</td></tr>`;
             return;
         }
 
         tbody.innerHTML = '';
-        companies.forEach((comp, index) => {
-            let isExpired = comp.expiry ? new Date(comp.expiry) < new Date() : false;
-            let statusClass = comp.status === 'active' && !isExpired ? 'status-active' : 'status-stopped';
-            let statusText = isExpired ? 'منتهي الاشتراك (موقوف تلقائياً)' : (comp.status === 'active' ? 'نشطة' : 'متوقفة يدوياً');
+        companiesCache.forEach((comp, index) => {
+            const isExpired = comp.subscriptionEndDate && new Date(comp.subscriptionEndDate) < new Date();
+            const statusClass = comp.systemState === 'active' && !isExpired ? 'status-active' : 'status-stopped';
+            const statusText = isExpired ? 'منتهي الاشتراك' : (comp.systemState === 'active' ? 'نشطة' : 'متوقفة يدوياً');
 
             tbody.innerHTML += `
                 <tr>
-                    <td><b>${comp.id}</b></td>
+                    <td><b>${comp.companyId}</b></td>
                     <td>${comp.name}</td>
                     <td><span class="status-badge status-trial">${comp.subscription}</span></td>
                     <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                     <td>
-                        <button class="btn btn-warning" style="padding: 5px 10px; font-size: 11px;" onclick="toggleCompanyStatus(${index})">${comp.status === 'active' ? '⏸️ إيقاف' : '▶️ تفعيل'}</button>
+                        <button class="btn btn-warning" style="padding: 5px 10px; font-size: 11px;" onclick="toggleCompanyStatus(${index})">${comp.systemState === 'active' ? '⏸️ إيقاف' : '▶️ تفعيل'}</button>
                         <button class="btn btn-primary" style="padding: 5px 10px; font-size: 11px;" onclick="editCompany(${index})">✏️ تعديل</button>
                         <button class="btn btn-danger" style="padding: 5px 10px; font-size: 11px;" onclick="deleteCompany(${index})">🗑️ حذف</button>
                     </td>
@@ -275,34 +284,45 @@
     }
 
     // 4. زر إيقاف تشغيل الشركة (أو تفعيلها)
-    function toggleCompanyStatus(index) {
-        let companies = JSON.parse(localStorage.getItem('all_registered_companies') || '[]');
-        companies[index].status = companies[index].status === 'active' ? 'stopped' : 'active';
-        localStorage.setItem('all_registered_companies', JSON.stringify(companies));
-        loadCompaniesTable();
-        alert("🔄 تم تغيير حالة تشغيل الشركة بنجاح.");
+    async function toggleCompanyStatus(index) {
+        const company = companiesCache[index];
+        try {
+            await developerRequest(`/api/developer/companies/${encodeURIComponent(company.companyId)}`, {
+                method: 'PATCH', body: JSON.stringify({ systemState: company.systemState === 'active' ? 'stopped' : 'active' })
+            });
+            await loadCompaniesTable();
+            alert('🔄 تم تغيير حالة الشركة في MongoDB.');
+        } catch (error) { alert(`❌ ${error.message}`); }
     }
 
     // 5. زر تعديل بيانات الشركة
-    function editCompany(index) {
-        let companies = JSON.parse(localStorage.getItem('all_registered_companies') || '[]');
-        let newName = prompt("أدخل الاسم الجديد للشركة:", companies[index].name);
+    async function editCompany(index) {
+        const company = companiesCache[index];
+        let newName = prompt("أدخل الاسم الجديد للشركة:", company.name);
         if (newName) {
-            companies[index].name = newName;
-            localStorage.setItem('all_registered_companies', JSON.stringify(companies));
-            loadCompaniesTable();
-            alert("✅ تم تعديل بيانات الشركة بنجاح.");
+            const adminUsername = prompt("اسم مستخدم مدير الشركة:", company.adminUsername || 'admin');
+            if (adminUsername === null || !adminUsername.trim()) return;
+            const adminPassword = prompt("كلمة مرور مدير الشركة الجديدة (اتركها فارغة للاحتفاظ بالحالية):", '');
+            try {
+                const update = { name: newName, adminUsername: adminUsername.trim() };
+                if (adminPassword) update.adminPassword = adminPassword;
+                await developerRequest(`/api/developer/companies/${encodeURIComponent(company.companyId)}`, {
+                    method: 'PATCH', body: JSON.stringify(update)
+                });
+                await loadCompaniesTable();
+                alert('✅ تم تعديل بيانات الشركة في MongoDB.');
+            } catch (error) { alert(`❌ ${error.message}`); }
         }
     }
 
     // 6. زر حذف نهائي للشركة
-    function deleteCompany(index) {
+    async function deleteCompany(index) {
         if (confirm("⚠️ تحذير صارم: هل أنت متأكد من الحذف النهائي للشركة وسجلاتها؟ لا يمكن التراجع عن هذا الإجراء.")) {
-            let companies = JSON.parse(localStorage.getItem('all_registered_companies') || '[]');
-            companies.splice(index, 1);
-            localStorage.setItem('all_registered_companies', JSON.stringify(companies));
-            loadCompaniesTable();
-            alert("🗑️ تم الحذف النهائي بنجاح.");
+            try {
+                await developerRequest(`/api/developer/companies/${encodeURIComponent(companiesCache[index].companyId)}`, { method: 'DELETE' });
+                await loadCompaniesTable();
+                alert('🗑️ تم حذف الشركة وسجلاتها من MongoDB.');
+            } catch (error) { alert(`❌ ${error.message}`); }
         }
     }
 

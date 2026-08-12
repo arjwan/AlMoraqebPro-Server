@@ -4,10 +4,13 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
+const DEVELOPER_PASSWORD = process.env.DEVELOPER_PASSWORD;
+const SESSION_SECRET = process.env.SESSION_SECRET || DEVELOPER_PASSWORD;
 
 if (!MONGO_URI) {
     console.error('❌ MONGO_URI is not configured. The server will not start without MongoDB.');
@@ -27,6 +30,12 @@ const companySchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, default: '' },
     phone: { type: String, default: '' },
+    adminUsername: { type: String, default: 'admin' },
+    adminPasswordHash: { type: String, default: '' },
+    subscription: { type: String, default: 'annual' },
+    systemState: { type: String, enum: ['active', 'stopped', 'expired'], default: 'active' },
+    subscriptionStartDate: Date,
+    subscriptionEndDate: Date,
     createdAt: { type: Date, default: Date.now }
 });
 const Company = mongoose.model('Company', companySchema);
@@ -60,6 +69,8 @@ const employeeSchema = new mongoose.Schema({
     workplace: String,
     username: { type: String, required: true },
     password: { type: String, required: true },
+    deviceId: { type: String, default: '' },
+    deviceBoundAt: Date,
     photoUrl: String,
     location: String,
     createdAt: { type: Date, default: Date.now },
@@ -83,6 +94,76 @@ const attendanceSchema = new mongoose.Schema({
 });
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 
+const serviceRequestSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true },
+    employeeId: { type: String, required: true, index: true },
+    employeeName: { type: String, required: true },
+    type: { type: String, enum: ['leave', 'loan'], required: true },
+    reason: { type: String, default: '' },
+    amount: Number,
+    requestedDate: Date,
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
+    createdAt: { type: Date, default: Date.now }
+});
+const ServiceRequest = mongoose.model('ServiceRequest', serviceRequestSchema);
+
+function hashPassword(password) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(String(password), salt, 64).toString('hex');
+    return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, storedHash) {
+    if (!storedHash || !storedHash.includes(':')) return false;
+    const [salt, expectedHash] = storedHash.split(':');
+    const actualHash = crypto.scryptSync(String(password), salt, 64).toString('hex');
+    return crypto.timingSafeEqual(Buffer.from(expectedHash, 'hex'), Buffer.from(actualHash, 'hex'));
+}
+
+function createToken(payload) {
+    const body = Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 8 * 60 * 60 * 1000 })).toString('base64url');
+    const signature = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
+    return `${body}.${signature}`;
+}
+
+function readToken(token) {
+    if (!SESSION_SECRET || !token || !token.includes('.')) return null;
+    const [body, signature] = token.split('.');
+    const expected = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
+    if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+    try {
+        const payload = JSON.parse(Buffer.from(body, 'base64url').toString());
+        return payload.exp > Date.now() ? payload : null;
+    } catch {
+        return null;
+    }
+}
+
+function requireDeveloper(req, res, next) {
+    const token = readToken(req.headers.authorization?.replace(/^Bearer\s+/i, ''));
+    if (!token || token.role !== 'developer') return res.status(401).json({ success: false, message: 'جلسة المطور غير صالحة' });
+    req.session = token;
+    next();
+}
+
+function requireAdmin(req, res, next) {
+    const token = readToken(req.headers.authorization?.replace(/^Bearer\s+/i, ''));
+    if (!token || token.role !== 'admin') return res.status(401).json({ success: false, message: 'جلسة المدير غير صالحة' });
+    req.session = token;
+    next();
+}
+
+function publicEmployee(employee) {
+    const { password, ...safeEmployee } = employee.toObject ? employee.toObject() : employee;
+    return safeEmployee;
+}
+
+function publicCompany(company) {
+    const value = company.toObject ? company.toObject() : company;
+    const { adminPasswordHash, ...safeCompany } = value;
+    return safeCompany;
+}
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'uploads/'),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
@@ -91,6 +172,74 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 app.get('/api/ping', (req, res) => {
     res.status(200).json({ status: 'connected', database: 'mongodb', message: 'السيرفر يعمل ومتصل بنجاح' });
+});
+
+app.post('/api/developer/login', (req, res) => {
+    if (!DEVELOPER_PASSWORD || !SESSION_SECRET) {
+        return res.status(503).json({ success: false, message: 'لم تُضبط حماية لوحة المطور في إعدادات الخادم' });
+    }
+    const password = String(req.body.password || '');
+    if (password !== DEVELOPER_PASSWORD) {
+        return res.status(401).json({ success: false, message: 'كلمة مرور المطور غير صحيحة' });
+    }
+    res.json({ success: true, token: createToken({ role: 'developer' }) });
+});
+
+app.get('/api/developer/companies', requireDeveloper, async (req, res) => {
+    try {
+        const companies = await Company.find().sort({ createdAt: -1 }).lean();
+        res.json({ success: true, companies: companies.map(publicCompany) });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.patch('/api/developer/companies/:companyId', requireDeveloper, async (req, res) => {
+    try {
+        const allowed = ['name', 'email', 'phone', 'subscription', 'systemState', 'subscriptionStartDate', 'subscriptionEndDate', 'adminUsername'];
+        const updates = {};
+        for (const key of allowed) {
+            if (req.body[key] !== undefined) updates[key] = typeof req.body[key] === 'string' ? req.body[key].trim() : req.body[key];
+        }
+        if (req.body.adminPassword) updates.adminPasswordHash = hashPassword(req.body.adminPassword);
+        const company = await Company.findOneAndUpdate({ companyId: String(req.params.companyId).trim() }, updates, { new: true, runValidators: true });
+        if (!company) return res.status(404).json({ success: false, message: 'الشركة غير موجودة' });
+        res.json({ success: true, company: publicCompany(company) });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+app.delete('/api/developer/companies/:companyId', requireDeveloper, async (req, res) => {
+    try {
+        const companyId = String(req.params.companyId).trim();
+        const company = await Company.findOneAndDelete({ companyId });
+        if (!company) return res.status(404).json({ success: false, message: 'الشركة غير موجودة' });
+        await Promise.all([Employee.deleteMany({ companyId }), EmployeeRequest.deleteMany({ companyId }), Attendance.deleteMany({ companyId })]);
+        res.json({ success: true, message: 'تم حذف الشركة وبياناتها المرتبطة' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/admin/login', async (req, res) => {
+    try {
+        const companyId = String(req.body.companyId || '').trim();
+        const username = String(req.body.username || '').trim();
+        const password = String(req.body.password || '');
+        const company = await Company.findOne({ companyId });
+        if (!company || company.systemState !== 'active') return res.status(401).json({ success: false, message: 'الشركة غير متاحة أو غير موجودة' });
+        if (company.adminUsername !== username || !verifyPassword(password, company.adminPasswordHash)) {
+            return res.status(401).json({ success: false, message: 'بيانات المدير غير صحيحة' });
+        }
+        res.json({ success: true, company: publicCompany(company), token: createToken({ role: 'admin', companyId }) });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.get('/api/admin/session', requireAdmin, (req, res) => {
+    res.json({ success: true, companyId: req.session.companyId });
 });
 
 app.post('/api/companies/register', async (req, res) => {
@@ -103,17 +252,23 @@ app.post('/api/companies/register', async (req, res) => {
 
         const existingCompany = await Company.findOne({ companyId: canonicalCompanyId }).lean();
         if (existingCompany) {
-            return res.status(200).json({ success: true, message: 'الشركة مسجلة مسبقاً', company: existingCompany });
+            return res.status(200).json({ success: true, message: 'الشركة مسجلة مسبقاً', company: publicCompany(existingCompany) });
         }
 
         const company = await new Company({
             companyId: canonicalCompanyId,
             name,
             email: req.body.email || '',
-            phone: req.body.phone || ''
+            phone: req.body.phone || '',
+            adminUsername: String(req.body.adminUsername || 'admin').trim(),
+            adminPasswordHash: req.body.adminPassword ? hashPassword(req.body.adminPassword) : '',
+            subscription: req.body.subscription || 'annual',
+            systemState: req.body.systemState || 'active',
+            subscriptionStartDate: req.body.subscriptionStartDate || new Date(),
+            subscriptionEndDate: req.body.subscriptionEndDate || undefined
         }).save();
 
-        res.status(201).json({ success: true, message: 'تم تسجيل الشركة بنجاح في MongoDB', company });
+        res.status(201).json({ success: true, message: 'تم تسجيل الشركة بنجاح في MongoDB', company: publicCompany(company) });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
@@ -122,7 +277,7 @@ app.post('/api/companies/register', async (req, res) => {
 app.get('/api/companies', async (req, res) => {
     try {
         const companies = await Company.find().sort({ createdAt: -1 }).lean();
-        res.json({ success: true, companies });
+        res.json({ success: true, companies: companies.map(publicCompany) });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
@@ -276,13 +431,80 @@ app.post('/api/mobile/login', async (req, res) => {
         const companyId = String(req.body.companyId || req.body.companyCode || '').trim();
         const username = String(req.body.username || '').trim();
         const password = String(req.body.password || '');
-        if (!companyId || !username || !password) {
+        const deviceId = String(req.body.deviceId || '').trim();
+        if (!companyId || !username || !password || !deviceId) {
             return res.status(400).json({ success: false, message: 'بيانات الدخول ناقصة' });
         }
 
-        const employee = await Employee.findOne({ companyId, username, password }).lean();
+        const employee = await Employee.findOne({ companyId, username, password });
         if (!employee) return res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
-        res.json({ success: true, message: 'تم تسجيل الدخول بنجاح', employee });
+        if (employee.deviceId && employee.deviceId !== deviceId) {
+            return res.status(403).json({ success: false, message: 'هذا الحساب مرتبط بجهاز آخر. راجع مدير الشركة لإعادة ربط الجهاز.' });
+        }
+        if (!employee.deviceId) {
+            employee.deviceId = deviceId;
+            employee.deviceBoundAt = new Date();
+            await employee.save();
+        }
+        res.json({ success: true, message: 'تم تسجيل الدخول بنجاح', employee: publicEmployee(employee) });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/employees/:employeeId/device/reset', requireAdmin, async (req, res) => {
+    try {
+        const employee = await Employee.findById(req.params.employeeId);
+        if (!employee || employee.companyId !== req.session.companyId) {
+            return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+        }
+        employee.deviceId = '';
+        employee.deviceBoundAt = undefined;
+        await employee.save();
+        res.json({ success: true, message: 'تم فك ارتباط الجهاز؛ يستطيع الموظف الربط من جهازه الجديد عند الدخول القادم.' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/employee/service-request', async (req, res) => {
+    try {
+        const employeeId = String(req.body.employeeId || '').trim();
+        const deviceId = String(req.body.deviceId || '').trim();
+        const type = String(req.body.type || '').trim();
+        if (!employeeId || !deviceId || !['leave', 'loan'].includes(type)) {
+            return res.status(400).json({ success: false, message: 'بيانات طلب الخدمة ناقصة' });
+        }
+        const employee = await Employee.findById(employeeId).lean();
+        if (!employee || employee.deviceId !== deviceId) {
+            return res.status(403).json({ success: false, message: 'لا يمكن إرسال الطلب من هذا الجهاز' });
+        }
+        const amount = req.body.amount === '' || req.body.amount == null ? undefined : Number(req.body.amount);
+        if (type === 'loan' && (!Number.isFinite(amount) || amount <= 0)) {
+            return res.status(400).json({ success: false, message: 'أدخل مبلغ سلفة صحيحاً' });
+        }
+        if (type === 'leave' && !req.body.requestedDate) {
+            return res.status(400).json({ success: false, message: 'حدد تاريخ الإجازة' });
+        }
+        const request = await new ServiceRequest({
+            companyId: employee.companyId,
+            employeeId: String(employee._id),
+            employeeName: employee.name,
+            type,
+            reason: String(req.body.reason || '').trim(),
+            amount,
+            requestedDate: req.body.requestedDate ? new Date(req.body.requestedDate) : undefined
+        }).save();
+        res.status(201).json({ success: true, message: 'تم إرسال الطلب إلى لوحة المدير', requestId: request._id });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.get('/api/admin/service-requests', requireAdmin, async (req, res) => {
+    try {
+        const requests = await ServiceRequest.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
+        res.json({ success: true, requests });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

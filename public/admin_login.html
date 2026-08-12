@@ -63,19 +63,17 @@ async function loginAdmin() {
     if (!password) return showMessage('⚠️ يجب إدخال كلمة المرور.');
 
     btn.disabled = true;
-    showMessage('جاري التحقق من رمز الشركة...', true);
+        showMessage('جاري التحقق من بيانات المدير...', true);
 
     try {
-        const response = await fetch(`${API_BASE}/api/companies`);
-        if (!response.ok) throw new Error('تعذر الاتصال بالسيرفر');
+        const response = await fetch(`${API_BASE}/api/admin/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ companyId, username, password })
+        });
         const data = await response.json();
-        const companies = Array.isArray(data.companies) ? data.companies : [];
-        const company = companies.find(c => String(c.companyId || '').trim() === companyId);
-
-        if (!company) {
-            showMessage('❌ رمز الشركة غير موجود في MongoDB.');
-            return;
-        }
+        if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تسجيل الدخول');
+        const company = data.company;
 
         // لا نعتبر مجرد وجود الشركة مصادقة كاملة؛ نحفظ جلسة الواجهة فقط بعد إدخال الحقول المطلوبة.
         // المصادقة الفعلية الخاصة بكلمة المرور يمكن ربطها لاحقًا ببيانات مدير الشركة.
@@ -88,8 +86,9 @@ async function loginAdmin() {
         localStorage.setItem('almoraqeb_admin_session', JSON.stringify(session));
         localStorage.setItem('companyId', String(company.companyId));
         localStorage.setItem('companyName', String(company.name || ''));
+        sessionStorage.setItem('almoraqeb_admin_token', data.token);
 
-        showMessage('✅ تم التحقق من الشركة، جارٍ فتح لوحة التحكم...', true);
+        showMessage('✅ تم التحقق من بيانات المدير، جارٍ فتح لوحة التحكم...', true);
         const target = `admin.html?company=${encodeURIComponent(company.companyId)}`;
         setTimeout(() => { window.location.replace(target); }, 250);
     } catch (error) {

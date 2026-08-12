@@ -161,6 +161,17 @@
         const SERVER_URL = window.location.origin;
         let gpsData = { lat: 33.3152, lng: 44.3661 };
 
+        // المتصفح لا يكشف رقم الهاتف الحقيقي، لذا ننشئ معرف تثبيت ثابتاً لهذا الجهاز.
+        // لا يغادر المعرف الجهاز إلا عند تسجيل دخول الموظف للتحقق من ربط الحساب.
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('almoraqeb_device_id');
+            if (!deviceId) {
+                deviceId = crypto.randomUUID ? crypto.randomUUID() : `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                localStorage.setItem('almoraqeb_device_id', deviceId);
+            }
+            return deviceId;
+        }
+
         // --- نظام Offline-First الذكي ---
         async function safeApiCall(endpoint, method = 'POST', payload = null) {
             if (!navigator.onLine) {
@@ -268,7 +279,7 @@
                 const response = await fetch(`${SERVER_URL}/api/mobile/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ companyId: comp, username: user, password })
+                    body: JSON.stringify({ companyId: comp, username: user, password, deviceId: getDeviceId() })
                 });
                 const result = await response.json();
                 if (!response.ok || !result.success) throw new Error(result.message || 'بيانات الدخول غير صحيحة');
@@ -276,6 +287,7 @@
                 localStorage.setItem('activeUser', employee.username);
                 localStorage.setItem('activeCompanyId', employee.companyId);
                 localStorage.setItem('activeEmployeeId', employee._id);
+                localStorage.setItem('activeDeviceId', getDeviceId());
                 alertBox.style.color = "#047857";
                 alertBox.innerText = "✅ تم التحقق من الحساب بنجاح!";
                 setTimeout(() => {

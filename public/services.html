@@ -193,8 +193,8 @@
 </div>
 
 <script>
-    const SERVER_URL = "https://almoraqebpro-server.onrender.com";
-    let companyId = 'B-2070';
+    const SERVER_URL = window.location.origin;
+    let companyId = localStorage.getItem('activeCompanyId') || '';
     let isRecording = false;
 
     // --- نظام Offline-First الذكي والربط البرمجي ---
@@ -249,6 +249,10 @@
         const urlParams = new URLSearchParams(window.location.search);
         let compParam = urlParams.get('company');
         if(compParam) companyId = compParam;
+        if (!localStorage.getItem('activeEmployeeId') || !companyId) {
+            window.location.replace('index.html');
+            return;
+        }
 
         const hour = new Date().getHours();
         const ticker = document.getElementById('safetyTicker');
@@ -334,17 +338,22 @@
     }
 
     async function submitRequest(type) {
+        const employeeId = localStorage.getItem('activeEmployeeId');
+        const deviceId = localStorage.getItem('activeDeviceId') || localStorage.getItem('almoraqeb_device_id');
         let payload = {
-            companyId: companyId,
-            type: type,
+            employeeId,
+            deviceId,
+            type: type === 'إجازة' ? 'leave' : 'loan',
             reason: document.getElementById(type === 'إجازة' ? 'leaveReason' : 'loanDesc')?.value || '',
             amount: type === 'سلفة' ? document.getElementById('loanAmount').value : null,
-            date: type === 'إجازة' ? document.getElementById('leaveDate').value : new Date().toISOString()
+            requestedDate: type === 'إجازة' ? document.getElementById('leaveDate').value : null
         };
 
-        let res = await safeApiCall('/api/employee/request', 'POST', payload);
+        let res = await safeApiCall('/api/employee/service-request', 'POST', payload);
         if(res && res.offline) {
             alert(`💾 تم حفظ طلب (${type}) محلياً، وستتم مزامنته عند الاتصال.`);
+        } else if (!res || !res.success) {
+            alert(`❌ ${res?.message || 'تعذر إرسال الطلب'}`);
         } else {
             alert(`✅ تم إرسال طلب (${type}) بنجاح إلى الإدارة!`);
             playArabicVoice(`تم إرسال طلب ${type} بنجاح.`);
