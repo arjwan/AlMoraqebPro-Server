@@ -28,614 +28,1685 @@ app.use(express.static(path.join(__dirname, 'public')));
 const companySchema = new mongoose.Schema({
     companyId: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
-    email: { type: String, default: '' },
-    phone: { type: String, default: '' },
-    adminUsername: { type: String, default: 'admin' },
-    adminPasswordHash: { type: String, default: '' },
-    subscription: { type: String, default: 'annual' },
-    systemState: { type: String, enum: ['active', 'stopped', 'expired'], default: 'active' },
-    subscriptionStartDate: Date,
-    subscriptionEndDate: Date,
-    createdAt: { type: Date, default: Date.now }
-});
-const Company = mongoose.model('Company', companySchema);
-
-const employeeRequestSchema = new mongoose.Schema({
-    companyId: { type: String, required: true, index: true },
-    companyName: String,
-    name: { type: String, required: true },
-    jobTitle: String,
-    workLocation: String,
-    salary: Number,
-    shift: String,
-    workHours: Number,
-    wageType: String,
-    socialSecurity: String,
-    location: String,
-    username: String,
-    password: String,
-    status: { type: String, default: 'pending', index: true },
-    createdAt: { type: Date, default: Date.now }
-});
-const EmployeeRequest = mongoose.model('EmployeeRequest', employeeRequestSchema);
-
-const employeeSchema = new mongoose.Schema({
-    companyId: { type: String, required: true, index: true },
-    companyName: String,
-    name: { type: String, required: true },
-    email: String,
-    salary: Number,
-    specialty: String,
-    workplace: String,
-    username: { type: String, required: true },
     password: { type: String, required: true },
-    deviceId: { type: String, default: '' },
-    deviceBoundAt: Date,
-    photoUrl: String,
-    location: String,
-    createdAt: { type: Date, default: Date.now },
-    loans: [{
-        loanAmount: Number,
-        monthlyInstallment: Number,
-        remainingAmount: Number,
-        startDate: { type: Date, default: Date.now }
-    }]
-});
-const Employee = mongoose.model('Employee', employeeSchema);
-
-const attendanceSchema = new mongoose.Schema({
-    employeeId: { type: String, required: true, index: true },
-    companyId: { type: String, index: true },
-    fingerprintToken: String,
+    phone: String,
+    address: String,
     latitude: Number,
     longitude: Number,
-    timestamp: { type: Date, default: Date.now },
-    type: { type: String, default: 'attendance' }
+    gpsRadius: { type: Number, default: 200 },
+    active: { type: Boolean, default: true },
+    createdAt: { type: Date, default: Date.now }
 });
-const Attendance = mongoose.model('Attendance', attendanceSchema);
+
+const employeeSchema = new mongoose.Schema({
+    employeeId: { type: String, required: true, unique: true, index: true },
+    companyId: { type: String, required: true, index: true },
+    name: { type: String, required: true },
+    username: String,
+    password: String,
+
+    credentialsStatus: {
+        type: String,
+        enum: ['pending', 'active', 'disabled'],
+        default: 'pending'
+    },
+
+    phone: String,
+    jobTitle: String,
+
+    deviceId: {
+        type: String,
+        default: null,
+        index: true
+    },
+
+    deviceBoundAt: {
+        type: Date,
+        default: null
+    },
+
+    active: {
+        type: Boolean,
+        default: true
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+const employeeRequestSchema = new mongoose.Schema({
+    requestId: { type: String, required: true, unique: true, index: true },
+    companyId: { type: String, required: true, index: true },
+    name: { type: String, required: true },
+    phone: String,
+    jobTitle: String,
+
+    deviceId: {
+        type: String,
+        default: null
+    },
+
+    username: String,
+    password: String,
+
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending',
+        index: true
+    },
+
+    employeeId: String,
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+
+    approvedAt: Date,
+    rejectedAt: Date
+});
+
+const attendanceSchema = new mongoose.Schema({
+    employeeId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    companyId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    deviceId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    fingerprintToken: {
+        type: String,
+        required: true
+    },
+
+    latitude: Number,
+    longitude: Number,
+
+    timestamp: {
+        type: Date,
+        default: Date.now,
+        index: true
+    },
+
+    type: {
+        type: String,
+        enum: ['check-in', 'check-out', 'in', 'out'],
+        default: 'check-in'
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
 
 const serviceRequestSchema = new mongoose.Schema({
-    companyId: { type: String, required: true, index: true },
-    employeeId: { type: String, required: true, index: true },
-    employeeName: { type: String, required: true },
-    type: { type: String, enum: ['leave', 'loan'], required: true },
-    reason: { type: String, default: '' },
+    requestId: {
+        type: String,
+        required: true,
+        unique: true,
+        index: true
+    },
+
+    employeeId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    companyId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    deviceId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    type: {
+        type: String,
+        enum: ['loan', 'leave'],
+        required: true
+    },
+
     amount: Number,
-    requestedDate: Date,
-    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
-    createdAt: { type: Date, default: Date.now }
+    reason: String,
+
+    startDate: Date,
+    endDate: Date,
+
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending',
+        index: true
+    },
+
+    managerNote: String,
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+
+    reviewedAt: Date
 });
-const ServiceRequest = mongoose.model('ServiceRequest', serviceRequestSchema);
 
 const notificationSchema = new mongoose.Schema({
-    companyId: { type: String, required: true, index: true },
-    employeeId: { type: String, required: true, index: true },
-    type: { type: String, enum: ['text', 'voice'], required: true },
-    message: { type: String, default: '' },
-    audioUrl: { type: String, default: '' },
-    createdAt: { type: Date, default: Date.now }
+    employeeId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    companyId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    message: String,
+    audioUrl: String,
+
+    createdAt: {
+        type: Date,
+        default: Date.now,
+        index: true
+    },
+
+    read: {
+        type: Boolean,
+        default: false
+    }
 });
+
+const Company = mongoose.model('Company', companySchema);
+const Employee = mongoose.model('Employee', employeeSchema);
+const EmployeeRequest = mongoose.model('EmployeeRequest', employeeRequestSchema);
+const Attendance = mongoose.model('Attendance', attendanceSchema);
+const ServiceRequest = mongoose.model('ServiceRequest', serviceRequestSchema);
 const Notification = mongoose.model('Notification', notificationSchema);
 
-function hashPassword(password) {
-    const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.scryptSync(String(password), salt, 64).toString('hex');
-    return `${salt}:${hash}`;
+mongoose.connect(MONGO_URI)
+    .then(() => {
+        console.log('✅ MongoDB connected successfully');
+    })
+    .catch(err => {
+        console.error('❌ MongoDB connection error:', err);
+    });
+
+function generateId(prefix = '') {
+    return prefix + crypto.randomBytes(8).toString('hex');
 }
 
-function verifyPassword(password, storedHash) {
-    if (!storedHash || !storedHash.includes(':')) return false;
-    const [salt, expectedHash] = storedHash.split(':');
-    const actualHash = crypto.scryptSync(String(password), salt, 64).toString('hex');
-    return crypto.timingSafeEqual(Buffer.from(expectedHash, 'hex'), Buffer.from(actualHash, 'hex'));
+function normalizeCompanyId(value) {
+    return String(value || '').trim();
 }
 
-function createToken(payload) {
-    const body = Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 8 * 60 * 60 * 1000 })).toString('base64url');
-    const signature = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
-    return `${body}.${signature}`;
+function normalizeDeviceId(value) {
+    return String(value || '').trim();
 }
 
-function readToken(token) {
-    if (!SESSION_SECRET || !token || !token.includes('.')) return null;
-    const [body, signature] = token.split('.');
-    const expected = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
-    if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+function isValidCoordinates(latitude, longitude) {
+    return Number.isFinite(Number(latitude)) &&
+        Number.isFinite(Number(longitude)) &&
+        Number(latitude) >= -90 &&
+        Number(latitude) <= 90 &&
+        Number(longitude) >= -180 &&
+        Number(longitude) <= 180;
+}
+
+function distanceInMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+
+    const p1 = Number(lat1) * Math.PI / 180;
+    const p2 = Number(lat2) * Math.PI / 180;
+
+    const dp = (Number(lat2) - Number(lat1)) * Math.PI / 180;
+    const dl = (Number(lon2) - Number(lon1)) * Math.PI / 180;
+
+    const a =
+        Math.sin(dp / 2) * Math.sin(dp / 2) +
+        Math.cos(p1) *
+        Math.cos(p2) *
+        Math.sin(dl / 2) *
+        Math.sin(dl / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
+function developerAuthenticated(req) {
+    const password =
+        req.headers['x-developer-password'] ||
+        req.headers['x-admin-password'] ||
+        req.body?.developerPassword;
+
+    if (!DEVELOPER_PASSWORD) return false;
+
+    return password === DEVELOPER_PASSWORD;
+}
+
+/* =========================================================
+   HEALTH
+========================================================= */
+
+app.get('/api/health', async (req, res) => {
     try {
-        const payload = JSON.parse(Buffer.from(body, 'base64url').toString());
-        return payload.exp > Date.now() ? payload : null;
-    } catch {
-        return null;
-    }
-}
+        const dbState = mongoose.connection.readyState;
 
-function requireDeveloper(req, res, next) {
-    const token = readToken(req.headers.authorization?.replace(/^Bearer\s+/i, ''));
-    if (!token || token.role !== 'developer') return res.status(401).json({ success: false, message: 'جلسة المطور غير صالحة' });
-    req.session = token;
-    next();
-}
-
-function requireAdmin(req, res, next) {
-    const token = readToken(req.headers.authorization?.replace(/^Bearer\s+/i, ''));
-    if (!token || token.role !== 'admin') return res.status(401).json({ success: false, message: 'جلسة المدير غير صالحة' });
-    req.session = token;
-    next();
-}
-
-function publicEmployee(employee) {
-    const { password, ...safeEmployee } = employee.toObject ? employee.toObject() : employee;
-    return safeEmployee;
-}
-
-function publicCompany(company) {
-    const value = company.toObject ? company.toObject() : company;
-    const { adminPasswordHash, ...safeCompany } = value;
-    return safeCompany;
-}
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
-
-app.get('/api/ping', (req, res) => {
-    res.status(200).json({ status: 'connected', database: 'mongodb', message: 'السيرفر يعمل ومتصل بنجاح' });
-});
-
-app.post('/api/developer/login', (req, res) => {
-    if (!DEVELOPER_PASSWORD || !SESSION_SECRET) {
-        return res.status(503).json({ success: false, message: 'لم تُضبط حماية لوحة المطور في إعدادات الخادم' });
-    }
-    const password = String(req.body.password || '');
-    if (password !== DEVELOPER_PASSWORD) {
-        return res.status(401).json({ success: false, message: 'كلمة مرور المطور غير صحيحة' });
-    }
-    res.json({ success: true, token: createToken({ role: 'developer' }) });
-});
-
-app.get('/api/developer/companies', requireDeveloper, async (req, res) => {
-    try {
-        const companies = await Company.find().sort({ createdAt: -1 }).lean();
-        res.json({ success: true, companies: companies.map(publicCompany) });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        res.json({
+            ok: true,
+            mongodb: dbState === 1,
+            mongoState: dbState,
+            time: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            error: error.message
+        });
     }
 });
 
-app.patch('/api/developer/companies/:companyId', requireDeveloper, async (req, res) => {
-    try {
-        const allowed = ['name', 'email', 'phone', 'subscription', 'systemState', 'subscriptionStartDate', 'subscriptionEndDate', 'adminUsername'];
-        const updates = {};
-        for (const key of allowed) {
-            if (req.body[key] !== undefined) updates[key] = typeof req.body[key] === 'string' ? req.body[key].trim() : req.body[key];
-        }
-        if (req.body.adminPassword) updates.adminPasswordHash = hashPassword(req.body.adminPassword);
-        const company = await Company.findOneAndUpdate({ companyId: String(req.params.companyId).trim() }, updates, { new: true, runValidators: true });
-        if (!company) return res.status(404).json({ success: false, message: 'الشركة غير موجودة' });
-        res.json({ success: true, company: publicCompany(company) });
-    } catch (err) {
-        res.status(400).json({ success: false, error: err.message });
-    }
-});
-
-app.delete('/api/developer/companies/:companyId', requireDeveloper, async (req, res) => {
-    try {
-        const companyId = String(req.params.companyId).trim();
-        const company = await Company.findOneAndDelete({ companyId });
-        if (!company) return res.status(404).json({ success: false, message: 'الشركة غير موجودة' });
-        await Promise.all([Employee.deleteMany({ companyId }), EmployeeRequest.deleteMany({ companyId }), Attendance.deleteMany({ companyId })]);
-        res.json({ success: true, message: 'تم حذف الشركة وبياناتها المرتبطة' });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-app.post('/api/admin/login', async (req, res) => {
-    try {
-        const companyId = String(req.body.companyId || '').trim();
-        const username = String(req.body.username || '').trim();
-        const password = String(req.body.password || '');
-        const company = await Company.findOne({ companyId });
-        if (!company || company.systemState !== 'active') return res.status(401).json({ success: false, message: 'الشركة غير متاحة أو غير موجودة' });
-        if (company.adminUsername !== username || !verifyPassword(password, company.adminPasswordHash)) {
-            return res.status(401).json({ success: false, message: 'بيانات المدير غير صحيحة' });
-        }
-        res.json({ success: true, company: publicCompany(company), token: createToken({ role: 'admin', companyId }) });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-app.get('/api/admin/session', requireAdmin, (req, res) => {
-    res.json({ success: true, companyId: req.session.companyId });
-});
+/* =========================================================
+   COMPANIES
+========================================================= */
 
 app.post('/api/companies/register', async (req, res) => {
     try {
-        const canonicalCompanyId = String(req.body.companyId || req.body.id || '').trim();
-        const name = String(req.body.name || '').trim();
-        if (!canonicalCompanyId || !name) {
-            return res.status(400).json({ success: false, message: 'بيانات الشركة ناقصة' });
-        }
-
-        const existingCompany = await Company.findOne({ companyId: canonicalCompanyId }).lean();
-        if (existingCompany) {
-            return res.status(200).json({ success: true, message: 'الشركة مسجلة مسبقاً', company: publicCompany(existingCompany) });
-        }
-
-        const company = await new Company({
-            companyId: canonicalCompanyId,
+        const {
+            companyId,
             name,
-            email: req.body.email || '',
-            phone: req.body.phone || '',
-            adminUsername: String(req.body.adminUsername || 'admin').trim(),
-            adminPasswordHash: req.body.adminPassword ? hashPassword(req.body.adminPassword) : '',
-            subscription: req.body.subscription || 'annual',
-            systemState: req.body.systemState || 'active',
-            subscriptionStartDate: req.body.subscriptionStartDate || new Date(),
-            subscriptionEndDate: req.body.subscriptionEndDate || undefined
-        }).save();
+            password,
+            phone,
+            address,
+            latitude,
+            longitude,
+            gpsRadius
+        } = req.body;
 
-        res.status(201).json({ success: true, message: 'تم تسجيل الشركة بنجاح في MongoDB', company: publicCompany(company) });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        const normalizedCompanyId = normalizeCompanyId(companyId);
+
+        if (!normalizedCompanyId || !name || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'companyId, name and password are required'
+            });
+        }
+
+        const exists = await Company.findOne({
+            companyId: normalizedCompanyId
+        });
+
+        if (exists) {
+            return res.status(409).json({
+                success: false,
+                message: 'Company already exists'
+            });
+        }
+
+        const company = new Company({
+            companyId: normalizedCompanyId,
+            name,
+            password,
+            phone,
+            address,
+            latitude: isValidCoordinates(latitude, longitude)
+                ? Number(latitude)
+                : undefined,
+            longitude: isValidCoordinates(latitude, longitude)
+                ? Number(longitude)
+                : undefined,
+            gpsRadius: Number(gpsRadius) > 0
+                ? Number(gpsRadius)
+                : 200
+        });
+
+        await company.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Company registered successfully',
+            company
+        });
+
+    } catch (error) {
+        console.error('Company register error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+app.post('/api/company/login', async (req, res) => {
+    try {
+        const { companyId, password } = req.body;
+
+        const company = await Company.findOne({
+            companyId: normalizeCompanyId(companyId),
+            password
+        });
+
+        if (!company) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid company credentials'
+            });
+        }
+
+        if (!company.active) {
+            return res.status(403).json({
+                success: false,
+                message: 'Company is disabled'
+            });
+        }
+
+        res.json({
+            success: true,
+            company
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
 app.get('/api/companies', async (req, res) => {
     try {
-        const companies = await Company.find().sort({ createdAt: -1 }).lean();
-        res.json({ success: true, companies: companies.map(publicCompany) });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        const companies = await Company.find({})
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.json({
+            success: true,
+            companies
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
+
+/* =========================================================
+   DEVELOPER COMPANY CRUD
+========================================================= */
+
+app.get('/api/developer/companies', async (req, res) => {
+    try {
+        if (!developerAuthenticated(req)) {
+            return res.status(401).json({
+                success: false,
+                message: 'Developer authentication required'
+            });
+        }
+
+        const companies = await Company.find({})
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.json({
+            success: true,
+            companies
+        });
+
+    } catch (error) {
+        console.error('Developer companies error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+app.patch('/api/developer/companies/:companyId', async (req, res) => {
+    try {
+        if (!developerAuthenticated(req)) {
+            return res.status(401).json({
+                success: false,
+                message: 'Developer authentication required'
+            });
+        }
+
+        const companyId = normalizeCompanyId(req.params.companyId);
+
+        const allowed = [
+            'name',
+            'password',
+            'phone',
+            'address',
+            'latitude',
+            'longitude',
+            'gpsRadius',
+            'active'
+        ];
+
+        const update = {};
+
+        for (const key of allowed) {
+            if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+                update[key] = req.body[key];
+            }
+        }
+
+        if (update.latitude !== undefined) {
+            update.latitude = Number(update.latitude);
+        }
+
+        if (update.longitude !== undefined) {
+            update.longitude = Number(update.longitude);
+        }
+
+        if (update.gpsRadius !== undefined) {
+            update.gpsRadius = Number(update.gpsRadius);
+        }
+
+        const company = await Company.findOneAndUpdate(
+            { companyId },
+            { $set: update },
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'Company not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Company updated successfully',
+            company
+        });
+
+    } catch (error) {
+        console.error('Developer company update error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+app.patch('/api/developer/companies/:companyId/status', async (req, res) => {
+    try {
+        if (!developerAuthenticated(req)) {
+            return res.status(401).json({
+                success: false,
+                message: 'Developer authentication required'
+            });
+        }
+
+        const companyId = normalizeCompanyId(req.params.companyId);
+
+        const active =
+            req.body.active === true ||
+            req.body.active === 'true';
+
+        const company = await Company.findOneAndUpdate(
+            { companyId },
+            { $set: { active } },
+            {
+                new: true
+            }
+        );
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'Company not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: active
+                ? 'Company activated successfully'
+                : 'Company disabled successfully',
+            company
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+app.delete('/api/developer/companies/:companyId', async (req, res) => {
+    try {
+        if (!developerAuthenticated(req)) {
+            return res.status(401).json({
+                success: false,
+                message: 'Developer authentication required'
+            });
+        }
+
+        const companyId = normalizeCompanyId(req.params.companyId);
+
+        const company = await Company.findOneAndDelete({
+            companyId
+        });
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'Company not found'
+            });
+        }
+
+        await Promise.all([
+            Employee.deleteMany({ companyId }),
+            EmployeeRequest.deleteMany({ companyId }),
+            Attendance.deleteMany({ companyId }),
+            ServiceRequest.deleteMany({ companyId }),
+            Notification.deleteMany({ companyId })
+        ]);
+
+        res.json({
+            success: true,
+            message: 'Company and related data deleted successfully',
+            companyId
+        });
+
+    } catch (error) {
+        console.error('Company delete error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/* =========================================================
+   EMPLOYEE REQUEST
+========================================================= */
 
 app.post('/api/employee/request', async (req, res) => {
     try {
-        const companyId = String(req.body.companyId || req.body.companyCode || req.body.id || '').trim();
-        const name = String(req.body.name || '').trim();
-        if (!companyId || !name) {
-            return res.status(400).json({ success: false, message: 'بيانات طلب الموظف ناقصة' });
-        }
-
-        const company = await Company.findOne({ companyId }).lean();
-        if (!company) {
-            return res.status(404).json({ success: false, message: 'رمز الشركة غير مسجل في MongoDB' });
-        }
-
-        const request = await new EmployeeRequest({
-            ...req.body,
+        const {
             companyId,
-            companyName: req.body.companyName || company.name,
             name,
-            salary: req.body.salary !== undefined && req.body.salary !== '' ? Number(req.body.salary) : undefined,
+            phone,
+            jobTitle,
+            deviceId
+        } = req.body;
+
+        const normalizedCompanyId = normalizeCompanyId(companyId);
+        const normalizedDeviceId = normalizeDeviceId(deviceId);
+
+        if (!normalizedCompanyId || !name) {
+            return res.status(400).json({
+                success: false,
+                message: 'companyId and name are required'
+            });
+        }
+
+        const company = await Company.findOne({
+            companyId: normalizedCompanyId,
+            active: true
+        });
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'Company not found or inactive'
+            });
+        }
+
+        const request = new EmployeeRequest({
+            requestId: generateId('REQ-'),
+            companyId: normalizedCompanyId,
+            name,
+            phone,
+            jobTitle,
+            deviceId: normalizedDeviceId || null,
             status: 'pending'
-        }).save();
+        });
+
+        await request.save();
 
         res.status(201).json({
             success: true,
-            message: 'تم إرسال الطلب إلى MongoDB بانتظار موافقة الشركة',
-            requestId: request._id
+            message: 'Employee request submitted successfully',
+            request
         });
-    } catch (err) {
-        res.status(500).json({ success: false, message: 'تعذر حفظ طلب الموظف', error: err.message });
-    }
-});
 
-app.get('/api/employee/requests/:companyId', async (req, res) => {
-    try {
-        const companyId = String(req.params.companyId || '').trim();
-        const requests = await EmployeeRequest.find({ companyId }).sort({ createdAt: -1 }).lean();
-        res.json({ success: true, requests });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+    } catch (error) {
+        console.error('Employee request error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
 app.get('/api/employee/requests/:companyId/pending', async (req, res) => {
     try {
-        const companyId = String(req.params.companyId || '').trim();
-        const requests = await EmployeeRequest.find({ companyId, status: 'pending' }).sort({ createdAt: -1 }).lean();
-        res.json({ success: true, requests });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        const companyId = normalizeCompanyId(req.params.companyId);
+
+        const requests = await EmployeeRequest.find({
+            companyId,
+            status: 'pending'
+        })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.json({
+            success: true,
+            requests
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
+
+/* =========================================================
+   APPROVE EMPLOYEE REQUEST
+   Password is NOT taken from the phone request.
+========================================================= */
 
 app.post('/api/employee/request/:requestId/approve', async (req, res) => {
     try {
-        const request = await EmployeeRequest.findById(req.params.requestId);
-        if (!request) return res.status(404).json({ success: false, message: 'طلب الموظف غير موجود' });
-        if (request.status === 'approved') return res.status(200).json({ success: true, message: 'الطلب معتمد مسبقاً' });
+        const requestId = req.params.requestId;
 
-        const username = String(req.body.username || request.username || '').trim();
-        const password = String(req.body.password || request.password || '').trim();
-        if (!username || !password) {
-            return res.status(400).json({ success: false, message: 'اسم المستخدم وكلمة المرور مطلوبان لاعتماد الموظف' });
+        const request = await EmployeeRequest.findOne({
+            requestId
+        });
+
+        if (!request) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee request not found'
+            });
         }
 
-        const existing = await Employee.findOne({ companyId: request.companyId, username }).lean();
-        if (existing) return res.status(409).json({ success: false, message: 'اسم المستخدم مستخدم مسبقاً' });
+        if (request.status !== 'pending') {
+            return res.status(400).json({
+                success: false,
+                message: 'Employee request has already been processed'
+            });
+        }
 
-        const employee = await new Employee({
+        const existingEmployee = await Employee.findOne({
+            $or: [
+                { employeeId: request.requestId },
+                {
+                    companyId: request.companyId,
+                    phone: request.phone
+                }
+            ]
+        });
+
+        if (existingEmployee) {
+            return res.status(409).json({
+                success: false,
+                message: 'Employee already exists',
+                employee: existingEmployee
+            });
+        }
+
+        const employeeId = generateId('EMP-');
+
+        const employee = new Employee({
+            employeeId,
             companyId: request.companyId,
-            companyName: request.companyName,
             name: request.name,
-            email: req.body.email || '',
-            salary: request.salary,
-            specialty: request.jobTitle,
-            workplace: request.workLocation,
-            username,
-            password,
-            location: request.location,
-            loans: []
-        }).save();
+            phone: request.phone,
+            jobTitle: request.jobTitle,
+
+            username: null,
+            password: null,
+
+            credentialsStatus: 'pending',
+
+            deviceId: request.deviceId || null,
+            deviceBoundAt: request.deviceId
+                ? new Date()
+                : null,
+
+            active: true
+        });
+
+        await employee.save();
 
         request.status = 'approved';
+        request.employeeId = employeeId;
+        request.approvedAt = new Date();
+
+        /*
+         * Never copy request.username/request.password.
+         * Credentials are assigned by the manager after approval.
+         */
+        request.username = undefined;
+        request.password = undefined;
+
         await request.save();
 
-        res.status(201).json({ success: true, message: 'تم اعتماد الموظف وحفظه في MongoDB', employee });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        res.json({
+            success: true,
+            message: 'Employee approved. Credentials must now be assigned by the manager.',
+            employee: {
+                employeeId: employee.employeeId,
+                companyId: employee.companyId,
+                name: employee.name,
+                deviceId: employee.deviceId,
+                credentialsStatus: employee.credentialsStatus
+            }
+        });
+
+    } catch (error) {
+        console.error('Approve employee error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
-app.post('/api/employee/register', upload.single('photo'), async (req, res) => {
+/* =========================================================
+   REJECT EMPLOYEE REQUEST
+========================================================= */
+
+app.post('/api/employee/request/:requestId/reject', async (req, res) => {
     try {
-        const companyId = String(req.body.companyId || req.body.companyCode || '').trim();
-        if (!companyId || !req.body.name || !req.body.username || !req.body.password) {
-            return res.status(400).json({ success: false, message: 'بيانات الموظف الأساسية ناقصة' });
+        const request = await EmployeeRequest.findOne({
+            requestId: req.params.requestId
+        });
+
+        if (!request) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee request not found'
+            });
         }
 
-        const photoPath = req.file ? `/uploads/${req.file.filename}` : (req.body.photo || '');
-        const employee = await new Employee({
+        request.status = 'rejected';
+        request.rejectedAt = new Date();
+
+        await request.save();
+
+        res.json({
+            success: true,
+            message: 'Employee request rejected',
+            request
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/* =========================================================
+   EMPLOYEE CREDENTIALS
+========================================================= */
+
+app.patch('/api/employees/:employeeId/credentials', async (req, res) => {
+    try {
+        const {
             companyId,
-            companyName: req.body.companyName,
-            name: req.body.name,
-            email: req.body.email,
-            salary: req.body.salary ? Number(req.body.salary) : undefined,
-            specialty: req.body.specialty,
-            workplace: req.body.workplace,
-            username: req.body.username,
-            password: req.body.password,
-            photoUrl: photoPath,
-            location: req.body.location,
-            loans: []
-        }).save();
+            username,
+            password
+        } = req.body;
 
-        res.status(201).json({ success: true, message: 'تم تسجيل الموظف وحفظه في MongoDB', employee });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        if (!companyId || !username || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'companyId, username and password are required'
+            });
+        }
+
+        const employee = await Employee.findOne({
+            employeeId: req.params.employeeId,
+            companyId: normalizeCompanyId(companyId)
+        });
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
+        }
+
+        const duplicate = await Employee.findOne({
+            companyId: employee.companyId,
+            username,
+            employeeId: { $ne: employee.employeeId }
+        });
+
+        if (duplicate) {
+            return res.status(409).json({
+                success: false,
+                message: 'Username is already used'
+            });
+        }
+
+        employee.username = String(username).trim();
+        employee.password = String(password);
+        employee.credentialsStatus = 'active';
+
+        await employee.save();
+
+        res.json({
+            success: true,
+            message: 'Employee credentials assigned successfully',
+            employee: {
+                employeeId: employee.employeeId,
+                companyId: employee.companyId,
+                name: employee.name,
+                username: employee.username,
+                credentialsStatus: employee.credentialsStatus,
+                deviceId: employee.deviceId
+            }
+        });
+
+    } catch (error) {
+        console.error('Employee credentials error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
-app.get('/api/employees', async (req, res) => {
-    try {
-        const companyId = String(req.query.companyId || '').trim();
-        if (!companyId) return res.status(400).json({ success: false, message: 'companyId مطلوب' });
-        const employees = await Employee.find({ companyId }).sort({ createdAt: -1 }).lean();
-        res.json({ success: true, total: employees.length, employees });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-app.get('/api/employees/:companyId', async (req, res) => {
-    try {
-        const page = Math.max(parseInt(req.query.page) || 1, 1);
-        const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
-        const filter = { companyId: String(req.params.companyId).trim() };
-        const employees = await Employee.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean();
-        const total = await Employee.countDocuments(filter);
-        res.json({ success: true, total, page, pages: Math.ceil(total / limit), employees });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
+/* =========================================================
+   EMPLOYEE LOGIN
+========================================================= */
 
 app.post('/api/mobile/login', async (req, res) => {
     try {
-        const companyId = String(req.body.companyId || req.body.companyCode || '').trim();
-        const username = String(req.body.username || '').trim();
-        const password = String(req.body.password || '');
-        const deviceId = String(req.body.deviceId || '').trim();
-        if (!companyId || !username || !password || !deviceId) {
-            return res.status(400).json({ success: false, message: 'بيانات الدخول ناقصة' });
+        const {
+            companyId,
+            username,
+            password,
+            deviceId
+        } = req.body;
+
+        const normalizedCompanyId = normalizeCompanyId(companyId);
+        const normalizedDeviceId = normalizeDeviceId(deviceId);
+
+        if (!normalizedCompanyId || !username || !password || !normalizedDeviceId) {
+            return res.status(400).json({
+                success: false,
+                message: 'companyId, username, password and deviceId are required'
+            });
         }
 
-        const employee = await Employee.findOne({ companyId, username, password });
-        if (!employee) return res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
-        if (employee.deviceId && employee.deviceId !== deviceId) {
-            return res.status(403).json({ success: false, message: 'هذا الحساب مرتبط بجهاز آخر. راجع مدير الشركة لإعادة ربط الجهاز.' });
+        const employee = await Employee.findOne({
+            companyId: normalizedCompanyId,
+            username,
+            password,
+            active: true,
+            credentialsStatus: 'active'
+        });
+
+        if (!employee) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid employee credentials'
+            });
         }
+
+        if (employee.deviceId &&
+            employee.deviceId !== normalizedDeviceId) {
+
+            return res.status(403).json({
+                success: false,
+                message: 'This employee is already bound to another device'
+            });
+        }
+
         if (!employee.deviceId) {
-            employee.deviceId = deviceId;
+            employee.deviceId = normalizedDeviceId;
             employee.deviceBoundAt = new Date();
+
             await employee.save();
         }
-        res.json({ success: true, message: 'تم تسجيل الدخول بنجاح', employee: publicEmployee(employee) });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+
+        res.json({
+            success: true,
+            message: 'Login successful',
+
+            employee: {
+                employeeId: employee.employeeId,
+                companyId: employee.companyId,
+                name: employee.name,
+                username: employee.username,
+                deviceId: employee.deviceId
+            }
+        });
+
+    } catch (error) {
+        console.error('Mobile login error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
-app.post('/api/employees/:employeeId/device/reset', requireAdmin, async (req, res) => {
+/* =========================================================
+   DEVICE RESET
+========================================================= */
+
+app.post('/api/employees/:employeeId/device/reset', async (req, res) => {
     try {
-        const employee = await Employee.findById(req.params.employeeId);
-        if (!employee || employee.companyId !== req.session.companyId) {
-            return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+        const {
+            companyId
+        } = req.body;
+
+        const employee = await Employee.findOne({
+            employeeId: req.params.employeeId,
+            companyId: normalizeCompanyId(companyId)
+        });
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
         }
-        employee.deviceId = '';
-        employee.deviceBoundAt = undefined;
+
+        employee.deviceId = null;
+        employee.deviceBoundAt = null;
+
         await employee.save();
-        res.json({ success: true, message: 'تم فك ارتباط الجهاز؛ يستطيع الموظف الربط من جهازه الجديد عند الدخول القادم.' });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+
+        res.json({
+            success: true,
+            message: 'Employee device binding reset successfully'
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
-app.post('/api/employee/service-request', async (req, res) => {
+/* =========================================================
+   EMPLOYEES
+========================================================= */
+
+app.get('/api/employees/:companyId', async (req, res) => {
     try {
-        const employeeId = String(req.body.employeeId || '').trim();
-        const deviceId = String(req.body.deviceId || '').trim();
-        const type = String(req.body.type || '').trim();
-        if (!employeeId || !deviceId || !['leave', 'loan'].includes(type)) {
-            return res.status(400).json({ success: false, message: 'بيانات طلب الخدمة ناقصة' });
-        }
-        const employee = await Employee.findById(employeeId).lean();
-        if (!employee || employee.deviceId !== deviceId) {
-            return res.status(403).json({ success: false, message: 'لا يمكن إرسال الطلب من هذا الجهاز' });
-        }
-        const amount = req.body.amount === '' || req.body.amount == null ? undefined : Number(req.body.amount);
-        if (type === 'loan' && (!Number.isFinite(amount) || amount <= 0)) {
-            return res.status(400).json({ success: false, message: 'أدخل مبلغ سلفة صحيحاً' });
-        }
-        if (type === 'leave' && !req.body.requestedDate) {
-            return res.status(400).json({ success: false, message: 'حدد تاريخ الإجازة' });
-        }
-        const request = await new ServiceRequest({
-            companyId: employee.companyId,
-            employeeId: String(employee._id),
-            employeeName: employee.name,
-            type,
-            reason: String(req.body.reason || '').trim(),
-            amount,
-            requestedDate: req.body.requestedDate ? new Date(req.body.requestedDate) : undefined
-        }).save();
-        res.status(201).json({ success: true, message: 'تم إرسال الطلب إلى لوحة المدير', requestId: request._id });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        const employees = await Employee.find({
+            companyId: normalizeCompanyId(req.params.companyId)
+        })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.json({
+            success: true,
+            employees
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
-app.get('/api/admin/service-requests', requireAdmin, async (req, res) => {
+app.get('/api/employees/:employeeId', async (req, res) => {
     try {
-        const requests = await ServiceRequest.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
-        res.json({ success: true, requests });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        const employee = await Employee.findOne({
+            employeeId: req.params.employeeId
+        }).lean();
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            employee
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
-app.post('/api/admin/notifications', requireAdmin, upload.single('audio'), async (req, res) => {
-    try {
-        const employeeId = String(req.body.employeeId || '').trim();
-        const employee = await Employee.findById(employeeId).lean();
-        if (!employee || employee.companyId !== req.session.companyId) {
-            return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
-        }
-        const message = String(req.body.message || '').trim();
-        const audioUrl = req.file ? `/uploads/${req.file.filename}` : '';
-        if (!message && !audioUrl) return res.status(400).json({ success: false, message: 'أدخل نص الإشعار أو أرفق رسالة صوتية' });
-        const notification = await new Notification({
-            companyId: employee.companyId, employeeId: String(employee._id),
-            type: audioUrl ? 'voice' : 'text', message, audioUrl
-        }).save();
-        res.status(201).json({ success: true, notification });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-app.get('/api/employee/notifications', async (req, res) => {
-    try {
-        const employeeId = String(req.query.employeeId || '').trim();
-        const deviceId = String(req.query.deviceId || '').trim();
-        const employee = await Employee.findById(employeeId).lean();
-        if (!employee || !deviceId || employee.deviceId !== deviceId) {
-            return res.status(403).json({ success: false, message: 'لا يمكن قراءة الإشعارات من هذا الجهاز' });
-        }
-        const notifications = await Notification.find({ employeeId }).sort({ createdAt: -1 }).limit(50).lean();
-        res.json({ success: true, notifications });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
+/* =========================================================
+   ATTENDANCE / FINGERPRINT / GPS
+========================================================= */
 
 app.post('/api/attendance', async (req, res) => {
     try {
-        const { employeeId, fingerprintToken, latitude, longitude, timestamp, type } = req.body;
-        if (!employeeId) return res.status(400).json({ success: false, message: 'معرف الموظف مطلوب' });
+        const {
+            employeeId,
+            deviceId,
+            fingerprintToken,
+            latitude,
+            longitude,
+            timestamp,
+            type
+        } = req.body;
 
-        const employee = await Employee.findById(employeeId).lean();
-        if (!employee) return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+        const normalizedDeviceId = normalizeDeviceId(deviceId);
 
-        const attendance = await new Attendance({
-            employeeId: String(employee._id),
+        if (!employeeId ||
+            !normalizedDeviceId ||
+            !fingerprintToken) {
+
+            return res.status(400).json({
+                success: false,
+                message: 'employeeId, deviceId and fingerprintToken are required'
+            });
+        }
+
+        if (!isValidCoordinates(latitude, longitude)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Valid GPS coordinates are required'
+            });
+        }
+
+        const employee = await Employee.findOne({
+            employeeId,
+            active: true
+        });
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found or inactive'
+            });
+        }
+
+        if (!employee.deviceId ||
+            employee.deviceId !== normalizedDeviceId) {
+
+            return res.status(403).json({
+                success: false,
+                message: 'Device is not bound to this employee'
+            });
+        }
+
+        const company = await Company.findOne({
             companyId: employee.companyId,
-            fingerprintToken: fingerprintToken || '',
-            latitude: latitude != null ? Number(latitude) : undefined,
-            longitude: longitude != null ? Number(longitude) : undefined,
-            timestamp: timestamp ? new Date(timestamp) : new Date(),
-            type: type || 'attendance'
-        }).save();
+            active: true
+        });
 
-        res.status(201).json({ success: true, message: 'تم تسجيل الحضور وحفظه في MongoDB', attendanceId: attendance._id });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'Company not found or inactive'
+            });
+        }
+
+        /*
+         * If the company has coordinates configured,
+         * enforce the configured GPS radius.
+         */
+        if (isValidCoordinates(company.latitude, company.longitude)) {
+            const distance = distanceInMeters(
+                company.latitude,
+                company.longitude,
+                latitude,
+                longitude
+            );
+
+            const radius = Number(company.gpsRadius) > 0
+                ? Number(company.gpsRadius)
+                : 200;
+
+            if (distance > radius) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Employee is outside the allowed company location',
+                    distance,
+                    allowedRadius: radius
+                });
+            }
+        }
+
+        const attendance = new Attendance({
+            employeeId: employee.employeeId,
+            companyId: employee.companyId,
+            deviceId: normalizedDeviceId,
+            fingerprintToken,
+            latitude: Number(latitude),
+            longitude: Number(longitude),
+            timestamp: timestamp
+                ? new Date(timestamp)
+                : new Date(),
+            type: type || 'check-in'
+        });
+
+        await attendance.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Attendance recorded successfully',
+            attendance
+        });
+
+    } catch (error) {
+        console.error('Attendance error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
 app.get('/api/employees/:employeeId/attendance', async (req, res) => {
     try {
-        const attendance = await Attendance.find({ employeeId: req.params.employeeId }).sort({ timestamp: -1 }).limit(100).lean();
-        res.json({ success: true, attendance });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        const attendance = await Attendance.find({
+            employeeId: req.params.employeeId
+        })
+            .sort({ timestamp: -1 })
+            .lean();
+
+        res.json({
+            success: true,
+            attendance
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
-app.post('/api/employees/:employeeId/loan', async (req, res) => {
+app.get('/api/admin/attendance', async (req, res) => {
     try {
-        const employee = await Employee.findById(req.params.employeeId);
-        if (!employee) return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
-        const loanAmount = parseFloat(req.body.loanAmount);
-        const monthlyInstallment = parseFloat(req.body.monthlyInstallment);
-        if (!Number.isFinite(loanAmount) || !Number.isFinite(monthlyInstallment)) {
-            return res.status(400).json({ success: false, message: 'بيانات السلفة غير صحيحة' });
+        const {
+            companyId,
+            employeeId
+        } = req.query;
+
+        const query = {};
+
+        if (companyId) {
+            query.companyId = normalizeCompanyId(companyId);
         }
-        employee.loans.push({ loanAmount, monthlyInstallment, remainingAmount: loanAmount });
-        await employee.save();
-        res.json({ success: true, message: 'تم إضافة السلفة بنجاح', employee });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+
+        if (employeeId) {
+            query.employeeId = String(employeeId);
+        }
+
+        const attendance = await Attendance.find(query)
+            .sort({ timestamp: -1 })
+            .limit(1000)
+            .lean();
+
+        res.json({
+            success: true,
+            attendance
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
-app.get('/api/employees/:employeeId/loan-deduction', async (req, res) => {
+/* =========================================================
+   SERVICE REQUESTS: LOAN / LEAVE
+========================================================= */
+
+app.post('/api/employee/service-request', async (req, res) => {
     try {
-        const employee = await Employee.findById(req.params.employeeId);
-        if (!employee) return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
-        const totalMonthlyDeduction = (employee.loans || []).reduce(
-            (sum, loan) => sum + (loan.remainingAmount > 0 ? loan.monthlyInstallment : 0),
-            0
-        );
-        res.json({ success: true, employeeId: employee._id, totalMonthlyDeduction });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        const {
+            employeeId,
+            deviceId,
+            type,
+            amount,
+            reason,
+            startDate,
+            endDate
+        } = req.body;
+
+        const normalizedDeviceId = normalizeDeviceId(deviceId);
+
+        if (!employeeId ||
+            !normalizedDeviceId ||
+            !type) {
+
+            return res.status(400).json({
+                success: false,
+                message: 'employeeId, deviceId and type are required'
+            });
+        }
+
+        if (!['loan', 'leave'].includes(type)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid service request type'
+            });
+        }
+
+        const employee = await Employee.findOne({
+            employeeId,
+            active: true
+        });
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
+        }
+
+        if (employee.deviceId !== normalizedDeviceId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Device is not bound to this employee'
+            });
+        }
+
+        if (type === 'loan') {
+            if (!Number.isFinite(Number(amount)) ||
+                Number(amount) <= 0) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: 'Valid loan amount is required'
+                });
+            }
+        }
+
+        if (type === 'leave') {
+            if (!startDate || !endDate) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Leave startDate and endDate are required'
+                });
+            }
+        }
+
+        const request = new ServiceRequest({
+            requestId: generateId('SR-'),
+            employeeId: employee.employeeId,
+            companyId: employee.companyId,
+            deviceId: normalizedDeviceId,
+            type,
+            amount: type === 'loan'
+                ? Number(amount)
+                : undefined,
+            reason,
+            startDate: type === 'leave'
+                ? new Date(startDate)
+                : undefined,
+            endDate: type === 'leave'
+                ? new Date(endDate)
+                : undefined,
+            status: 'pending'
+        });
+
+        await request.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Service request submitted successfully',
+            request
+        });
+
+    } catch (error) {
+        console.error('Service request error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
-async function migrateCompanyIndexes() {
-    const indexes = await Company.collection.indexes();
-    const legacyIdIndex = indexes.find(index => index.name === 'id_1');
-    if (legacyIdIndex) {
-        await Company.collection.dropIndex(legacyIdIndex.name);
-        console.log('ℹ️ تمت إزالة فهرس الشركة القديم id_1');
-    }
-    await Company.collection.createIndex({ companyId: 1 }, { unique: true, name: 'companyId_1' });
-}
+app.get('/api/admin/service-requests', async (req, res) => {
+    try {
+        const query = {};
 
-mongoose.connect(MONGO_URI)
-    .then(async () => {
-        console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح');
-        await migrateCompanyIndexes();
-        app.listen(PORT, () => console.log(`🚀 السيرفر يعمل الآن على المنفذ: ${PORT}`));
-    })
-    .catch(err => {
-        console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err.message);
-        process.exit(1);
+        if (req.query.companyId) {
+            query.companyId = normalizeCompanyId(req.query.companyId);
+        }
+
+        if (req.query.status) {
+            query.status = req.query.status;
+        }
+
+        const requests = await ServiceRequest.find(query)
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.json({
+            success: true,
+            requests
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+app.patch('/api/admin/service-requests/:requestId', async (req, res) => {
+    try {
+        const {
+            status,
+            managerNote
+        } = req.body;
+
+        if (!['approved', 'rejected'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'status must be approved or rejected'
+            });
+        }
+
+        const request = await ServiceRequest.findOne({
+            requestId: req.params.requestId
+        });
+
+        if (!request) {
+            return res.status(404).json({
+                success: false,
+                message: 'Service request not found'
+            });
+        }
+
+        if (request.status !== 'pending') {
+            return res.status(400).json({
+                success: false,
+                message: 'Request has already been reviewed'
+            });
+        }
+
+        request.status = status;
+        request.managerNote = managerNote || '';
+        request.reviewedAt = new Date();
+
+        await request.save();
+
+        res.json({
+            success: true,
+            message: 'Service request updated successfully',
+            request
+        });
+
+    } catch (error) {
+        console.error('Service request review error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/* =========================================================
+   EMPLOYEE NOTIFICATIONS
+========================================================= */
+
+app.post('/api/admin/notifications', async (req, res) => {
+    try {
+        const {
+            employeeId,
+            companyId,
+            message,
+            audioUrl
+        } = req.body;
+
+        if (!employeeId || !companyId) {
+            return res.status(400).json({
+                success: false,
+                message: 'employeeId and companyId are required'
+            });
+        }
+
+        const employee = await Employee.findOne({
+            employeeId,
+            companyId: normalizeCompanyId(companyId),
+            active: true
+        });
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
+        }
+
+        if (!message && !audioUrl) {
+            return res.status(400).json({
+                success: false,
+                message: 'message or audioUrl is required'
+            });
+        }
+
+        const notification = new Notification({
+            employeeId,
+            companyId: normalizeCompanyId(companyId),
+            message: message || '',
+            audioUrl: audioUrl || ''
+        });
+
+        await notification.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Notification sent successfully',
+            notification
+        });
+
+    } catch (error) {
+        console.error('Notification create error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+app.get('/api/employee/notifications', async (req, res) => {
+    try {
+        const {
+            employeeId,
+            deviceId
+        } = req.query;
+
+        const normalizedDeviceId = normalizeDeviceId(deviceId);
+
+        if (!employeeId || !normalizedDeviceId) {
+            return res.status(400).json({
+                success: false,
+                message: 'employeeId and deviceId are required'
+            });
+        }
+
+        const employee = await Employee.findOne({
+            employeeId,
+            active: true
+        });
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
+        }
+
+        if (employee.deviceId !== normalizedDeviceId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Device is not bound to this employee'
+            });
+        }
+
+        const notifications = await Notification.find({
+            employeeId
+        })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.json({
+            success: true,
+            notifications
+        });
+
+    } catch (error) {
+        console.error('Employee notifications error:', error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+app.patch('/api/employee/notifications/:id/read', async (req, res) => {
+    try {
+        const {
+            employeeId,
+            deviceId
+        } = req.body;
+
+        const employee = await Employee.findOne({
+            employeeId,
+            active: true
+        });
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
+        }
+
+        if (employee.deviceId !== normalizeDeviceId(deviceId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Device is not bound to this employee'
+            });
+        }
+
+        const notification = await Notification.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                employeeId
+            },
+            {
+                $set: {
+                    read: true
+                }
+            },
+            {
+                new: true
+            }
+        );
+
+        if (!notification) {
+            return res.status(404).json({
+                success: false,
+                message: 'Notification not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            notification
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/* =========================================================
+   ERROR HANDLER
+========================================================= */
+
+app.use((req, res) => {
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({
+            success: false,
+            message: 'API endpoint not found',
+            path: req.path
+        });
+    }
+
+    res.status(404).send('Not Found');
+});
+
+app.use((err, req, res, next) => {
+    console.error('Unhandled server error:', err);
+
+    res.status(500).json({
+        success: false,
+        message: 'Internal server error'
     });
+});
+
+/* =========================================================
+   START SERVER
+========================================================= */
+
+app.listen(PORT, () => {
+    console.log(`🚀 AlMoraqebPro Server running on port ${PORT}`);
+});
