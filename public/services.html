@@ -267,6 +267,7 @@
         }
 
         loadAttendanceLogs();
+        loadManagerNotifications();
         cleanOldVoiceRecords();
     };
 
@@ -325,10 +326,35 @@
 
         // تفاعل عند النقر على الأزرار المحددة
         if(panelId === 'notifPanel') {
+            loadManagerNotifications();
             playArabicVoice("تم عرض إشعارات ورسائل الإدارة.");
         } else if(panelId === 'rewardPanel') {
             alert("🏆 هذه نافذة المكافآت والخصومات الخاصة بسجلك.");
             playArabicVoice("سجل المكافآت والجزاءات.");
+        }
+    }
+
+    async function loadManagerNotifications() {
+        const container = document.getElementById('managerMessagesList');
+        const employeeId = localStorage.getItem('activeEmployeeId');
+        const deviceId = localStorage.getItem('activeDeviceId') || localStorage.getItem('almoraqeb_device_id');
+        if (!employeeId || !deviceId) return;
+        try {
+            const response = await fetch(`${SERVER_URL}/api/employee/notifications?employeeId=${encodeURIComponent(employeeId)}&deviceId=${encodeURIComponent(deviceId)}`, { cache: 'no-store' });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تحميل الإشعارات');
+            if (!data.notifications.length) {
+                container.innerHTML = '<div class="record-item"><span>لا توجد إشعارات جديدة من المدير.</span></div>';
+                return;
+            }
+            container.innerHTML = data.notifications.map(notification => `
+                <div class="record-item" style="display:block;">
+                    <div>📩 ${notification.message || 'رسالة صوتية من المدير'}</div>
+                    ${notification.audioUrl ? `<audio controls style="width:100%;margin-top:8px;" src="${notification.audioUrl}"></audio>` : ''}
+                    <small style="color:#64748b;">${new Date(notification.createdAt).toLocaleString('ar-IQ')}</small>
+                </div>`).join('');
+        } catch (error) {
+            container.innerHTML = `<div class="record-item"><span>⚠️ ${error.message}</span></div>`;
         }
     }
 

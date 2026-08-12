@@ -107,6 +107,16 @@ const serviceRequestSchema = new mongoose.Schema({
 });
 const ServiceRequest = mongoose.model('ServiceRequest', serviceRequestSchema);
 
+const notificationSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true },
+    employeeId: { type: String, required: true, index: true },
+    type: { type: String, enum: ['text', 'voice'], required: true },
+    message: { type: String, default: '' },
+    audioUrl: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now }
+});
+const Notification = mongoose.model('Notification', notificationSchema);
+
 function hashPassword(password) {
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = crypto.scryptSync(String(password), salt, 64).toString('hex');
@@ -505,6 +515,41 @@ app.get('/api/admin/service-requests', requireAdmin, async (req, res) => {
     try {
         const requests = await ServiceRequest.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
         res.json({ success: true, requests });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/admin/notifications', requireAdmin, upload.single('audio'), async (req, res) => {
+    try {
+        const employeeId = String(req.body.employeeId || '').trim();
+        const employee = await Employee.findById(employeeId).lean();
+        if (!employee || employee.companyId !== req.session.companyId) {
+            return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+        }
+        const message = String(req.body.message || '').trim();
+        const audioUrl = req.file ? `/uploads/${req.file.filename}` : '';
+        if (!message && !audioUrl) return res.status(400).json({ success: false, message: 'أدخل نص الإشعار أو أرفق رسالة صوتية' });
+        const notification = await new Notification({
+            companyId: employee.companyId, employeeId: String(employee._id),
+            type: audioUrl ? 'voice' : 'text', message, audioUrl
+        }).save();
+        res.status(201).json({ success: true, notification });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.get('/api/employee/notifications', async (req, res) => {
+    try {
+        const employeeId = String(req.query.employeeId || '').trim();
+        const deviceId = String(req.query.deviceId || '').trim();
+        const employee = await Employee.findById(employeeId).lean();
+        if (!employee || !deviceId || employee.deviceId !== deviceId) {
+            return res.status(403).json({ success: false, message: 'لا يمكن قراءة الإشعارات من هذا الجهاز' });
+        }
+        const notifications = await Notification.find({ employeeId }).sort({ createdAt: -1 }).limit(50).lean();
+        res.json({ success: true, notifications });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

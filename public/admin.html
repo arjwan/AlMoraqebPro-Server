@@ -6,6 +6,7 @@
     <title>لوحة التحكم الرئيسية - نظام المراقب برو</title>
     <!-- FontAwesome icons for settings UI -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #1e1b4b; color: #0f172a; min-height: 100vh; padding: 15px; transition: background 0.3s ease, color 0.3s ease; }
@@ -100,6 +101,7 @@
 
         .content-section { display: none; background: #ffffff; border-radius: 12px; padding: 20px; border: 1px solid #cbd5e1; margin-top: 15px; }
         .content-section.active { display: block; }
+        #liveMap { height: 360px; border-radius: 12px; border: 1px solid #cbd5e1; margin: 0 0 20px; }
 
         .section-header {
             display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
@@ -470,6 +472,9 @@
             </div>
         </div>
 
+        <h3 style="margin:0 0 10px;">🗺️ آخر موقع مسجل لكل موظف</h3>
+        <div id="liveMap"></div>
+
         <div class="table-container">
             <table>
                 <thead>
@@ -539,6 +544,8 @@
 <input type="file" id="nativeCameraInput" style="display:none;" accept="image/*" capture="user">
 <input type="file" id="restoreFilePicker" style="display:none" accept=".json" onchange="processRestoreFile(event)">
 
+<input type="file" id="voiceNotificationInput" style="display:none" accept="audio/*" onchange="uploadVoiceNotification(event)">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
    <script>
 /* =========================================================
    AlMoraqebPro Admin Dashboard
@@ -552,6 +559,9 @@ let employeesCache = [];
 let requestsCache = [];
 let attendanceCache = [];
 let serviceRequestsCache = [];
+let notificationEmployeeId = '';
+let liveMap;
+let liveMapMarkers = [];
 
 /* =========================================================
    عند تحميل لوحة التحكم
@@ -999,6 +1009,9 @@ function renderEmployees() {
                             📱 إعادة ربط الجهاز
                         </button>
 
+                        <button class="btn btn-success" style="padding:5px 9px;font-size:11px;" onclick="sendTextNotification('${employee._id}')">📨 إشعار</button>
+                        <button class="btn btn-purple" style="padding:5px 9px;font-size:11px;" onclick="selectVoiceNotification('${employee._id}')">🎙️ صوتي</button>
+
                     </td>
 
                 </tr>
@@ -1023,6 +1036,44 @@ async function resetEmployeeDevice(employeeId) {
     } catch (error) {
         alert(`❌ ${error.message}`);
     }
+}
+
+async function sendTextNotification(employeeId) {
+    const message = prompt('اكتب رسالة المدير للموظف:');
+    if (!message?.trim()) return;
+    try {
+        const form = new FormData();
+        form.append('employeeId', employeeId);
+        form.append('message', message.trim());
+        const response = await fetch(`${API_BASE}/api/admin/notifications`, {
+            method: 'POST', headers: { Authorization: `Bearer ${getAdminToken()}` }, body: form
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'تعذر إرسال الإشعار');
+        alert('✅ تم إرسال الإشعار النصي للموظف.');
+    } catch (error) { alert(`❌ ${error.message}`); }
+}
+
+function selectVoiceNotification(employeeId) {
+    notificationEmployeeId = employeeId;
+    document.getElementById('voiceNotificationInput').click();
+}
+
+async function uploadVoiceNotification(event) {
+    const file = event.target.files?.[0];
+    if (!file || !notificationEmployeeId) return;
+    try {
+        const form = new FormData();
+        form.append('employeeId', notificationEmployeeId);
+        form.append('audio', file);
+        const response = await fetch(`${API_BASE}/api/admin/notifications`, {
+            method: 'POST', headers: { Authorization: `Bearer ${getAdminToken()}` }, body: form
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'تعذر إرسال الرسالة الصوتية');
+        alert('✅ تم إرسال الرسالة الصوتية للموظف.');
+    } catch (error) { alert(`❌ ${error.message}`); }
+    finally { event.target.value = ''; notificationEmployeeId = ''; }
 }
 
 
@@ -1799,7 +1850,7 @@ function renderGpsSection() {
                 </td>
             </tr>
         `;
-
+        renderLiveMap();
         return;
     }
 
@@ -1870,6 +1921,42 @@ function renderGpsSection() {
                 `;
             }
         ).join("");
+
+    renderLiveMap();
+}
+
+function renderLiveMap() {
+    const container = document.getElementById('liveMap');
+    if (!container || typeof L === 'undefined') return;
+    const latestByEmployee = new Map();
+    attendanceCache.forEach(record => {
+        const lat = Number(record.latitude);
+        const lng = Number(record.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || !record.employee?._id) return;
+        const previous = latestByEmployee.get(String(record.employee._id));
+        if (!previous || new Date(record.timestamp) > new Date(previous.timestamp)) {
+            latestByEmployee.set(String(record.employee._id), record);
+        }
+    });
+    const locations = [...latestByEmployee.values()];
+    if (!liveMap) liveMap = L.map('liveMap').setView([33.3152, 44.3661], 11);
+    if (!liveMap._baseLayer) {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(liveMap);
+        liveMap._baseLayer = true;
+    }
+    liveMapMarkers.forEach(marker => marker.remove());
+    liveMapMarkers = locations.map(record => {
+        const employee = record.employee || {};
+        return L.marker([Number(record.latitude), Number(record.longitude)])
+            .addTo(liveMap)
+            .bindPopup(`<b>${escapeHtml(employee.name || 'موظف')}</b><br>${escapeHtml(record.type || 'attendance')}<br>${formatDate(record.timestamp)}`);
+    });
+    if (locations.length) {
+        liveMap.fitBounds(locations.map(r => [Number(r.latitude), Number(r.longitude)]), { padding: [30, 30], maxZoom: 15 });
+    }
+    setTimeout(() => liveMap.invalidateSize(), 0);
 }
 
 
