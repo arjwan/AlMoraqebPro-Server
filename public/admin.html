@@ -1,31 +1,22 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>لوحة التحكم الرئيسية - نظام المراقب برو</title>
-<style>
-/* === التصميم الأساسي === */
-*{box-sizing:border-box}body{margin:0;background:#1e1b4b;color:#0f172a;font-family:'Segoe UI',Tahoma,sans-serif;padding:18px}.wrap{max-width:1500px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}.brand{font-size:24px;font-weight:900}.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px;margin-right:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;gap:7px;align-items:center;position:relative;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease}.btn:hover{transform:translateY(-2px);filter:brightness(1.07);box-shadow:0 8px 18px #0f172a26}.btn:active{transform:translateY(0) scale(.98);box-shadow:0 3px 8px #0f172a20}.btn:focus-visible{outline:3px solid #38bdf8;outline-offset:3px}.btn-blue{background:#0284c7;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-orange{background:#f59e0b;color:#fff}.btn-purple{background:#8b5cf6;color:#fff}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}.stat{border:1px solid #e2e8f0;border-radius:12px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}.stat span{display:block;color:#64748b;font-size:13px;font-weight:800}.stat b{font-size:20px}.icon{font-size:25px;background:#f1f5f9;padding:10px;border-radius:10px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 15px;text-align:center;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease;box-shadow:0 2px 6px #00000008}.card:hover{transform:translateY(-4px);border-color:#0284c7;box-shadow:0 8px 20px #0284c71f;background:#f8fcff}.card:focus-visible{outline:3px solid #38bdf8;outline-offset:3px}.card .bigicon{font-size:38px;display:block;margin-bottom:11px;transition:transform .2s ease}.card:hover .bigicon{transform:scale(1.08)}.card h3{font-size:16px;margin:0 0 6px;font-weight:900}.card p{font-size:12px;color:#64748b;line-height:1.45;margin:0}.status{margin-top:16px;background:#10b981;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:900;transition:background .2s ease}.ripple{position:absolute;border-radius:50%;transform:scale(0);animation:ripple .55s linear;background:#ffffff80;pointer-events:none}@keyframes ripple{to{transform:scale(4);opacity:0}}@media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){body{padding:8px}.stats,.grid{grid-template-columns:1fr}.wrap{padding:12px}.top{padding:12px}.brand{font-size:20px}}
-
-/* ===== مشغل القنوات المتقدم ===== */
+/* ===== مشغل القنوات (تصميم راقٍ) ===== */
 .channel-card {
     grid-column: span 1;
-    background: #0f172a;
-    border-radius: 16px;
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+    border-radius: 20px;
     padding: 20px;
     color: #fff;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-    position: relative;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    border: 1px solid #334155;
     transition: all 0.3s ease;
 }
 .channel-card .player-wrapper {
     position: relative;
     width: 100%;
-    padding-bottom: 75%; /* نسبة 4:3 */
+    padding-bottom: 75%;
     background: #000;
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
 }
 .channel-card .player-wrapper iframe {
     position: absolute;
@@ -33,116 +24,221 @@
     width: 100%;
     height: 100%;
     border: 0;
-    background: #000;
 }
-.channel-card .player-controls {
+.channel-card .player-overlay {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 12px;
+    color: #94a3b8;
+    border: 1px solid #334155;
+}
+.channel-card .player-overlay .channel-name-display {
+    color: #f8fafc;
+    font-weight: 600;
+}
+.channel-card .player-controls-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding: 0 4px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.channel-card .controls-left {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
+    gap: 12px;
 }
-.channel-card .player-controls .ctrl-btn {
+.channel-card .controls-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.channel-card .ctrl-btn {
     background: #1e293b;
     border: 0;
-    color: #fff;
-    width: 36px;
-    height: 36px;
+    color: #e2e8f0;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     cursor: pointer;
     font-size: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: 0.2s;
+    transition: all 0.2s ease;
+    border: 1px solid #334155;
 }
-.channel-card .player-controls .ctrl-btn:hover {
+.channel-card .ctrl-btn:hover {
     background: #0284c7;
+    border-color: #0284c7;
+    transform: scale(1.05);
 }
-.channel-card .player-controls .volume-slider {
-    width: 60px;
-    accent-color: #0284c7;
+.channel-card .volume-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-.channel-card .player-controls .size-btn {
-    background: #1e293b;
-    border: 0;
+.channel-card .volume-icon {
     color: #94a3b8;
-    padding: 4px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 700;
-    transition: 0.2s;
+    font-size: 14px;
 }
-.channel-card .player-controls .size-btn.active {
+.channel-card .volume-slider {
+    width: 70px;
+    accent-color: #0284c7;
+    cursor: pointer;
+    height: 4px;
+}
+.channel-card .size-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    padding: 6px 12px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.channel-card .size-btn:hover {
     background: #0284c7;
     color: #fff;
+    border-color: #0284c7;
 }
-.channel-card .channel-selector {
+.channel-card .channel-management {
+    margin-top: 14px;
+    background: #1e293b;
+    border-radius: 14px;
+    padding: 14px;
+    border: 1px solid #334155;
+}
+.channel-card .channel-selector-group {
     display: flex;
     gap: 8px;
-    margin-top: 12px;
+    margin-bottom: 10px;
     flex-wrap: wrap;
-    align-items: center;
 }
-.channel-card .channel-selector select {
+.channel-card .channel-select {
     flex: 1;
-    padding: 8px 12px;
-    border: 0;
-    border-radius: 8px;
-    background: #1e293b;
-    color: #fff;
-    font-weight: 600;
+    padding: 8px 14px;
+    border: 1px solid #334155;
+    border-radius: 30px;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-weight: 500;
     min-width: 120px;
+    outline: none;
 }
-.channel-card .channel-selector select option {
-    background: #1e293b;
-    color: #fff;
+.channel-card .channel-select:focus {
+    border-color: #0284c7;
 }
-.channel-card .channel-actions {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 8px;
-}
-.channel-card .channel-actions input {
-    flex: 1;
-    padding: 6px 10px;
+.channel-card .btn-edit {
+    background: #f59e0b;
+    color: #0f172a;
+    padding: 6px 14px;
     border: 0;
-    border-radius: 8px;
-    background: #1e293b;
+    border-radius: 30px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.channel-card .btn-edit:hover {
+    background: #fbbf24;
+    transform: scale(1.02);
+}
+.channel-card .btn-delete {
+    background: #ef4444;
     color: #fff;
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 30px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.channel-card .btn-delete:hover {
+    background: #dc2626;
+    transform: scale(1.02);
+}
+.channel-card .channel-add-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+.channel-card .input-field {
+    flex: 1;
+    padding: 8px 14px;
+    border: 1px solid #334155;
+    border-radius: 30px;
+    background: #0f172a;
+    color: #e2e8f0;
     min-width: 80px;
+    outline: none;
 }
-.channel-card .channel-actions input::placeholder {
-    color: #94a3b8;
+.channel-card .input-field:focus {
+    border-color: #0284c7;
 }
-.channel-card .channel-actions .btn {
-    padding: 6px 12px;
-    font-size: 11px;
+.channel-card .input-field::placeholder {
+    color: #64748b;
+}
+.channel-card .btn-add {
+    background: #10b981;
+    color: #fff;
+    padding: 6px 16px;
+    border: 0;
+    border-radius: 30px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.channel-card .btn-add:hover {
+    background: #059669;
+    transform: scale(1.02);
+}
+.channel-card .btn-upload {
+    background: #8b5cf6;
+    color: #fff;
+    padding: 6px 16px;
+    border: 0;
+    border-radius: 30px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.channel-card .btn-upload:hover {
+    background: #7c3aed;
+    transform: scale(1.02);
 }
 .channel-card .channel-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-top: 8px;
-    max-height: 50px;
+    max-height: 44px;
     overflow-y: auto;
+    padding-top: 4px;
 }
 .channel-card .channel-tag {
-    background: #1e293b;
-    padding: 3px 10px;
-    border-radius: 20px;
+    background: #0f172a;
+    padding: 4px 12px;
+    border-radius: 30px;
     font-size: 11px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 6px;
+    border: 1px solid #334155;
     transition: 0.2s;
 }
 .channel-card .channel-tag:hover {
     background: #0284c7;
+    border-color: #0284c7;
 }
 .channel-card .channel-tag .del {
     color: #ef4444;
@@ -152,445 +248,3 @@
 .channel-card .channel-tag .del:hover {
     color: #dc2626;
 }
-/* وضعية التكبير */
-.channel-card.fullscreen {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999;
-    border-radius: 0;
-    padding: 20px;
-    background: #0f172a;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-.channel-card.fullscreen .player-wrapper {
-    padding-bottom: 56.25%; /* 16:9 */
-}
-.channel-card.halfscreen {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 70vw;
-    height: 70vh;
-    z-index: 9998;
-    border-radius: 20px;
-    padding: 20px;
-    background: #0f172a;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-}
-.channel-card.halfscreen .player-wrapper {
-    padding-bottom: 56.25%;
-}
-.channel-card.quarterscreen {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 300px;
-    height: 250px;
-    z-index: 9997;
-    border-radius: 16px;
-    padding: 12px;
-    background: #0f172a;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    cursor: grab;
-}
-.channel-card.quarterscreen .player-wrapper {
-    padding-bottom: 56.25%;
-}
-.channel-card.quarterscreen .player-controls .ctrl-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-}
-.channel-card.quarterscreen .channel-selector,
-.channel-card.quarterscreen .channel-actions,
-.channel-card.quarterscreen .channel-tags {
-    display: none;
-}
-</style>
-</head>
-<body>
-<div class="wrap">
-<div class="top">
-    <div class="brand">نظام المراقب برو <span id="company" class="badge">...</span></div>
-    <div class="actions">
-        <button class="btn btn-purple" onclick="location.href='admin.html'">🏠 العودة للرئيسية</button>
-        <button class="btn btn-blue" onclick="checkServer(this)">🔄 مراعاة السيرفر</button>
-        <button class="btn btn-orange" onclick="backupData(this)">💾 نسخة احتياطية</button>
-        <button class="btn btn-red" onclick="logout()">🚪 تسجيل الخروج</button>
-    </div>
-</div>
-<div class="stats">
-    <div class="stat"><div><span>معرف الشركة</span><b id="companyStat">—</b></div><div class="icon">🏢</div></div>
-    <div class="stat"><div><span>حركات معلقة</span><b id="pending">0</b></div><div class="icon">🔄</div></div>
-    <div class="stat"><div><span>إجمالي الموظفين</span><b id="employees">0</b></div><div class="icon">👥</div></div>
-</div>
-
-<!-- ===== البطاقات ===== -->
-<div class="grid">
-    <div class="card" onclick="go('admin_operations.html','shifts')"><span class="bigicon">⏰</span><h3>الأوقات والشفتات</h3><p>إدارة مواعيد الدوام</p></div>
-    <div class="card" onclick="go('admin_reports.html','settings')"><span class="bigicon">🏢</span><h3>إدارة الفروع</h3><p>توزيع وإدارة الفروع</p></div>
-    <div class="card" onclick="go('admin_employees.html')"><span class="bigicon">👥</span><h3>إدارة الموظفين</h3><p>عرض وتعديل وإضافة وحذف</p></div>
-    
-    <!-- ===== مشغل القنوات ===== -->
-    <div class="channel-card" id="channelCard">
-        <div class="player-wrapper">
-            <iframe id="playerFrame" src="" allowfullscreen></iframe>
-        </div>
-
-        <!-- أزرار التحكم في المشغل -->
-        <div class="player-controls">
-            <button class="ctrl-btn" onclick="togglePlay()" title="تشغيل/إيقاف">⏸️</button>
-            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80" oninput="setVolume(this.value)">
-            <button class="ctrl-btn" onclick="setSize('quarter')" title="ربع شاشة">📱</button>
-            <button class="ctrl-btn" onclick="setSize('half')" title="نصف شاشة">📐</button>
-            <button class="ctrl-btn" onclick="setSize('full')" title="كامل الشاشة">🖥️</button>
-            <button class="ctrl-btn" onclick="closeFullscreen()" title="إغلاق التكبير" style="display:none;" id="closeFullscreenBtn">✖️</button>
-        </div>
-
-        <!-- اختيار القناة من قائمة منسدلة -->
-        <div class="channel-selector">
-            <select id="channelSelect" onchange="playSelectedChannel()">
-                <option value="">-- اختر قناة --</option>
-            </select>
-            <button class="btn btn-red" onclick="deleteSelectedChannel()" style="padding:4px 10px;font-size:11px;">🗑️ حذف</button>
-            <button class="btn btn-orange" onclick="editSelectedChannel()" style="padding:4px 10px;font-size:11px;">✏️ تعديل</button>
-        </div>
-
-        <!-- إضافة ملف أو رابط -->
-        <div class="channel-actions">
-            <input type="text" id="channelNameInput" placeholder="اسم القناة">
-            <input type="text" id="channelUrlInput" placeholder="الرابط (URL)">
-            <button class="btn btn-green" onclick="addChannel()">➕ إضافة</button>
-            <button class="btn btn-purple" onclick="document.getElementById('m3uFile').click()">📂 رفع M3U/M8U</button>
-            <input type="file" id="m3uFile" accept=".m3u,.m3u8" style="display:none" onchange="loadM3U(event)">
-        </div>
-
-        <!-- قائمة القنوات المضافة -->
-        <div class="channel-tags" id="channelList"></div>
-    </div>
-
-    <div class="card" onclick="go('admin_reports.html')"><span class="bigicon">📈</span><h3>التقارير</h3><p>تقارير متكاملة</p></div>
-    <div class="card" onclick="go('admin_operations.html','loans')"><span class="bigicon">💳</span><h3>إدارة السلف</h3><p>تسجيل ومتابعة السلف</p></div>
-    <div class="card" onclick="go('admin_operations.html','salaries')"><span class="bigicon">💰</span><h3>إدارة الرواتب</h3><p>حساب الرواتب</p></div>
-    <div class="card" onclick="go('admin_reports.html','gps')"><span class="bigicon">📍</span><h3>بصمة الوجه والـ GPS</h3><p>مراقبة الحضور</p></div>
-    <div class="card" onclick="go('admin_reports.html','settings')"><span class="bigicon">⚙️</span><h3>إعدادات النظام</h3><p>التحكم بالإعدادات</p></div>
-    <div class="card" onclick="go('admin_reports.html','gps')"><span class="bigicon">🗺️</span><h3>متابعة الموظف</h3><p>آخر موقع GPS</p></div>
-    <div class="card" onclick="go('admin_reports.html','archive')"><span class="bigicon">📁</span><h3>أرشيف النظام</h3><p>السجلات المؤرشفة</p></div>
-    <div class="card" onclick="go('admin_employees.html')"><span class="bigicon">📥</span><h3>طلبات التسجيل <span id="reqBadge" style="background:#ef4444;color:#fff;padding:1px 6px;border-radius:8px;font-size:11px">0</span></h3><p>مراجعة طلبات الانضمام</p></div>
-</div>
-
-<div id="status" class="status">✓ جاري التحقق من اتصال السيرفر...</div>
-</div>
-
-<script>
-const API=location.origin;let token='',companyId='';
-let channels = [];
-let currentChannelId = null;
-let isPlaying = true;
-let currentSize = 'normal';
-
-// ===== إدارة الجلسة =====
-function session(){try{return JSON.parse(localStorage.getItem('almoraqeb_admin_session')||'{}')}catch{return{}}}
-function q(){return new URLSearchParams(location.search)}
-function go(page,tab=''){const u=new URL(page,location.href);u.searchParams.set('company',companyId);if(tab)u.searchParams.set('tab',tab);location.href=u.toString()}
-
-async function auth(){
-    token=sessionStorage.getItem('almoraqeb_admin_token')||'';
-    const s=session();
-    companyId=String(s.companyId||q().get('company')||localStorage.getItem('companyId')||'').trim();
-    if(!token||!companyId){location.href='admin_login.html';return false}
-    try{
-        const r=await fetch(API+'/api/admin/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});
-        const d=await r.json();
-        if(!r.ok||!d.success)throw 0;
-        document.getElementById('company').textContent=companyId;
-        document.getElementById('companyStat').textContent=companyId;
-        return true
-    }catch{location.href='admin_login.html';return false}
-}
-
-async function loadStats(){try{const r=await fetch(API+'/api/employees?companyId='+encodeURIComponent(companyId),{cache:'no-store'});const d=await r.json();if(r.ok&&d.success)document.getElementById('employees').textContent=(d.employees||[]).length}catch{}}
-async function loadPending(){try{const r=await fetch(API+'/api/employee/requests/'+encodeURIComponent(companyId)+'/pending',{cache:'no-store'});const d=await r.json();if(r.ok&&d.success){const n=(d.requests||[]).length;document.getElementById('pending').textContent=n;document.getElementById('reqBadge').textContent=n}}catch{}}
-async function checkServer(button){const el=document.getElementById('status');try{const r=await fetch(API+'/api/admin/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});el.textContent=r.ok?'✓ السيرفر متصل':'⚠️ تعذر التحقق';el.style.background=r.ok?'#10b981':'#f59e0b'}catch{el.textContent='❌ السيرفر غير متاح';el.style.background='#ef4444'}}
-function backupData(button){location.href='backup_system.html'}
-function logout(){sessionStorage.removeItem('almoraqeb_admin_token');location.href='admin_login.html'}
-
-// ===== مشغل القنوات =====
-async function loadChannels() {
-    try {
-        const r = await fetch(API+'/api/channels?companyId='+encodeURIComponent(companyId), {
-            headers: { 'Authorization': 'Bearer '+token }
-        });
-        const d = await r.json();
-        if (r.ok && d.success) {
-            channels = d.channels || [];
-            renderChannels();
-            if (channels.length > 0) {
-                currentChannelId = channels[0].id;
-                playChannel(currentChannelId);
-            }
-        }
-    } catch(e) { console.error('فشل تحميل القنوات', e); }
-}
-
-async function saveChannels() {
-    try {
-        await fetch(API+'/api/channels', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+token },
-            body: JSON.stringify({ companyId, channels })
-        });
-    } catch(e) { console.error('فشل حفظ القنوات', e); }
-}
-
-function renderChannels() {
-    // تحديث القائمة المنسدلة
-    const select = document.getElementById('channelSelect');
-    select.innerHTML = '<option value="">-- اختر قناة --</option>';
-    channels.forEach(ch => {
-        select.innerHTML += `<option value="${ch.id}">${ch.name}</option>`;
-    });
-    if (currentChannelId) {
-        select.value = currentChannelId;
-    }
-
-    // تحديث علامات القنوات
-    const list = document.getElementById('channelList');
-    if (channels.length === 0) {
-        list.innerHTML = '<span style="color:#94a3b8;font-size:11px;">لا توجد قنوات</span>';
-        return;
-    }
-    list.innerHTML = channels.map(ch => `
-        <span class="channel-tag" onclick="playChannel(${ch.id})">
-            ${ch.name}
-            <span class="del" onclick="event.stopPropagation();deleteChannel(${ch.id})">✖</span>
-        </span>
-    `).join('');
-}
-
-function addChannel() {
-    const nameInput = document.getElementById('channelNameInput');
-    const urlInput = document.getElementById('channelUrlInput');
-    const name = nameInput.value.trim();
-    const url = urlInput.value.trim();
-    if (!name || !url) { alert('يرجى إدخال اسم القناة والرابط'); return; }
-    const newId = Date.now();
-    channels.push({ id: newId, name, url });
-    saveChannels();
-    nameInput.value = ''; urlInput.value = '';
-    renderChannels();
-    currentChannelId = newId;
-    playChannel(newId);
-}
-
-function deleteChannel(id) {
-    if (!confirm('حذف القناة؟')) return;
-    channels = channels.filter(ch => ch.id !== id);
-    saveChannels();
-    if (channels.length > 0) {
-        currentChannelId = channels[0].id;
-        playChannel(currentChannelId);
-    } else {
-        currentChannelId = null;
-        document.getElementById('playerFrame').src = '';
-    }
-    renderChannels();
-}
-
-function deleteSelectedChannel() {
-    const select = document.getElementById('channelSelect');
-    const id = parseInt(select.value);
-    if (!id) { alert('اختر قناة أولاً'); return; }
-    deleteChannel(id);
-}
-
-function editSelectedChannel() {
-    const select = document.getElementById('channelSelect');
-    const id = parseInt(select.value);
-    if (!id) { alert('اختر قناة أولاً'); return; }
-    const ch = channels.find(c => c.id === id);
-    if (!ch) return;
-    const newName = prompt('اسم القناة الجديد:', ch.name);
-    if (newName && newName.trim()) {
-        ch.name = newName.trim();
-        saveChannels();
-        renderChannels();
-        playChannel(id);
-    }
-}
-
-function playSelectedChannel() {
-    const select = document.getElementById('channelSelect');
-    const id = parseInt(select.value);
-    if (id) {
-        currentChannelId = id;
-        playChannel(id);
-    }
-}
-
-function playChannel(id) {
-    const ch = channels.find(c => c.id === id);
-    if (!ch) return;
-    currentChannelId = id;
-    const frame = document.getElementById('playerFrame');
-    // دعم الروابط المختلفة
-    let src = ch.url;
-    if (ch.url.includes('youtube.com') || ch.url.includes('youtu.be')) {
-        src = ch.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/');
-    }
-    frame.src = src;
-    // تحديث التحديد
-    document.querySelectorAll('.channel-tag').forEach(el => el.style.background = '');
-    const items = document.querySelectorAll('.channel-tag');
-    const index = channels.findIndex(c => c.id === id);
-    if (items[index]) items[index].style.background = '#0284c7';
-    document.getElementById('channelSelect').value = id;
-}
-
-function loadM3U(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const content = e.target.result;
-        const lines = content.split('\n');
-        let name = '', url = '';
-        let added = 0;
-        for (let line of lines) {
-            line = line.trim();
-            if (line.startsWith('#EXTINF:')) {
-                const match = line.match(/,([^,]+)$/);
-                if (match) name = match[1].trim();
-            } else if (line && !line.startsWith('#')) {
-                url = line;
-                if (name && url) {
-                    channels.push({ id: Date.now() + added, name, url });
-                    name = ''; url = '';
-                    added++;
-                }
-            }
-        }
-        saveChannels();
-        renderChannels();
-        if (channels.length > 0) {
-            currentChannelId = channels[0].id;
-            playChannel(currentChannelId);
-        }
-        alert('✅ تم استيراد ' + added + ' قناة');
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-}
-
-// ===== التحكم في المشغل =====
-function togglePlay() {
-    const frame = document.getElementById('playerFrame');
-    const btn = document.querySelector('.ctrl-btn:first-child');
-    // محاولة إيقاف/تشغيل الفيديو عبر iframe
-    try {
-        if (frame.contentWindow) {
-            frame.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-        }
-    } catch(e) {}
-    isPlaying = !isPlaying;
-    btn.textContent = isPlaying ? '⏸️' : '▶️';
-}
-
-function setVolume(value) {
-    const frame = document.getElementById('playerFrame');
-    try {
-        if (frame.contentWindow) {
-            frame.contentWindow.postMessage(`{"event":"command","func":"setVolume","args":[${value}]}`, '*');
-        }
-    } catch(e) {}
-}
-
-// ===== التحكم بحجم الشاشة =====
-function setSize(size) {
-    const card = document.getElementById('channelCard');
-    const closeBtn = document.getElementById('closeFullscreenBtn');
-    // إزالة جميع أوضاع التكبير
-    card.classList.remove('fullscreen', 'halfscreen', 'quarterscreen');
-    closeBtn.style.display = 'none';
-    
-    if (size === 'quarter') {
-        card.classList.add('quarterscreen');
-        currentSize = 'quarter';
-    } else if (size === 'half') {
-        card.classList.add('halfscreen');
-        currentSize = 'half';
-        closeBtn.style.display = 'inline-flex';
-    } else if (size === 'full') {
-        card.classList.add('fullscreen');
-        currentSize = 'full';
-        closeBtn.style.display = 'inline-flex';
-    } else {
-        currentSize = 'normal';
-    }
-}
-
-function closeFullscreen() {
-    const card = document.getElementById('channelCard');
-    card.classList.remove('fullscreen', 'halfscreen', 'quarterscreen');
-    document.getElementById('closeFullscreenBtn').style.display = 'none';
-    currentSize = 'normal';
-}
-
-// جعل البطاقة قابلة للسحب في وضع ربع الشاشة
-let isDragging = false;
-let offsetX = 0, offsetY = 0;
-
-document.addEventListener('mousedown', function(e) {
-    const card = document.getElementById('channelCard');
-    if (card.classList.contains('quarterscreen') && e.target.closest('.channel-card')) {
-        isDragging = true;
-        offsetX = e.clientX - card.getBoundingClientRect().left;
-        offsetY = e.clientY - card.getBoundingClientRect().top;
-        card.style.cursor = 'grabbing';
-    }
-});
-
-document.addEventListener('mousemove', function(e) {
-    if (isDragging) {
-        const card = document.getElementById('channelCard');
-        card.style.left = (e.clientX - offsetX) + 'px';
-        card.style.top = (e.clientY - offsetY) + 'px';
-        card.style.right = 'auto';
-        card.style.bottom = 'auto';
-    }
-});
-
-document.addEventListener('mouseup', function() {
-    if (isDragging) {
-        isDragging = false;
-        document.getElementById('channelCard').style.cursor = 'grab';
-    }
-});
-
-// ===== تأثير الـ Ripple =====
-document.querySelectorAll('.btn,.card').forEach(el => el.addEventListener('click', function(e) {
-    const r = document.createElement('span');
-    r.className = 'ripple';
-    const size = Math.max(el.offsetWidth, el.offsetHeight);
-    r.style.width = r.style.height = size + 'px';
-    r.style.left = (e.offsetX - size/2) + 'px';
-    r.style.top = (e.offsetY - size/2) + 'px';
-    el.appendChild(r);
-    setTimeout(() => r.remove(), 600);
-}));
-
-// ===== التهيئة =====
-(async () => {
-    if (await auth()) {
-        await Promise.all([loadStats(), loadPending(), loadChannels()]);
-        await checkServer();
-    }
-})();
-</script>
-</body>
-</html>
