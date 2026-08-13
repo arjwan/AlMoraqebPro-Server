@@ -5,13 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم الرئيسية - نظام المراقب برو</title>
     <style>
-        /* ===== التصميم الأساسي ===== */
-        *{box-sizing:border-box}body{margin:0;background:#1e1b4b;color:#0f172a;font-family:'Segoe UI',Tahoma,sans-serif;padding:18px}.wrap{max-width:1500px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}.brand{font-size:24px;font-weight:900}.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px;margin-right:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;gap:7px;align-items:center;transition:transform .18s ease,box-shadow .18s ease}.btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px #0f172a26}.btn:active{transform:translateY(0) scale(.98)}.btn-blue{background:#0284c7;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-orange{background:#f59e0b;color:#fff}.btn-purple{background:#8b5cf6;color:#fff}
-        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}.stat{border:1px solid #e2e8f0;border-radius:12px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}.stat span{display:block;color:#64748b;font-size:13px;font-weight:800}.stat b{font-size:20px}.icon{font-size:25px;background:#f1f5f9;padding:10px;border-radius:10px}
-        .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 15px;text-align:center;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;box-shadow:0 2px 6px #00000008}.card:hover{transform:translateY(-4px);border-color:#0284c7;box-shadow:0 8px 20px #0284c71f;background:#f8fcff}.card .bigicon{font-size:38px;display:block;margin-bottom:11px}.card h3{font-size:16px;margin:0 0 6px;font-weight:900}.card p{font-size:12px;color:#64748b;line-height:1.45;margin:0}
-        .status{margin-top:16px;background:#10b981;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:900;transition:background .2s ease}.status.error{background:#ef4444}.status.warning{background:#f59e0b}
-        .ripple{position:absolute;border-radius:50%;transform:scale(0);animation:ripple .55s linear;background:#ffffff80;pointer-events:none}@keyframes ripple{to{transform:scale(4);opacity:0}}
-        @media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){body{padding:8px}.stats,.grid{grid-template-columns:1fr}.wrap{padding:12px}.top{padding:12px}.brand{font-size:20px}}
+        *{box-sizing:border-box}body{margin:0;background:#1e1b4b;color:#0f172a;font-family:'Segoe UI',Tahoma,sans-serif;padding:18px}.wrap{max-width:1500px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}.brand{font-size:24px;font-weight:900}.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px;margin-right:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;gap:7px;align-items:center;transition:transform .18s ease,box-shadow .18s ease}.btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px #0f172a26}.btn:active{transform:translateY(0) scale(.98)}.btn-blue{background:#0284c7;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-orange{background:#f59e0b;color:#fff}.btn-purple{background:#8b5cf6;color:#fff}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}.stat{border:1px solid #e2e8f0;border-radius:12px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}.stat span{display:block;color:#64748b;font-size:13px;font-weight:800}.stat b{font-size:20px}.icon{font-size:25px;background:#f1f5f9;padding:10px;border-radius:10px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 15px;text-align:center;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;box-shadow:0 2px 6px #00000008}.card:hover{transform:translateY(-4px);border-color:#0284c7;box-shadow:0 8px 20px #0284c71f;background:#f8fcff}.card .bigicon{font-size:38px;display:block;margin-bottom:11px}.card h3{font-size:16px;margin:0 0 6px;font-weight:900}.card p{font-size:12px;color:#64748b;line-height:1.45;margin:0}.status{margin-top:16px;background:#10b981;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:900;transition:background .2s ease}.status.error{background:#ef4444}.status.warning{background:#f59e0b}.ripple{position:absolute;border-radius:50%;transform:scale(0);animation:ripple .55s linear;background:#ffffff80;pointer-events:none}@keyframes ripple{to{transform:scale(4);opacity:0}}@media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){body{padding:8px}.stats,.grid{grid-template-columns:1fr}.wrap{padding:12px}.top{padding:12px}.brand{font-size:20px}}
     </style>
 </head>
 <body>
@@ -43,6 +37,8 @@
         <div class="card" onclick="go('admin_reports.html','gps')"><span class="bigicon">🗺️</span><h3>متابعة الموقع</h3><p>تتبع الموظفين على الخريطة</p></div>
         <div class="card" onclick="go('admin_reports.html','reports')"><span class="bigicon">📈</span><h3>التقارير</h3><p>تقارير شاملة وسجل الحركات</p></div>
         <div class="card" onclick="go('admin_reports.html','settings')"><span class="bigicon">⚙️</span><h3>إعدادات النظام</h3><p>التحكم بالإعدادات العامة</p></div>
+        <div class="card" onclick="go('admin_reports.html','archive')"><span class="bigicon">📁</span><h3>أرشيف النظام</h3><p>السجلات المؤرشفة</p></div>
+        <div class="card" onclick="alert('مشغل القنوات قيد التطوير')"><span class="bigicon">📺</span><h3>مشغل القنوات</h3><p>قوائم M3U والقنوات</p></div>
     </div>
 
     <div id="status" class="status">✓ جاري التحقق من اتصال السيرفر...</div>
@@ -52,7 +48,6 @@
     const API = location.origin;
     let token = '', companyId = '';
 
-    // ===== الجلسة =====
     function getSession() {
         try { return JSON.parse(localStorage.getItem('almoraqeb_admin_session') || '{}'); } 
         catch { return {}; }
@@ -83,7 +78,6 @@
         }
     }
 
-    // ===== الانتقال بين الصفحات =====
     function go(page, tab = '') {
         const u = new URL(page, location.href);
         u.searchParams.set('company', companyId);
@@ -91,12 +85,10 @@
         location.href = u.toString();
     }
 
-    // ===== تحميل الإحصائيات =====
     async function loadStats() {
         try {
             const r = await fetch(API + '/api/employees?companyId=' + encodeURIComponent(companyId), {
-                headers: { 'Authorization': 'Bearer ' + token },
-                cache: 'no-store'
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             const d = await r.json();
             if (r.ok && d.success) {
@@ -108,8 +100,7 @@
     async function loadPending() {
         try {
             const r = await fetch(API + '/api/employee/requests/' + encodeURIComponent(companyId) + '/pending', {
-                headers: { 'Authorization': 'Bearer ' + token },
-                cache: 'no-store'
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             const d = await r.json();
             if (r.ok && d.success) {
@@ -118,13 +109,11 @@
         } catch {}
     }
 
-    // ===== حالة السيرفر =====
     async function checkServer() {
         const el = document.getElementById('status');
         try {
             const r = await fetch(API + '/api/admin/session', {
-                headers: { 'Authorization': 'Bearer ' + token },
-                cache: 'no-store'
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             el.textContent = r.ok ? '✓ السيرفر متصل ويعمل بشكل طبيعي' : '⚠️ تعذر التحقق من السيرفر';
             el.className = r.ok ? 'status' : 'status warning';
@@ -144,7 +133,6 @@
         location.href = 'admin_login.html';
     }
 
-    // ===== التهيئة =====
     (async () => {
         if (await auth()) {
             await Promise.all([loadStats(), loadPending()]);
