@@ -5,68 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>لوحة التحكم الرئيسية - نظام المراقب برو</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#1e1b4b;color:#0f172a;font-family:'Segoe UI',Tahoma,sans-serif;padding:18px}.wrap{max-width:1500px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}.brand{font-size:24px;font-weight:900}.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px;margin-right:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;gap:7px;align-items:center;position:relative;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease}.btn:hover{transform:translateY(-2px);filter:brightness(1.07);box-shadow:0 8px 18px #0f172a26}.btn:active{transform:translateY(0) scale(.98);box-shadow:0 3px 8px #0f172a20}.btn:focus-visible{outline:3px solid #38bdf8;outline-offset:3px}.btn-blue{background:#0284c7;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-orange{background:#f59e0b;color:#fff}.btn-purple{background:#8b5cf6;color:#fff}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}.stat{border:1px solid #e2e8f0;border-radius:12px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}.stat span{display:block;color:#64748b;font-size:13px;font-weight:800}.stat b{font-size:20px}.icon{font-size:25px;background:#f1f5f9;padding:10px;border-radius:10px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 15px;text-align:center;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease;box-shadow:0 2px 6px #00000008}.card:hover{transform:translateY(-4px);border-color:#0284c7;box-shadow:0 8px 20px #0284c71f;background:#f8fcff}.card .bigicon{font-size:38px;display:block;margin-bottom:11px}.card h3{font-size:16px;margin:0 0 6px;font-weight:900}.card p{font-size:12px;color:#64748b;line-height:1.45;margin:0}.status{margin-top:16px;background:#10b981;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:900}.ripple{position:absolute;border-radius:50%;transform:scale(0);animation:ripple .55s linear;background:#ffffff80;pointer-events:none}@keyframes ripple{to{transform:scale(4);opacity:0}}@media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){body{padding:8px}.stats,.grid{grid-template-columns:1fr}.wrap{padding:12px}.top{padding:12px}.brand{font-size:20px}}
-
-/* ===== مشغل القنوات البسيط ===== */
-.channel-player {
-    background: #0f172a;
-    border-radius: 14px;
-    padding: 15px;
-    color: #fff;
-}
-.channel-player iframe {
-    width: 100%;
-    height: 280px;
-    border-radius: 10px;
-    border: 0;
-    background: #000;
-}
-.channel-player .controls {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 10px;
-    justify-content: center;
-}
-.channel-player .controls input {
-    padding: 6px 10px;
-    border: 0;
-    border-radius: 8px;
-    background: #1e293b;
-    color: #fff;
-    flex: 1;
-    min-width: 100px;
-}
-.channel-player .controls input::placeholder {
-    color: #94a3b8;
-}
-.channel-player .controls .btn {
-    padding: 6px 12px;
-    font-size: 12px;
-}
-.channel-player .channel-list {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 8px;
-}
-.channel-player .channel-tag {
-    background: #1e293b;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.channel-player .channel-tag:hover {
-    background: #0284c7;
-}
-.channel-player .channel-tag .del {
-    color: #ef4444;
-    cursor: pointer;
-}
+*{box-sizing:border-box}body{margin:0;background:#1e1b4b;color:#0f172a;font-family:'Segoe UI',Tahoma,sans-serif;padding:18px}.wrap{max-width:1500px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}.brand{font-size:24px;font-weight:900}.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px;margin-right:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;gap:7px;align-items:center;position:relative;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease}.btn:hover{transform:translateY(-2px);filter:brightness(1.07);box-shadow:0 8px 18px #0f172a26}.btn:active{transform:translateY(0) scale(.98);box-shadow:0 3px 8px #0f172a20}.btn:focus-visible{outline:3px solid #38bdf8;outline-offset:3px}.btn-blue{background:#0284c7;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-orange{background:#f59e0b;color:#fff}.btn-purple{background:#8b5cf6;color:#fff}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}.stat{border:1px solid #e2e8f0;border-radius:12px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}.stat span{display:block;color:#64748b;font-size:13px;font-weight:800}.stat b{font-size:20px}.icon{font-size:25px;background:#f1f5f9;padding:10px;border-radius:10px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 15px;text-align:center;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease;box-shadow:0 2px 6px #00000008}.card:hover{transform:translateY(-4px);border-color:#0284c7;box-shadow:0 8px 20px #0284c71f;background:#f8fcff}.card:focus-visible{outline:3px solid #38bdf8;outline-offset:3px}.card .bigicon{font-size:38px;display:block;margin-bottom:11px;transition:transform .2s ease}.card:hover .bigicon{transform:scale(1.08)}.card h3{font-size:16px;margin:0 0 6px;font-weight:900}.card p{font-size:12px;color:#64748b;line-height:1.45;margin:0}.status{margin-top:16px;background:#10b981;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:900;transition:background .2s ease}.ripple{position:absolute;border-radius:50%;transform:scale(0);animation:ripple .55s linear;background:#ffffff80;pointer-events:none}@keyframes ripple{to{transform:scale(4);opacity:0}}@media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){body{padding:8px}.stats,.grid{grid-template-columns:1fr}.wrap{padding:12px}.top{padding:12px}.brand{font-size:20px}}
 </style>
 </head>
 <body>
@@ -87,31 +26,17 @@
 </div>
 
 <div class="grid">
-    <div class="card" onclick="go('admin_operations.html','shifts')"><span class="bigicon">⏰</span><h3>الأوقات والشفتات</h3><p>إدارة مواعيد الدوام</p></div>
-    <div class="card" onclick="go('admin_reports.html','settings')"><span class="bigicon">🏢</span><h3>إدارة الفروع</h3><p>توزيع وإدارة الفروع</p></div>
-    <div class="card" onclick="go('admin_employees.html')"><span class="bigicon">👥</span><h3>إدارة الموظفين</h3><p>عرض وتعديل وإضافة وحذف</p></div>
-
-    <!-- ===== مشغل القنوات ===== -->
-    <div class="channel-player">
-        <iframe id="playerFrame" src="" allowfullscreen></iframe>
-        <div class="controls">
-            <input type="text" id="channelName" placeholder="اسم القناة">
-            <input type="text" id="channelUrl" placeholder="الرابط">
-            <button class="btn btn-green" onclick="addChannel()">➕ إضافة</button>
-            <button class="btn btn-purple" onclick="document.getElementById('m3uFile').click()">📂 رفع M3U</button>
-            <input type="file" id="m3uFile" accept=".m3u,.m3u8" style="display:none" onchange="loadM3U(event)">
-        </div>
-        <div class="channel-list" id="channelList"></div>
-    </div>
-
-    <div class="card" onclick="go('admin_reports.html')"><span class="bigicon">📈</span><h3>التقارير</h3><p>تقارير متكاملة</p></div>
-    <div class="card" onclick="go('admin_operations.html','loans')"><span class="bigicon">💳</span><h3>إدارة السلف</h3><p>تسجيل ومتابعة السلف</p></div>
-    <div class="card" onclick="go('admin_operations.html','salaries')"><span class="bigicon">💰</span><h3>إدارة الرواتب</h3><p>حساب الرواتب</p></div>
-    <div class="card" onclick="go('admin_reports.html','gps')"><span class="bigicon">📍</span><h3>بصمة الوجه والـ GPS</h3><p>مراقبة الحضور</p></div>
-    <div class="card" onclick="go('admin_reports.html','settings')"><span class="bigicon">⚙️</span><h3>إعدادات النظام</h3><p>التحكم بالإعدادات</p></div>
-    <div class="card" onclick="go('admin_reports.html','gps')"><span class="bigicon">🗺️</span><h3>متابعة الموظف</h3><p>آخر موقع GPS</p></div>
-    <div class="card" onclick="go('admin_reports.html','archive')"><span class="bigicon">📁</span><h3>أرشيف النظام</h3><p>السجلات المؤرشفة</p></div>
-    <div class="card" onclick="go('admin_employees.html')"><span class="bigicon">📥</span><h3>طلبات التسجيل <span id="reqBadge" style="background:#ef4444;color:#fff;padding:1px 6px;border-radius:8px;font-size:11px">0</span></h3><p>مراجعة طلبات الانضمام</p></div>
+    <div class="card" onclick="go('admin_operations.html','shifts')"><span class="bigicon">⏰</span><h3>الأوقات والشفتات</h3><p>إدارة مواعيد الدوام الرسمي والأوقات الخاصة والحضور والانصراف</p></div>
+    <div class="card" onclick="go('admin_reports.html','settings')"><span class="bigicon">🏢</span><h3>إدارة الفروع والمخازن</h3><p>توزيع وإدارة فروع العمل وأماكن التواجد</p></div>
+    <div class="card" onclick="go('admin_employees.html')"><span class="bigicon">👥</span><h3>إدارة الموظفين</h3><p>عرض وتعديل والبحث وإضافة وحذف الموظفين وطلبات التسجيل</p></div>
+    <div class="card" onclick="go('admin_reports.html')"><span class="bigicon">📈</span><h3>التقارير الشاملة وسجل الحركات</h3><p>تقارير متكاملة وحضور وانصراف وحركات الموظفين</p></div>
+    <div class="card" onclick="go('admin_operations.html','loans')"><span class="bigicon">💳</span><h3>إدارة السلف</h3><p>تسجيل ومتابعة سلف الموظفين وأقساطها</p></div>
+    <div class="card" onclick="go('admin_operations.html','salaries')"><span class="bigicon">💰</span><h3>إدارة الرواتب</h3><p>حساب الرواتب الأساسية والصافي النهائي</p></div>
+    <div class="card" onclick="go('admin_reports.html','gps')"><span class="bigicon">📍</span><h3>بصمة الوجه والـ GPS</h3><p>مراقبة مواقع الحضور والنطاق الجغرافي وحالة البصمة</p></div>
+    <div class="card" onclick="go('admin_reports.html','settings')"><span class="bigicon">⚙️</span><h3>إعدادات النظام</h3><p>التحكم بالإعدادات العامة ومظهر النظام</p></div>
+    <div class="card" onclick="go('admin_reports.html','gps')"><span class="bigicon">🗺️</span><h3>متابعة موظف على الخريطة</h3><p>متابعة آخر موقع GPS مسجل للموظف المطلوب</p></div>
+    <div class="card" onclick="go('admin_reports.html','archive')"><span class="bigicon">📁</span><h3>أرشيف النظام</h3><p>الرجوع إلى السجلات والبيانات المؤرشفة</p></div>
+    <div class="card" onclick="go('admin_employees.html')"><span class="bigicon">📥</span><h3>طلبات التسجيل <span id="reqBadge" style="background:#ef4444;color:#fff;padding:1px 6px;border-radius:8px;font-size:11px">0</span></h3><p>مراجعة طلبات الانضمام وتأكيد الاعتماد</p></div>
 </div>
 
 <div id="status" class="status">✓ جاري التحقق من اتصال السيرفر...</div>
@@ -119,11 +44,14 @@
 
 <script>
 const API=location.origin;let token='',companyId='';
-let channels = [];
 
 function session(){try{return JSON.parse(localStorage.getItem('almoraqeb_admin_session')||'{}')}catch{return{}}}
 function q(){return new URLSearchParams(location.search)}
 function go(page,tab=''){const u=new URL(page,location.href);u.searchParams.set('company',companyId);if(tab)u.searchParams.set('tab',tab);location.href=u.toString()}
+
+function cardKey(e,el){if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click()}}
+function ripple(e){const el=e.currentTarget;if(!el)return;const r=document.createElement('span');const size=Math.max(el.offsetWidth,el.offsetHeight);r.className='ripple';r.style.width=r.style.height=size+'px';r.style.left=(e.offsetX-size/2)+'px';r.style.top=(e.offsetY-size/2)+'px';el.appendChild(r);setTimeout(()=>r.remove(),600)}
+function markWorking(el,on=true){if(!el)return;if(on){el.disabled=true;el.dataset.oldText=el.textContent;el.textContent='⏳ جاري التنفيذ...'}else{el.disabled=false;if(el.dataset.oldText)el.textContent=el.dataset.oldText}}
 
 async function auth(){
     token=sessionStorage.getItem('almoraqeb_admin_token')||'';
@@ -142,134 +70,18 @@ async function auth(){
 
 async function loadStats(){try{const r=await fetch(API+'/api/employees?companyId='+encodeURIComponent(companyId),{cache:'no-store'});const d=await r.json();if(r.ok&&d.success)document.getElementById('employees').textContent=(d.employees||[]).length}catch{}}
 async function loadPending(){try{const r=await fetch(API+'/api/employee/requests/'+encodeURIComponent(companyId)+'/pending',{cache:'no-store'});const d=await r.json();if(r.ok&&d.success){const n=(d.requests||[]).length;document.getElementById('pending').textContent=n;document.getElementById('reqBadge').textContent=n}}catch{}}
-async function checkServer(button){const el=document.getElementById('status');try{const r=await fetch(API+'/api/admin/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});el.textContent=r.ok?'✓ السيرفر متصل':'⚠️ تعذر التحقق';el.style.background=r.ok?'#10b981':'#f59e0b'}catch{el.textContent='❌ السيرفر غير متاح';el.style.background='#ef4444'}}
-function backupData(button){location.href='backup_system.html'}
+
+async function checkServer(button){const el=document.getElementById('status');markWorking(button,true);try{const r=await fetch(API+'/api/admin/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});el.textContent=r.ok?'✓ السيرفر متصل ويعمل بشكل طبيعي':'⚠️ تعذر التحقق من السيرفر';el.style.background=r.ok?'#10b981':'#f59e0b'}catch{el.textContent='❌ السيرفر غير متاح';el.style.background='#ef4444'}finally{markWorking(button,false)}}
+
+function backupData(button){markWorking(button,true);setTimeout(()=>location.href='backup_system.html',150)}
 function logout(){sessionStorage.removeItem('almoraqeb_admin_token');location.href='admin_login.html'}
 
-// ===== مشغل القنوات =====
-async function loadChannels() {
-    try {
-        const r = await fetch(API+'/api/channels?companyId='+encodeURIComponent(companyId), {
-            headers: { 'Authorization': 'Bearer '+token }
-        });
-        const d = await r.json();
-        if (r.ok && d.success) {
-            channels = d.channels || [];
-            renderChannels();
-            if (channels.length > 0) playChannel(channels[0].id);
-        }
-    } catch(e) { console.error('فشل تحميل القنوات', e); }
-}
+document.querySelectorAll('.btn,.card').forEach(el=>el.addEventListener('click',ripple));
+document.querySelectorAll('.card').forEach(el=>el.addEventListener('keydown',e=>cardKey(e,el)));
 
-async function saveChannels() {
-    try {
-        await fetch(API+'/api/channels', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+token },
-            body: JSON.stringify({ companyId, channels })
-        });
-    } catch(e) { console.error('فشل حفظ القنوات', e); }
-}
-
-function renderChannels() {
-    const list = document.getElementById('channelList');
-    if (channels.length === 0) {
-        list.innerHTML = '<span style="color:#94a3b8;font-size:11px;">لا توجد قنوات</span>';
-        return;
-    }
-    list.innerHTML = channels.map(ch => `
-        <span class="channel-tag" onclick="playChannel(${ch.id})">
-            ${ch.name}
-            <span class="del" onclick="event.stopPropagation();deleteChannel(${ch.id})">✖</span>
-        </span>
-    `).join('');
-}
-
-function addChannel() {
-    const nameInput = document.getElementById('channelName');
-    const urlInput = document.getElementById('channelUrl');
-    const name = nameInput.value.trim();
-    const url = urlInput.value.trim();
-    if (!name || !url) { alert('يرجى إدخال اسم القناة والرابط'); return; }
-    const newId = Date.now();
-    channels.push({ id: newId, name, url });
-    saveChannels();
-    nameInput.value = ''; urlInput.value = '';
-    renderChannels();
-    playChannel(newId);
-}
-
-function deleteChannel(id) {
-    if (!confirm('حذف القناة؟')) return;
-    channels = channels.filter(ch => ch.id !== id);
-    saveChannels();
-    if (channels.length > 0) playChannel(channels[0].id);
-    else document.getElementById('playerFrame').src = '';
-    renderChannels();
-}
-
-function playChannel(id) {
-    const ch = channels.find(c => c.id === id);
-    if (!ch) return;
-    const frame = document.getElementById('playerFrame');
-    let src = ch.url;
-    if (ch.url.includes('youtube.com') || ch.url.includes('youtu.be')) {
-        src = ch.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/');
-    }
-    frame.src = src;
-    // تحديث التحديد
-    document.querySelectorAll('.channel-tag').forEach(el => el.style.background = '');
-    const items = document.querySelectorAll('.channel-tag');
-    const index = channels.findIndex(c => c.id === id);
-    if (items[index]) items[index].style.background = '#0284c7';
-}
-
-function loadM3U(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const content = e.target.result;
-        const lines = content.split('\n');
-        let name = '', url = '';
-        let added = 0;
-        for (let line of lines) {
-            line = line.trim();
-            if (line.startsWith('#EXTINF:')) {
-                const match = line.match(/,([^,]+)$/);
-                if (match) name = match[1].trim();
-            } else if (line && !line.startsWith('#')) {
-                url = line;
-                if (name && url) {
-                    channels.push({ id: Date.now() + added, name, url });
-                    name = ''; url = '';
-                    added++;
-                }
-            }
-        }
-        saveChannels();
-        renderChannels();
-        if (channels.length > 0) playChannel(channels[0].id);
-        alert('✅ تم استيراد ' + added + ' قناة');
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-}
-
-document.querySelectorAll('.btn,.card').forEach(el => el.addEventListener('click', function(e) {
-    const r = document.createElement('span');
-    r.className = 'ripple';
-    const size = Math.max(el.offsetWidth, el.offsetHeight);
-    r.style.width = r.style.height = size + 'px';
-    r.style.left = (e.offsetX - size/2) + 'px';
-    r.style.top = (e.offsetY - size/2) + 'px';
-    el.appendChild(r);
-    setTimeout(() => r.remove(), 600);
-}));
-
-(async () => {
-    if (await auth()) {
-        await Promise.all([loadStats(), loadPending(), loadChannels()]);
+(async()=>{
+    if(await auth()){
+        await Promise.all([loadStats(),loadPending()]);
         await checkServer();
     }
 })();
