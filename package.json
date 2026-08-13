@@ -4,7 +4,7 @@
   "description": "AlMoraqebPro Server Backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node -r ./server-preload.js server.js",
     "build": "npm install"
   },
   "dependencies": {
