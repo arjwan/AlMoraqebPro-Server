@@ -20,10 +20,12 @@ const path = require('path');
         ["openSection('salariesSection')", "window.location.href='admin_operations.html?tab=salaries&'+window.location.search.replace(/^\\?/, '')"],
         ["openSection('loansSection')", "window.location.href='admin_operations.html?tab=loans&'+window.location.search.replace(/^\\?/, '')"],
         ["openSection('shiftsSection')", "window.location.href='admin_operations.html?tab=shifts&'+window.location.search.replace(/^\\?/, '')"],
+        ["openSection('branchesSection')", "window.location.href='admin_reports.html?tab=settings&'+window.location.search.replace(/^\\?/, '')"],
         ["openSection('reportsSection')", "window.location.href='admin_reports.html'+window.location.search"],
         ["openSection('gpsSection')", "window.location.href='admin_reports.html?tab=gps&'+window.location.search.replace(/^\\?/, '')"],
-        ["openSection('servicesSection')", "window.location.href='admin_reports.html?tab=services&'+window.location.search.replace(/^\\?/, '')"],
         ["openSection('settingsSection')", "window.location.href='admin_reports.html?tab=settings&'+window.location.search.replace(/^\\?/, '')"],
+        ["openSection('employeeTrackingSection')", "window.location.href='admin_reports.html?tab=gps&'+window.location.search.replace(/^\\?/, '')"],
+        ["openSection('archiveDocumentsSection')", "window.location.href='admin_reports.html?tab=archive&'+window.location.search.replace(/^\\?/, '')"],
         ["openSection('archiveSection')", "window.location.href='admin_reports.html?tab=archive&'+window.location.search.replace(/^\\?/, '')"],
         ["openSection('trackingSection')", "window.location.href='admin_reports.html?tab=gps&'+window.location.search.replace(/^\\?/, '')"],
         ["openSection('requestsSection')", "window.location.href='admin_employees.html?tab=requests&'+window.location.search.replace(/^\\?/, '')"]
