@@ -1,144 +1,473 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم الرئيسية - نظام المراقب برو</title>
-    <style>
-        *{box-sizing:border-box}body{margin:0;background:#1e1b4b;color:#0f172a;font-family:'Segoe UI',Tahoma,sans-serif;padding:18px}.wrap{max-width:1500px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}.brand{font-size:24px;font-weight:900}.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px;margin-right:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;gap:7px;align-items:center;transition:transform .18s ease,box-shadow .18s ease}.btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px #0f172a26}.btn:active{transform:translateY(0) scale(.98)}.btn-blue{background:#0284c7;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-orange{background:#f59e0b;color:#fff}.btn-purple{background:#8b5cf6;color:#fff}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}.stat{border:1px solid #e2e8f0;border-radius:12px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}.stat span{display:block;color:#64748b;font-size:13px;font-weight:800}.stat b{font-size:20px}.icon{font-size:25px;background:#f1f5f9;padding:10px;border-radius:10px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 15px;text-align:center;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;box-shadow:0 2px 6px #00000008}.card:hover{transform:translateY(-4px);border-color:#0284c7;box-shadow:0 8px 20px #0284c71f;background:#f8fcff}.card .bigicon{font-size:38px;display:block;margin-bottom:11px}.card h3{font-size:16px;margin:0 0 6px;font-weight:900}.card p{font-size:12px;color:#64748b;line-height:1.45;margin:0}.status{margin-top:16px;background:#10b981;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:900;transition:background .2s ease}.status.error{background:#ef4444}.status.warning{background:#f59e0b}.ripple{position:absolute;border-radius:50%;transform:scale(0);animation:ripple .55s linear;background:#ffffff80;pointer-events:none}@keyframes ripple{to{transform:scale(4);opacity:0}}@media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){body{padding:8px}.stats,.grid{grid-template-columns:1fr}.wrap{padding:12px}.top{padding:12px}.brand{font-size:20px}}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>المراقب برو | بوابة الموظف</title>
+<style>
+/* === التصميم الأصلي مع إضافات النافذة === */
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,'Segoe UI',sans-serif;background:linear-gradient(160deg,#eff6ff,#f8fafc 55%,#e0f2fe);color:#0f172a;min-height:100vh;padding:18px;position:relative}.app{width:100%;max-width:480px;margin:auto}.hero{background:linear-gradient(135deg,#0369a1,#0284c7 55%,#38bdf8);color:#fff;border-radius:28px;padding:24px 20px;box-shadow:0 18px 45px rgba(2,132,199,.25);position:relative;overflow:hidden;display:flex;justify-content:space-between;align-items:center}.hero:after{content:'';position:absolute;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.09);left:-45px;top:-55px}.brand{font-size:25px;font-weight:900;display:flex;align-items:center;gap:10px}.info-btn{background:rgba(255,255,255,0.2);border:0;color:#fff;font-size:20px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.3s}.info-btn:hover{background:rgba(255,255,255,0.4);transform:rotate(10deg)}.hero p{margin:7px 0 0;color:#e0f2fe;font-size:12px}.server{margin-top:18px;display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.14);padding:7px 11px;border-radius:999px;font-size:11px}.dot{width:8px;height:8px;border-radius:50%;background:#fbbf24}.nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.nav button{border:0;border-radius:17px;padding:14px;background:#fff;color:#475569;font-weight:900;box-shadow:0 7px 22px rgba(15,23,42,.07);cursor:pointer;transition:0.2s}.nav button.active{background:#0f172a;color:#fff}.panel{display:none;background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:20px;box-shadow:0 12px 30px rgba(15,23,42,.08)}.panel.active{display:block}.section-title{font-size:18px;font-weight:900;margin-bottom:5px}.section-sub{font-size:11px;color:#64748b;margin-bottom:18px}.form{display:grid;gap:12px}.field label{display:block;font-size:11px;font-weight:900;color:#475569;margin:0 0 6px}.field input,.field select{width:100%;height:46px;border:1px solid #cbd5e1;border-radius:13px;padding:0 13px;font-size:13px;background:#f8fafc;outline:none}.field input:focus,.field select:focus{border-color:#0284c7;background:#fff;box-shadow:0 0 0 3px #e0f2fe}.primary{width:100%;height:48px;border:0;border-radius:14px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;font-weight:900;cursor:pointer;transition:0.2s}.primary:hover{transform:scale(1.01);opacity:0.95}.secondary{width:100%;height:44px;border:1px solid #cbd5e1;border-radius:13px;background:#f8fafc;color:#334155;font-weight:800;cursor:pointer;transition:0.2s}.secondary:hover{background:#e2e8f0}.success,.error,.info{display:none;margin-top:12px;padding:11px;border-radius:12px;font-size:12px;font-weight:800}.success{background:#dcfce7;color:#166534}.error{background:#fee2e2;color:#991b1b}.info{background:#e0f2fe;color:#075985}.request-menu{position:relative}.company-list{position:absolute;z-index:20;top:53px;right:0;left:0;background:#fff;border:1px solid #cbd5e1;border-radius:14px;box-shadow:0 16px 35px rgba(15,23,42,.16);max-height:220px;overflow:auto;display:none}.company-item{padding:12px;border-bottom:1px solid #f1f5f9;cursor:pointer;font-size:12px;font-weight:800}.company-item:hover{background:#f0f9ff}.choice-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:13px;margin-bottom:12px}.choice-card strong{display:block;font-size:13px}.choice-card span{font-size:11px;color:#64748b}.footer{text-align:center;color:#64748b;font-size:10px;margin:18px 0}.back{margin-top:10px}.loading{opacity:.65;pointer-events:none}
+
+/* === النافذة المنبثقة (Full Screen) === */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 40px;
+    animation: fadeIn 0.3s ease;
+}
+.modal-overlay.open { display: flex; }
+
+.modal-sheet {
+    background: #fff;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    border-radius: 32px 32px 0 0;
+    padding: 25px 20px 30px;
+    box-shadow: 0 -20px 60px rgba(0,0,0,0.3);
+    overflow-y: auto;
+    animation: slideUp 0.4s ease;
+    position: relative;
+}
+
+/* منطقة السحب للتحديث */
+.pull-area {
+    background: #f1f5f9;
+    border-radius: 16px;
+    padding: 18px 15px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.3s;
+    border: 1px solid #e2e8f0;
+}
+.pull-area:active { transform: scale(0.98); }
+.pull-area .pull-icon { font-size: 22px; }
+.pull-area .pull-text { font-weight: 800; font-size: 13px; color: #1e293b; }
+
+/* حالة السيرفر */
+.server-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 15px;
+}
+.status-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: 0.3s;
+}
+.status-dot.green { background: #22c55e; box-shadow: 0 0 12px #22c55e66; }
+.status-dot.yellow { background: #fbbf24; box-shadow: 0 0 12px #fbbf2466; }
+.status-dot.red { background: #ef4444; box-shadow: 0 0 12px #ef444466; }
+.status-text { font-size: 14px; font-weight: 700; color: #0f172a; }
+
+/* معلومات المطور */
+.dev-info {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 18px;
+    margin: 15px 0 20px;
+    border: 1px solid #e2e8f0;
+}
+.dev-info h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #0284c7;
+}
+.dev-info p {
+    margin: 5px 0;
+    font-size: 13px;
+    color: #334155;
+}
+.dev-info .label { font-weight: 700; color: #0f172a; }
+
+/* زر الإغلاق */
+.close-btn {
+    width: 100%;
+    padding: 14px;
+    border: 0;
+    border-radius: 14px;
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 900;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 10px;
+}
+.close-btn:hover { background: #e2e8f0; }
+
+/* الحركات */
+@keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* السحب للتحديث (Pull-to-Refresh) */
+.pull-to-refresh {
+    touch-action: none;
+}
+</style>
 </head>
 <body>
-<div class="wrap">
-    <!-- الشريط العلوي -->
-    <div class="top">
-        <div class="brand">نظام المراقب برو <span id="company" class="badge">...</span></div>
-        <div class="actions">
-            <button class="btn btn-blue" onclick="checkServer()">🔄 مراعاة السيرفر</button>
-            <button class="btn btn-orange" onclick="backupData()">💾 نسخة احتياطية</button>
-            <button class="btn btn-red" onclick="logout()">🚪 تسجيل الخروج</button>
+<div class="app">
+
+<!-- الهيدر مع زر المعلومات -->
+<section class="hero">
+    <div class="brand">
+        ☀️ المراقب برو
+        <button class="info-btn" onclick="openModal()" title="معلومات المطور وحالة السيرفر">ℹ️</button>
+    </div>
+    <div><p>بوابة الموظف الذكية</p></div>
+</section>
+
+<!-- حالة السيرفر المصغرة في الهيدر -->
+<div class="server">
+    <span class="dot" id="statusDot"></span>
+    <span id="statusText">جاري فحص الاتصال...</span>
+</div>
+
+<!-- أزرار التبديل بين تسجيل الدخول وطلب التسجيل -->
+<div class="nav">
+    <button id="loginTab" class="active" onclick="showPanel('login')">🔐 تسجيل الدخول</button>
+    <button id="requestTab" onclick="showPanel('request')">📝 طلب انضمام</button>
+</div>
+
+<!-- لوحة تسجيل الدخول -->
+<section id="loginPanel" class="panel active">
+    <div class="section-title">تسجيل دخول الموظف</div>
+    <div class="section-sub">أدخل بيانات الحساب المعتمدة من إدارة الشركة.</div>
+    <form class="form" onsubmit="login(event)">
+        <div class="field"><label>رمز الشركة</label><input id="companyId" required placeholder="مثال: B-2080"></div>
+        <div class="field"><label>اسم المستخدم</label><input id="username" required placeholder="اسم المستخدم"></div>
+        <div class="field"><label>كلمة المرور</label><input id="password" type="password" required placeholder="كلمة المرور"></div>
+        <button class="primary" id="loginBtn">🚀 دخول إلى حسابي</button>
+    </form>
+    <div id="loginMsg" class="error"></div>
+</section>
+
+<!-- لوحة طلب التسجيل -->
+<section id="requestPanel" class="panel">
+    <div class="section-title">طلب تسجيل موظف جديد</div>
+    <div class="section-sub">اختر الشركة من القائمة المنبثقة ثم أكمل بياناتك. سيصل الطلب إلى إدارة الشركة.</div>
+    <form class="form" onsubmit="submitRequest(event)">
+        <div class="field request-menu">
+            <label>الشركة</label>
+            <input id="requestCompany" autocomplete="off" placeholder="اضغط لاختيار الشركة" required onclick="toggleCompanies()" oninput="filterCompanies()">
+            <div id="companyList" class="company-list"></div>
         </div>
-    </div>
+        <input id="requestCompanyId" type="hidden">
+        <div class="choice-card" id="selectedCompany"><strong>لم يتم اختيار شركة</strong><span>اختر شركة من القائمة أعلاه</span></div>
+        <div class="field"><label>اسم الموظف الثلاثي</label><input id="requestName" required placeholder="الاسم الكامل"></div>
+        <div class="field"><label>العنوان الوظيفي</label><input id="jobTitle" required placeholder="مثال: محاسب"></div>
+        <div class="field"><label>موقع العمل</label><input id="workLocation" required placeholder="الفرع / القسم"></div>
+        <div class="field"><label>الراتب</label><input id="salary" type="number" required placeholder="بالدينار العراقي"></div>
+        <div class="field"><label>الشفت</label><select id="shift"><option>صباحي</option><option>مسائي</option><option>ليلي</option><option>طوارئ</option></select></div>
+        <div class="field"><label>ساعات العمل اليومية</label><input id="workHours" type="number" required placeholder="8"></div>
+        <div class="field"><label>نوع الأجور</label><select id="wageType"><option>شهري</option><option>أسبوعي</option><option>يومي</option></select></div>
+        <div class="field"><label>الضمان الاجتماعي</label><select id="socialSecurity"><option>مسجل</option><option>غير مسجل</option></select></div>
+        <div class="field"><label>الموقع الجغرافي</label><input id="gps" readonly placeholder="سيتم تحديده تلقائياً"></div>
+        <button class="primary" id="requestBtn">📨 إرسال طلب التسجيل</button>
+    </form>
+    <div id="requestMsg" class="success"></div>
+    <button class="secondary back" onclick="showPanel('login')">⬅ العودة لتسجيل الدخول</button>
+</section>
 
-    <!-- الإحصائيات -->
-    <div class="stats">
-        <div class="stat"><div><span>معرف الشركة</span><b id="companyStat">—</b></div><div class="icon">🏢</div></div>
-        <div class="stat"><div><span>طلبات معلقة</span><b id="pending">0</b></div><div class="icon">📥</div></div>
-        <div class="stat"><div><span>إجمالي الموظفين</span><b id="employees">0</b></div><div class="icon">👥</div></div>
-    </div>
+<div class="footer">المراقب برو © 2026 — شركة الارجوان للبرمجيات</div>
+</div>
 
-    <!-- بطاقات الأقسام -->
-    <div class="grid">
-        <div class="card" onclick="go('admin_employees.html')"><span class="bigicon">👥</span><h3>إدارة الموظفين</h3><p>عرض، إضافة، تعديل، حذف الموظفين</p></div>
-        <div class="card" onclick="go('admin_operations.html','shifts')"><span class="bigicon">⏰</span><h3>الشفتات والدوام</h3><p>إدارة جداول العمل</p></div>
-        <div class="card" onclick="go('admin_operations.html','loans')"><span class="bigicon">💳</span><h3>السلف</h3><p>إدارة السلف والأقساط</p></div>
-        <div class="card" onclick="go('admin_operations.html','salaries')"><span class="bigicon">💰</span><h3>الرواتب</h3><p>حساب وإدارة الرواتب</p></div>
-        <div class="card" onclick="go('admin_reports.html','attendance')"><span class="bigicon">📍</span><h3>البصمة والحضور</h3><p>تسجيل ومتابعة البصمة</p></div>
-        <div class="card" onclick="go('admin_reports.html','gps')"><span class="bigicon">🗺️</span><h3>متابعة الموقع</h3><p>تتبع الموظفين على الخريطة</p></div>
-        <div class="card" onclick="go('admin_reports.html','reports')"><span class="bigicon">📈</span><h3>التقارير</h3><p>تقارير شاملة وسجل الحركات</p></div>
-        <div class="card" onclick="go('admin_reports.html','settings')"><span class="bigicon">⚙️</span><h3>إعدادات النظام</h3><p>التحكم بالإعدادات العامة</p></div>
-        <div class="card" onclick="go('admin_reports.html','archive')"><span class="bigicon">📁</span><h3>أرشيف النظام</h3><p>السجلات المؤرشفة</p></div>
-        <div class="card" onclick="alert('مشغل القنوات قيد التطوير')"><span class="bigicon">📺</span><h3>مشغل القنوات</h3><p>قوائم M3U والقنوات</p></div>
-    </div>
+<!-- ===== النافذة المنبثقة (Full Screen) ===== -->
+<div class="modal-overlay" id="infoModal" onclick="if(event.target===this) closeModal()">
+    <div class="modal-sheet">
+        <!-- منطقة السحب للتحديث -->
+        <div class="pull-area" id="pullArea" onclick="refreshAll()">
+            <span class="pull-icon">⬇️</span>
+            <span class="pull-text" id="pullText">اسحب للأسفل لتحديث الاتصال</span>
+            <span style="font-size:12px;color:#64748b;" id="lastUpdate">آخر تحديث: --</span>
+        </div>
 
-    <div id="status" class="status">✓ جاري التحقق من اتصال السيرفر...</div>
+        <!-- حالة السيرفر -->
+        <div class="server-status">
+            <span class="status-dot" id="modalStatusDot"></span>
+            <span class="status-text" id="modalStatusText">جاري التحقق...</span>
+        </div>
+
+        <!-- معلومات المطور -->
+        <div class="dev-info">
+            <h3>👨‍💻 معلومات المطور</h3>
+            <p><span class="label">الاسم:</span> محمد العبيدي</p>
+            <p><span class="label">الشركة:</span> شركة الارجوان للبرمجيات</p>
+            <p><span class="label">واتساب:</span> <a href="https://wa.me/9647807807491" style="color:#0284c7;text-decoration:none;">07807807491</a></p>
+            <p><span class="label">البريد الإلكتروني:</span> <a href="mailto:mohmmed1628@gmail.com" style="color:#0284c7;text-decoration:none;">mohmmed1628@gmail.com</a></p>
+        </div>
+
+        <!-- زر الإغلاق -->
+        <button class="close-btn" onclick="closeModal()">✖️ إغلاق</button>
+    </div>
 </div>
 
 <script>
-    const API = location.origin;
-    let token = '', companyId = '';
+// ============================================================
+// الكود الأصلي مع إضافات النافذة المنبثقة
+// ============================================================
 
-    function getSession() {
-        try { return JSON.parse(localStorage.getItem('almoraqeb_admin_session') || '{}'); } 
-        catch { return {}; }
+const SERVER_URL = location.origin;
+let companies = [];
+let gps = {};
+
+// ===== دوال النافذة المنبثقة =====
+function openModal() {
+    document.getElementById('infoModal').classList.add('open');
+    updateServerStatus();
+}
+
+function closeModal() {
+    document.getElementById('infoModal').classList.remove('open');
+}
+
+// ===== تحديث حالة السيرفر في النافذة =====
+async function updateServerStatus() {
+    const dot = document.getElementById('modalStatusDot');
+    const text = document.getElementById('modalStatusText');
+    const pullText = document.getElementById('pullText');
+    const lastUpdate = document.getElementById('lastUpdate');
+    
+    // التحقق من وجود اتصال بالإنترنت أولاً
+    if (!navigator.onLine) {
+        dot.className = 'status-dot red';
+        text.textContent = '❌ لا يوجد اتصال بالإنترنت';
+        pullText.textContent = '⚠️ تحقق من اتصالك بالشبكة';
+        return;
     }
 
-    function getCompanyId() {
-        const s = getSession();
-        return String(s.companyId || new URLSearchParams(location.search).get('company') || localStorage.getItem('companyId') || '').trim();
-    }
-
-    async function auth() {
-        token = sessionStorage.getItem('almoraqeb_admin_token') || '';
-        companyId = getCompanyId();
-        if (!token || !companyId) { location.href = 'admin_login.html'; return false; }
-        try {
-            const r = await fetch(API + '/api/admin/session', {
-                headers: { 'Authorization': 'Bearer ' + token },
-                cache: 'no-store'
-            });
-            const d = await r.json();
-            if (!r.ok || !d.success) throw 0;
-            document.getElementById('company').textContent = companyId;
-            document.getElementById('companyStat').textContent = companyId;
-            return true;
-        } catch {
-            location.href = 'admin_login.html';
-            return false;
+    try {
+        const r = await fetch(SERVER_URL + '/api/ping', { 
+            signal: AbortSignal.timeout(5000) 
+        });
+        if (r.ok) {
+            dot.className = 'status-dot green';
+            text.textContent = '✅ متصل بالسيرفر المركزي';
+            pullText.textContent = '✅ الاتصال مستقر';
+        } else {
+            dot.className = 'status-dot yellow';
+            text.textContent = '⚠️ يوجد إنترنت لكن السيرفر غير متاح';
+            pullText.textContent = '⚠️ السيرفر غير مستجيب';
         }
+    } catch (e) {
+        dot.className = 'status-dot yellow';
+        text.textContent = '⚠️ يوجد إنترنت لكن السيرفر غير متاح';
+        pullText.textContent = '⚠️ تعذر الوصول إلى السيرفر';
     }
+    
+    lastUpdate.textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG');
+}
 
-    function go(page, tab = '') {
-        const u = new URL(page, location.href);
-        u.searchParams.set('company', companyId);
-        if (tab) u.searchParams.set('tab', tab);
-        location.href = u.toString();
+// ===== السحب للتحديث (Pull-to-Refresh) =====
+async function refreshAll() {
+    const pullText = document.getElementById('pullText');
+    const lastUpdate = document.getElementById('lastUpdate');
+    const dot = document.getElementById('modalStatusDot');
+    
+    pullText.textContent = '⏳ جاري التحديث...';
+    dot.className = 'status-dot yellow';
+    
+    await updateServerStatus();
+    
+    // تحديث حالة السيرفر في الهيدر أيضاً
+    await ping();
+    
+    pullText.textContent = '✅ تم التحديث';
+    setTimeout(() => {
+        pullText.textContent = 'اسحب للأسفل لتحديث الاتصال';
+    }, 2000);
+}
+
+// ===== الكود الأصلي =====
+function deviceId() {
+    let id = localStorage.getItem('almoraqeb_device_id');
+    if (!id) {
+        id = crypto.randomUUID ? crypto.randomUUID() : 'device-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        localStorage.setItem('almoraqeb_device_id', id);
     }
+    return id;
+}
 
-    async function loadStats() {
-        try {
-            const r = await fetch(API + '/api/employees?companyId=' + encodeURIComponent(companyId), {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
-            if (r.ok && d.success) {
-                document.getElementById('employees').textContent = (d.employees || []).length;
-            }
-        } catch {}
+function showPanel(name) {
+    document.getElementById('loginPanel').classList.toggle('active', name === 'login');
+    document.getElementById('requestPanel').classList.toggle('active', name === 'request');
+    document.getElementById('loginTab').classList.toggle('active', name === 'login');
+    document.getElementById('requestTab').classList.toggle('active', name === 'request');
+    if (name === 'request') { loadCompanies(); getGPS(); }
+}
+
+async function ping() {
+    try {
+        const r = await fetch(SERVER_URL + '/api/ping');
+        document.getElementById('statusDot').style.background = r.ok ? '#22c55e' : '#fbbf24';
+        document.getElementById('statusText').textContent = r.ok ? 'متصل بالسيرفر المركزي' : 'السيرفر غير متاح';
+    } catch(e) {
+        document.getElementById('statusDot').style.background = '#ef4444';
+        document.getElementById('statusText').textContent = 'غير متصل حالياً';
     }
+}
 
-    async function loadPending() {
-        try {
-            const r = await fetch(API + '/api/employee/requests/' + encodeURIComponent(companyId) + '/pending', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
-            if (r.ok && d.success) {
-                document.getElementById('pending').textContent = (d.requests || []).length;
-            }
-        } catch {}
+async function loadCompanies() {
+    try {
+        const r = await fetch(SERVER_URL + '/api/companies');
+        const d = await r.json();
+        companies = d.companies || [];
+        renderCompanies(companies);
+    } catch(e) { companies = []; }
+}
+
+function toggleCompanies() {
+    const x = document.getElementById('companyList');
+    x.style.display = x.style.display === 'block' ? 'none' : 'block';
+    renderCompanies(companies);
+}
+
+function filterCompanies() {
+    const q = document.getElementById('requestCompany').value.toLowerCase();
+    renderCompanies(companies.filter(c => 
+        String(c.name || '').toLowerCase().includes(q) || 
+        String(c.companyId || '').toLowerCase().includes(q)
+    ));
+}
+
+function renderCompanies(list) {
+    const box = document.getElementById('companyList');
+    box.innerHTML = list.length ? 
+        list.map(c => `<div class="company-item" onclick="chooseCompany('${esc(c.companyId)}','${esc(c.name)}')">🏢 ${esc(c.name)} <small>(${esc(c.companyId)})</small></div>`).join('') :
+        '<div class="company-item">لا توجد شركات مطابقة</div>';
+}
+
+function chooseCompany(id, name) {
+    document.getElementById('requestCompany').value = name + ' — ' + id;
+    document.getElementById('requestCompanyId').value = id;
+    document.getElementById('selectedCompany').innerHTML = '<strong>🏢 ' + esc(name) + '</strong><span>رمز الشركة: ' + esc(id) + '</span>';
+    document.getElementById('companyList').style.display = 'none';
+}
+
+function getGPS() {
+    if (!navigator.geolocation) {
+        document.getElementById('gps').value = 'المتصفح لا يدعم GPS';
+        return;
     }
+    navigator.geolocation.getCurrentPosition(
+        p => {
+            gps = { latitude: p.coords.latitude, longitude: p.coords.longitude };
+            document.getElementById('gps').value = p.coords.latitude.toFixed(5) + ', ' + p.coords.longitude.toFixed(5);
+        },
+        () => document.getElementById('gps').value = 'تعذر تحديد الموقع'
+    );
+}
 
-    async function checkServer() {
-        const el = document.getElementById('status');
-        try {
-            const r = await fetch(API + '/api/admin/session', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            el.textContent = r.ok ? '✓ السيرفر متصل ويعمل بشكل طبيعي' : '⚠️ تعذر التحقق من السيرفر';
-            el.className = r.ok ? 'status' : 'status warning';
-        } catch {
-            el.textContent = '❌ السيرفر غير متاح';
-            el.className = 'status error';
-        }
+async function login(e) {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const msg = document.getElementById('loginMsg');
+    msg.style.display = 'none';
+    btn.classList.add('loading');
+    try {
+        const companyId = document.getElementById('companyId').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const r = await fetch(SERVER_URL + '/api/mobile/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ companyId, username, password, deviceId: deviceId() })
+        });
+        const d = await r.json();
+        if (!r.ok || !d.success) throw new Error(d.message || 'تعذر تسجيل الدخول');
+        localStorage.setItem('activeEmployeeId', d.employee._id);
+        localStorage.setItem('activeUser', d.employee.name || username);
+        localStorage.setItem('activeUsername', username);
+        localStorage.setItem('activeCompanyId', companyId);
+        localStorage.setItem('activeEmployee', JSON.stringify(d.employee));
+        location.href = 'attendance.html';
+    } catch(err) {
+        msg.textContent = '⚠️ ' + err.message;
+        msg.style.display = 'block';
+    } finally {
+        btn.classList.remove('loading');
     }
+}
 
-    function backupData() {
-        location.href = 'backup_system.html';
+async function submitRequest(e) {
+    e.preventDefault();
+    const companyId = document.getElementById('requestCompanyId').value;
+    if (!companyId) { alert('اختر الشركة أولاً'); return; }
+    const btn = document.getElementById('requestBtn');
+    const msg = document.getElementById('requestMsg');
+    btn.classList.add('loading');
+    msg.style.display = 'none';
+    const company = companies.find(c => String(c.companyId) === companyId);
+    try {
+        const payload = {
+            companyId,
+            companyName: company?.name || document.getElementById('requestCompany').value,
+            name: document.getElementById('requestName').value.trim(),
+            jobTitle: document.getElementById('jobTitle').value.trim(),
+            workLocation: document.getElementById('workLocation').value.trim(),
+            salary: Number(document.getElementById('salary').value),
+            shift: document.getElementById('shift').value,
+            workHours: Number(document.getElementById('workHours').value),
+            wageType: document.getElementById('wageType').value,
+            socialSecurity: document.getElementById('socialSecurity').value,
+            location: gps.latitude ? `${gps.latitude},${gps.longitude}` : '',
+            deviceId: deviceId()
+        };
+        const r = await fetch(SERVER_URL + '/api/employee/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        if (!r.ok || !d.success) throw new Error(d.message || 'تعذر إرسال الطلب');
+        msg.className = 'success';
+        msg.textContent = '✅ تم إرسال طلب التسجيل بنجاح إلى إدارة الشركة. ستظهر بيانات الدخول بعد الاعتماد.';
+        msg.style.display = 'block';
+        e.target.reset();
+        document.getElementById('requestCompanyId').value = '';
+        document.getElementById('selectedCompany').innerHTML = '<strong>تم إرسال الطلب</strong><span>يمكنك متابعة الاعتماد من الإدارة.</span>';
+    } catch(err) {
+        msg.className = 'error';
+        msg.textContent = '⚠️ ' + err.message;
+        msg.style.display = 'block';
+    } finally {
+        btn.classList.remove('loading');
     }
+}
 
-    function logout() {
-        sessionStorage.removeItem('almoraqeb_admin_token');
-        localStorage.removeItem('almoraqeb_admin_session');
-        location.href = 'admin_login.html';
-    }
+function esc(v) {
+    return String(v ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
+}
 
-    (async () => {
-        if (await auth()) {
-            await Promise.all([loadStats(), loadPending()]);
-            await checkServer();
-        }
-    })();
+// ===== إغلاق قائمة الشركات عند النقر خارجها =====
+document.addEventListener('click', e => {
+    if (!e.target.closest('.request-menu')) document.getElementById('companyList').style.display = 'none';
+});
+
+// ===== التهيئة =====
+ping();
+setInterval(ping, 30000);
 </script>
 </body>
 </html>
