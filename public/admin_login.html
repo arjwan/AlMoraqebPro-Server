@@ -3,104 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول - نظام المراقب برو</title>
+    <title>تسجيل دخول المدير - المراقب برو</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background: #1e1b4b;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .login-box {
-            background: #fff;
-            border-radius: 20px;
-            padding: 40px 35px;
-            max-width: 420px;
-            width: 100%;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-            text-align: center;
-        }
-        .login-box .logo {
-            font-size: 28px;
-            font-weight: 900;
-            color: #1e293b;
-            margin-bottom: 5px;
-        }
-        .login-box .sub {
-            color: #64748b;
-            font-size: 14px;
-            margin-bottom: 25px;
-        }
-        .login-box .form-group {
-            margin-bottom: 18px;
-            text-align: right;
-        }
-        .login-box label {
-            display: block;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        .login-box input {
-            width: 100%;
-            padding: 12px 14px;
-            border: 2px solid #cbd5e1;
-            border-radius: 10px;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.2s;
-            background: #f8fafc;
-        }
-        .login-box input:focus {
-            border-color: #0284c7;
-            background: #fff;
-        }
-        .login-box .btn {
-            width: 100%;
-            padding: 14px;
-            border: 0;
-            border-radius: 10px;
-            font-size: 17px;
-            font-weight: 800;
-            cursor: pointer;
-            background: #0284c7;
-            color: #fff;
-            transition: background 0.2s, transform 0.15s;
-        }
-        .login-box .btn:hover {
-            background: #0369a1;
-            transform: translateY(-2px);
-        }
-        .login-box .btn:active {
-            transform: scale(0.97);
-        }
-        .login-box .error {
-            color: #ef4444;
-            font-size: 13px;
-            margin-top: 12px;
-            display: none;
-            font-weight: 600;
-        }
-        .login-box .error.show { display: block; }
-        .login-box .footer {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #94a3b8;
-        }
-        @media(max-width: 480px) {
-            .login-box { padding: 25px 20px; }
-        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#1e1b4b;font-family:'Segoe UI',Tahoma,sans-serif;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}
+        .login-box{background:#fff;border-radius:20px;padding:40px 35px;max-width:420px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.4);text-align:center}
+        .login-box .logo{font-size:28px;font-weight:900;color:#1e293b}
+        .login-box .sub{color:#64748b;font-size:14px;margin:5px 0 25px}
+        .login-box .form-group{margin-bottom:18px;text-align:right}
+        .login-box label{display:block;font-weight:700;color:#1e293b;margin-bottom:5px;font-size:14px}
+        .login-box input{width:100%;padding:12px 14px;border:2px solid #cbd5e1;border-radius:10px;font-size:15px;outline:none;background:#f8fafc}
+        .login-box input:focus{border-color:#0284c7;background:#fff}
+        .login-box .btn{width:100%;padding:14px;border:0;border-radius:10px;font-size:17px;font-weight:800;cursor:pointer;background:#0284c7;color:#fff;transition:background .2s,transform .15s}
+        .login-box .btn:hover{background:#0369a1;transform:translateY(-2px)}
+        .login-box .btn:active{transform:scale(0.97)}
+        .login-box .error{color:#ef4444;font-size:13px;margin-top:12px;display:none;font-weight:600}
+        .login-box .error.show{display:block}
+        .login-box .footer{margin-top:20px;font-size:12px;color:#94a3b8}
     </style>
 </head>
 <body>
     <div class="login-box">
-        <div class="logo">نظام المراقب برو</div>
-        <div class="sub">تسجيل الدخول إلى لوحة التحكم</div>
+        <div class="logo">👨‍💼 المراقب برو</div>
+        <div class="sub">تسجيل دخول المدير</div>
         <form id="loginForm" onsubmit="login(event)">
             <div class="form-group">
                 <label>رمز الشركة</label>
@@ -147,7 +72,6 @@
                 const data = await res.json();
 
                 if (res.ok && data.success) {
-                    // حفظ الجلسة
                     sessionStorage.setItem('almoraqeb_admin_token', data.token);
                     localStorage.setItem('almoraqeb_admin_session', JSON.stringify({
                         companyId: companyId,
@@ -155,8 +79,7 @@
                         role: data.role || 'admin'
                     }));
                     localStorage.setItem('companyId', companyId);
-                    // الانتقال إلى لوحة التحكم
-                    location.href = 'index.html?company=' + encodeURIComponent(companyId);
+                    location.href = 'admin.html?company=' + encodeURIComponent(companyId);
                 } else {
                     errorEl.textContent = '❌ ' + (data.message || 'بيانات الدخول غير صحيحة');
                     errorEl.classList.add('show');
@@ -166,19 +89,6 @@
                 errorEl.classList.add('show');
             }
         }
-
-        // إذا كان هناك جلسة سابقة، انتقل مباشرة
-        (function() {
-            const session = localStorage.getItem('almoraqeb_admin_session');
-            if (session) {
-                try {
-                    const s = JSON.parse(session);
-                    if (s.companyId) {
-                        location.href = 'index.html?company=' + encodeURIComponent(s.companyId);
-                    }
-                } catch {}
-            }
-        })();
     </script>
 </body>
 </html>
