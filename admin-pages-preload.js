@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+require('./mobile-fix-preload');
 
 /*
  * AlMoraqebPro admin navigation patch.
