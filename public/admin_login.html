@@ -3,104 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل دخول المدير - المراقب برو</title>
+    <title>تسجيل الدخول - نظام المراقب برو</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .admin-card { background: #1e293b; padding: 30px; border-radius: 20px; width: 100%; max-width: 440px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 2px solid #334155; }
-        .title-header { text-align: center; margin-bottom: 20px; }
-        .title-header h2 { font-size: 18px; color: #38bdf8; font-weight: 800; margin-bottom: 5px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-size: 13px; margin-bottom: 6px; color: #94a3b8; font-weight: 600; }
-        input { width: 100%; padding: 12px; border: 2px solid #475569; border-radius: 10px; background: #0f172a; color: #fff; font-size: 14px; outline: none; }
-        input:focus { border-color: #38bdf8; }
-        .btn { width: 100%; padding: 14px; background: #0284c7; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; transition: 0.2s; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
-        .btn:hover { background: #0ea5e9; }
-        .btn:disabled { opacity: .6; cursor: wait; }
-        #loginMessage { min-height: 22px; margin-top: 12px; text-align: center; font-size: 13px; font-weight: 700; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #1e1b4b;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .login-box {
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px 35px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+        .login-box .logo {
+            font-size: 28px;
+            font-weight: 900;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        .login-box .sub {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .login-box .form-group {
+            margin-bottom: 18px;
+            text-align: right;
+        }
+        .login-box label {
+            display: block;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+            background: #f8fafc;
+        }
+        .login-box input:focus {
+            border-color: #0284c7;
+            background: #fff;
+        }
+        .login-box .btn {
+            width: 100%;
+            padding: 14px;
+            border: 0;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 800;
+            cursor: pointer;
+            background: #0284c7;
+            color: #fff;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .login-box .btn:hover {
+            background: #0369a1;
+            transform: translateY(-2px);
+        }
+        .login-box .btn:active {
+            transform: scale(0.97);
+        }
+        .login-box .error {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+            font-weight: 600;
+        }
+        .login-box .error.show { display: block; }
+        .login-box .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        @media(max-width: 480px) {
+            .login-box { padding: 25px 20px; }
+        }
     </style>
 </head>
 <body>
-<div class="admin-card">
-    <div class="title-header"><h2>🛡️ تسجيل دخول المدير</h2></div>
-
-    <div class="form-group">
-        <label>رمز الشركة:</label>
-        <input type="text" id="adminCompanyId" placeholder="مثال: 80 أو B-2070" autocomplete="organization">
+    <div class="login-box">
+        <div class="logo">نظام المراقب برو</div>
+        <div class="sub">تسجيل الدخول إلى لوحة التحكم</div>
+        <form id="loginForm" onsubmit="login(event)">
+            <div class="form-group">
+                <label>رمز الشركة</label>
+                <input type="text" id="companyId" placeholder="مثال: B-2070" required>
+            </div>
+            <div class="form-group">
+                <label>اسم المستخدم</label>
+                <input type="text" id="username" placeholder="أدخل اسم المستخدم" required>
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn">🚪 دخول</button>
+            <div class="error" id="loginError">❌ بيانات الدخول غير صحيحة</div>
+        </form>
+        <div class="footer">© 2026 نظام المراقب برو - جميع الحقوق محفوظة</div>
     </div>
 
-    <div class="form-group">
-        <label>اسم المستخدم:</label>
-        <input type="text" id="adminUser" placeholder="أدخل اسم المستخدم" value="admin" autocomplete="username">
-    </div>
+    <script>
+        const API = location.origin;
 
-    <div class="form-group">
-        <label>كلمة المرور:</label>
-        <input type="password" id="adminPass" placeholder="أدخل كلمة المرور" autocomplete="current-password">
-    </div>
+        async function login(e) {
+            e.preventDefault();
+            const companyId = document.getElementById('companyId').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const errorEl = document.getElementById('loginError');
 
-    <button class="btn" id="loginBtn" onclick="loginAdmin()">🚀 تسجيل الدخول</button>
-    <div id="loginMessage"></div>
-</div>
+            errorEl.classList.remove('show');
 
-<script>
-const API_BASE = window.location.origin;
+            if (!companyId || !username || !password) {
+                errorEl.textContent = '⚠️ يرجى ملء جميع الحقول';
+                errorEl.classList.add('show');
+                return;
+            }
 
-function showMessage(message, ok = false) {
-    const el = document.getElementById('loginMessage');
-    el.textContent = message;
-    el.style.color = ok ? '#4ade80' : '#f87171';
-}
+            try {
+                const res = await fetch(API + '/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ companyId, username, password })
+                });
+                const data = await res.json();
 
-async function loginAdmin() {
-    const companyId = document.getElementById('adminCompanyId').value.trim();
-    const username = document.getElementById('adminUser').value.trim();
-    const password = document.getElementById('adminPass').value;
-    const btn = document.getElementById('loginBtn');
+                if (res.ok && data.success) {
+                    // حفظ الجلسة
+                    sessionStorage.setItem('almoraqeb_admin_token', data.token);
+                    localStorage.setItem('almoraqeb_admin_session', JSON.stringify({
+                        companyId: companyId,
+                        username: username,
+                        role: data.role || 'admin'
+                    }));
+                    localStorage.setItem('companyId', companyId);
+                    // الانتقال إلى لوحة التحكم
+                    location.href = 'index.html?company=' + encodeURIComponent(companyId);
+                } else {
+                    errorEl.textContent = '❌ ' + (data.message || 'بيانات الدخول غير صحيحة');
+                    errorEl.classList.add('show');
+                }
+            } catch (err) {
+                errorEl.textContent = '❌ فشل الاتصال بالسيرفر';
+                errorEl.classList.add('show');
+            }
+        }
 
-    if (!companyId) return showMessage('⚠️ يجب إدخال رمز الشركة.');
-    if (!username) return showMessage('⚠️ يجب إدخال اسم المستخدم.');
-    if (!password) return showMessage('⚠️ يجب إدخال كلمة المرور.');
-
-    btn.disabled = true;
-        showMessage('جاري التحقق من بيانات المدير...', true);
-
-    try {
-        const response = await fetch(`${API_BASE}/api/admin/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ companyId, username, password })
-        });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تسجيل الدخول');
-        const company = data.company;
-
-        // لا نعتبر مجرد وجود الشركة مصادقة كاملة؛ نحفظ جلسة الواجهة فقط بعد إدخال الحقول المطلوبة.
-        // المصادقة الفعلية الخاصة بكلمة المرور يمكن ربطها لاحقًا ببيانات مدير الشركة.
-        const session = {
-            companyId: company.companyId,
-            companyName: company.name || '',
-            username,
-            loggedInAt: Date.now()
-        };
-        localStorage.setItem('almoraqeb_admin_session', JSON.stringify(session));
-        localStorage.setItem('companyId', String(company.companyId));
-        localStorage.setItem('companyName', String(company.name || ''));
-        sessionStorage.setItem('almoraqeb_admin_token', data.token);
-
-        showMessage('✅ تم التحقق من بيانات المدير، جارٍ فتح لوحة التحكم...', true);
-        const target = `admin.html?company=${encodeURIComponent(company.companyId)}`;
-        setTimeout(() => { window.location.replace(target); }, 250);
-    } catch (error) {
-        showMessage(`❌ ${error.message || 'تعذر تسجيل الدخول'}`);
-    } finally {
-        btn.disabled = false;
-    }
-}
-
-document.addEventListener('keydown', event => {
-    if (event.key === 'Enter') loginAdmin();
-});
-</script>
+        // إذا كان هناك جلسة سابقة، انتقل مباشرة
+        (function() {
+            const session = localStorage.getItem('almoraqeb_admin_session');
+            if (session) {
+                try {
+                    const s = JSON.parse(session);
+                    if (s.companyId) {
+                        location.href = 'index.html?company=' + encodeURIComponent(s.companyId);
+                    }
+                } catch {}
+            }
+        })();
+    </script>
 </body>
 </html>
