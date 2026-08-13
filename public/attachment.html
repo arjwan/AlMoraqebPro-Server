@@ -3,15 +3,118 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>المراقب برو | الحضور والانصراف</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Tahoma,'Segoe UI',sans-serif;background:linear-gradient(160deg,#0f172a,#172554 55%,#0c4a6e);min-height:100vh;padding:16px;color:#fff}.app{max-width:480px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}.brand{font-size:20px;font-weight:900}.connection{font-size:10px;background:rgba(255,255,255,.1);padding:7px 10px;border-radius:999px}.card{background:rgba(255,255,255,.97);color:#0f172a;border-radius:26px;padding:20px;box-shadow:0 22px 50px rgba(0,0,0,.3)}.profile{display:flex;align-items:center;gap:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:12px;margin-bottom:15px}.avatar{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}.profile strong{display:block;font-size:14px}.profile span{font-size:10px;color:#64748b}.clock{font-size:42px;font-weight:900;text-align:center;color:#0369a1;margin:12px 0}.date{text-align:center;color:#64748b;font-size:11px;margin-bottom:18px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:11px}.action{border:0;border-radius:17px;padding:17px 8px;color:#fff;font-weight:900;cursor:pointer;font-size:13px}.in{background:linear-gradient(135deg,#10b981,#047857)}.out{background:linear-gradient(135deg,#ef4444,#b91c1c)}.services{grid-column:span 2;background:linear-gradient(135deg,#0284c7,#075985)}.action:disabled{opacity:.55;cursor:not-allowed}.gps{margin-top:15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:15px;padding:11px;font-size:10px;color:#475569;text-align:center}.status{display:none;margin-top:13px;border-radius:14px;padding:13px;font-size:12px;font-weight:900;text-align:center}.status.ok{display:block;background:#dcfce7;color:#166534}.status.bad{display:block;background:#fee2e2;color:#991b1b}.status.info{display:block;background:#e0f2fe;color:#075985}.history{margin-top:16px;border-top:1px solid #e2e8f0;padding-top:14px}.history h3{font-size:14px;margin:0 0 10px}.row{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #edf2f7;border-radius:12px;padding:10px;margin-bottom:7px;font-size:11px}.badge{padding:5px 8px;border-radius:999px;font-weight:900}.badge.in{background:#dcfce7;color:#166534}.badge.out{background:#fee2e2;color:#991b1b}.back{margin-top:12px;width:100%;height:42px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;font-weight:800;color:#334155}
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,'Segoe UI',sans-serif;background:linear-gradient(160deg,#0f172a,#172554 55%,#0c4a6e);min-height:100vh;padding:16px;color:#fff}.app{max-width:480px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}.brand{font-size:20px;font-weight:900}.connection{font-size:10px;background:rgba(255,255,255,.1);padding:7px 10px;border-radius:999px}.card{background:rgba(255,255,255,.97);color:#0f172a;border-radius:26px;padding:20px;box-shadow:0 22px 50px rgba(0,0,0,.3)}.profile{display:flex;align-items:center;gap:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:12px;margin-bottom:15px}.avatar{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}.profile strong{display:block;font-size:14px}.profile span{font-size:10px;color:#64748b}.clock{font-size:42px;font-weight:900;text-align:center;color:#0369a1;margin:12px 0}.date{text-align:center;color:#64748b;font-size:11px;margin-bottom:18px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:11px}.action{border:0;border-radius:17px;padding:17px 8px;color:#fff;font-weight:900;cursor:pointer;font-size:13px}.in{background:linear-gradient(135deg,#10b981,#047857)}.out{background:linear-gradient(135deg,#ef4444,#b91c1c)}.services{grid-column:span 2;background:linear-gradient(135deg,#0284c7,#075985)}.action:disabled{opacity:.55;cursor:not-allowed}.gps{margin-top:15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:15px;padding:11px;font-size:10px;color:#475569;text-align:center}.status{display:none;margin-top:13px;border-radius:14px;padding:13px;font-size:12px;font-weight:900;text-align:center}.status.ok{display:block;background:#dcfce7;color:#166534}.status.bad{display:block;background:#fee2e2;color:#991b1b}.status.info{display:block;background:#e0f2fe;color:#075985}.history{margin-top:16px;border-top:1px solid #e2e8f0;padding-top:14px}.history h3{font-size:14px;margin:0 0 10px}.row{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #edf2f7;border-radius:12px;padding:10px;margin-bottom:7px;font-size:11px}.badge{padding:5px 8px;border-radius:999px;font-weight:900}.badge.in{background:#dcfce7;color:#166534}.badge.out{background:#fee2e2;color:#991b1b}.back{margin-top:12px;width:100%;height:42px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;font-weight:800;color:#334155;cursor:pointer}
 </style></head>
 <body><div class="app"><div class="top"><div class="brand">☀️ المراقب برو</div><div class="connection" id="connection">● فحص الاتصال</div></div><main class="card"><div class="profile"><div class="avatar" id="avatar">م</div><div><strong id="empName">جاري التحميل...</strong><span id="company">—</span></div></div><div class="clock" id="clock">00:00:00</div><div class="date" id="date"></div><div class="actions"><button class="action in" id="inBtn" onclick="record('attendance')">🟢 تسجيل الحضور</button><button class="action out" id="outBtn" onclick="record('departure')">🔴 تسجيل الانصراف</button><button class="action services" onclick="location.href='services.html'">🧰 الخدمات والطلبات</button></div><div class="gps" id="gps">📍 جاري التحقق من موقع الجهاز...</div><div id="status" class="status"></div><div class="history"><h3>آخر حركات الحضور والانصراف</h3><div id="historyList">جاري التحميل...</div></div><button class="back" onclick="location.href='index.html'">⬅ العودة إلى تسجيل الدخول</button></main></div>
+
 <script>
-const SERVER_URL=location.origin;let pos=null;const employeeId=localStorage.getItem('activeEmployeeId');const deviceId=localStorage.getItem('almoraqeb_device_id')||'';
-function tick(){const d=new Date();document.getElementById('clock').textContent=d.toLocaleTimeString('ar-IQ');document.getElementById('date').textContent=d.toLocaleDateString('ar-IQ',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}setInterval(tick,1000);tick();
-function show(type,text){const x=document.getElementById('status');x.className='status '+type;x.textContent=text;x.style.display='block';setTimeout(()=>x.style.display='none',6500)}
-function gps(){return new Promise((resolve,reject)=>{if(!navigator.geolocation)return reject(new Error('الجهاز لا يدعم GPS'));navigator.geolocation.getCurrentPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude,accuracy:p.coords.accuracy};document.getElementById('gps').innerHTML='📍 الموقع متاح — الدقة '+Math.round(pos.accuracy)+' متر';resolve(pos)},()=>reject(new Error('فعّل خدمة الموقع ثم حاول مرة أخرى')),{enableHighAccuracy:true,timeout:12000,maximumAge:0})})}
-async function record(type){if(!employeeId){location.href='index.html';return}const buttons=[document.getElementById('inBtn'),document.getElementById('outBtn')];buttons.forEach(b=>b.disabled=true);show('info','⏳ جارٍ تحديد الموقع وتسجيل الحركة...');try{const p=await gps();const r=await fetch(SERVER_URL+'/api/attendance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employeeId,deviceId,fingerprintToken:'device-'+deviceId,verificationMethod:'device-gps',latitude:p.lat,longitude:p.lng,timestamp:new Date().toISOString(),type})});const d=await r.json();if(!r.ok||!d.success)throw new Error(d.message||'تعذر تسجيل الحركة');show('ok',type==='attendance'?'✅ تم تسجيل الحضور بنجاح — تم حفظ الموقع والوقت.':'✅ تم تسجيل الانصراف بنجاح — تم حفظ الموقع والوقت.');loadHistory()}catch(e){show('bad','⚠️ '+e.message)}finally{buttons.forEach(b=>b.disabled=false)}}
-async function loadHistory(){try{const r=await fetch(SERVER_URL+'/api/employees/'+encodeURIComponent(employeeId)+'/attendance');const d=await r.json();const list=(d.attendance||[]).slice(0,6);document.getElementById('historyList').innerHTML=list.length?list.map(x=>`<div class="row"><span>${new Date(x.timestamp).toLocaleString('ar-IQ')}</span><span class="badge ${x.type==='departure'?'out':'in'}">${x.type==='departure'?'انصراف':'حضور'}</span></div>`).join(''):'<div class="row">لا توجد حركات مسجلة بعد</div>'}catch(e){document.getElementById('historyList').textContent='تعذر تحميل السجل'}}
-async function init(){if(!employeeId){location.href='index.html';return}const emp=JSON.parse(localStorage.getItem('activeEmployee')||'{}');const name=localStorage.getItem('activeUser')||emp.name||'الموظف';document.getElementById('empName').textContent=name;document.getElementById('company').textContent='الشركة: '+(localStorage.getItem('activeCompanyId')||emp.companyId||'—');document.getElementById('avatar').textContent=name.charAt(0);document.getElementById('connection').textContent='● متصل';try{await gps()}catch(e){document.getElementById('gps').textContent='⚠️ '+e.message}loadHistory()}init();
-</script></body></html>
+const SERVER_URL = location.origin;
+
+// ===== قراءة البيانات من الرابط =====
+const params = new URLSearchParams(window.location.search);
+const employeeId = params.get('employeeId');
+const employeeName = params.get('name') || 'الموظف';
+const companyId = params.get('company') || '—';
+
+// ===== إذا لم يكن هناك معرف موظف، نعيد التوجيه =====
+if (!employeeId) {
+    location.href = 'index.html';
+}
+
+// ===== تحديث الساعة =====
+function tick() {
+    const d = new Date();
+    document.getElementById('clock').textContent = d.toLocaleTimeString('ar-IQ');
+    document.getElementById('date').textContent = d.toLocaleDateString('ar-IQ', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+}
+setInterval(tick, 1000);
+tick();
+
+// ===== عرض رسالة الحالة =====
+function show(type, text) {
+    const el = document.getElementById('status');
+    el.className = 'status ' + type;
+    el.textContent = text;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 6000);
+}
+
+// ===== الحصول على الموقع الجغرافي =====
+function getGPS() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('الجهاز لا يدعم GPS'));
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (p) => {
+                const pos = { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy };
+                document.getElementById('gps').innerHTML = '📍 الموقع متاح — الدقة ' + Math.round(pos.accuracy) + ' متر';
+                resolve(pos);
+            },
+            () => reject(new Error('فعّل خدمة الموقع ثم حاول مرة أخرى')),
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    });
+}
+
+// ===== تسجيل بصمة (حضور أو انصراف) =====
+async function record(type) {
+    const btns = [document.getElementById('inBtn'), document.getElementById('outBtn')];
+    btns.forEach(b => b.disabled = true);
+    show('info', '⏳ جارٍ تحديد الموقع وتسجيل الحركة...');
+    try {
+        const pos = await getGPS();
+        const payload = { employeeId, type, latitude: pos.lat, longitude: pos.lng, timestamp: new Date().toISOString() };
+        const res = await fetch(SERVER_URL + '/api/attendance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'تعذر تسجيل الحركة');
+        show('ok', type === 'attendance' ? '✅ تم تسجيل الحضور' : '✅ تم تسجيل الانصراف');
+        loadHistory();
+    } catch (err) {
+        show('bad', '⚠️ ' + err.message);
+    }
+    btns.forEach(b => b.disabled = false);
+}
+
+// ===== تحميل تاريخ الحركات =====
+async function loadHistory() {
+    try {
+        const res = await fetch(SERVER_URL + '/api/employees/' + encodeURIComponent(employeeId) + '/attendance');
+        const data = await res.json();
+        const list = (data.attendance || []).slice(0, 6);
+        const container = document.getElementById('historyList');
+        if (list.length === 0) {
+            container.innerHTML = '<div class="row">لا توجد حركات مسجلة بعد</div>';
+            return;
+        }
+        container.innerHTML = list.map(item => {
+            const type = item.type === 'departure' ? 'انصراف' : 'حضور';
+            const badgeClass = item.type === 'departure' ? 'out' : 'in';
+            const time = new Date(item.timestamp).toLocaleString('ar-IQ');
+            return `<div class="row"><span>${time}</span><span class="badge ${badgeClass}">${type}</span></div>`;
+        }).join('');
+    } catch (err) {
+        document.getElementById('historyList').textContent = 'تعذر تحميل السجل';
+    }
+}
+
+// ===== تهيئة الصفحة =====
+function init() {
+    document.getElementById('empName').textContent = employeeName;
+    document.getElementById('company').textContent = 'الشركة: ' + companyId;
+    document.getElementById('avatar').textContent = employeeName.charAt(0) || 'م';
+    document.getElementById('connection').textContent = '● متصل';
+    getGPS().catch(() => document.getElementById('gps').textContent = '⚠️ تعذر تحديد الموقع');
+    loadHistory();
+}
+init();
+</script>
+</body>
+</html>
