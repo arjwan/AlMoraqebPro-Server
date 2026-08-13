@@ -396,6 +396,28 @@ async function login(e) {
         });
         const d = await r.json();
         if (!r.ok || !d.success) throw new Error(d.message || 'تعذر تسجيل الدخول');
+        
+        // ✅ التوجيه إلى attachment.html مع تمرير البيانات
+        const emp = d.employee;
+        location.href = `attachment.html?employeeId=${emp._id}&name=${encodeURIComponent(emp.name || username)}&company=${emp.companyId || companyId}`;
+        
+    } catch(err) {
+        msg.textContent = '⚠️ ' + err.message;
+        msg.style.display = 'block';
+    } finally {
+        btn.classList.remove('loading');
+    }
+}
+        const companyId = document.getElementById('companyId').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const r = await fetch(SERVER_URL + '/api/mobile/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ companyId, username, password, deviceId: deviceId() })
+        });
+        const d = await r.json();
+        if (!r.ok || !d.success) throw new Error(d.message || 'تعذر تسجيل الدخول');
         localStorage.setItem('activeEmployeeId', d.employee._id);
         localStorage.setItem('activeUser', d.employee.name || username);
         localStorage.setItem('activeUsername', username);
