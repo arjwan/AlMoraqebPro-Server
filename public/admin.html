@@ -157,6 +157,31 @@
             #printSalaryTable td { border: 1px solid #000 !important; padding: 4px; font-size: 9px; text-align: center; color: #000 !important; }
             @page { size: A4 landscape; margin: 5mm; }
         }
+
+        /* ===== AlMoraqebPro additions ===== */
+        .modal-overlay{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.68);backdrop-filter:blur(5px)}
+        .modal-overlay.open{display:flex}
+        .modal-card{width:min(860px,96vw);max-height:92vh;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:18px;box-shadow:0 25px 70px rgba(0,0,0,.35);direction:rtl;text-align:right}
+        .modal-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;background:inherit;z-index:2}
+        .modal-body{padding:18px}.modal-close{width:38px;height:38px;border:0;border-radius:10px;cursor:pointer;font-size:20px;font-weight:900;background:#fee2e2;color:#b91c1c}
+        .modal-card.compact{width:min(560px,96vw)}.modal-card.maximized{width:98vw;max-width:1500px;height:95vh;max-height:95vh}
+        .modal-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+        .player-shell{background:#0f172a;border-radius:14px;padding:10px;margin-bottom:12px}
+        #m3uVideo{width:100%;height:360px;background:#020617;border-radius:10px;display:block;object-fit:contain}
+        .channel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;max-height:220px;overflow:auto;padding:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}
+        .channel-btn{border:1px solid #cbd5e1;background:#fff;border-radius:9px;padding:9px;cursor:pointer;text-align:right;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .channel-btn:hover{border-color:#0284c7;background:#f0f9ff}
+        .playlist-panel{display:grid;grid-template-columns:180px 1fr;gap:12px}.playlist-list{border:1px solid #e2e8f0;border-radius:12px;padding:8px;background:#f8fafc;display:flex;flex-direction:column;gap:6px}
+        .playlist-choice{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:8px 10px;cursor:pointer;font-weight:800;text-align:right}.playlist-choice.active{background:#e0f2fe;border-color:#0284c7}
+        .tracking-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:12px;margin-bottom:12px}
+        .tracking-toolbar select{min-width:260px;flex:1}.tracking-status{padding:8px 12px;border-radius:9px;font-weight:800;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
+        #employeeTrackingMap{height:520px;border-radius:14px;border:1px solid #cbd5e1;overflow:hidden;background:#e2e8f0}
+        .tracking-info{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.tracking-info div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;text-align:center}.tracking-info small{display:block;color:#64748b;margin-bottom:3px}.tracking-info b{font-size:13px}
+        body.dark-mode .modal-card{background:#1e293b;border-color:#475569;color:#f8fafc}body.dark-mode .modal-header{border-color:#334155}
+        body.dark-mode .channel-grid,body.dark-mode .playlist-list,body.dark-mode .tracking-toolbar,body.dark-mode .tracking-info div{background:#0f172a;border-color:#334155}
+        body.dark-mode .channel-btn,body.dark-mode .playlist-choice{background:#1e293b;color:#f8fafc;border-color:#475569}
+        @media(max-width:800px){.playlist-panel{grid-template-columns:1fr}.tracking-info{grid-template-columns:repeat(2,1fr)}#employeeTrackingMap{height:430px}#m3uVideo{height:280px}}
+
     </style>
 </head>
 <body>
@@ -226,10 +251,10 @@
                 <p>عرض، تعديل، وبحث في بيانات الموظفين المسجلين</p>
             </div>
 
-            <div class="dash-card" onclick="openSection('addEmpSection')">
-                <span class="icon-img">➕</span>
-                <h3>إضافة موظف جديد</h3>
-                <p>تسجيل موظف جديد وفق الحقول الموحدة للاستمارة</p>
+            <div class="dash-card" onclick="openPlaylistModal()">
+                <span class="icon-img">📺</span>
+                <h3>مشغل القنوات</h3>
+                <p>قوائم M3U، القنوات العربية والعراقية وإدارة القنوات</p>
             </div>
 
             <div class="dash-card" onclick="openSection('reportsSection')">
@@ -262,10 +287,10 @@
                 <p>التحكم بالإعدادات العامة ومظهر النظام</p>
             </div>
 
-            <div class="dash-card" onclick="openSection('reportsSection')">
-                <span class="icon-img">📝</span>
-                <h3>سجل الحركات</h3>
-                <p>متابعة حركة العمليات والنشاطات</p>
+            <div class="dash-card" onclick="openSection('employeeTrackingSection')">
+                <span class="icon-img">🗺️</span>
+                <h3>متابعة موظف على الخريطة</h3>
+                <p>اختر موظفاً عند الحاجة لمتابعة آخر موقع GPS مسجل فقط</p>
             </div>
 
             <div class="dash-card" onclick="openSection('archiveDocumentsSection')">
@@ -327,7 +352,7 @@
         </div>
         <div class="filter-bar">
             <input type="text" id="searchInput" placeholder="🔍 بحث عن موظف..." onkeyup="filterEmployees()" style="flex:1; min-width:220px;">
-            <button class="btn btn-primary" onclick="openSection('addEmpSection')">➕ إضافة موظف جديد</button>
+            <button class="btn btn-primary" onclick="openEmployeeModal()">➕ إضافة موظف جديد</button>
         </div>
         <div class="table-container">
             <table>
@@ -348,58 +373,62 @@
         </div>
     </div>
 
-    <!-- ================= إضافة موظف جديد ================= -->
-    <div id="addEmpSection" class="content-section">
+    <!-- ================= نافذة إضافة موظف جديد ================= -->
+    <div id="addEmpSection" class="modal-overlay" onclick="if(event.target===this) closeEmployeeModal()">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>➕ إضافة موظف جديد</h2>
+                <button type="button" class="modal-close" onclick="closeEmployeeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="addEmployeeForm" onsubmit="saveNewEmployeeFromForm(event)" class="uniform-form-grid" style="margin:0;">
+                    <div class="form-group"><label>رمز الشركة:</label><input type="text" id="newEmpCompanyId" required placeholder="رمز الشركة"></div>
+                    <div class="form-group"><label>الاسم الكامل:</label><input type="text" id="newEmpName" required placeholder="الاسم الثلاثي واللقب"></div>
+                    <div class="form-group"><label>البريد الإلكتروني:</label><input type="email" id="newEmpEmail" required placeholder="name@domain.com"></div>
+                    <div class="form-group"><label>الراتب الأساسي:</label><input type="text" id="newEmpSalary" value="1,000,000 د.ع" required placeholder="الراتب الأساسي"></div>
+                    <div class="form-group"><label>الاختصاص / القسم:</label><input type="text" id="newEmpSpecialty" required placeholder="المسمى الوظيفي أو القسم"></div>
+                    <div class="form-group"><label>مكان العمل:</label><input type="text" id="newEmpWorkLocation" value="الفرع الرئيسي" required placeholder="الفرع أو القسم"></div>
+                    <div class="form-group"><label>اسم المستخدم:</label><input type="text" id="newEmpUser" required placeholder="اسم المستخدم للنظام"></div>
+                    <div class="form-group"><label>كلمة المرور:</label><input type="password" id="newEmpPassword" required placeholder="كلمة المرور"></div>
+                    <div class="form-group full-width" style="background:#f1f5f9;padding:15px;border-radius:10px;border:1px dashed #cbd5e1;text-align:center;">
+                        <span style="font-size:13px;font-weight:bold;color:#0369a1;display:block;margin-bottom:10px;">بصمة الوجه، بصمة الجهاز والنطاق المكاني (GPS)</span>
+                        <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-primary" onclick="alert('تم تفعيل كاميرا النظام لبصمة الوجه')">📷 تفعيل الكاميرا</button>
+                            <button type="button" class="btn btn-success" onclick="alert('تم تسجيل بصمة الجهاز')">👆 تسجيل البصمة</button>
+                        </div>
+                    </div>
+                    <div class="form-group full-width">
+                        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-danger" onclick="closeEmployeeModal()">إلغاء</button>
+                            <button type="submit" class="btn btn-success" style="padding:14px 22px;font-size:16px;">💾 حفظ الموظف</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= متابعة موظف على الخريطة ================= -->
+    <div id="employeeTrackingSection" class="content-section">
         <div class="section-header">
-            <h2>➕ تسجيل موظف جديد (مطابق لاستمارة التسجيل العامة)</h2>
+            <h2>🗺️ متابعة موظف على الخريطة</h2>
             <button class="btn btn-danger" onclick="closeSections()">العودة للوحة الرئيسية ➡</button>
         </div>
-        
-        <form id="addEmployeeForm" onsubmit="saveNewEmployeeFromForm(event)" class="uniform-form-grid">
-            <div class="form-group">
-                <label>رمز الشركة:</label>
-                <input type="text" id="newEmpCompanyId" required placeholder="رمز الشركة">
-            </div>
-            <div class="form-group">
-                <label>الاسم الكامل:</label>
-                <input type="text" id="newEmpName" required placeholder="الاسم الثلاثي واللقب">
-            </div>
-            <div class="form-group">
-                <label>البريد الإلكتروني:</label>
-                <input type="email" id="newEmpEmail" required placeholder="name@domain.com">
-            </div>
-            <div class="form-group">
-                <label>الراتب الأساسي:</label>
-                <input type="text" id="newEmpSalary" value="1,000,000 د.ع" required placeholder="الراتب الأساسي">
-            </div>
-            <div class="form-group">
-                <label>الاختصاص:</label>
-                <input type="text" id="newEmpSpecialty" required placeholder="المنزل الوظيفي أو القسم">
-            </div>
-            <div class="form-group">
-                <label>مكان العمل:</label>
-                <input type="text" id="newEmpWorkLocation" value="الفرع الرئيسي" required placeholder="الفرع أو القسم">
-            </div>
-            <div class="form-group">
-                <label>اسم المستخدم:</label>
-                <input type="text" id="newEmpUser" required placeholder="اسم المستخدم للنظام">
-            </div>
-            <div class="form-group">
-                <label>كلمة المرور:</label>
-                <input type="password" id="newEmpPassword" required placeholder="كلمة المرور">
-            </div>
-            <div class="form-group full-width" style="background:#f1f5f9; padding:15px; border-radius:10px; border:1px dashed #cbd5e1; text-align:center;">
-                <span style="font-size:13px; font-weight:bold; color:#0369a1; display:block; margin-bottom:10px;">بصمة وجه، بصمة الإصبع والنطاق المكاني (GPS الحقيقي):</span>
-                <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-                    <button type="button" class="btn btn-primary" style="font-size:13px;" onclick="alert('تم تفعيل كاميرا النظام لبصمة الوجه بنجاح')">📷 تفعيل الكاميرا</button>
-                    <button type="button" class="btn btn-success" style="font-size:13px;" onclick="alert('تم تسجيل البصمة البيومترية بنجاح')">👆 تسجيل بصمة الجهاز</button>
-                </div>
-                <span style="font-size:11px; color:#10b981; display:block; margin-top:8px;" id="gpsStatusText">📍 تم ربط الـ GPS الحقيقي بنجاح</span>
-            </div>
-            <div class="form-group full-width" style="margin-top: 10px;">
-                <button type="submit" class="btn btn-success" style="padding: 14px; font-size: 16px; justify-content: center;">💾 حفظ نهائي وترحيل البيانات (توزيع تلقائي لكل الأقسام)</button>
-            </div>
-        </form>
+        <div class="tracking-toolbar">
+            <select id="trackingEmployeeSelect"><option value="">اختر الموظف المطلوب متابعته...</option></select>
+            <button class="btn btn-primary" onclick="startEmployeeTracking()">📍 بدء المتابعة</button>
+            <button class="btn btn-orange" onclick="refreshSelectedEmployeeLocation()">🔄 تحديث الآن</button>
+            <button class="btn btn-danger" onclick="stopEmployeeTracking()">⏹️ إيقاف المتابعة</button>
+            <span id="trackingStatus" class="tracking-status">⚪ لا توجد متابعة نشطة</span>
+        </div>
+        <div id="employeeTrackingMap"></div>
+        <div class="tracking-info">
+            <div><small>الموظف</small><b id="trackEmployeeName">—</b></div>
+            <div><small>آخر تحديث</small><b id="trackLastUpdate">—</b></div>
+            <div><small>خط العرض</small><b id="trackLat">—</b></div>
+            <div><small>خط الطول</small><b id="trackLng">—</b></div>
+        </div>
+        <p style="margin-top:10px;color:#64748b;font-size:12px;">لا يتم تحميل مواقع جميع الموظفين. يتم جلب GPS للموظف الذي يختاره المدير فقط، مع تحديث دوري أثناء المتابعة.</p>
     </div>
 
     <!-- ================= التقارير وسجل الحركات ================= -->
@@ -540,12 +569,59 @@
 
 </div>
 
+<!-- ================= مشغل M3U المنبثق ================= -->
+<div id="playlistModal" class="modal-overlay" onclick="if(event.target===this) closePlaylistModal()">
+    <div id="playlistModalCard" class="modal-card maximized">
+        <div class="modal-header">
+            <div><h2>📺 مشغل القنوات</h2><small style="color:#64748b;">M3U / M3U8 — العربية والعراقية</small></div>
+            <div style="display:flex;gap:7px;align-items:center;">
+                <button class="btn btn-primary" onclick="togglePlaylistSize()">⛶ حجم البطاقة</button>
+                <button class="modal-close" onclick="closePlaylistModal()">✕</button>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div class="modal-toolbar">
+                <button class="btn btn-primary" onclick="selectPlaylistCategory('arabic')">🇦🇪 العربية</button>
+                <button class="btn btn-success" onclick="selectPlaylistCategory('iraqi')">🇮🇶 العراقية</button>
+                <button class="btn btn-purple" onclick="document.getElementById('m3uFileInput').click()">📂 استيراد M3U</button>
+                <button class="btn btn-danger" onclick="deleteCurrentPlaylist()">🗑️ حذف القائمة</button>
+            </div>
+            <input type="file" id="m3uFileInput" hidden accept=".m3u,.m3u8,.txt" onchange="importM3UFile(event)">
+            <div class="playlist-panel">
+                <div class="playlist-list"><strong style="padding:4px 6px;">القوائم</strong><div id="playlistList"></div></div>
+                <div>
+                    <div class="player-shell"><video id="m3uVideo" controls playsinline></video></div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+                        <select id="playlistChannelSelect" style="flex:1;min-width:220px;" onchange="playSelectedChannel()"><option value="">اختر قناة...</option></select>
+                        <button class="btn btn-danger" onclick="deleteSelectedChannel()">🗑️ حذف القناة</button>
+                    </div>
+                    <div id="channelGrid" class="channel-grid"></div>
+                </div>
+            </div>
+            <div style="margin-top:12px;padding:12px;border:1px dashed #94a3b8;border-radius:12px;background:#f8fafc;">
+                <b>إضافة قائمة أو قناة:</b>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                    <input id="newPlaylistName" placeholder="اسم القائمة" style="flex:1;min-width:220px;">
+                    <button class="btn btn-success" onclick="createPlaylist()">➕ إنشاء قائمة</button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin-top:8px;">
+                    <input id="newChannelName" placeholder="اسم القناة">
+                    <input id="newChannelUrl" placeholder="رابط البث M3U8">
+                    <button class="btn btn-orange" onclick="addPlaylistChannel()">➕ إضافة القناة</button>
+                </div>
+            </div>
+            <div id="playlistMessage" style="margin-top:10px;color:#64748b;font-size:12px;"></div>
+        </div>
+    </div>
+</div>
+
 <!-- عناصر مخفية داعمة للكاميرا الحقيقية والملفات -->
 <input type="file" id="nativeCameraInput" style="display:none;" accept="image/*" capture="user">
 <input type="file" id="restoreFilePicker" style="display:none" accept=".json" onchange="processRestoreFile(event)">
 
 <input type="file" id="voiceNotificationInput" style="display:none" accept="audio/*" onchange="uploadVoiceNotification(event)">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
    <script>
 /* =========================================================
    AlMoraqebPro Admin Dashboard
@@ -562,6 +638,17 @@ let serviceRequestsCache = [];
 let notificationEmployeeId = '';
 let liveMap;
 let liveMapMarkers = [];
+let employeeTrackingMap;
+let employeeTrackingMarker;
+let employeeTrackingTimer = null;
+let trackedEmployeeId = "";
+let playlistHls = null;
+let playlists = JSON.parse(localStorage.getItem("almoraqeb_m3u_playlists") || "null") || {
+    arabic: { name: "العربية", channels: [] },
+    iraqi: { name: "العراقية", channels: [] }
+};
+let activePlaylistKey = "arabic";
+let playlistModalCompact = false;
 
 /* =========================================================
    عند تحميل لوحة التحكم
@@ -580,8 +667,7 @@ window.addEventListener("load", async function () {
         loadEmployeesFromMongoDB(),
         loadEmployeeRequestsFromMongoDB(),
         loadServiceRequestsFromMongoDB(),
-        loadCompanyInfo(),
-        loadAttendanceFromMongoDB()
+        loadCompanyInfo()
     ]);
 
     renderSalaryCards();
@@ -1001,6 +1087,12 @@ function renderEmployees() {
                             onclick="showEmployeeAttendance('${employee._id}')">
                             📍 البصمات
                         </button>
+                        <button
+                            class="btn btn-primary"
+                            style="padding:5px 9px;font-size:11px;"
+                            onclick="openEmployeeTrackingFor('${employee._id}')">
+                            🗺️ متابعة
+                        </button>
 
                         <button
                             class="btn btn-warning"
@@ -1011,7 +1103,6 @@ function renderEmployees() {
 
                         <button class="btn btn-success" style="padding:5px 9px;font-size:11px;" onclick="sendTextNotification('${employee._id}')">📨 إشعار</button>
                         <button class="btn btn-purple" style="padding:5px 9px;font-size:11px;" onclick="selectVoiceNotification('${employee._id}')">🎙️ صوتي</button>
-                        <button class="btn btn-danger" style="padding:5px 9px;font-size:11px;" onclick="deleteEmployee('${employee._id}', ${JSON.stringify(employee.name || 'الموظف')})">🗑️ حذف</button>
 
                     </td>
 
@@ -1021,40 +1112,6 @@ function renderEmployees() {
     ).join("");
 
     updateDashboardStats();
-}
-
-async function deleteEmployee(employeeId, employeeName) {
-    const name = String(employeeName || "الموظف");
-    const confirmed = confirm(`⚠️ سيتم حذف الموظف «${name}» نهائياً من قاعدة البيانات.\n\nسيتم حذف سجل الموظف نفسه، ولن يتم حذف الشركة.\n\nهل أنت متأكد؟`);
-    if (!confirmed) return;
-
-    const doubleCheck = prompt(`للتأكيد النهائي اكتب اسم الموظف كما هو:\n${name}`);
-    if (doubleCheck === null || doubleCheck.trim() !== name.trim()) {
-        alert("❌ لم يتم الحذف. اسم الموظف غير مطابق.");
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE}/api/admin/employees/${encodeURIComponent(employeeId)}`, {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${getAdminToken()}`,
-                Accept: "application/json"
-            }
-        });
-
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || data.error || "تعذر حذف الموظف");
-        }
-
-        alert(`✅ ${data.message || "تم حذف الموظف بنجاح"}`);
-        await loadEmployeesFromMongoDB();
-        updateDashboardStats();
-    } catch (error) {
-        console.error("❌ خطأ في حذف الموظف:", error);
-        alert(`❌ ${error.message}`);
-    }
 }
 
 async function resetEmployeeDevice(employeeId) {
@@ -1576,10 +1633,10 @@ async function openSection(sectionId) {
 
     }
 
-    if (sectionId === "gpsSection") {
-
-        await loadAttendanceFromMongoDB();
-
+    if (sectionId === "employeeTrackingSection") {
+        await loadEmployeesFromMongoDB();
+        populateTrackingEmployeeSelect();
+        setTimeout(() => employeeTrackingMap?.invalidateSize(), 50);
     }
 
     if (sectionId === "reportsSection") {
@@ -1597,6 +1654,7 @@ async function openSection(sectionId) {
 
 
 function closeSections() {
+    closeEmployeeModal();
 
     document
         .querySelectorAll(".content-section")
@@ -1741,6 +1799,7 @@ async function saveNewEmployeeFromForm(event) {
 
         await loadEmployeesFromMongoDB();
 
+        closeEmployeeModal();
         openSection("employeesSection");
 
 
@@ -1757,6 +1816,194 @@ async function saveNewEmployeeFromForm(event) {
         );
     }
 }
+
+
+
+/* =========================================================
+   نافذة إضافة الموظف
+   ========================================================= */
+function openEmployeeModal(){
+    const modal=document.getElementById("addEmpSection");
+    if(!modal)return;
+    modal.classList.add("open");
+    loadSavedSystemId();
+    setTimeout(()=>document.getElementById("newEmpName")?.focus(),80);
+}
+function closeEmployeeModal(){
+    document.getElementById("addEmpSection")?.classList.remove("open");
+}
+
+/* =========================================================
+   متابعة موظف واحد فقط
+   ========================================================= */
+function populateTrackingEmployeeSelect(){
+    const select=document.getElementById("trackingEmployeeSelect");
+    if(!select)return;
+    const current=select.value;
+    select.innerHTML='<option value="">اختر الموظف المطلوب متابعته...</option>'+
+        employeesCache.map(e=>`<option value="${escapeHtml(e._id)}">${escapeHtml(e.name||"موظف")} — ${escapeHtml(e.companyId||"")}</option>`).join("");
+    if(current)select.value=current;
+}
+async function fetchEmployeeLatestLocation(employeeId){
+    const response=await fetch(`${API_BASE}/api/employees/${encodeURIComponent(employeeId)}/attendance`,{cache:"no-store"});
+    const data=await response.json();
+    if(!response.ok||!data.success)throw new Error(data.message||"تعذر جلب موقع الموظف");
+    const records=Array.isArray(data.attendance)?data.attendance:[];
+    return records.filter(r=>Number.isFinite(Number(r.latitude))&&Number.isFinite(Number(r.longitude)))
+        .sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0]||null;
+}
+async function refreshSelectedEmployeeLocation(){
+    const id=document.getElementById("trackingEmployeeSelect")?.value;
+    if(!id){setTrackingStatus("⚠️ اختر موظفاً أولاً",false);return;}
+    const employee=employeesCache.find(e=>String(e._id)===String(id));
+    if(!employee)return;
+    try{
+        const record=await fetchEmployeeLatestLocation(id);
+        if(!record){updateTrackingInfo(employee,null);setTrackingStatus("🟡 لا يوجد موقع GPS مسجل",false);return;}
+        renderSelectedEmployeeLocation(employee,record);
+        setTrackingStatus(`🟢 متابعة: ${employee.name||"الموظف"}`,true);
+    }catch(error){setTrackingStatus(`❌ ${error.message}`,false);}
+}
+function startEmployeeTracking(){
+    const id=document.getElementById("trackingEmployeeSelect")?.value;
+    if(!id){setTrackingStatus("⚠️ اختر موظفاً أولاً",false);return;}
+    stopEmployeeTracking(false);
+    trackedEmployeeId=id;
+    refreshSelectedEmployeeLocation();
+    employeeTrackingTimer=setInterval(refreshSelectedEmployeeLocation,10000);
+}
+function stopEmployeeTracking(show=true){
+    if(employeeTrackingTimer){clearInterval(employeeTrackingTimer);employeeTrackingTimer=null;}
+    trackedEmployeeId="";
+    if(show)setTrackingStatus("⚪ تم إيقاف المتابعة",false);
+}
+function setTrackingStatus(message,active){
+    const el=document.getElementById("trackingStatus");if(!el)return;
+    el.textContent=message;
+    el.style.background=active?"#ecfdf5":"#f8fafc";
+    el.style.color=active?"#047857":"#64748b";
+}
+function ensureEmployeeTrackingMap(){
+    const c=document.getElementById("employeeTrackingMap");
+    if(!c||typeof L==="undefined")return null;
+    if(!employeeTrackingMap){
+        employeeTrackingMap=L.map(c).setView([33.3152,44.3661],11);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(employeeTrackingMap);
+    }
+    setTimeout(()=>employeeTrackingMap.invalidateSize(),50);
+    return employeeTrackingMap;
+}
+function renderSelectedEmployeeLocation(employee,record){
+    const map=ensureEmployeeTrackingMap();if(!map||!record)return;
+    const lat=Number(record.latitude),lng=Number(record.longitude);
+    if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+    if(employeeTrackingMarker)employeeTrackingMarker.remove();
+    employeeTrackingMarker=L.marker([lat,lng]).addTo(map).bindPopup(
+        `<b>${escapeHtml(employee.name||"موظف")}</b><br>${escapeHtml(record.type||"GPS")}<br>${escapeHtml(formatDate(record.timestamp))}`
+    ).openPopup();
+    map.setView([lat,lng],16);
+    updateTrackingInfo(employee,record);
+}
+function updateTrackingInfo(employee,record){
+    document.getElementById("trackEmployeeName").textContent=employee?.name||"—";
+    document.getElementById("trackLastUpdate").textContent=record?formatDate(record.timestamp):"—";
+    document.getElementById("trackLat").textContent=record?Number(record.latitude).toFixed(6):"—";
+    document.getElementById("trackLng").textContent=record?Number(record.longitude).toFixed(6):"—";
+}
+function openEmployeeTrackingFor(employeeId){
+    openSection("employeeTrackingSection");
+    setTimeout(()=>{
+        const select=document.getElementById("trackingEmployeeSelect");
+        if(select){select.value=String(employeeId);startEmployeeTracking();}
+    },100);
+}
+
+/* =========================================================
+   مشغل M3U / M3U8
+   ========================================================= */
+function savePlaylists(){localStorage.setItem("almoraqeb_m3u_playlists",JSON.stringify(playlists));}
+function openPlaylistModal(){document.getElementById("playlistModal")?.classList.add("open");renderPlaylistUI();}
+function closePlaylistModal(){document.getElementById("playlistModal")?.classList.remove("open");stopM3UPlayback();}
+function togglePlaylistSize(){
+    const c=document.getElementById("playlistModalCard");if(!c)return;
+    playlistModalCompact=!playlistModalCompact;
+    c.classList.toggle("compact",playlistModalCompact);
+    c.classList.toggle("maximized",!playlistModalCompact);
+}
+function selectPlaylistCategory(key){
+    if(!playlists[key])playlists[key]={name:key==="iraqi"?"العراقية":"العربية",channels:[]};
+    activePlaylistKey=key;savePlaylists();renderPlaylistUI();
+}
+function renderPlaylistUI(){
+    const list=document.getElementById("playlistList"),select=document.getElementById("playlistChannelSelect"),grid=document.getElementById("channelGrid");
+    if(!list||!select||!grid)return;
+    list.innerHTML=Object.entries(playlists).map(([key,p])=>`<button class="playlist-choice ${key===activePlaylistKey?"active":""}" onclick="selectPlaylistCategory('${escapeHtml(key)}')">${escapeHtml(p.name||key)} <span style="color:#64748b;font-size:11px;">(${p.channels.length})</span></button>`).join("");
+    const channels=playlists[activePlaylistKey]?.channels||[];
+    select.innerHTML='<option value="">اختر قناة...</option>'+channels.map((c,i)=>`<option value="${i}">${escapeHtml(c.name||"قناة")}</option>`).join("");
+    grid.innerHTML=channels.length?channels.map((c,i)=>`<button class="channel-btn" onclick="playChannel(${i})">${escapeHtml(c.name||"قناة")}</button>`).join(""):'<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:20px;">لا توجد قنوات. استورد ملف M3U أو أضف قناة.</div>';
+}
+function parseM3U(raw){
+    const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),channels=[];
+    for(let i=0;i<lines.length;i++){
+        if(!lines[i].startsWith("#EXTINF"))continue;
+        const comma=lines[i].indexOf(","),name=comma>=0?lines[i].slice(comma+1).trim():"قناة";
+        let url="";
+        for(let j=i+1;j<lines.length;j++){if(!lines[j].startsWith("#")){url=lines[j];i=j;break;}}
+        if(url)channels.push({name,url});
+    }
+    return channels;
+}
+function importM3UFile(event){
+    const file=event.target.files?.[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+        const channels=parseM3U(String(reader.result||""));
+        if(!channels.length){showPlaylistMessage("❌ لم يتم العثور على قنوات صالحة.");return;}
+        const lower=file.name.toLowerCase(),key=(lower.includes("iq")||lower.includes("iraq")||lower.includes("عراق"))?"iraqi":"arabic";
+        playlists[key]={name:key==="iraqi"?"العراقية":"العربية",channels};activePlaylistKey=key;savePlaylists();renderPlaylistUI();
+        showPlaylistMessage(`✅ تم استيراد ${channels.length} قناة إلى ${playlists[key].name}.`);
+    };
+    reader.readAsText(file,"UTF-8");event.target.value="";
+}
+function createPlaylist(){
+    const input=document.getElementById("newPlaylistName"),name=input?.value.trim();
+    if(!name){showPlaylistMessage("⚠️ اكتب اسم القائمة.");return;}
+    const key="list_"+Date.now();playlists[key]={name,channels:[]};activePlaylistKey=key;savePlaylists();renderPlaylistUI();input.value="";
+}
+function deleteCurrentPlaylist(){
+    const p=playlists[activePlaylistKey];if(!p)return;
+    if(!confirm(`حذف قائمة "${p.name}"؟`))return;
+    delete playlists[activePlaylistKey];const keys=Object.keys(playlists);activePlaylistKey=keys[0]||"arabic";
+    if(!playlists[activePlaylistKey])playlists[activePlaylistKey]={name:"العربية",channels:[]};
+    savePlaylists();renderPlaylistUI();stopM3UPlayback();
+}
+function addPlaylistChannel(){
+    const n=document.getElementById("newChannelName"),u=document.getElementById("newChannelUrl"),name=n?.value.trim(),url=u?.value.trim();
+    if(!name||!url){showPlaylistMessage("⚠️ أدخل اسم القناة ورابط M3U8.");return;}
+    if(!playlists[activePlaylistKey])playlists[activePlaylistKey]={name:"العربية",channels:[]};
+    playlists[activePlaylistKey].channels.push({name,url});savePlaylists();renderPlaylistUI();
+    if(n)n.value="";if(u)u.value="";showPlaylistMessage("✅ تمت إضافة القناة.");
+}
+function deleteSelectedChannel(){
+    const i=Number(document.getElementById("playlistChannelSelect")?.value),channels=playlists[activePlaylistKey]?.channels||[];
+    if(!Number.isInteger(i)||!channels[i])return;
+    if(!confirm(`حذف القناة "${channels[i].name}"؟`))return;
+    channels.splice(i,1);savePlaylists();renderPlaylistUI();stopM3UPlayback();
+}
+function playSelectedChannel(){const i=Number(document.getElementById("playlistChannelSelect")?.value);if(Number.isInteger(i))playChannel(i);}
+function playChannel(index){
+    const c=playlists[activePlaylistKey]?.channels?.[index],video=document.getElementById("m3uVideo");if(!c?.url||!video)return;
+    stopM3UPlayback();
+    if(video.canPlayType("application/vnd.apple.mpegurl")){video.src=c.url;video.play().catch(()=>{});return;}
+    if(window.Hls&&Hls.isSupported()){playlistHls=new Hls({enableWorker:true});playlistHls.loadSource(c.url);playlistHls.attachMedia(video);playlistHls.on(Hls.Events.MANIFEST_PARSED,()=>video.play().catch(()=>{}));return;}
+    showPlaylistMessage("❌ المتصفح لا يدعم HLS.");
+}
+function stopM3UPlayback(){
+    const v=document.getElementById("m3uVideo");
+    if(playlistHls){playlistHls.destroy();playlistHls=null;}
+    if(v){v.pause();v.removeAttribute("src");v.load();}
+}
+function showPlaylistMessage(message){const el=document.getElementById("playlistMessage");if(el)el.textContent=message;}
 
 
 /* =========================================================
@@ -2000,9 +2247,11 @@ function renderLiveMap() {
    ========================================================= */
 
 async function showEmployeeAttendance(employeeId) {
+    openEmployeeTrackingFor(employeeId);
+    return;
 
+    /* legacy attendance table */
     openSection("gpsSection");
-
     await loadAttendanceFromMongoDB();
 
     const employeeRecords =
