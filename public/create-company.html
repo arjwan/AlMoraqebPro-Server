@@ -7,6 +7,7 @@
 <title>المراقب برو | لوحة المطور المركزية</title>
 
 <style>
+
 *{
     box-sizing:border-box;
     margin:0;
@@ -36,6 +37,10 @@ body{
         var(--bg);
     color:var(--text);
     min-height:100vh;
+}
+
+body.modal-open{
+    overflow:hidden;
 }
 
 button,input,select{
@@ -406,7 +411,8 @@ label{
     color:#ef4444;
 }
 
-input,select{
+input,
+select{
     width:100%;
     border:1px solid #dbe1ea;
     background:#f9fafc;
@@ -417,10 +423,17 @@ input,select{
     transition:.2s;
 }
 
-input:focus,select:focus{
+input:focus,
+select:focus{
     background:#fff;
     border-color:#6366f1;
     box-shadow:0 0 0 4px rgba(99,102,241,.10);
+}
+
+input[readonly]{
+    background:#eef2f7;
+    color:#64748b;
+    cursor:not-allowed;
 }
 
 .form-footer{
@@ -607,6 +620,182 @@ tbody tr:hover{
     color:#94a3b8;
 }
 
+/* =========================================================
+   نافذة تعديل الشركة
+========================================================= */
+
+.modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(15,23,42,.62);
+    backdrop-filter:blur(7px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:9999;
+    animation:fadeIn .2s ease;
+}
+
+.modal-overlay.show{
+    display:flex;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+    }
+    to{
+        opacity:1;
+    }
+}
+
+.edit-modal{
+    width:min(760px,100%);
+    max-height:90vh;
+    overflow:auto;
+    background:#fff;
+    border-radius:24px;
+    box-shadow:
+        0 30px 80px rgba(15,23,42,.28),
+        0 5px 20px rgba(0,0,0,.10);
+    animation:modalIn .25s ease;
+}
+
+@keyframes modalIn{
+    from{
+        opacity:0;
+        transform:translateY(20px) scale(.97);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+}
+
+.edit-modal-header{
+    padding:18px 22px;
+    color:#fff;
+    background:linear-gradient(
+        135deg,
+        #4f46e5,
+        #7c3aed 60%,
+        #06b6d4
+    );
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+}
+
+.edit-modal-title{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.edit-modal-icon{
+    width:45px;
+    height:45px;
+    border-radius:14px;
+    background:rgba(255,255,255,.18);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+}
+
+.edit-modal-title h3{
+    font-size:17px;
+    font-weight:900;
+}
+
+.edit-modal-title p{
+    margin-top:3px;
+    font-size:11px;
+    opacity:.82;
+}
+
+.modal-close{
+    width:38px;
+    height:38px;
+    border:0;
+    border-radius:11px;
+    background:rgba(255,255,255,.15);
+    color:#fff;
+    font-size:21px;
+    font-weight:900;
+}
+
+.modal-close:hover{
+    background:rgba(255,255,255,.25);
+}
+
+.edit-modal-body{
+    padding:22px;
+}
+
+.edit-form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+}
+
+.edit-form-group{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.edit-form-group.full{
+    grid-column:1/-1;
+}
+
+.edit-form-group label{
+    font-size:11px;
+}
+
+.edit-form-group input,
+.edit-form-group select{
+    padding:11px 12px;
+    border-radius:11px;
+    font-size:13px;
+}
+
+.password-note{
+    margin-top:5px;
+    color:#94a3b8;
+    font-size:10px;
+    line-height:1.5;
+}
+
+.modal-info{
+    margin-top:15px;
+    padding:11px 13px;
+    border-radius:12px;
+    background:#f0f9ff;
+    border:1px solid #bae6fd;
+    color:#0369a1;
+    font-size:11px;
+    line-height:1.6;
+}
+
+.edit-modal-footer{
+    padding:16px 22px;
+    border-top:1px solid var(--border);
+    display:flex;
+    justify-content:flex-start;
+    gap:10px;
+}
+
+.modal-save-btn{
+    min-width:190px;
+}
+
+.modal-cancel-btn{
+    min-width:110px;
+}
+
 /* ================= FOOTER ================= */
 
 .footer{
@@ -648,7 +837,8 @@ tbody tr:hover{
 
     .actions,
     .stats,
-    .form-grid{
+    .form-grid,
+    .edit-form-grid{
         grid-template-columns:1fr;
     }
 
@@ -674,7 +864,26 @@ tbody tr:hover{
     .register-btn{
         width:100%;
     }
+
+    .edit-modal{
+        max-height:94vh;
+        border-radius:20px;
+    }
+
+    .edit-modal-body{
+        padding:17px;
+    }
+
+    .edit-modal-footer{
+        flex-direction:column;
+    }
+
+    .modal-save-btn,
+    .modal-cancel-btn{
+        width:100%;
+    }
 }
+
 </style>
 </head>
 
@@ -1175,37 +1384,14 @@ tbody tr:hover{
 
                     <tr>
 
-                        <th>
-                            الشركة
-                        </th>
-
-                        <th>
-                            المدير
-                        </th>
-
-                        <th>
-                            الهاتف
-                        </th>
-
-                        <th>
-                            الاشتراك
-                        </th>
-
-                        <th>
-                            البداية
-                        </th>
-
-                        <th>
-                            الانتهاء
-                        </th>
-
-                        <th>
-                            الحالة
-                        </th>
-
-                        <th>
-                            الإجراءات
-                        </th>
+                        <th>الشركة</th>
+                        <th>المدير</th>
+                        <th>الهاتف</th>
+                        <th>الاشتراك</th>
+                        <th>البداية</th>
+                        <th>الانتهاء</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
 
                     </tr>
 
@@ -1244,6 +1430,261 @@ tbody tr:hover{
 </div>
 
 
+<!-- =========================================================
+     نافذة تعديل الشركة
+========================================================= -->
+
+<div
+    id="editCompanyModal"
+    class="modal-overlay"
+    onclick="handleModalOutsideClick(event)">
+
+    <div
+        class="edit-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="editModalTitle">
+
+        <div class="edit-modal-header">
+
+            <div class="edit-modal-title">
+
+                <div class="edit-modal-icon">
+                    ✏️
+                </div>
+
+                <div>
+
+                    <h3 id="editModalTitle">
+                        تعديل بيانات الشركة
+                    </h3>
+
+                    <p>
+                        تعديل البيانات وحفظها مباشرة في قاعدة البيانات
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="modal-close"
+                type="button"
+                onclick="closeEditCompanyModal()">
+
+                ×
+
+            </button>
+
+        </div>
+
+
+        <div class="edit-modal-body">
+
+            <div class="edit-form-grid">
+
+                <div class="edit-form-group">
+
+                    <label>
+                        معرف الشركة
+                    </label>
+
+                    <input
+                        id="editCompanyId"
+                        type="text"
+                        readonly>
+
+                </div>
+
+
+                <div class="edit-form-group">
+
+                    <label>
+                        اسم الشركة بالعربي
+                        <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="editCompanyName"
+                        type="text"
+                        placeholder="اسم الشركة">
+
+                </div>
+
+
+                <div class="edit-form-group">
+
+                    <label>
+                        اسم الشركة بالإنجليزي
+                    </label>
+
+                    <input
+                        id="editCompanyNameEn"
+                        type="text"
+                        placeholder="Company Name">
+
+                </div>
+
+
+                <div class="edit-form-group">
+
+                    <label>
+                        اسم المدير
+                    </label>
+
+                    <input
+                        id="editManagerName"
+                        type="text"
+                        placeholder="اسم المدير">
+
+                </div>
+
+
+                <div class="edit-form-group">
+
+                    <label>
+                        هاتف المدير
+                    </label>
+
+                    <input
+                        id="editManagerPhone"
+                        type="tel"
+                        placeholder="07xxxxxxxxx">
+
+                </div>
+
+
+                <div class="edit-form-group">
+
+                    <label>
+                        البريد الإلكتروني
+                    </label>
+
+                    <input
+                        id="editCompanyEmail"
+                        type="email"
+                        placeholder="company@domain.com">
+
+                </div>
+
+
+                <div class="edit-form-group">
+
+                    <label>
+                        اسم مستخدم المدير
+                        <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="editUsername"
+                        type="text"
+                        autocomplete="off">
+
+                </div>
+
+
+                <div class="edit-form-group">
+
+                    <label>
+                        نوع الاشتراك
+                    </label>
+
+                    <select id="editSubscription">
+
+                        <option value="trial">
+                            تجريبي
+                        </option>
+
+                        <option value="monthly">
+                            شهري
+                        </option>
+
+                        <option value="annual">
+                            سنوي
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="edit-form-group">
+
+                    <label>
+                        حالة الشركة
+                    </label>
+
+                    <select id="editSystemState">
+
+                        <option value="active">
+                            نشطة
+                        </option>
+
+                        <option value="stopped">
+                            متوقفة
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="edit-form-group">
+
+                    <label>
+                        كلمة مرور المدير الجديدة
+                    </label>
+
+                    <input
+                        id="editPassword"
+                        type="password"
+                        placeholder="اتركها فارغة بدون تغيير"
+                        autocomplete="new-password">
+
+                    <div class="password-note">
+                        لا يتم تغيير كلمة المرور الحالية إلا إذا أدخلت كلمة مرور جديدة.
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-info">
+                🔐 التعديل يتم بواسطة جلسة المطور الحالية، وبعد الحفظ يتم تحديث سجل الشركات من السيرفر تلقائياً.
+            </div>
+
+        </div>
+
+
+        <div class="edit-modal-footer">
+
+            <button
+                id="saveEditButton"
+                class="btn btn-success modal-save-btn"
+                onclick="saveCompanyEdit()">
+
+                💾 حفظ التعديلات
+
+            </button>
+
+
+            <button
+                class="btn btn-light modal-cancel-btn"
+                onclick="closeEditCompanyModal()">
+
+                إلغاء
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
 <script>
 
 /* =========================================================
@@ -1260,6 +1701,8 @@ let developerVerified = false;
 let companiesCache = [];
 
 let filteredCompanies = [];
+
+let editingCompanyIndex = null;
 
 
 /* =========================================================
@@ -2282,119 +2725,452 @@ function renderCompanies(){
 
 
 /* =========================================================
-   تعديل الشركة
+   فتح نافذة تعديل الشركة
 ========================================================= */
 
-async function editCompany(index){
+function editCompany(index){
+
+    if(!developerVerified){
+
+        alert(
+            "🔒 يجب التحقق من صلاحيات المطور أولاً."
+        );
+
+        return;
+    }
+
 
     const company =
         companiesCache[index];
 
 
-    if(!company)
-        return;
+    if(!company){
 
-
-    const newName =
-        prompt(
-            "اسم الشركة الجديد:",
-            company.name || ""
+        alert(
+            "❌ لم يتم العثور على الشركة."
         );
 
-
-    if(newName === null)
         return;
+    }
 
 
-    if(!newName.trim()){
+    editingCompanyIndex = index;
+
+
+    document.getElementById(
+        "editCompanyId"
+    ).value =
+        company.companyId || "";
+
+
+    document.getElementById(
+        "editCompanyName"
+    ).value =
+        company.name || "";
+
+
+    document.getElementById(
+        "editCompanyNameEn"
+    ).value =
+        company.nameEn || "";
+
+
+    document.getElementById(
+        "editManagerName"
+    ).value =
+        company.managerName || "";
+
+
+    document.getElementById(
+        "editManagerPhone"
+    ).value =
+        company.phone ||
+        company.managerPhone ||
+        "";
+
+
+    document.getElementById(
+        "editCompanyEmail"
+    ).value =
+        company.email || "";
+
+
+    document.getElementById(
+        "editUsername"
+    ).value =
+        company.adminUsername ||
+        "admin";
+
+
+    document.getElementById(
+        "editPassword"
+    ).value =
+        "";
+
+
+    document.getElementById(
+        "editSubscription"
+    ).value =
+        company.subscription || "trial";
+
+
+    document.getElementById(
+        "editSystemState"
+    ).value =
+        company.systemState || "active";
+
+
+    document.getElementById(
+        "editCompanyModal"
+    ).classList.add("show");
+
+
+    document.body.classList.add(
+        "modal-open"
+    );
+
+
+    setTimeout(() => {
+
+        document.getElementById(
+            "editCompanyName"
+        ).focus();
+
+    },100);
+}
+
+
+/* =========================================================
+   إغلاق نافذة التعديل
+========================================================= */
+
+function closeEditCompanyModal(){
+
+    document.getElementById(
+        "editCompanyModal"
+    ).classList.remove("show");
+
+
+    document.body.classList.remove(
+        "modal-open"
+    );
+
+
+    editingCompanyIndex = null;
+
+
+    document.getElementById(
+        "editPassword"
+    ).value = "";
+}
+
+
+/* =========================================================
+   إغلاق عند الضغط خارج النافذة
+========================================================= */
+
+function handleModalOutsideClick(event){
+
+    if(
+        event.target ===
+        document.getElementById(
+            "editCompanyModal"
+        )
+    ){
+
+        closeEditCompanyModal();
+    }
+}
+
+
+/* =========================================================
+   حفظ تعديلات الشركة
+========================================================= */
+
+async function saveCompanyEdit(){
+
+    if(
+        editingCompanyIndex === null
+    ){
+
+        return;
+    }
+
+
+    if(!developerVerified){
+
+        alert(
+            "🔒 انتهت جلسة المطور. يرجى تسجيل الدخول من جديد."
+        );
+
+        closeEditCompanyModal();
+
+        return;
+    }
+
+
+    const company =
+        companiesCache[
+            editingCompanyIndex
+        ];
+
+
+    if(!company){
+
+        alert(
+            "❌ لم يتم العثور على الشركة."
+        );
+
+        return;
+    }
+
+
+    const name =
+        document.getElementById(
+            "editCompanyName"
+        ).value.trim();
+
+
+    const nameEn =
+        document.getElementById(
+            "editCompanyNameEn"
+        ).value.trim();
+
+
+    const managerName =
+        document.getElementById(
+            "editManagerName"
+        ).value.trim();
+
+
+    const phone =
+        document.getElementById(
+            "editManagerPhone"
+        ).value.trim();
+
+
+    const email =
+        document.getElementById(
+            "editCompanyEmail"
+        ).value.trim();
+
+
+    const username =
+        document.getElementById(
+            "editUsername"
+        ).value.trim();
+
+
+    const password =
+        document.getElementById(
+            "editPassword"
+        ).value;
+
+
+    const subscription =
+        document.getElementById(
+            "editSubscription"
+        ).value;
+
+
+    const systemState =
+        document.getElementById(
+            "editSystemState"
+        ).value;
+
+
+    if(!name){
 
         alert(
             "⚠️ اسم الشركة لا يمكن أن يكون فارغاً."
         );
 
+        document.getElementById(
+            "editCompanyName"
+        ).focus();
+
         return;
     }
 
 
-    const username =
-        prompt(
-            "اسم مستخدم المدير:",
-            company.adminUsername ||
-            "admin"
+    if(!username){
+
+        alert(
+            "⚠️ اسم مستخدم المدير لا يمكن أن يكون فارغاً."
+        );
+
+        document.getElementById(
+            "editUsername"
+        ).focus();
+
+        return;
+    }
+
+
+    if(
+        password &&
+        password.length < 6
+    ){
+
+        alert(
+            "⚠️ كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف."
+        );
+
+        document.getElementById(
+            "editPassword"
+        ).focus();
+
+        return;
+    }
+
+
+    const update = {
+
+        name:name,
+
+        nameEn:nameEn,
+
+        managerName:managerName,
+
+        phone:phone,
+
+        email:email,
+
+        adminUsername:username,
+
+        subscription:subscription,
+
+        systemState:systemState
+    };
+
+
+    /*
+       كلمة المرور لا ترسل للسيرفر
+       إلا إذا أدخل المستخدم كلمة جديدة.
+    */
+
+    if(password){
+
+        update.adminPassword =
+            password;
+
+        /*
+           الإبقاء على password أيضاً
+           للتوافق مع الـ API الحالي
+           إذا كان السيرفر يعتمد عليه.
+        */
+
+        update.password =
+            password;
+    }
+
+
+    const saveButton =
+        document.getElementById(
+            "saveEditButton"
         );
 
 
-    if(username === null)
-        return;
+    saveButton.disabled = true;
 
-
-    const password =
-        prompt(
-            "كلمة المرور الجديدة — اتركها فارغة إذا لم ترد تغييرها:",
-            ""
-        );
-
-
-    if(password === null)
-        return;
+    saveButton.innerText =
+        "⏳ جارٍ حفظ التعديلات...";
 
 
     try{
 
-        const update = {
+        /*
+           إرسال التعديل مباشرة إلى السيرفر
+        */
 
-            name:
-                newName.trim(),
+        const result =
+            await developerRequest(
+                `/api/developer/companies/${encodeURIComponent(
+                    company.companyId
+                )}`,
+                {
+                    method:"PATCH",
 
-            adminUsername:
-                username.trim()
-        };
-
-
-        if(password.trim()){
-
-            if(password.length < 6){
-
-                alert(
-                    "⚠️ كلمة المرور يجب ألا تقل عن 6 أحرف."
-                );
-
-                return;
-            }
-
-            update.adminPassword =
-                password;
-        }
+                    body:JSON.stringify(
+                        update
+                    )
+                }
+            );
 
 
-        await developerRequest(
-            `/api/developer/companies/${encodeURIComponent(
-                company.companyId
-            )}`,
-            {
-                method:"PATCH",
-
-                body:JSON.stringify(
-                    update
-                )
-            }
+        console.log(
+            "Company update:",
+            result
         );
 
+
+        /*
+           إغلاق النافذة
+        */
+
+        closeEditCompanyModal();
+
+
+        /*
+           إعادة تحميل البيانات من السيرفر
+           حتى لا نعتمد على البيانات القديمة.
+        */
 
         await loadCompaniesTable();
 
 
         alert(
-            "✅ تم تعديل بيانات الشركة في قاعدة البيانات."
+            "✅ تم تعديل بيانات الشركة بنجاح.\n\n" +
+            "تم حفظ التعديلات في قاعدة البيانات."
         );
+
+
+        playGeminiVoice(
+            "تم حفظ تعديلات الشركة بنجاح."
+        );
+
 
     }catch(error){
 
-        alert(
-            "❌ " + error.message
+        console.error(
+            "Company update error:",
+            error
         );
+
+
+        alert(
+            "❌ لم يتم حفظ التعديلات.\n\n" +
+            error.message
+        );
+
+
+    }finally{
+
+        saveButton.disabled = false;
+
+        saveButton.innerText =
+            "💾 حفظ التعديلات";
     }
 }
+
+
+/* =========================================================
+   إغلاق النافذة بزر ESC
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    function(event){
+
+        if(
+            event.key === "Escape" &&
+            editingCompanyIndex !== null
+        ){
+
+            closeEditCompanyModal();
+        }
+    }
+);
 
 
 /* =========================================================
