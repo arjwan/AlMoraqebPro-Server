@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>المراقب برو | الحضور والانصراف</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Tahoma,'Segoe UI',sans-serif;background:linear-gradient(160deg,#0f172a,#172554 55%,#0c4a6e);min-height:100vh;padding:16px;color:#fff}.app{max-width:480px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}.brand{font-size:20px;font-weight:900}.connection{font-size:10px;background:rgba(255,255,255,.1);padding:7px 10px;border-radius:999px}.card{background:rgba(255,255,255,.97);color:#0f172a;border-radius:26px;padding:20px;box-shadow:0 22px 50px rgba(0,0,0,.3)}.profile{display:flex;align-items:center;gap:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:12px;margin-bottom:15px}.avatar{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}.profile strong{display:block;font-size:14px}.profile span{font-size:10px;color:#64748b}.clock{font-size:42px;font-weight:900;text-align:center;color:#0369a1;margin:12px 0}.date{text-align:center;color:#64748b;font-size:11px;margin-bottom:18px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:11px}.action{border:0;border-radius:17px;padding:17px 8px;color:#fff;font-weight:900;cursor:pointer;font-size:13px}.in{background:linear-gradient(135deg,#10b981,#047857)}.out{background:linear-gradient(135deg,#ef4444,#b91c1c)}.services{grid-column:span 2;background:linear-gradient(135deg,#0284c7,#075985)}.action:disabled{opacity:.55;cursor:not-allowed}.gps{margin-top:15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:15px;padding:11px;font-size:10px;color:#475569;text-align:center}.status{display:none;margin-top:13px;border-radius:14px;padding:13px;font-size:12px;font-weight:900;text-align:center}.status.ok{display:block;background:#dcfce7;color:#166534}.status.bad{display:block;background:#fee2e2;color:#991b1b}.status.info{display:block;background:#e0f2fe;color:#075985}.history{margin-top:16px;border-top:1px solid #e2e8f0;padding-top:14px}.history h3{font-size:14px;margin:0 0 10px}.row{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #edf2f7;border-radius:12px;padding:10px;margin-bottom:7px;font-size:11px}.badge{padding:5px 8px;border-radius:999px;font-weight:900}.badge.in{background:#dcfce7;color:#166534}.badge.out{background:#fee2e2;color:#991b1b}.back{margin-top:12px;width:100%;height:42px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;font-weight:800;color:#334155;cursor:pointer}
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,'Segoe UI',sans-serif;background:linear-gradient(160deg,#0f172a,#172554 55%,#0c4a6e);min-height:100vh;padding:16px;color:#fff}.app{max-width:480px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}.brand{font-size:20px;font-weight:900}.connection{font-size:10px;background:rgba(255,255,255,.1);padding:7px 10px;border-radius:999px}.card{background:rgba(255,255,255,.97);color:#0f172a;border-radius:26px;padding:20px;box-shadow:0 22px 50px rgba(0,0,0,.3)}.profile{display:flex;align-items:center;gap:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:12px;margin-bottom:15px}.avatar{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}.profile strong{display:block;font-size:14px}.profile span{font-size:10px;color:#64748b}.clock{font-size:42px;font-weight:900;text-align:center;color:#0369a1;margin:12px 0}.date{text-align:center;color:#64748b;font-size:11px;margin-bottom:18px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:11px}.action{border:0;border-radius:17px;padding:17px 8px;color:#fff;font-weight:900;cursor:pointer;font-size:13px;transition:transform .2s ease}.action:hover{transform:scale(1.02)}.action:disabled{opacity:.55;cursor:not-allowed}.in{background:linear-gradient(135deg,#10b981,#047857)}.out{background:linear-gradient(135deg,#ef4444,#b91c1c)}.services{grid-column:span 2;background:linear-gradient(135deg,#0284c7,#075985)}.gps-area{display:flex;align-items:center;gap:8px;margin-top:15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:15px;padding:8px 12px;flex-wrap:wrap}.gps-area .gps-text{flex:1;font-size:10px;color:#475569;text-align:center}.gps-area .gps-btn{background:#0284c7;color:#fff;border:0;border-radius:30px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;transition:0.2s}.gps-area .gps-btn:hover{background:#0369a1}.status{display:none;margin-top:13px;border-radius:14px;padding:13px;font-size:12px;font-weight:900;text-align:center}.status.ok{display:block;background:#dcfce7;color:#166534}.status.bad{display:block;background:#fee2e2;color:#991b1b}.status.info{display:block;background:#e0f2fe;color:#075985}.history{margin-top:16px;border-top:1px solid #e2e8f0;padding-top:14px}.history h3{font-size:14px;margin:0 0 10px}.row{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #edf2f7;border-radius:12px;padding:10px;margin-bottom:7px;font-size:11px}.badge{padding:5px 8px;border-radius:999px;font-weight:900}.badge.in{background:#dcfce7;color:#166534}.badge.out{background:#fee2e2;color:#991b1b}.back{margin-top:12px;width:100%;height:42px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;font-weight:800;color:#334155;cursor:pointer;transition:0.2s}.back:hover{background:#f1f5f9}
 </style>
 </head>
 <body>
@@ -29,7 +29,11 @@
             <button class="action out" id="outBtn" onclick="record('departure')">🔴 تسجيل الانصراف</button>
             <button class="action services" onclick="location.href='services.html'">🧰 الخدمات والطلبات</button>
         </div>
-        <div class="gps" id="gps">📍 جاري التحقق من موقع الجهاز...</div>
+        <!-- منطقة GPS مع زر يدوي -->
+        <div class="gps-area">
+            <span class="gps-text" id="gpsText">📍 جاري التحقق من موقع الجهاز...</span>
+            <button class="gps-btn" onclick="refreshLocation()">🔄 تحديث الموقع</button>
+        </div>
         <div id="status" class="status"></div>
         <div class="history">
             <h3>آخر حركات الحضور والانصراف</h3>
@@ -41,6 +45,7 @@
 
 <script>
     const SERVER_URL = location.origin;
+    let currentPosition = null;
 
     // قراءة البيانات من الرابط
     const params = new URLSearchParams(window.location.search);
@@ -50,6 +55,16 @@
 
     if (!employeeId) {
         location.href = 'index.html';
+    }
+
+    // الحصول على device ID من التخزين المحلي
+    function getDeviceId() {
+        let id = localStorage.getItem('almoraqeb_device_id');
+        if (!id) {
+            id = crypto.randomUUID ? crypto.randomUUID() : 'device-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+            localStorage.setItem('almoraqeb_device_id', id);
+        }
+        return id;
     }
 
     // تحديث الساعة
@@ -64,7 +79,7 @@
     tick();
 
     // عرض رسائل الحالة
-    function show(type, text) {
+    function showStatus(type, text) {
         const el = document.getElementById('status');
         el.className = 'status ' + type;
         el.textContent = text;
@@ -72,17 +87,23 @@
         setTimeout(() => { el.style.display = 'none'; }, 6000);
     }
 
-    // ===== دالة طلب الموقع الجغرافي المحسّنة =====
+    // تحديث نص GPS
+    function updateGpsText(text, isError = false) {
+        const el = document.getElementById('gpsText');
+        el.textContent = text;
+        el.style.color = isError ? '#ef4444' : '#475569';
+    }
+
+    // ===== دالة طلب الموقع الجغرافي =====
     function requestLocation() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                document.getElementById('gps').innerHTML = '❌ الجهاز لا يدعم GPS';
+                updateGpsText('❌ الجهاز لا يدعم GPS', true);
                 reject(new Error('الجهاز لا يدعم GPS'));
                 return;
             }
 
-            // عرض رسالة للمستخدم
-            document.getElementById('gps').innerHTML = '⏳ جاري طلب الإذن للوصول إلى الموقع...';
+            updateGpsText('⏳ جاري طلب الإذن للوصول إلى الموقع...');
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -91,7 +112,8 @@
                         lng: position.coords.longitude,
                         accuracy: position.coords.accuracy
                     };
-                    document.getElementById('gps').innerHTML = '📍 الموقع متاح — الدقة ' + Math.round(pos.accuracy) + ' متر';
+                    currentPosition = pos;
+                    updateGpsText('📍 الموقع متاح — الدقة ' + Math.round(pos.accuracy) + ' متر');
                     resolve(pos);
                 },
                 (error) => {
@@ -103,7 +125,7 @@
                     } else if (error.code === 3) {
                         message = '⚠️ انتهت مهلة تحديد الموقع. تأكد من تشغيل GPS.';
                     }
-                    document.getElementById('gps').innerHTML = message;
+                    updateGpsText(message, true);
                     reject(new Error(message));
                 },
                 {
@@ -115,20 +137,36 @@
         });
     }
 
+    // ===== تحديث الموقع يدوياً =====
+    async function refreshLocation() {
+        updateGpsText('⏳ جاري تحديث الموقع...');
+        try {
+            await requestLocation();
+            showStatus('ok', '✅ تم تحديث الموقع بنجاح');
+        } catch (err) {
+            showStatus('bad', '⚠️ ' + err.message);
+        }
+    }
+
     // ===== تسجيل البصمة =====
     async function record(type) {
         const btns = [document.getElementById('inBtn'), document.getElementById('outBtn')];
         btns.forEach(b => b.disabled = true);
-        show('info', '⏳ جارٍ تحديد الموقع وتسجيل الحركة...');
+        showStatus('info', '⏳ جارٍ تحديد الموقع وتسجيل الحركة...');
 
         try {
-            const pos = await requestLocation();
+            // إذا لم يكن هناك موقع محدد، نطلبه
+            if (!currentPosition) {
+                await requestLocation();
+            }
 
+            const deviceId = getDeviceId();
             const payload = {
                 employeeId: employeeId,
                 type: type,
-                latitude: pos.lat,
-                longitude: pos.lng,
+                latitude: currentPosition.lat,
+                longitude: currentPosition.lng,
+                deviceId: deviceId,
                 timestamp: new Date().toISOString()
             };
 
@@ -145,11 +183,11 @@
             }
 
             const msg = type === 'attendance' ? '✅ تم تسجيل الحضور بنجاح' : '✅ تم تسجيل الانصراف بنجاح';
-            show('ok', msg);
+            showStatus('ok', msg);
             loadHistory();
 
         } catch (err) {
-            show('bad', '⚠️ ' + err.message);
+            showStatus('bad', '⚠️ ' + err.message);
         }
 
         btns.forEach(b => b.disabled = false);
@@ -194,10 +232,7 @@
         document.getElementById('connection').textContent = '● متصل';
 
         // طلب الموقع عند تحميل الصفحة
-        requestLocation().catch(() => {
-            // الخطأ يظهر تلقائياً في الـ GPS
-        });
-
+        requestLocation().catch(() => {});
         loadHistory();
     }
 
