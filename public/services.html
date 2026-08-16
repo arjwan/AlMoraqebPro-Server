@@ -1,388 +1,248 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>المراقب برو - الخدمات الذكية</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #e2e8f0; color: #0f172a; min-height: 100vh; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
-        
-        .main-wrapper { width: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }
-
-        /* الشريط الإخباري */
-        .ticker-container {
-            background: #0284c7;
-            color: #ffffff;
-            padding: 12px 15px;
-            border-radius: 16px;
-            font-size: 14px;
-            font-weight: bold;
-            border: 2px solid #0f172a;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            overflow: hidden;
-            white-space: nowrap;
-            position: relative;
-        }
-        .ticker-text {
-            display: inline-block;
-            animation: tickerReverse 28s linear infinite;
-        }
-        @keyframes tickerReverse {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        h1 { font-size: 20px; font-weight: 900; color: #1e293b; text-align: center; }
-
-        /* شبكة البطاقات */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .dash-card {
-            background: white; padding: 20px 12px; border-radius: 20px; text-align: center;
-            border: 2px solid #cbd5e1; box-shadow: 0 6px 16px rgba(0,0,0,0.06); cursor: pointer; transition: all 0.2s;
-        }
-        .dash-card:active { transform: scale(0.97); background: #f8fafc; border-color: #0284c7; }
-        .dash-icon { font-size: 32px; margin-bottom: 8px; display: block; }
-        .dash-title { font-size: 14px; font-weight: 800; color: #1e293b; }
-
-        /* اللوحات التفاعلية */
-        .section-panel {
-            background: white; padding: 20px; border-radius: 22px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.08); border: 2px solid #cbd5e1; display: none;
-        }
-        .section-panel h3 { font-size: 16px; color: #0284c7; margin-bottom: 14px; font-weight: 800; }
-        
-        input, textarea {
-            width: 100%; padding: 12px; border: 2px solid #cbd5e1; border-radius: 12px;
-            margin-bottom: 12px; font-size: 14px; outline: none; background: #fff;
-        }
-        input:focus, textarea:focus { border-color: #0284c7; }
-        
-        .action-btn {
-            width: 100%; padding: 14px; background: #0284c7; color: white; border: none;
-            border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 15px;
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); margin-top: 5px;
-        }
-        .back-btn { background: #475569; margin-top: 10px; }
-        .delete-btn { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; }
-
-        .record-item {
-            background: #f8fafc; padding: 10px 12px; border-radius: 10px; font-size: 13px;
-            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-            border: 1px solid #e2e8f0; font-weight: 600;
-        }
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
-        .success { background: #dcfce7; color: #166534; }
-        .fail { background: #fee2e2; color: #991b1b; }
-        .warning { background: #fef3c7; color: #92400e; }
-
-        /* مسجل الصوت */
-        .voice-box {
-            background: #f1f5f9; padding: 14px; border-radius: 12px; text-align: center;
-            margin-bottom: 12px; border: 2px dashed #94a3b8;
-        }
-        .record-mic {
-            background: #ef4444; color: white; border: none; padding: 10px 18px;
-            border-radius: 25px; font-size: 13px; cursor: pointer; font-weight: bold;
-            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
-        }
-        .record-mic.recording { background: #166534; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>الخدمات - المراقب برو</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#0284c7;--blue2:#0369a1;--navy:#0f172a;--muted:#64748b;--line:#dbe4ee;--green:#16a34a;--red:#dc2626;--amber:#d97706}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(160deg,#0f172a,#172554 55%,#0c4a6e);min-height:100vh;padding:14px;color:#0f172a}
+.app{width:100%;max-width:500px;margin:auto;padding-bottom:20px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;color:#fff}
+.brand{font-size:20px;font-weight:900}.connection{font-size:11px;background:rgba(255,255,255,.1);padding:7px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12)}
+.connection.ok{color:#86efac}.connection.bad{color:#fca5a5}.connection.busy{color:#fde68a}
+.ticker-wrapper{background:#07111f;border-radius:40px;padding:10px 16px;margin-bottom:14px;overflow:hidden;white-space:nowrap;border:1px solid #1e293b;box-shadow:inset 0 0 20px rgba(2,132,199,.12)}
+.ticker-text{display:inline-block;font-size:13px;font-weight:700;color:#cbd5e1;animation:tickerScroll 24s linear infinite}.ticker-text span{margin:0 18px;color:#38bdf8}
+@keyframes tickerScroll{0%{transform:translateX(20%)}100%{transform:translateX(-120%)}}
+.card{background:rgba(255,255,255,.98);border-radius:26px;padding:18px;box-shadow:0 22px 50px rgba(0,0,0,.3)}
+.welcome{background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border-radius:20px;padding:16px;margin-bottom:14px;text-align:center;box-shadow:0 10px 25px rgba(2,132,199,.25)}
+.welcome h2{font-size:18px;margin-bottom:4px}.welcome p{font-size:12px;opacity:.92}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.service-card{position:relative;background:#fff;border:1px solid var(--line);border-radius:18px;padding:17px 10px;text-align:center;cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s,background .18s;user-select:none;min-height:125px}
+.service-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(15,23,42,.12);border-color:#7dd3fc}.service-card:active{transform:scale(.97);background:#f0f9ff;border-color:var(--blue)}.service-card:focus-visible{outline:3px solid rgba(56,189,248,.45);outline-offset:2px}
+.icon{font-size:31px;display:block;margin-bottom:7px}.service-card h3{font-size:14px;font-weight:900;color:#0f172a}.service-card p{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.5}
+.card-status{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0 2px}.mini-status{flex:1;min-width:100px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:9px;text-align:center;font-size:11px;font-weight:800;color:#475569}
+.mini-status strong{display:block;font-size:12px;color:#0f172a;margin-top:3px}
+.btn{width:100%;padding:12px;border:0;border-radius:14px;color:#fff;font-weight:900;cursor:pointer;margin-top:12px;transition:.18s;box-shadow:0 6px 14px rgba(2,132,199,.2)}
+.btn:hover{filter:brightness(1.05);transform:translateY(-1px)}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.btn-blue{background:var(--blue)}.btn-gray{background:#475569}.btn-red{background:var(--red)}.btn-green{background:var(--green)}.btn-amber{background:var(--amber)}
+.overlay{position:fixed;inset:0;background:rgba(2,6,23,.72);display:none;align-items:flex-end;justify-content:center;z-index:1000;padding:12px}.overlay.open{display:flex}
+.modal{background:#fff;width:100%;max-width:500px;max-height:88vh;overflow:auto;border-radius:28px 28px 18px 18px;padding:20px;color:#0f172a;box-shadow:0 -15px 50px rgba(0,0,0,.35);animation:up .2s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.modal h3{font-size:18px;color:var(--blue)}.close{border:0;background:#f1f5f9;color:#475569;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer}
+.field{margin-bottom:12px}.field label{display:block;font-size:12px;font-weight:900;color:#475569;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:12px;font-size:14px;background:#f8fafc;outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(2,132,199,.1)}.field textarea{min-height:80px;resize:vertical}
+.actions{display:flex;gap:8px;margin-top:15px}.actions .btn{margin-top:0;flex:1}
+.result-list{display:flex;flex-direction:column;gap:9px}.record{background:#f8fafc;border:1px solid var(--line);border-radius:13px;padding:11px;font-size:12px;line-height:1.7}.record-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;white-space:nowrap}.badge.green{background:#dcfce7;color:#166534}.badge.red{background:#fee2e2;color:#991b1b}.badge.amber{background:#fef3c7;color:#92400e}.badge.blue{background:#e0f2fe;color:#075985}.empty{text-align:center;padding:24px 12px;color:#64748b;font-size:13px;background:#f8fafc;border-radius:14px;border:1px dashed #cbd5e1}
+.loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:18px;color:#475569;font-size:12px}.spinner{width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;right:14px;left:14px;bottom:14px;z-index:3000;background:#0f172a;color:#fff;border-radius:14px;padding:13px 15px;font-size:12px;font-weight:800;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);display:none}.toast.show{display:block;animation:fade .2s ease-out}@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(max-width:360px){.grid{grid-template-columns:1fr}.service-card{min-height:105px}}
+</style>
 </head>
 <body>
+<div class="app">
+  <div class="top"><div class="brand">☀️ المراقب برو</div><div class="connection busy" id="connection">● جارٍ الاتصال</div></div>
+  <div class="ticker-wrapper"><div class="ticker-text" id="tickerText"><span>📢</span> جاري تحميل توجيهات الإدارة...</div></div>
 
-<div class="main-wrapper">
-    
-    <!-- الشريط الإخباري -->
-    <div class="ticker-container">
-        <span class="ticker-text" id="safetyTicker">🛡️ جاري تحميل توجيهات الإدارة والدفاع المدني...</span>
+  <div class="card">
+    <div class="welcome"><h2 id="greetingTitle">🌅 أهلاً بك</h2><p id="greetingText">خدماتك الإدارية في مكان واحد</p></div>
+    <div class="card-status">
+      <div class="mini-status">الشركة<strong id="companyView">—</strong></div>
+      <div class="mini-status">الجهاز<strong id="deviceView">—</strong></div>
+      <div class="mini-status">الحساب<strong id="accountView">جارٍ الفحص</strong></div>
     </div>
 
-    <h1>📱 لوحة خدمات الموظف الذكية</h1>
-
-    <div class="dashboard-grid" id="menuGrid">
-        <div class="dash-card" onclick="openPanel('leavePanel')">
-            <span class="dash-icon">📝</span>
-            <span class="dash-title">طلب إجازة</span>
-        </div>
-        <div class="dash-card" onclick="openPanel('loanPanel')">
-            <span class="dash-icon">💰</span>
-            <span class="dash-title">طلب سلفة</span>
-        </div>
-        <div class="dash-card" onclick="openPanel('attendancePanel')">
-            <span class="dash-icon">⏱️</span>
-            <span class="dash-title">سجل البصمات</span>
-        </div>
-        <div class="dash-card" onclick="openPanel('notifPanel')">
-            <span class="dash-icon">🔔</span>
-            <span class="dash-title">رسائل وإشعارات المدير</span>
-        </div>
-        <div class="dash-card" onclick="openPanel('rewardPanel')">
-            <span class="dash-icon">🏆</span>
-            <span class="dash-title">المكافآت والخصومات</span>
-        </div>
-        <div class="dash-card" onclick="checkAttendanceWarning()">
-            <span class="dash-icon">⚠️</span>
-            <span class="dash-title">فحص حالة البصمة</span>
-        </div>
+    <div class="grid" style="margin-top:12px">
+      <button class="service-card" type="button" onclick="openLoanModal()"><span class="icon">💰</span><h3>طلب سلفة</h3><p>إرسال طلب سلفة مباشرة إلى المدير</p></button>
+      <button class="service-card" type="button" onclick="openLeaveModal()"><span class="icon">📅</span><h3>طلب إجازة</h3><p>تقديم طلب إجازة مع التاريخ والسبب</p></button>
+      <button class="service-card" type="button" onclick="fetchNotifications(true)"><span class="icon">🔔</span><h3>إشعارات المدير</h3><p>رسائل الإدارة وآخر التنبيهات</p></button>
+      <button class="service-card" type="button" onclick="fetchAttendanceLog(true)"><span class="icon">📋</span><h3>سجل الحضور</h3><p>عرض حركات البصمة المسجلة فعلياً</p></button>
+      <button class="service-card" type="button" onclick="checkAccountStatus(true)"><span class="icon">📶</span><h3>حالة الحساب</h3><p>فحص السيرفر والجهاز المرتبط</p></button>
+      <button class="service-card" type="button" onclick="fetchRewards(true)"><span class="icon">🎁</span><h3>المكافآت والخصومات</h3><p>عرض البيانات المتاحة في النظام</p></button>
     </div>
 
-    <!-- اللوحات المنبثقة -->
-    <div id="leavePanel" class="section-panel">
-        <h3>📝 تقديم طلب إجازة رسمي</h3>
-        <input type="text" id="leaveReason" placeholder="سبب الإجازة (مرضية، طارئة...)">
-        <input type="date" id="leaveDate">
-        <div class="voice-box">
-            <p style="font-size:12px; color:#475569; margin-bottom:8px;" id="voiceStatus1">🎤 رسالة صوتية مفتوحة للمدير</p>
-            <button type="button" class="record-mic" id="micBtn1" onclick="toggleRecord(1)">🎙️ اضغط لبدء التسجيل الصوتي</button>
-        </div>
-        <button class="action-btn" onclick="submitRequest('إجازة')">إرسال الطلب للإدارة</button>
-        <button class="action-btn back-btn" onclick="closePanels()">رجوع للقائمة الرئيسية</button>
-    </div>
-
-    <div id="loanPanel" class="section-panel">
-        <h3>💰 طلب سلفة مالية طارئة</h3>
-        <input type="number" id="loanAmount" placeholder="مبلغ السلفة (د.ع)">
-        <textarea id="loanDesc" rows="3" placeholder="شرح تفصيلي للمدير..."></textarea>
-        <div class="voice-box">
-            <p style="font-size:12px; color:#475569; margin-bottom:8px;" id="voiceStatus2">🎤 تسجيل صوتي توضيحي مفتوح</p>
-            <button type="button" class="record-mic" id="micBtn2" onclick="toggleRecord(2)">🎙️ اضغط لبدء التسجيل الصوتي</button>
-        </div>
-        <button class="action-btn" style="background:#d97706" onclick="submitRequest('سلفة')">تقديم طلب السلفة</button>
-        <button class="action-btn back-btn" onclick="closePanels()">رجوع للقائمة الرئيسية</button>
-    </div>
-
-    <div id="attendancePanel" class="section-panel">
-        <h3>⏱️ سجل البصمات (الناجحة والفاشلة)</h3>
-        <div id="attendanceLogsList"></div>
-        <button class="action-btn back-btn" onclick="closePanels()">رجوع للقائمة الرئيسية</button>
-    </div>
-
-    <div id="notifPanel" class="section-panel">
-        <h3>🔔 رسائل وإشعارات المدير</h3>
-        <div id="managerMessagesList">
-            <div class="record-item">
-                <span>📩 [من المدير]: يرجى الانتباه لمواعيد الحضور بدقة هذا الأسبوع.</span>
-                <span class="badge warning">وارد</span>
-            </div>
-        </div>
-        <button class="action-btn back-btn" onclick="closePanels()">رجوع للقائمة الرئيسية</button>
-    </div>
-
-    <div id="rewardPanel" class="section-panel">
-        <h3>🏆 سجل المكافآت والجزاءات</h3>
-        <div id="rewardsList">
-            <div class="record-item">
-                <span>✨ مكافأة التميز والالتزام الأسبوعي <b style="color:#166534">+50,000 د.ع</b></span>
-                <button class="delete-btn" onclick="removeItem(this)">حذف</button>
-            </div>
-            <div class="record-item">
-                <span>⏱️ خصم تأخير عن بصمة الصباح <b style="color:#991b1b">-10,000 د.ع</b></span>
-                <button class="delete-btn" onclick="removeItem(this)">حذف</button>
-            </div>
-        </div>
-        <button class="action-btn back-btn" onclick="closePanels()">رجوع للقائمة الرئيسية</button>
-    </div>
-
-    <button class="action-btn" style="background:#475569; margin-top: auto;" onclick="goBackToMain()">⬅ العودة لواجهة الكاميرا والبصمة</button>
+    <button class="btn btn-gray" type="button" onclick="goBackToMain()">⬅ العودة إلى واجهة الكاميرا والبصمة</button>
+  </div>
 </div>
 
+<div class="overlay" id="loanModal"><div class="modal">
+  <div class="modal-head"><h3>💰 طلب سلفة مالية</h3><button class="close" onclick="closeModal('loanModal')">×</button></div>
+  <div class="field"><label>المبلغ بالدينار العراقي</label><input type="number" id="loanAmount" min="1" placeholder="500000"></div>
+  <div class="field"><label>السبب والتفاصيل</label><textarea id="loanReason" placeholder="اكتب سبب طلب السلفة..."></textarea></div>
+  <div class="actions"><button class="btn btn-gray" onclick="closeModal('loanModal')">إلغاء</button><button class="btn btn-amber" id="loanSubmit" onclick="submitLoan()">إرسال الطلب</button></div>
+</div></div>
+
+<div class="overlay" id="leaveModal"><div class="modal">
+  <div class="modal-head"><h3>📅 طلب إجازة</h3><button class="close" onclick="closeModal('leaveModal')">×</button></div>
+  <div class="field"><label>نوع الإجازة</label><select id="leaveType"><option value="اعتيادية">اعتيادية</option><option value="مرضية">مرضية</option><option value="طارئة">طارئة</option><option value="زمنية">زمنية</option></select></div>
+  <div class="field"><label>تاريخ الإجازة</label><input type="date" id="leaveDate"></div>
+  <div class="field"><label>السبب</label><textarea id="leaveReason" placeholder="اكتب سبب الإجازة..."></textarea></div>
+  <div class="actions"><button class="btn btn-gray" onclick="closeModal('leaveModal')">إلغاء</button><button class="btn btn-blue" id="leaveSubmit" onclick="submitLeave()">إرسال الطلب</button></div>
+</div></div>
+
+<div class="overlay" id="dataModal"><div class="modal">
+  <div class="modal-head"><h3 id="dataTitle">البيانات</h3><button class="close" onclick="closeModal('dataModal')">×</button></div>
+  <div id="dataBody" class="result-list"></div>
+  <button class="btn btn-gray" onclick="closeModal('dataModal')">إغلاق</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-    const SERVER_URL = "https://almoraqebpro-server.onrender.com";
-    let companyId = 'B-2070';
-    let isRecording = false;
+const SERVER_URL = location.origin;
+const params = new URLSearchParams(location.search);
+const companyId = params.get('company') || params.get('companyId') || localStorage.getItem('companyId') || '';
+const employeeId = params.get('employeeId') || localStorage.getItem('employeeId') || '';
+const employeeName = params.get('name') || localStorage.getItem('employeeName') || 'الموظف';
+const deviceId = params.get('deviceId') || localStorage.getItem('deviceId') || localStorage.getItem('employeeDeviceId') || localStorage.getItem('device_id') || '';
 
-    // === دوال الاتصال بالسيرفر ===
-    async function safeApiCall(endpoint, method = 'POST', payload = null) {
-        if (!navigator.onLine) {
-            return handleOfflineOperation(endpoint, method, payload);
-        }
-        try {
-            let response = await fetch(`${SERVER_URL}${endpoint}`, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            return await response.json();
-        } catch (e) {
-            return handleOfflineOperation(endpoint, method, payload);
-        }
-    }
+const $ = id => document.getElementById(id);
+$('companyView').textContent = companyId || 'غير محددة';
+$('deviceView').textContent = deviceId ? 'مرتبط' : 'غير معروف';
 
-    function handleOfflineOperation(endpoint, method, payload) {
-        let offlineQueue = JSON.parse(localStorage.getItem('pending_sync_queue') || '[]');
-        offlineQueue.push({ endpoint, method, data: payload, timestamp: new Date().toISOString() });
-        localStorage.setItem('pending_sync_queue', JSON.stringify(offlineQueue));
-        
-        showLocalStorageAlert("💾 تم الحفظ محلياً (Offline)، ستتم المزامنة تلقائياً عند عودة الإنترنت.");
-        return { success: true, offline: true };
-    }
+function toast(message, type='info'){
+  const el=$('toast'); el.textContent=message; el.style.background=type==='error'?'#991b1b':type==='success'?'#166534':'#0f172a'; el.classList.add('show'); clearTimeout(window.__toast); window.__toast=setTimeout(()=>el.classList.remove('show'),4200);
+}
+function openModal(id){$(id).classList.add('open')}
+function closeModal(id){$(id).classList.remove('open')}
+window.addEventListener('click',e=>{if(e.target.classList.contains('overlay'))e.target.classList.remove('open')});
 
-    function showLocalStorageAlert(message) {
-        let alertBox = document.getElementById('offlineAlertBox') || document.createElement('div');
-        alertBox.id = 'offlineAlertBox';
-        alertBox.style.cssText = "position: fixed; bottom: 20px; right: 20px; background: #334155; color: #fff; padding: 12px 20px; border-radius: 10px; z-index: 9999; font-weight: bold; font-size: 14px;";
-        alertBox.innerText = message;
-        document.body.appendChild(alertBox);
-        setTimeout(() => { alertBox.style.display = 'none'; }, 5000);
-    }
+function setButtonLoading(id, loading, text){const b=$(id); if(!b)return; if(loading){b.dataset.oldText=b.textContent;b.disabled=true;b.textContent='⏳ جارٍ الإرسال...'}else{b.disabled=false;b.textContent=text||b.dataset.oldText||'إرسال'}}
 
-    window.addEventListener('online', async () => {
-        let offlineQueue = JSON.parse(localStorage.getItem('pending_sync_queue') || '[]');
-        if (offlineQueue.length > 0) {
-            for (let item of offlineQueue) {
-                await fetch(`${SERVER_URL}${item.endpoint}`, { method: item.method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(item.data) });
-            }
-            localStorage.removeItem('pending_sync_queue');
-            showLocalStorageAlert("🔄 تم مزامنة البيانات المخزنة محلياً مع السيرفر بنجاح!");
-        }
-    });
+async function api(path, options={}){
+  const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),15000);
+  try{
+    const res=await fetch(SERVER_URL+path,{...options,signal:controller.signal,headers:{'Content-Type':'application/json',...(options.headers||{})}});
+    const text=await res.text(); let data={}; try{data=text?JSON.parse(text):{}}catch{data={message:text}};
+    if(!res.ok) throw new Error(data.message||data.error||`HTTP ${res.status}`);
+    return data;
+  }finally{clearTimeout(timer)}
+}
 
-    // === تشغيل الصوت والشريط الإخباري ===
-    window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        let compParam = urlParams.get('company');
-        if(compParam) companyId = compParam;
+function updateGreeting(){
+  const h=new Date().getHours(); let title='🌙 مساء الخير',text=`مرحباً ${employeeName} – خدماتك في مكان واحد`;
+  if(h>=5&&h<12){title='🌅 صباح الخير';text=`مرحباً ${employeeName} – تذكر تسجيل بصمة الحضور`}
+  else if(h>=12&&h<17){title='🌤️ مساء الخير';text=`مرحباً ${employeeName} – خدماتك في مكان واحد`}
+  else if(h>=17&&h<21){title='🌆 مساء الخير';text=`مرحباً ${employeeName} – تذكر تسجيل بصمة الانصراف`}
+  $('greetingTitle').textContent=title;$('greetingText').textContent=text;
+}
+updateGreeting();
 
-        const hour = new Date().getHours();
-        const ticker = document.getElementById('safetyTicker');
-        
-        if(hour < 12) {
-            ticker.innerText = "🌟 صباح الخير! أهلاً بك. يرجى أخذ إجراءات السلامة المهنية، والتأكد من تسجيل بصمة الحضور بدقة.";
-            playArabicVoice("صباح الخير، أهلاً بك في يوم عمل جديد. يرجى الالتزام ببصمة الحضور وإجراءات السلامة المهنية.");
-        } else {
-            ticker.innerText = "🚨 وصايا الإدارة لنهاية الدوام: إغلاق الأجهزة ومصادر الطاقة، والتأكد من تسجيل بصمة الانصراف!";
-            playArabicVoice("تنبيه نهاية الدوام، يرجى إغلاق الأجهزة والتأكد من تسجيل بصمة الانصراف بنجاح.");
-        }
+function speak(text){
+  if(!('speechSynthesis' in window))return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);u.lang='ar-SA';u.rate=.9;u.pitch=1.12;
+  const voices=window.speechSynthesis.getVoices();
+  const candidates=voices.filter(v=>/^ar/i.test(v.lang));
+  u.voice=candidates.find(v=>/female|أنث|امرأة|Google العربية|Arabic/i.test(v.name))||candidates.find(v=>/SA|AE|EG/i.test(v.lang))||candidates[0]||null;
+  window.speechSynthesis.speak(u);
+}
+function speakGreeting(){
+  const h=new Date().getHours();
+  const msg=h>=17&&h<21?`مساء الخير يا ${employeeName}. تأكد من تسجيل بصمة الانصراف قبل مغادرة العمل.`:`أهلاً بك يا ${employeeName}. يمكنك الآن استخدام خدمات المراقب برو.`;
+  speak(msg);
+}
+if('speechSynthesis' in window){speechSynthesis.onvoiceschanged=()=>{};setTimeout(speakGreeting,700)}
 
-        loadAttendanceLogs();
-        cleanOldVoiceRecords();
-    };
+function requireIdentity(){
+  if(!employeeId){toast('⚠️ لم يتم تمرير رقم الموظف. افتح الخدمات من داخل حساب الموظف.','error');return false}
+  if(!deviceId){toast('⚠️ لم يتم العثور على معرّف الجهاز المرتبط. ارجع إلى صفحة البصمة ثم افتح الخدمات من جديد.','error');return false}
+  return true;
+}
 
-    function playArabicVoice(text) {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            let utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ar-SA';
-            utterance.rate = 1.0;
-            
-            let voices = window.speechSynthesis.getVoices();
-            let femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Google Arabic') || v.name.includes('AR-SA'));
-            if(femaleVoice) utterance.voice = femaleVoice;
-            
-            window.speechSynthesis.speak(utterance);
-        }
-    }
+async function submitService(type,payload,buttonId,modalId,successText){
+  if(!requireIdentity())return;
+  setButtonLoading(buttonId,true);
+  try{
+    const data=await api('/api/employee/service-request',{method:'POST',body:JSON.stringify({employeeId,deviceId,type,...payload})});
+    toast(`✅ ${data.message||successText}`,'success');
+    closeModal(modalId); speak('تم إرسال طلبك إلى الإدارة بنجاح.');
+  }catch(e){toast('❌ '+e.message,'error');speak('تعذر إرسال الطلب. يرجى المحاولة مرة أخرى.');}
+  finally{setButtonLoading(buttonId,false,buttonId==='loanSubmit'?'إرسال الطلب':'إرسال الطلب')}
+}
 
-    // === إدارة التسجيل الصوتي ===
-    function toggleRecord(id) {
-        let btn = document.getElementById(`micBtn${id}`);
-        let status = document.getElementById(`voiceStatus${id}`);
-        
-        if (!isRecording) {
-            isRecording = true;
-            btn.classList.add('recording');
-            btn.innerText = "⏹️ اضغط لإنهاء وإرسال التسجيل";
-            status.innerText = "🔴 جاري التسجيل المفتوح (تحدث الآن)...";
-            status.style.color = "#ef4444";
-        } else {
-            isRecording = false;
-            btn.classList.remove('recording');
-            btn.innerText = "🎙️ اضغط لبدء التسجيل الصوتي";
-            status.innerText = "✅ تم حفظ وإرسال الرسالة الصوتية بنجاح (صالحة لـ 5 أيام)";
-            status.style.color = "#166534";
-            playArabicVoice("تم حفظ رسالتك الصوتية وإرسالها للإدارة بنجاح.");
-            
-            let records = JSON.parse(localStorage.getItem('voice_records_time') || '[]');
-            records.push({ time: new Date().getTime() });
-            localStorage.setItem('voice_records_time', JSON.stringify(records));
-        }
-    }
+function submitLoan(){
+  const amount=Number($('loanAmount').value);const reason=$('loanReason').value.trim();
+  if(!Number.isFinite(amount)||amount<=0){toast('⚠️ أدخل مبلغ سلفة صحيحاً','error');return}
+  if(!reason){toast('⚠️ اكتب سبب السلفة','error');return}
+  submitService('loan',{amount,reason},'loanSubmit','loanModal','تم إرسال طلب السلفة');
+}
+function submitLeave(){
+  const date=$('leaveDate').value;const reason=`نوع الإجازة: ${$('leaveType').value} – ${$('leaveReason').value.trim()}`;
+  if(!date){toast('⚠️ حدد تاريخ الإجازة','error');return}
+  if($('leaveReason').value.trim().length<2){toast('⚠️ اكتب سبب الإجازة','error');return}
+  submitService('leave',{reason,requestedDate:date},'leaveSubmit','leaveModal','تم إرسال طلب الإجازة');
+}
+function openLoanModal(){ $('loanAmount').value='';$('loanReason').value='';openModal('loanModal') }
+function openLeaveModal(){ $('leaveDate').value='';$('leaveReason').value='';openModal('leaveModal') }
 
-    function cleanOldVoiceRecords() {
-        let records = JSON.parse(localStorage.getItem('voice_records_time') || '[]');
-        let now = new Date().getTime();
-        let fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
-        
-        let validRecords = records.filter(r => (now - r.time) < fiveDaysMs);
-        localStorage.setItem('voice_records_time', JSON.stringify(validRecords));
-    }
+function showData(title,body){$('dataTitle').textContent=title;$('dataBody').innerHTML=body;openModal('dataModal')}
+function loadingData(){return '<div class="loading"><span class="spinner"></span> جارٍ جلب البيانات من السيرفر...</div>'}
+function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function formatDate(v){if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('ar-IQ',{dateStyle:'medium',timeStyle:'short'})}
+function statusBadge(s){if(s==='approved')return '<span class="badge green">مقبول</span>';if(s==='rejected')return '<span class="badge red">مرفوض</span>';return '<span class="badge amber">قيد الانتظار</span>'}
 
-    // === دوال التنقل بين اللوحات ===
-    function openPanel(panelId) {
-        document.getElementById('menuGrid').style.display = 'none';
-        document.querySelectorAll('.section-panel').forEach(p => p.style.display = 'none');
-        document.getElementById(panelId).style.display = 'block';
-    }
+async function fetchNotifications(open=true){
+  if(!requireIdentity())return;
+  if(open)showData('🔔 إشعارات المدير',loadingData());
+  try{
+    const data=await api(`/api/employee/notifications?employeeId=${encodeURIComponent(employeeId)}&deviceId=${encodeURIComponent(deviceId)}`);
+    const items=data.notifications||[];
+    if(!items.length){if(open)showData('🔔 إشعارات المدير','<div class="empty">لا توجد إشعارات جديدة من الإدارة.</div>');return}
+    const html=items.map(n=>`<div class="record"><div class="record-top"><strong>${n.type==='voice'?'🎙️ رسالة صوتية':'📩 رسالة من الإدارة'}</strong><span class="badge blue">${formatDate(n.createdAt)}</span></div><div>${esc(n.message||'')}</div>${n.audioUrl?`<audio controls style="width:100%;margin-top:8px" src="${esc(n.audioUrl)}"></audio>`:''}</div>`).join('');
+    $('tickerText').innerHTML='<span>📢</span> '+items.slice(0,3).map(n=>esc(n.message||'تنبيه من الإدارة')).join(' <span>•</span> ');
+    if(open)showData('🔔 إشعارات المدير',html);
+  }catch(e){if(open)showData('🔔 إشعارات المدير',`<div class="empty">❌ ${esc(e.message)}</div>`);toast('تعذر جلب الإشعارات','error')}
+}
 
-    function closePanels() {
-        document.querySelectorAll('.section-panel').forEach(p => p.style.display = 'none');
-        document.getElementById('menuGrid').style.display = 'grid';
-    }
+async function fetchAttendanceLog(open=true){
+  if(!employeeId){toast('⚠️ رقم الموظف غير موجود','error');return}
+  if(open)showData('📋 سجل الحضور والانصراف',loadingData());
+  try{
+    const data=await api(`/api/employees/${encodeURIComponent(employeeId)}/attendance`);const items=data.attendance||[];
+    if(!items.length){if(open)showData('📋 سجل الحضور والانصراف','<div class="empty">لا توجد حركات بصمة محفوظة حتى الآن.</div>');return}
+    const html=items.map(a=>`<div class="record"><div class="record-top"><strong>${a.type==='exit'||a.type==='انصراف'?'🔴 انصراف':'🟢 حضور / بصمة'}</strong><span class="badge green">مسجل</span></div><div>الوقت: ${formatDate(a.timestamp)}</div><div>طريقة التحقق: ${esc(a.verificationMethod||'device-biometric')}</div>${Number.isFinite(Number(a.latitude))?`<div>الموقع: ${Number(a.latitude).toFixed(5)}, ${Number(a.longitude).toFixed(5)}</div>`:''}</div>`).join('');
+    if(open)showData('📋 سجل الحضور والانصراف',html);
+  }catch(e){if(open)showData('📋 سجل الحضور والانصراف',`<div class="empty">❌ ${esc(e.message)}</div>`);toast('تعذر جلب سجل الحضور','error')}
+}
 
-    // === إرسال الطلبات إلى السيرفر ===
-    async function submitRequest(type) {
-        let payload = {
-            companyId: companyId,
-            type: type,
-            reason: document.getElementById(type === 'إجازة' ? 'leaveReason' : 'loanDesc')?.value || '',
-            amount: type === 'سلفة' ? document.getElementById('loanAmount').value : null,
-            date: type === 'إجازة' ? document.getElementById('leaveDate').value : new Date().toISOString()
-        };
+async function checkAccountStatus(open=true){
+  if(open)showData('📶 حالة الحساب',loadingData());
+  try{
+    const ping=await api('/api/ping');
+    let linked='غير قابل للتحقق';
+    if(employeeId&&deviceId){
+      try{await api(`/api/employee/notifications?employeeId=${encodeURIComponent(employeeId)}&deviceId=${encodeURIComponent(deviceId)}`);linked='الجهاز مرتبط والحساب قابل للوصول'}catch(e){linked=e.message}
+    }else linked='معرّف الموظف أو الجهاز غير موجود في الرابط/التخزين المحلي';
+    $('accountView').textContent=linked.startsWith('الجهاز')?'نشط':'تحقق مطلوب';$('connection').textContent='● متصل';$('connection').className='connection ok';
+    if(open)showData('📶 حالة الحساب',`<div class="record"><div class="record-top"><strong>السيرفر</strong><span class="badge green">${esc(ping.status||'connected')}</span></div><div>${esc(ping.message||'السيرفر يعمل')}</div></div><div class="record"><strong>الشركة:</strong> ${esc(companyId||'غير محددة')}</div><div class="record"><strong>الموظف:</strong> ${esc(employeeName)}<br><strong>Employee ID:</strong> ${esc(employeeId||'غير موجود')}</div><div class="record"><strong>الجهاز:</strong> ${esc(deviceId||'غير موجود')}<br><strong>الحالة:</strong> ${esc(linked)}</div>`);
+  }catch(e){$('connection').textContent='● غير متصل';$('connection').className='connection bad';$('accountView').textContent='غير متصل';if(open)showData('📶 حالة الحساب',`<div class="empty">❌ ${esc(e.message)}</div>`)}
+}
 
-        await safeApiCall('/api/employee/request', 'POST', payload);
-        alert(`✅ تم إرسال طلب (${type}) بنجاح!`);
-        closePanels();
-    }
+async function fetchRewards(open=true){
+  const html='<div class="empty">ℹ️ لا يوجد في <b>server.js</b> حالياً API مستقل للمكافآت والخصومات. لم أعد أعرض بيانات وهمية. عند إضافة مسار المكافآت إلى السيرفر يمكن ربط هذه البطاقة مباشرة.</div>';
+  if(open)showData('🎁 المكافآت والخصومات',html);
+}
 
-    // === دوال البطاقات الأخرى ===
-    function checkAttendanceWarning() {
-        alert("⚠️ تنبيه النظام: البصمة نشطة وجاهزة للمطابقة الحية عبر كاميرا الهاتف.");
-        playArabicVoice("البصمة نشطة وجاهزة.");
-    }
+function setTickerDefault(){
+  const h=new Date().getHours();
+  const messages=h>=17&&h<21?['📢 تذكير: سجل بصمة الانصراف قبل مغادرة العمل','🛡️ تأكد من إغلاق الأجهزة ومصادر الطاقة','📋 يمكنك متابعة سجل حضورك من خدمات الموظف']:['📢 مرحباً بك في خدمات المراقب برو','🛡️ تأكد من تسجيل بصمة الحضور عند الوصول','📅 يمكنك إرسال طلبات الإجازة والسلف من هنا'];
+  $('tickerText').innerHTML=messages.map((m,i)=>`${i?' <span>•</span> ':''}${esc(m)}`).join('');
+}
+setTickerDefault();
 
-    function removeItem(button) {
-        if(confirm("هل أنت متأكد من الحذف؟")) {
-            button.parentElement.remove();
-        }
-    }
+function goBackToMain(){
+  const q=new URLSearchParams();if(companyId)q.set('company',companyId);if(employeeId)q.set('employeeId',employeeId);if(employeeName)q.set('name',employeeName);if(deviceId)q.set('deviceId',deviceId);
+  location.href='attachment.html'+(q.toString()?'?'+q.toString():'');
+}
 
-    function loadAttendanceLogs() {
-        let historyKey = `attendance_history_${companyId}`;
-        let history = JSON.parse(localStorage.getItem(historyKey) || '[]');
-        let container = document.getElementById('attendanceLogsList');
-        
-        if(history.length === 0) {
-            container.innerHTML = `
-                <div class="record-item">
-                    <span>🟢 بصمة حضور صباحية (ناجحة عبر الكاميرا)</span>
-                    <div><span class="badge success">مؤكد</span> <button class="delete-btn" onclick="removeItem(this)">حذف</button></div>
-                </div>
-                <div class="record-item">
-                    <span>🔴 محاولة انصراف مسائية</span>
-                    <div><span class="badge success">مؤكد</span> <button class="delete-btn" onclick="removeItem(this)">حذف</button></div>
-                </div>
-            `;
-            return;
-        }
+window.addEventListener('online',()=>{ $('connection').textContent='● متصل';$('connection').className='connection ok';toast('✅ عاد اتصال الإنترنت','success');checkAccountStatus(false)});
+window.addEventListener('offline',()=>{ $('connection').textContent='● بدون إنترنت';$('connection').className='connection bad';toast('⚠️ لا يوجد اتصال بالإنترنت','error')});
 
-        container.innerHTML = '';
-        history.forEach((item) => {
-            container.innerHTML += `
-                <div class="record-item">
-                    <span>${item.type === 'حضور' ? '🟢' : '🔴'} تسجيل ${item.type} (${item.time})</span>
-                    <div><span class="badge success">مؤكد</span> <button class="delete-btn" onclick="removeItem(this)">حذف</button></div>
-                </div>
-            `;
-        });
-    }
-
-    // === زر العودة إلى البصمة ===
-    function goBackToMain() {
-        window.location.href = `attachment.html?company=${encodeURIComponent(companyId)}`;
-    }
+(async function init(){
+  try{await checkAccountStatus(false)}catch{}
+  if(employeeId&&deviceId){fetchNotifications(false)}
+})();
 </script>
-
 </body>
 </html>
