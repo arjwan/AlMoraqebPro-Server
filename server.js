@@ -9,7 +9,7 @@ const crypto = require('crypto');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = "mongodb+srv://db_mohmmed1628_db:db_PlbCNfMCe2049hXU@cluster0.oomto7r.mongodb.net/?appName=Cluster0";
+const MONGO_URI = "mongodb+srv://arjwan307_db_user:0780moh780@cluster0.oomto7r.mongodb.net/?appName=Cluster0";
 const DEVELOPER_PASSWORD = process.env.DEVELOPER_PASSWORD;
 const SESSION_SECRET = process.env.SESSION_SECRET || DEVELOPER_PASSWORD;
 
