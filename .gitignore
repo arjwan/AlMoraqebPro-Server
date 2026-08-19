@@ -3,3 +3,5 @@ node_modules/
 *.db
 uploads/
 cloud_backup.json
+
+public/.idea/
