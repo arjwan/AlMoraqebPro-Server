@@ -5,6 +5,15 @@ const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
 const crypto = require('crypto');
+const dotenv = require('dotenv');
+
+/*
+ * تحميل المتغيرات من ملف .env المحلي (إن وُجد).
+ * على Render تُحقن المتغيرات من لوحة التحكم، وليس من ملف .env.
+ * dotenv لا يتجاوز المتغيرات الموجودة مسبقًا في البيئة.
+ * quiet: منع طباعة رسائل التلميح أثناء الإقلاع.
+ */
+dotenv.config({ quiet: true });
 
 const app = express();
 
@@ -12,6 +21,10 @@ const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
 const DEVELOPER_PASSWORD = process.env.DEVELOPER_PASSWORD;
 const SESSION_SECRET = process.env.SESSION_SECRET || DEVELOPER_PASSWORD;
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
 
 /*
 =========================================================
@@ -20,16 +33,43 @@ const SESSION_SECRET = process.env.SESSION_SECRET || DEVELOPER_PASSWORD;
 */
 
 if (!MONGO_URI) {
-    console.error('❌ MONGO_URI is not configured.');
+    console.error('❌ MONGO_URI is not configured. أضِفه إلى ملف .env أو إلى متغيرات البيئة في Render.');
     process.exit(1);
 }
 
 if (!DEVELOPER_PASSWORD) {
-    console.error('❌ DEVELOPER_PASSWORD is not configured.');
+    console.error('❌ DEVELOPER_PASSWORD is not configured. أضِفه إلى ملف .env أو إلى متغيرات البيئة في Render.');
     process.exit(1);
 }
 
-app.use(cors());
+if (!SESSION_SECRET) {
+    console.log('⚠️ SESSION_SECRET غير محدد، سيُستخدم DEVELOPER_PASSWORD لفترة محدودة.');
+}
+
+app.disable('x-powered-by');
+
+/*
+ * CORS: يُسمح لكل الأصلان افتراضيًا (نفس السلوك السابق) حتى لا تُكسر الوظائف الحالية،
+ * ويمكن تقييده عبر متغير البيئة:
+ *   ALLOWED_ORIGINS = "https://app1.example.com,https://app2.example.com"
+ */
+app.use(cors(
+    ALLOWED_ORIGINS.length
+        ? { origin: ALLOWED_ORIGINS, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] }
+        : { origin: true }
+));
+
+/*
+ * ترويسات أمان أساسية دون حظر النصوص والتنسيقات المضمّنة في الصفحات الموجودة.
+ */
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+});
 
 app.use(express.json({
     limit: '50mb'
@@ -1046,6 +1086,61 @@ app.get(
     }
 );
 
+/*
+=========================================================
+  HEALTH CHECK
+=========================================================
+*/
+
+/*
+ * نقطة فحص الحالة لـ Render Health Check.
+ * تُرجع 200 عندما تكون قاعدة البيانات متصلة، و 503 عند ضعف الاتصال
+ * (لكن الخادم يبقى قيد التشغيل حتى يمكن إعادة الاتصال تلقائيًا).
+ */
+app.get(
+    '/health',
+    (req, res) => {
+
+        const dbState =
+            mongoose.connection.readyState;
+
+        const dbLabels = [
+            'disconnected',
+            'connected',
+            'connecting',
+            'disconnecting'
+        ];
+
+        const dbLabel =
+            dbLabels[dbState] || 'unknown';
+
+        const healthy =
+            dbState === 1;
+
+        res.status(
+            healthy ? 200 : 503
+        ).json({
+
+            success: healthy,
+
+            status:
+                healthy ? 'ok' : 'degraded',
+
+            service:
+                'almoraqebpro-server',
+
+            database: dbLabel,
+
+            uptime:
+                process.uptime(),
+
+            timestamp:
+                new Date().toISOString()
+
+        });
+
+    }
+);
 
 /*
 =========================================================
@@ -4521,47 +4616,190 @@ async function migrateCompanyIndexes() {
 
 /*
 =========================================================
+  ERROR HANDLING & 404
+=========================================================
+*/
+
+/*
+ * معالجة أخطاء تنسيق JSON غير الصالح (قادمة من express.json).
+ */
+app.use((err, req, res, next) => {
+
+    if (
+        err instanceof SyntaxError &&
+        err.status === 400 &&
+        'body' in err
+    ) {
+
+        return res.status(400).json({
+            success: false,
+            message: 'طلب JSON غير صالح'
+        });
+
+    }
+
+    // أخطاء multer (حجم/نوع ملف) تملك statusCode و code
+    if (err && err.statusCode && err.code) {
+
+        return res.status(err.statusCode).json({
+            success: false,
+            message: err.message
+        });
+
+    }
+
+    next(err);
+
+});
+
+/*
+ * 404 مخصص لمسارات /api غير المعروفة.
+ */
+app.use('/api', (req, res) => {
+
+    res.status(404).json({
+        success: false,
+        message: 'المسار غير موجود'
+    });
+
+});
+
+/*
+ * معالج أخطاء مركزي نهائي: يمنع تسريب تفاصيل داخلية للعميل.
+ */
+app.use((err, req, res, next) => {
+
+    console.error(
+        '❌ خطأ غير معالج:',
+        err && err.message ? err.message : err
+    );
+
+    res.status(500).json({
+        success: false,
+        message: 'حدث خطأ داخلي في الخادم'
+    });
+
+});
+
+/*
+=========================================================
+  GRACEFUL SHUTDOWN & PROCESS HANDLERS
+=========================================================
+*/
+
+async function gracefulShutdown(signal) {
+
+    console.log(
+        `\n🛑 استقبال إشارة ${signal}، إيقاف تشغيل نظيف...`
+    );
+
+    try {
+
+        await mongoose.connection.close();
+
+        console.log('🔌 تم إغلاق اتصال MongoDB.');
+
+    } catch (err) {
+
+        console.error(
+            '⚠️ خطأ أثناء إغلاق MongoDB:',
+            err.message
+        );
+
+    }
+
+    process.exit(0);
+
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+process.on('unhandledRejection', reason => {
+    console.error('⚠️ وعد غير معالج:', reason);
+});
+
+process.on('uncaughtException', err => {
+    console.error(
+        '⚠️ استثناء غير ملتقط:',
+        err && err.message ? err.message : err
+    );
+});
+
+/*
+=========================================================
   START
 =========================================================
 */
 
-mongoose
-    .connect(
-        MONGO_URI
-    )
+function startServer() {
 
-    .then(
-        async () => {
+    app.listen(
+        PORT,
+        () => {
 
             console.log(
-                '✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح'
+                `🚀 AlMoraqebPro Server يعمل الآن على المنفذ ${PORT}`
             );
-
-            await migrateCompanyIndexes();
-
-            app.listen(
-                PORT,
-                () => {
-
-                    console.log(
-                        `🚀 AlMoraqebPro Server يعمل الآن على المنفذ ${PORT}`
-                    );
-
-                }
-            );
-
-        }
-    )
-
-    .catch(
-        err => {
-
-            console.error(
-                '❌ خطأ في الاتصال بقاعدة البيانات:',
-                err.message
-            );
-
-            process.exit(1);
 
         }
     );
+
+}
+
+/*
+ * الاتصال بقاعدة البيانات مع إعادة محاولة تلقائية بفاصل زمني تصاعدي.
+ * الخادم يبقى قيد التشغيل دائمًا، ونقطة /health تعكس حالة الاتصال
+ * حتى يمكن لـ Render اكتشاف المشكلة والتعافي منها.
+ */
+async function connectWithRetry(attempt = 1) {
+
+    try {
+
+        await mongoose.connect(
+            MONGO_URI,
+            {
+                serverSelectionTimeoutMS: 10000,
+                connectTimeoutMS: 10000
+            }
+        );
+
+        console.log(
+            '✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح'
+        );
+
+        await migrateCompanyIndexes();
+
+    } catch (err) {
+
+        console.error(
+            `❌ محاولة الاتصال بـ MongoDB رقم ${attempt} فشلت:`,
+            err.message
+        );
+
+        const delay = Math.min(1000 * attempt, 15000);
+
+        setTimeout(
+            () => connectWithRetry(attempt + 1),
+            delay
+        );
+
+    }
+
+}
+
+// استمع أولاً كي يكون الخادم متاحًا فورًا، ثم اتصل بقاعدة البيانات في الخلفية.
+startServer();
+connectWithRetry();
+
+mongoose.connection.on('error', err => {
+    console.error('🔄 خطأ في اتصال MongoDB:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.warn('🔌 تم فصل اتصال MongoDB.');
+});
+
+mongoose.connection.on('reconnected', () => {
+    console.log('🔁 تمت إعادة الاتصال بـ MongoDB.');
+});
