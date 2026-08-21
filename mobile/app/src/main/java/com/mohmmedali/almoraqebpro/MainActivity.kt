@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity() {
             myWebView.reload()
         }
 
-        myWebView.loadUrl("https://almoraqebpro-server.onrender.com/index.html")
+        myWebView.loadUrl("https://almoraqebpro-server-aymo.onrender.com/index.html")
     }
 
     override fun onBackPressed() {
