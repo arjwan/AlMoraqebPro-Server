@@ -176,6 +176,7 @@
         <input id="requestCompanyId" type="hidden">
         <div class="choice-card" id="selectedCompany"><strong>لم يتم اختيار شركة</strong><span>اختر شركة من القائمة أعلاه</span></div>
         <div class="field"><label>اسم الموظف الثلاثي</label><input id="requestName" required placeholder="الاسم الكامل"></div>
+        <div class="field"><label>رقم الهاتف</label><input id="phoneNumber" type="tel" required placeholder="مثال: 07XX XXX XXXX"></div>
         <div class="field"><label>العنوان الوظيفي</label><input id="jobTitle" required placeholder="مثال: محاسب"></div>
         <div class="field"><label>موقع العمل</label><input id="workLocation" required placeholder="الفرع / القسم"></div>
         <div class="field"><label>الراتب</label><input id="salary" type="number" required placeholder="بالدينار العراقي"></div>
@@ -422,6 +423,7 @@ async function submitRequest(e) {
             companyId,
             companyName: company?.name || document.getElementById('requestCompany').value,
             name: document.getElementById('requestName').value.trim(),
+            phoneNumber: document.getElementById('phoneNumber').value.trim(),
             jobTitle: document.getElementById('jobTitle').value.trim(),
             workLocation: document.getElementById('workLocation').value.trim(),
             salary: Number(document.getElementById('salary').value),

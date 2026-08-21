@@ -40,9 +40,9 @@
     <div class="table-container">
         <table>
             <thead>
-                <tr><th>#</th><th>رمز الشركة</th><th>الاسم</th><th>البريد</th><th>الراتب</th><th>الاختصاص</th><th>الحالة</th><th>الإجراءات</th></tr>
+                <tr><th>#</th><th>رمز الشركة</th><th>الاسم</th><th>رقم الهاتف</th><th>البريد</th><th>الراتب</th><th>الاختصاص</th><th>الحالة</th><th>الإجراءات</th></tr>
             </thead>
-            <tbody id="employeesTable"><tr><td colspan="8"><div class="loading-spinner"></div> جاري التحميل...</td></tr></tbody>
+            <tbody id="employeesTable"><tr><td colspan="9"><div class="loading-spinner"></div> جاري التحميل...</td></tr></tbody>
         </table>
     </div>
 
@@ -57,6 +57,7 @@
             <input type="hidden" id="editId" value="">
             <div class="form-group"><label>رمز الشركة</label><input type="text" id="empCompanyId" required></div>
             <div class="form-group"><label>الاسم الكامل</label><input type="text" id="empName" required></div>
+            <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="empPhone" placeholder="مثال: 07XX XXX XXXX"></div>
             <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="empEmail" required></div>
             <div class="form-group"><label>الراتب الأساسي</label><input type="number" id="empSalary" required></div>
             <div class="form-group"><label>الاختصاص</label><input type="text" id="empSpecialty" required></div>
@@ -191,12 +192,13 @@
             if (r.ok && d.success) {
                 const employees = d.employees || [];
                 tbody.innerHTML = employees.length === 0 ?
-                    `<tr><td colspan="8" style="color:#64748b;">لا يوجد موظفون</td></tr>` :
+                    `<tr><td colspan="9" style="color:#64748b;">لا يوجد موظفون</td></tr>` :
                     employees.map((e, i) => `
                         <tr data-status="${e.status || 'active'}">
                             <td>${i+1}</td>
                             <td>${e.companyId || '—'}</td>
                             <td><b>${e.name}</b></td>
+                            <td>${e.phoneNumber || '—'}</td>
                             <td>${e.email || '—'}</td>
                             <td>${e.salary ? Number(e.salary).toLocaleString() + ' د.ع' : '—'}</td>
                             <td>${e.specialty || '—'}</td>
@@ -209,7 +211,7 @@
                     `).join('');
                 showStatus('✅ تم تحميل ' + employees.length + ' موظف', '');
             } else {
-                tbody.innerHTML = `<tr><td colspan="8" style="color:#ef4444;">❌ فشل التحميل</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;">❌ فشل التحميل</td></tr>`;
             }
         } catch {
             tbody.innerHTML = `<tr><td colspan="8" style="color:#ef4444;">❌ فشل الاتصال بالسيرفر</td></tr>`;
@@ -253,6 +255,7 @@
                 document.getElementById('editId').value = id;
                 document.getElementById('empCompanyId').value = e.companyId || '';
                 document.getElementById('empName').value = e.name || '';
+                document.getElementById('empPhone').value = e.phoneNumber || '';
                 document.getElementById('empEmail').value = e.email || '';
                 document.getElementById('empSalary').value = e.salary || '';
                 document.getElementById('empSpecialty').value = e.specialty || '';
@@ -274,6 +277,7 @@
         const data = {
             companyId: document.getElementById('empCompanyId').value,
             name: document.getElementById('empName').value,
+            phoneNumber: document.getElementById('empPhone').value.trim(),
             email: document.getElementById('empEmail').value,
             salary: parseInt(document.getElementById('empSalary').value),
             specialty: document.getElementById('empSpecialty').value,

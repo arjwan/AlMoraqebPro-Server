@@ -236,6 +236,11 @@ const employeeRequestSchema = new mongoose.Schema({
         required: true
     },
 
+    phoneNumber: {
+        type: String,
+        default: ''
+    },
+
     jobTitle: String,
 
     workLocation: String,
@@ -303,6 +308,15 @@ const employeeSchema = new mongoose.Schema({
     },
 
     email: String,
+
+    /*
+     * رقم الهاتف يُستخدم لربط طلبات الهاتف
+     * بالموظف الموجود داخل نفس الشركة.
+     */
+    phoneNumber: {
+        type: String,
+        default: ''
+    },
 
     salary: Number,
 
@@ -2367,10 +2381,122 @@ app.post(
 
             }
 
+            const phoneNumber =
+                String(
+                    req.body.phoneNumber ||
+                    req.body.phone ||
+                    ''
+                ).trim();
+
+            /*
+             * إذا وصل طلب من هاتف يحمل رقم موظف موجود مسبقاً
+             * داخل نفس الشركة، نربط الجهاز بالموظف الحالي
+             * ولا ننشئ موظفاً جديداً.
+             */
+            if (phoneNumber) {
+
+                const existingEmployee =
+                    await Employee.findOne({
+                        companyId,
+                        phoneNumber
+                    }).lean();
+
+                if (existingEmployee) {
+
+                    const update = {};
+
+                    if (
+                        deviceId &&
+                        existingEmployee.deviceId !== deviceId
+                    ) {
+                        update.deviceId = deviceId;
+                        update.deviceBoundAt = new Date();
+                    }
+
+                    if (Object.keys(update).length) {
+                        await Employee.updateOne(
+                            {
+                                _id: existingEmployee._id
+                            },
+                            {
+                                $set: update
+                            }
+                        );
+                    }
+
+                    const linkedRequest =
+                        await new EmployeeRequest({
+
+                            ...req.body,
+
+                            companyId,
+
+                            companyName:
+                                req.body.companyName ||
+                                company.name,
+
+                            name,
+
+                            phoneNumber,
+
+                            deviceId,
+
+                            status: 'approved'
+
+                        }).save();
+
+                    await Company.updateOne(
+                        {
+                            companyId
+                        },
+                        {
+                            $set: {
+                                lastSeenAt: new Date()
+                            }
+                        }
+                    );
+
+                    logEmployeeRequestEvent('request-linked-existing', {
+                        endpoint: '/api/employee/request',
+                        companyId,
+                        deviceId,
+                        requestId: String(linkedRequest._id),
+                        httpStatus: 200
+                    });
+
+                    return res.status(200).json({
+
+                        success: true,
+
+                        message:
+                            'الموظف موجود مسبقاً في الشركة، وتم ربط الجهاز بالحساب الحالي.',
+
+                        linked: true,
+
+                        employee: publicEmployee(
+                            Object.assign(
+                                {},
+                                existingEmployee,
+                                update
+                            )
+                        ),
+
+                        requestId: linkedRequest._id,
+
+                        status: 'approved'
+
+                    });
+
+                }
+
+            }
+
             const request =
                 await new EmployeeRequest({
 
                     ...req.body,
+
+                    phoneNumber,
 
                     companyId,
 
@@ -2633,8 +2759,12 @@ app.post(
             const existingEmployee =
                 await Employee.findOne({
                     companyId: request.companyId,
-                    name: request.name,
-                    ...(request.deviceId ? { deviceId: request.deviceId } : {})
+                    ...(request.phoneNumber
+                        ? { phoneNumber: request.phoneNumber }
+                        : {
+                            name: request.name,
+                            ...(request.deviceId ? { deviceId: request.deviceId } : {})
+                        })
                 }).lean();
 
             if (existingEmployee) {
@@ -2678,6 +2808,10 @@ app.post(
 
                     name:
                         request.name,
+
+                    phoneNumber:
+                        request.phoneNumber ||
+                        '',
 
                     email:
                         req.body.email ||
@@ -3207,11 +3341,29 @@ app.post(
                 });
             }
 
+            const phoneNumber =
+                String(req.body.phoneNumber || '').trim();
+
+            if (phoneNumber) {
+                const phoneDuplicate = await Employee.findOne({
+                    companyId,
+                    phoneNumber
+                }).lean();
+
+                if (phoneDuplicate) {
+                    return res.status(409).json({
+                        success: false,
+                        message: 'رقم الهاتف مستخدم مسبقاً في هذه الشركة'
+                    });
+                }
+            }
+
             const employee = await new Employee({
                 companyId,
                 companyName: req.body.companyName || '',
                 name,
                 email: req.body.email || '',
+                phoneNumber,
                 salary: req.body.salary !== undefined && req.body.salary !== ''
                     ? Number(req.body.salary)
                     : undefined,
@@ -3331,6 +3483,26 @@ app.put(
                 });
             }
 
+            const phoneNumber =
+                req.body.phoneNumber !== undefined
+                    ? String(req.body.phoneNumber || '').trim()
+                    : String(employee.phoneNumber || '').trim();
+
+            if (phoneNumber) {
+                const phoneDuplicate = await Employee.findOne({
+                    _id: { $ne: employee._id },
+                    companyId: employee.companyId,
+                    phoneNumber
+                }).lean();
+
+                if (phoneDuplicate) {
+                    return res.status(409).json({
+                        success: false,
+                        message: 'رقم الهاتف مستخدم مسبقاً في هذه الشركة'
+                    });
+                }
+            }
+
             const duplicate = await Employee.findOne({
                 _id: { $ne: employee._id },
                 companyId: employee.companyId,
@@ -3352,6 +3524,7 @@ app.put(
             employee.specialty = req.body.specialty ?? employee.specialty;
             employee.workplace = req.body.workplace ?? req.body.workLocation ?? employee.workplace;
             employee.location = req.body.location ?? employee.location;
+            employee.phoneNumber = phoneNumber;
             employee.username = username;
 
             if (password) {
