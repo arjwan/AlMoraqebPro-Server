@@ -803,6 +803,15 @@ function publicEmployee(employee) {
         ...safeEmployee
     } = value;
 
+    // توحيد الحقل الذي تستخدمه لوحة المدير مع حالة بيانات الدخول في MongoDB.
+    // النظام يحفظ credentialsStatus فقط للموظف، بينما الواجهة القديمة تقرأ status.
+    if (!safeEmployee.status) {
+        safeEmployee.status =
+            safeEmployee.credentialsStatus === 'active'
+                ? 'active'
+                : 'pending';
+    }
+
     return safeEmployee;
 }
 
@@ -3128,6 +3137,284 @@ app.get(
 
         }
 
+    }
+);
+
+
+/*
+=========================================================
+  ADMIN EMPLOYEE CRUD
+=========================================================
+
+  لوحة المدير تستخدم /api/employees للإضافة والتعديل والحذف.
+  هذه المسارات كانت ناقصة في النسخة السابقة، رغم أن الواجهة
+  تستدعيها مباشرة.
+*/
+
+app.post(
+    '/api/employees',
+    requireAdmin,
+    async (req, res) => {
+
+        try {
+
+            const companyId =
+                String(
+                    req.body.companyId ||
+                    req.session.companyId ||
+                    ''
+                ).trim();
+
+            const name =
+                String(req.body.name || '').trim();
+
+            const username =
+                String(req.body.username || '').trim();
+
+            const password =
+                String(req.body.password || '');
+
+            if (!companyId || !name) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'companyId واسم الموظف مطلوبان'
+                });
+            }
+
+            if (companyId !== String(req.session.companyId || '').trim()) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'لا يمكنك إضافة موظف لشركة أخرى'
+                });
+            }
+
+            if (!username || password.length < 4) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'اسم المستخدم وكلمة المرور مطلوبان، وكلمة المرور 4 أحرف على الأقل'
+                });
+            }
+
+            const duplicate = await Employee.findOne({
+                companyId,
+                username
+            }).lean();
+
+            if (duplicate) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'اسم المستخدم مستخدم مسبقاً'
+                });
+            }
+
+            const employee = await new Employee({
+                companyId,
+                companyName: req.body.companyName || '',
+                name,
+                email: req.body.email || '',
+                salary: req.body.salary !== undefined && req.body.salary !== ''
+                    ? Number(req.body.salary)
+                    : undefined,
+                specialty: req.body.specialty || req.body.jobTitle || '',
+                workplace: req.body.workplace || req.body.workLocation || '',
+                username,
+                password,
+                credentialsStatus: 'active',
+                deviceId: String(req.body.deviceId || '').trim(),
+                deviceBoundAt: req.body.deviceId ? new Date() : undefined,
+                location: req.body.location || '',
+                loans: []
+            }).save();
+
+            await Company.updateOne(
+                { companyId },
+                { $set: { lastSeenAt: new Date() } }
+            );
+
+            return res.status(201).json({
+                success: true,
+                message: 'تمت إضافة الموظف بنجاح',
+                employee: publicEmployee(employee)
+            });
+
+        } catch (err) {
+            console.error('POST /api/employees failed:', err);
+            return res.status(500).json({
+                success: false,
+                message: 'تعذر إضافة الموظف',
+                error: err.message
+            });
+        }
+    }
+);
+
+
+app.get(
+    '/api/employees/:employeeId',
+    requireAdmin,
+    async (req, res, next) => {
+
+        // إذا كان المعامل companyId وليس Mongo ObjectId نمرره لمسار
+        // /api/employees/:companyId الموجود أسفل هذا المسار.
+        if (!mongoose.Types.ObjectId.isValid(req.params.employeeId)) {
+            return next();
+        }
+
+        try {
+            const employee = await Employee.findById(req.params.employeeId).lean();
+
+            if (
+                !employee ||
+                employee.companyId !== String(req.session.companyId || '').trim()
+            ) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'الموظف غير موجود'
+                });
+            }
+
+            return res.json({
+                success: true,
+                employee: publicEmployee(employee)
+            });
+        } catch (err) {
+            console.error('GET /api/employees/:employeeId failed:', err);
+            return res.status(500).json({
+                success: false,
+                message: 'تعذر جلب بيانات الموظف',
+                error: err.message
+            });
+        }
+    }
+);
+
+
+app.put(
+    '/api/employees/:employeeId',
+    requireAdmin,
+    async (req, res) => {
+
+        try {
+            const employee = await Employee.findById(req.params.employeeId);
+
+            if (
+                !employee ||
+                employee.companyId !== String(req.session.companyId || '').trim()
+            ) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'الموظف غير موجود'
+                });
+            }
+
+            const username =
+                req.body.username !== undefined
+                    ? String(req.body.username || '').trim()
+                    : employee.username;
+
+            const password =
+                req.body.password !== undefined
+                    ? String(req.body.password || '')
+                    : '';
+
+            if (!username) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'اسم المستخدم مطلوب'
+                });
+            }
+
+            if (password && password.length < 4) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'كلمة المرور يجب أن تكون 4 أحرف على الأقل'
+                });
+            }
+
+            const duplicate = await Employee.findOne({
+                _id: { $ne: employee._id },
+                companyId: employee.companyId,
+                username
+            }).lean();
+
+            if (duplicate) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'اسم المستخدم مستخدم مسبقاً'
+                });
+            }
+
+            employee.name = String(req.body.name || employee.name).trim();
+            employee.email = req.body.email ?? employee.email;
+            employee.salary = req.body.salary !== undefined && req.body.salary !== ''
+                ? Number(req.body.salary)
+                : employee.salary;
+            employee.specialty = req.body.specialty ?? employee.specialty;
+            employee.workplace = req.body.workplace ?? req.body.workLocation ?? employee.workplace;
+            employee.location = req.body.location ?? employee.location;
+            employee.username = username;
+
+            if (password) {
+                employee.password = password;
+                employee.credentialsStatus = 'active';
+            } else if (req.body.status !== undefined) {
+                employee.credentialsStatus =
+                    String(req.body.status).toLowerCase() === 'active'
+                        ? 'active'
+                        : 'pending';
+            }
+
+            await employee.save();
+
+            return res.json({
+                success: true,
+                message: 'تم تعديل الموظف بنجاح',
+                employee: publicEmployee(employee)
+            });
+        } catch (err) {
+            console.error('PUT /api/employees/:employeeId failed:', err);
+            return res.status(500).json({
+                success: false,
+                message: 'تعذر تعديل الموظف',
+                error: err.message
+            });
+        }
+    }
+);
+
+
+app.delete(
+    '/api/employees/:employeeId',
+    requireAdmin,
+    async (req, res) => {
+
+        try {
+            const employee = await Employee.findById(req.params.employeeId);
+
+            if (
+                !employee ||
+                employee.companyId !== String(req.session.companyId || '').trim()
+            ) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'الموظف غير موجود'
+                });
+            }
+
+            await Employee.deleteOne({ _id: employee._id });
+
+            return res.json({
+                success: true,
+                message: 'تم حذف الموظف بنجاح'
+            });
+        } catch (err) {
+            console.error('DELETE /api/employees/:employeeId failed:', err);
+            return res.status(500).json({
+                success: false,
+                message: 'تعذر حذف الموظف',
+                error: err.message
+            });
+        }
     }
 );
 
