@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>المراقب برو | بوابة الموظف</title>
+<title>طلب انضمام موظف | المراقب برو</title>
 <style>
 /* === التصميم الأصلي مع إضافات النافذة === */
 *{box-sizing:border-box}body{margin:0;font-family:Tahoma,'Segoe UI',sans-serif;background:linear-gradient(160deg,#eff6ff,#f8fafc 55%,#e0f2fe);color:#0f172a;min-height:100vh;padding:18px;position:relative}.app{width:100%;max-width:480px;margin:auto}.hero{background:linear-gradient(135deg,#0369a1,#0284c7 55%,#38bdf8);color:#fff;border-radius:28px;padding:24px 20px;box-shadow:0 18px 45px rgba(2,132,199,.25);position:relative;overflow:hidden;display:flex;justify-content:space-between;align-items:center}.hero:after{content:'';position:absolute;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.09);left:-45px;top:-55px}.brand{font-size:25px;font-weight:900;display:flex;align-items:center;gap:10px}.info-btn{background:rgba(255,255,255,0.2);border:0;color:#fff;font-size:20px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.3s}.info-btn:hover{background:rgba(255,255,255,0.4);transform:rotate(10deg)}.hero p{margin:7px 0 0;color:#e0f2fe;font-size:12px}.server{margin-top:18px;display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.14);padding:7px 11px;border-radius:999px;font-size:11px}.dot{width:8px;height:8px;border-radius:50%;background:#fbbf24}.nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.nav button{border:0;border-radius:17px;padding:14px;background:#fff;color:#475569;font-weight:900;box-shadow:0 7px 22px rgba(15,23,42,.07);cursor:pointer;transition:0.2s}.nav button.active{background:#0f172a;color:#fff}.panel{display:none;background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:20px;box-shadow:0 12px 30px rgba(15,23,42,.08)}.panel.active{display:block}.section-title{font-size:18px;font-weight:900;margin-bottom:5px}.section-sub{font-size:11px;color:#64748b;margin-bottom:18px}.form{display:grid;gap:12px}.field label{display:block;font-size:11px;font-weight:900;color:#475569;margin:0 0 6px}.field input,.field select{width:100%;height:46px;border:1px solid #cbd5e1;border-radius:13px;padding:0 13px;font-size:13px;background:#f8fafc;outline:none}.field input:focus,.field select:focus{border-color:#0284c7;background:#fff;box-shadow:0 0 0 3px #e0f2fe}.primary{width:100%;height:48px;border:0;border-radius:14px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;font-weight:900;cursor:pointer;transition:0.2s}.primary:hover{transform:scale(1.01);opacity:0.95}.secondary{width:100%;height:44px;border:1px solid #cbd5e1;border-radius:13px;background:#f8fafc;color:#334155;font-weight:800;cursor:pointer;transition:0.2s}.secondary:hover{background:#e2e8f0}.success,.error,.info{display:none;margin-top:12px;padding:11px;border-radius:12px;font-size:12px;font-weight:800}.success{background:#dcfce7;color:#166534}.error{background:#fee2e2;color:#991b1b}.info{background:#e0f2fe;color:#075985}.request-menu{position:relative}.company-list{position:absolute;z-index:20;top:53px;right:0;left:0;background:#fff;border:1px solid #cbd5e1;border-radius:14px;box-shadow:0 16px 35px rgba(15,23,42,.16);max-height:220px;overflow:auto;display:none}.company-item{padding:12px;border-bottom:1px solid #f1f5f9;cursor:pointer;font-size:12px;font-weight:800}.company-item:hover{background:#f0f9ff}.choice-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:13px;margin-bottom:12px}.choice-card strong{display:block;font-size:13px}.choice-card span{font-size:11px;color:#64748b}.footer{text-align:center;color:#64748b;font-size:10px;margin:18px 0}.back{margin-top:10px}.loading{opacity:.65;pointer-events:none}
@@ -144,25 +144,33 @@
     <span id="statusText">جاري فحص الاتصال...</span>
 </div>
 
-<!-- أزرار التبديل بين تسجيل الدخول وطلب التسجيل -->
-<div class="nav">
-    <button id="loginTab" class="active" onclick="showPanel('login')">🔐 تسجيل الدخول</button>
-    <button id="requestTab" onclick="goRequest()">📝 طلب انضمام</button>
-</div>
-
-<!-- لوحة تسجيل الدخول -->
-<section id="loginPanel" class="panel active">
-    <div class="section-title">تسجيل دخول الموظف</div>
-    <div class="section-sub">أدخل بيانات الحساب المعتمدة من إدارة الشركة.</div>
-    <form class="form" onsubmit="login(event)">
-        <div class="field"><label>رمز الشركة</label><input id="companyId" required placeholder="مثال: B-2080"></div>
-        <div class="field"><label>اسم المستخدم</label><input id="username" required placeholder="اسم المستخدم"></div>
-        <div class="field"><label>كلمة المرور</label><input id="password" type="password" required placeholder="كلمة المرور"></div>
-        <button class="primary" id="loginBtn">🚀 دخول إلى حسابي</button>
+<!-- لوحة طلب التسجيل -->
+<section id="requestPanel" class="panel active">
+    <div class="section-title">طلب تسجيل موظف جديد</div>
+    <div class="section-sub">اختر الشركة من القائمة المنبثقة ثم أكمل بياناتك. سيصل الطلب إلى إدارة الشركة.</div>
+    <form class="form" onsubmit="submitRequest(event)">
+        <div class="field request-menu">
+            <label>الشركة</label>
+            <input id="requestCompany" autocomplete="off" placeholder="اضغط لاختيار الشركة" required onclick="toggleCompanies()" oninput="filterCompanies()">
+            <div id="companyList" class="company-list"></div>
+        </div>
+        <input id="requestCompanyId" type="hidden">
+        <div class="choice-card" id="selectedCompany"><strong>لم يتم اختيار شركة</strong><span>اختر شركة من القائمة أعلاه</span></div>
+        <div class="field"><label>اسم الموظف الثلاثي</label><input id="requestName" required placeholder="الاسم الكامل"></div>
+        <div class="field"><label>رقم الهاتف</label><input id="phoneNumber" type="tel" required placeholder="مثال: 07XX XXX XXXX"></div>
+        <div class="field"><label>العنوان الوظيفي</label><input id="jobTitle" required placeholder="مثال: محاسب"></div>
+        <div class="field"><label>موقع العمل</label><input id="workLocation" required placeholder="الفرع / القسم"></div>
+        <div class="field"><label>الراتب</label><input id="salary" type="number" required placeholder="بالدينار العراقي"></div>
+        <div class="field"><label>الشفت</label><select id="shift"><option>صباحي</option><option>مسائي</option><option>ليلي</option><option>طوارئ</option></select></div>
+        <div class="field"><label>ساعات العمل اليومية</label><input id="workHours" type="number" required placeholder="8"></div>
+        <div class="field"><label>نوع الأجور</label><select id="wageType"><option>شهري</option><option>أسبوعي</option><option>يومي</option></select></div>
+        <div class="field"><label>الضمان الاجتماعي</label><select id="socialSecurity"><option>مسجل</option><option>غير مسجل</option></select></div>
+        <div class="field"><label>الموقع الجغرافي</label><input id="gps" readonly placeholder="سيتم تحديده تلقائياً"></div>
+        <button class="primary" id="requestBtn">📨 إرسال طلب التسجيل</button>
     </form>
-    <div id="loginMsg" class="error"></div>
+    <div id="requestMsg" class="success"></div>
+    <button class="secondary back" onclick="location.href='/'">⬅ العودة لتسجيل الدخول</button>
 </section>
-
 
 <div class="footer">المراقب برو © 2026 — شركة الارجوان للبرمجيات</div>
 </div>
@@ -173,6 +181,8 @@
 // ============================================================
 
 const SERVER_URL = location.origin;
+let companies = [];
+let gps = {};
 
 // ===== الكود الأصلي =====
 function deviceId() {
@@ -184,11 +194,6 @@ function deviceId() {
     return id;
 }
 
-function showPanel(name) {
-    document.getElementById('loginPanel').classList.toggle('active', name === 'login');
-    document.getElementById('loginTab').classList.toggle('active', name === 'login');
-}
-function goRequest() { location.href = 'register.html'; }
 
 async function ping() {
     try {
@@ -201,13 +206,67 @@ async function ping() {
     }
 }
 
-function esc(v) {
-    return String(v ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
+async function loadCompanies() {
+    try {
+        const r = await fetch(SERVER_URL + '/api/companies');
+        const d = await r.json();
+        companies = d.companies || [];
+        renderCompanies(companies);
+    } catch(e) { companies = []; }
 }
+
+function toggleCompanies() {
+    const x = document.getElementById('companyList');
+    x.style.display = x.style.display === 'block' ? 'none' : 'block';
+    renderCompanies(companies);
+}
+
+function filterCompanies() {
+    const q = document.getElementById('requestCompany').value.toLowerCase();
+    renderCompanies(companies.filter(c => 
+        String(c.name || '').toLowerCase().includes(q) || 
+        String(c.companyId || '').toLowerCase().includes(q)
+    ));
+}
+
+function renderCompanies(list) {
+    const box = document.getElementById('companyList');
+    box.innerHTML = list.length ? 
+        list.map(c => `<div class="company-item" onclick="chooseCompany('${esc(c.companyId)}','${esc(c.name)}')">🏢 ${esc(c.name)} <small>(${esc(c.companyId)})</small></div>`).join('') :
+        '<div class="company-item">لا توجد شركات مطابقة</div>';
+}
+
+function chooseCompany(id, name) {
+    document.getElementById('requestCompany').value = name + ' — ' + id;
+    document.getElementById('requestCompanyId').value = id;
+    document.getElementById('selectedCompany').innerHTML = '<strong>🏢 ' + esc(name) + '</strong><span>رمز الشركة: ' + esc(id) + '</span>';
+    document.getElementById('companyList').style.display = 'none';
+}
+
+function getGPS() {
+    if (!navigator.geolocation) {
+        document.getElementById('gps').value = 'المتصفح لا يدعم GPS';
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        p => {
+            gps = { latitude: p.coords.latitude, longitude: p.coords.longitude };
+            document.getElementById('gps').value = p.coords.latitude.toFixed(5) + ', ' + p.coords.longitude.toFixed(5);
+        },
+        () => document.getElementById('gps').value = 'تعذر تحديد الموقع'
+    );
+}
+
+// ===== إغلاق قائمة الشركات عند النقر خارجها =====
+document.addEventListener('click', e => {
+    if (!e.target.closest('.request-menu')) document.getElementById('companyList').style.display = 'none';
+});
 
 // ===== التهيئة =====
 ping();
 setInterval(ping, 30000);
+loadCompanies();
+getGPS();
 </script>
 </body>
 </html>
