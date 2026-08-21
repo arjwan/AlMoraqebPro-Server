@@ -95,8 +95,45 @@ async function waitForServer(url, retries, delay) {
                 headers: { Authorization: 'Bearer ' + login.token }
             })).json();
             check('developer companies list', Array.isArray(list.companies) && list.companies.length >= 1);
+
+            const adminLogin = await (await fetch(BASE + '/api/admin/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyId, username: 'admin', password: 'admin123' })
+            })).json();
+            check('admin login => token', !!adminLogin.token);
+
+            const requestBody = {
+                companyId,
+                companyName: 'شركة الاختبار',
+                name: 'موظف اختبار',
+                jobTitle: 'مستخدم',
+                workLocation: 'الفرع الرئيسي',
+                salary: 1200,
+                shift: 'صباحي',
+                workHours: 8,
+                wageType: 'شهري',
+                socialSecurity: 'مسجل',
+                location: '31.000,45.000',
+                deviceId: 'device-' + Date.now()
+            };
+            const requestResult = await (await fetch(BASE + '/api/employee/request', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody)
+            })).json();
+            check('employee request saved in EmployeeRequest', requestResult.success === true && !!requestResult.requestId && requestResult.status === 'pending');
+
+            const pending = await (await fetch(BASE + '/api/employee/requests/' + encodeURIComponent(companyId) + '/pending')).json();
+            check('pending request visible to admin', Array.isArray(pending.requests) && pending.requests.length >= 1);
+
+            const approve = await (await fetch(BASE + '/api/employee/request/' + requestResult.requestId + '/approve', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'employee@example.com' })
+            })).json();
+            check('approve request creates employee', approve.success === true && !!approve.employee);
+
+            const employees = await (await fetch(BASE + '/api/employees?companyId=' + encodeURIComponent(companyId), {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('employees list includes approved employee', Array.isArray(employees.employees) && employees.employees.some(e => e.companyId === companyId && e.name === 'موظف اختبار'));
         } else {
-            skip('company register'); skip('duplicate company'); skip('developer companies list');
+            skip('company register'); skip('duplicate company'); skip('developer companies list'); skip('admin login'); skip('employee request saved in EmployeeRequest'); skip('pending request visible to admin'); skip('approve request creates employee'); skip('employees list includes approved employee');
         }
 
         check('no-auth endpoints => 401', (await fetch(BASE + '/api/developer/companies')).status === 401);

@@ -822,6 +822,21 @@ function publicCompany(company) {
     return safeCompany;
 }
 
+function logEmployeeRequestEvent(event, meta = {}) {
+
+   const payload = {
+       event,
+       endpoint: meta.endpoint || null,
+       companyId: meta.companyId || null,
+       deviceId: meta.deviceId || null,
+       requestId: meta.requestId || null,
+       httpStatus: meta.httpStatus || null,
+       error: meta.error ? String(meta.error).slice(0, 200) : null
+   };
+
+   console.log('[employee-request]', JSON.stringify(payload));
+}
+
 
 /*
 =========================================================
@@ -2269,37 +2284,51 @@ app.post(
     '/api/employee/request',
     async (req, res) => {
 
+        const companyId =
+            String(
+                req.body.companyId ||
+                req.body.companyCode ||
+                req.body.id ||
+                ''
+            ).trim();
+
+        const deviceId =
+            String(
+                req.body.deviceId ||
+                ''
+            ).trim();
+
+        const name =
+            String(
+                req.body.name ||
+                ''
+            ).trim();
+
+        if (
+            !companyId ||
+            !name
+        ) {
+
+            logEmployeeRequestEvent('request-rejected', {
+                endpoint: '/api/employee/request',
+                companyId,
+                deviceId,
+                httpStatus: 400,
+                error: 'missing companyId or name'
+            });
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    'بيانات طلب الموظف ناقصة'
+
+            });
+
+        }
+
         try {
-
-            const companyId =
-                String(
-                    req.body.companyId ||
-                    req.body.companyCode ||
-                    req.body.id ||
-                    ''
-                ).trim();
-
-            const name =
-                String(
-                    req.body.name ||
-                    ''
-                ).trim();
-
-            if (
-                !companyId ||
-                !name
-            ) {
-
-                return res.status(400).json({
-
-                    success: false,
-
-                    message:
-                        'بيانات طلب الموظف ناقصة'
-
-                });
-
-            }
 
             const company =
                 await Company
@@ -2309,6 +2338,14 @@ app.post(
                     .lean();
 
             if (!company) {
+
+                logEmployeeRequestEvent('request-rejected', {
+                    endpoint: '/api/employee/request',
+                    companyId,
+                    deviceId,
+                    httpStatus: 404,
+                    error: 'company not found in MongoDB'
+                });
 
                 return res.status(404).json({
 
@@ -2343,18 +2380,13 @@ app.post(
                             )
                             : undefined,
 
-                    deviceId:
-                        req.body.deviceId ||
-                        '',
+                    deviceId,
 
                     status:
                         'pending'
 
                 }).save();
 
-            /*
-             * الهاتف يعتبر نشاطاً للشركة.
-             */
             await Company.updateOne(
                 {
                     companyId
@@ -2367,6 +2399,14 @@ app.post(
                 }
             );
 
+            logEmployeeRequestEvent('request-created', {
+                endpoint: '/api/employee/request',
+                companyId,
+                deviceId,
+                requestId: String(request._id),
+                httpStatus: 201
+            });
+
             res.status(201).json({
 
                 success: true,
@@ -2375,11 +2415,22 @@ app.post(
                     'تم إرسال الطلب إلى MongoDB',
 
                 requestId:
-                    request._id
+                    request._id,
+
+                status:
+                    'pending'
 
             });
 
         } catch (err) {
+
+            logEmployeeRequestEvent('request-failed', {
+                endpoint: '/api/employee/request',
+                companyId,
+                deviceId,
+                httpStatus: 500,
+                error: err.message
+            });
 
             res.status(500).json({
 
@@ -2511,15 +2562,28 @@ app.post(
     '/api/employee/request/:requestId/approve',
     async (req, res) => {
 
+        const requestId =
+            String(
+                req.params.requestId ||
+                ''
+            ).trim();
+
         try {
 
             const request =
                 await EmployeeRequest
                     .findById(
-                        req.params.requestId
+                        requestId
                     );
 
             if (!request) {
+
+                logEmployeeRequestEvent('approve-rejected', {
+                    endpoint: '/api/employee/request/:requestId/approve',
+                    requestId,
+                    httpStatus: 404,
+                    error: 'request not found'
+                });
 
                 return res.status(404).json({
 
@@ -2537,12 +2601,58 @@ app.post(
                 'approved'
             ) {
 
+                logEmployeeRequestEvent('approve-duplicate', {
+                    endpoint: '/api/employee/request/:requestId/approve',
+                    companyId: request.companyId,
+                    deviceId: request.deviceId || '',
+                    requestId: String(request._id),
+                    httpStatus: 200,
+                    error: 'already approved'
+                });
+
                 return res.status(200).json({
 
                     success: true,
 
                     message:
                         'الطلب معتمد مسبقاً'
+
+                });
+
+            }
+
+            const existingEmployee =
+                await Employee.findOne({
+                    companyId: request.companyId,
+                    name: request.name,
+                    ...(request.deviceId ? { deviceId: request.deviceId } : {})
+                }).lean();
+
+            if (existingEmployee) {
+
+                request.status = 'approved';
+                await request.save();
+
+                logEmployeeRequestEvent('approve-existing', {
+                    endpoint: '/api/employee/request/:requestId/approve',
+                    companyId: request.companyId,
+                    deviceId: request.deviceId || '',
+                    requestId: String(request._id),
+                    httpStatus: 200,
+                    error: 'existing employee found'
+                });
+
+                return res.status(200).json({
+
+                    success: true,
+
+                    message:
+                        'الموظف موجود بالفعل في الشركة، وتم اعتماد الطلب فقط.',
+
+                    employee:
+                        publicEmployee(
+                            existingEmployee
+                        )
 
                 });
 
@@ -2604,6 +2714,14 @@ app.post(
 
             await request.save();
 
+            logEmployeeRequestEvent('approve-created', {
+                endpoint: '/api/employee/request/:requestId/approve',
+                companyId: request.companyId,
+                deviceId: request.deviceId || '',
+                requestId: String(request._id),
+                httpStatus: 201
+            });
+
             res.status(201).json({
 
                 success: true,
@@ -2619,6 +2737,13 @@ app.post(
             });
 
         } catch (err) {
+
+            logEmployeeRequestEvent('approve-failed', {
+                endpoint: '/api/employee/request/:requestId/approve',
+                requestId,
+                httpStatus: 500,
+                error: err.message
+            });
 
             res.status(500).json({
 
