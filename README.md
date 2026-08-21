@@ -20,6 +20,9 @@
 | النشر     | Render |
 | المصدر    | GitHub |
 
+> البنية الرسمية للنشر هي: **GitHub → Render → MongoDB Atlas**.
+> لا يوجد Oracle، ولا أي نشر عبر SSH أو خادم Oracle في هذا المشروع.
+
 > ملاحظة: النشر الرسمي والحالي يعتمد على **MongoDB + Render**. لا يُستخدم Oracle في النشر.
 
 ## المتغيرات المطلوبة (Environment Variables)
