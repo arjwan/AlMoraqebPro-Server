@@ -540,6 +540,31 @@ async function login(event) {
                 )
             );
 
+            /*
+             * ✅ تخزين موحد للبيانات المستخدمة
+             * في صفحة البصمة وصفحة الخدمات.
+             */
+            localStorage.setItem(
+                'activeUser',
+                data.employee.username ||
+                data.employee.name ||
+                ''
+            );
+
+            localStorage.setItem(
+                'activeCompanyId',
+                data.employee.companyId ||
+                companyId ||
+                ''
+            );
+
+            localStorage.setItem(
+                'employeeId',
+                data.employee._id ||
+                data.employee.id ||
+                ''
+            );
+
         }
 
         /*
