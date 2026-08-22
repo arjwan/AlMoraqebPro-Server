@@ -4447,6 +4447,113 @@ app.patch(
     }
 );
 
+/*
+=========================================================
+  ADMIN EMPLOYEE LOCATIONS (لصفحة الخريطة)
+  يجلب آخر موقع مسجل لكل موظف تابع للشركة
+=========================================================
+*/
+app.get(
+    '/api/admin/employee-locations',
+    requireAdmin,
+    async (req, res) => {
+
+        try {
+
+            const companyId =
+                req.session.companyId;
+
+            const employees =
+                await Employee
+                    .find({
+                        companyId
+                    })
+                    .select(
+                        '_id name specialty workplace'
+                    )
+                    .lean();
+
+            const result = [];
+
+            for (
+                const emp
+                of employees
+            ) {
+
+                const lastAttendance =
+                    await Attendance
+                        .findOne({
+                            employeeId:
+                                String(
+                                    emp._id
+                                ),
+                            companyId
+                        })
+                        .sort({
+                            timestamp: -1
+                        })
+                        .lean();
+
+                result.push({
+
+                    employeeId:
+                        emp._id,
+
+                    name:
+                        emp.name,
+
+                    specialty:
+                        emp.specialty ||
+                        '',
+
+                    workplace:
+                        emp.workplace ||
+                        '',
+
+                    lastLocation:
+                        lastAttendance
+                            ? {
+                                latitude:
+                                    lastAttendance.latitude,
+
+                                longitude:
+                                    lastAttendance.longitude,
+
+                                type:
+                                    lastAttendance.type,
+
+                                timestamp:
+                                    lastAttendance.timestamp
+                            }
+                            : null
+
+                });
+
+            }
+
+            res.json({
+
+                success: true,
+
+                employees: result
+
+            });
+
+        } catch (err) {
+
+            res.status(500).json({
+
+                success: false,
+
+                error:
+                    err.message
+
+            });
+
+        }
+    }
+);
+
 
 /*
 =========================================================
