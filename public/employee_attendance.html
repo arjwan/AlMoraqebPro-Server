@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>البصمة والحضور | المراقب برو</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,'Segoe UI',sans-serif;background:linear-gradient(160deg,#eff6ff,#f8fafc 55%,#e0f2fe);color:#0f172a;min-height:100vh;padding:18px}
+.app{max-width:480px;margin:auto}
+.hero{background:linear-gradient(135deg,#0369a1,#0284c7 55%,#38bdf8);color:#fff;border-radius:24px;padding:20px;box-shadow:0 14px 35px rgba(2,132,199,.25)}
+.hero h1{margin:0;font-size:22px}.hero p{margin:6px 0 0;font-size:12px;color:#e0f2fe}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:18px;margin-top:14px;box-shadow:0 10px 26px rgba(15,23,42,.07)}
+.row{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:700;color:#334155}
+.row b{color:#0f172a}
+.btn{width:100%;border:0;border-radius:15px;padding:15px;font-size:16px;font-weight:900;cursor:pointer;color:#fff;margin-top:12px;transition:.2s}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-in{background:linear-gradient(135deg,#059669,#047857)}
+.btn-out{background:linear-gradient(135deg,#d97706,#b45309)}
+.msg{display:none;margin-top:12px;padding:12px;border-radius:13px;font-size:13px;font-weight:800}
+.msg.ok{background:#dcfce7;color:#166534;display:block}
+.msg.err{background:#fee2e2;color:#991b1b;display:block}
+.msg.info{background:#e0f2fe;color:#075985;display:block}
+.back{display:inline-block;margin-top:14px;color:#0369a1;font-weight:800;text-decoration:none;font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+    <div class="hero">
+        <h1>🖐️ البصمة والحضور</h1>
+        <p id="hello">الموظف: —</p>
+    </div>
+
+    <div class="card">
+        <div class="row"><span>حالة الحضور الحالية</span><b id="attStatus">جاري الفحص...</b></div>
+        <div class="row"><span>آخر عملية</span><b id="lastAtt">—</b></div>
+        <div class="row"><span>Device ID</span><b id="devView" style="font-size:11px;word-break:break-all">—</b></div>
+        <div class="row"><span>GPS</span><b id="gpsView">غير محدد بعد</b></div>
+        <div class="row"><span>التحقق بالبصمة</span><b id="fpView">لم يتم بعد</b></div>
+    </div>
+
+    <button class="btn btn-in" id="btnIn" onclick="mark('attendance')">🟢 تسجيل الحضور</button>
+    <button class="btn btn-out" id="btnOut" onclick="mark('leave')">🔴 تسجيل الانصراف</button>
+
+    <div id="msg" class="msg"></div>
+
+    <a class="back" href="#" onclick="history.back();return false">⬅ رجوع إلى صفحة الموظف</a>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const employeeId = params.get('employeeId') || localStorage.getItem('employeeId') || '';
+const employeeName = params.get('name') || localStorage.getItem('employeeName') || 'الموظف';
+const companyId = params.get('company') || localStorage.getItem('companyId') || '';
+const deviceId = params.get('deviceId') || localStorage.getItem('deviceId') || localStorage.getItem('employeeDeviceId') || localStorage.getItem('device_id') || '';
+const SERVER_URL = location.origin;
+
+const $ = id => document.getElementById(id);
+$('hello').textContent = 'الموظف: ' + employeeName;
+$('devView').textContent = deviceId || 'غير موجود';
+
+function showMsg(text, cls) { const m = $('msg'); m.className = 'msg ' + cls; m.textContent = text; }
+function setBusy(b) { $('btnIn').disabled = b; $('btnOut').disabled = b; }
+
+// ===== GPS حقيقي الزامي =====
+let gps = null;
+function getGPS() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) { showMsg('هذا الجهاز/المتصفح لا يدعم تحديد الموقع - لا يمكن تسجيل الحضور بدونه.', 'err'); resolve(false); return; }
+        showMsg('جاري تحديد موقعك الحالي...', 'info');
+        navigator.geolocation.getCurrentPosition(
+            p => {
+                gps = { latitude: p.coords.latitude, longitude: p.coords.longitude };
+                $('gpsView').textContent = gps.latitude.toFixed(5) + ', ' + gps.longitude.toFixed(5);
+                resolve(true);
+            },
+            e => {
+                showMsg('تعذر الحصول على الموقع: ' + (e.message || 'يرجى السماح بصلاحية الموقع') + ' - لا يمكن تسجيل الحضور بدونه.', 'err');
+                resolve(false);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+    });
+}
+
+// ===== بصمة حقيقية عبر WebAuthn (بصمة الجهاز) =====
+async function verifyFingerprint() {
+    $('fpView').textContent = 'بانتظار البصمة...';
+    if (!window.PublicKeyCredential) {
+        $('fpView').textContent = 'غير مدعوم';
+        throw new Error('هذا الجهاز لا يدعم البصمة (WebAuthn). استخدم تطبيق الهاتف لتسجيل البصمة.');
+    }
+    try {
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+        const cred = await navigator.credentials.get({
+            publicKey: { challenge, userVerification: 'required', timeout: 60000 }
+        });
+        if (!cred) throw new Error('لم يتم التحقق من البصمة');
+        const token = 'wa-' + btoa(String.fromCharCode(...new Uint8Array(cred.rawId))).slice(0, 48);
+        $('fpView').textContent = 'تم التحقق';
+        return token;
+    } catch (e) {
+        $('fpView').textContent = 'فشل التحقق';
+        throw new Error(e.name === 'NotAllowedError'
+            ? 'لم يتم تأكيد البصمة. يجب التحقق بالبصمة/PIN لتسجيل الحضور.'
+            : (e.message || 'فشل التحقق بالبصمة'));
+    }
+}
+
+async function mark(type) {
+    try {
+        if (!employeeId || !deviceId) { showMsg('بيانات الموظف أو الجهاز غير مكتملة. افتح الصفحة من داخل حساب الموظف.', 'err'); return; }
+        setBusy(true); $('msg').className = 'msg';
+
+        const hasGps = await getGPS();
+        if (!hasGps) { setBusy(false); return; }
+
+        const token = await verifyFingerprint();
+
+        showMsg('جاري الإرسال إلى السيرفر...', 'info');
+        const r = await fetch(SERVER_URL + '/api/attendance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                employeeId,
+                deviceId,
+                fingerprintToken: token,
+                latitude: gps.latitude,
+                longitude: gps.longitude,
+                type
+            })
+        });
+        const d = await r.json();
+        if (!r.ok || !d.success) { showMsg((d.message || 'تعذر تسجيل الحضور'), 'err'); await loadStatus(); setBusy(false); return; }
+        showMsg(d.message, 'ok');
+        await loadStatus();
+    } catch (e) {
+        showMsg((e.message || 'حدث خطأ غير متوقع'), 'err');
+    } finally {
+        setBusy(false);
+    }
+}
+
+async function loadStatus() {
+    try {
+        const r = await fetch(SERVER_URL + '/api/employees/' + encodeURIComponent(employeeId) + '/attendance');
+        const d = await r.json();
+        const items = d.attendance || [];
+        if (!items.length) { $('attStatus').textContent = 'لا يوجد سجل'; $('lastAtt').textContent = '—'; return; }
+        const last = items[0];
+        const t = new Date(last.timestamp).toLocaleString('ar-IQ', { dateStyle: 'medium', timeStyle: 'short' });
+        $('lastAtt').textContent = (last.type === 'leave' ? 'انصراف' : 'حضور') + ' - ' + t;
+        const lastOut = items.find(x => x.type === 'leave');
+        const lastIn = items.find(x => x.type !== 'leave');
+        const present = lastIn && (!lastOut || new Date(lastIn.timestamp) > new Date(lastOut.timestamp));
+        $('attStatus').innerHTML = present ? '<span style="color:#166534">حاضر</span>' : '<span style="color:#991b1b">خارج العمل</span>';
+    } catch { $('attStatus').textContent = 'تعذر جلب الحالة'; }
+}
+
+loadStatus();
+</script>
+</body>
+</html>

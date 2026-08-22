@@ -4159,6 +4159,69 @@ app.post(
 
 /*
 =========================================================
+  EMPLOYEE SERVICE REQUESTS (MY REQUESTS)
+=========================================================
+*/
+
+app.get(
+    '/api/employee/service-requests',
+    async (req, res) => {
+
+        try {
+
+            const employeeId =
+                String(req.query.employeeId || '').trim();
+
+            const deviceId =
+                String(req.query.deviceId || '').trim();
+
+            if (!employeeId || !deviceId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'employeeId وdeviceId مطلوبان'
+                });
+            }
+
+            const employee =
+                await Employee.findById(employeeId).lean();
+
+            if (
+                !employee ||
+                employee.deviceId !== deviceId
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'لا يمكن جلب الطلبات من هذا الجهاز'
+                });
+            }
+
+            const requests =
+                await ServiceRequest
+                    .find({
+                        employeeId,
+                        companyId: employee.companyId
+                    })
+                    .sort({ createdAt: -1 })
+                    .limit(50)
+                    .lean();
+
+            res.json({
+                success: true,
+                requests
+            });
+
+        } catch (err) {
+            res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+
+    }
+);
+
+/*
+=========================================================
   ADMIN SERVICE REQUESTS
 =========================================================
 */

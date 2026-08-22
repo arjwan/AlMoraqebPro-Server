@@ -154,6 +154,7 @@
         const params = new URLSearchParams(window.location.search);
         const employeeName = params.get('name') || 'الموظف';
         const employeeId = params.get('employeeId') || '';
+        const deviceId = params.get('deviceId') || localStorage.getItem('deviceId') || localStorage.getItem('employeeDeviceId') || localStorage.getItem('device_id') || '';
 
         // ===== تحديث الترحيب =====
         function updateGreeting() {
@@ -210,58 +211,60 @@
         function openLeaveModal() { openModal('leaveModal'); }
 
         function submitLoan() {
-            const amount = document.getElementById('loanAmount').value;
+            const amount = Number(document.getElementById('loanAmount').value);
             const reason = document.getElementById('loanReason').value;
-            if (!amount || !reason) { alert('⚠️ يرجى ملء جميع الحقول'); return; }
-            fetch(SERVER_URL + '/api/loans', {
+            if (!Number.isFinite(amount) || amount <= 0 || !reason) { alert('⚠️ يرجى إدخال مبلغ صحيح وسبب السلفة'); return; }
+            fetch(SERVER_URL + '/api/employee/service-request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ employeeId, amount, reason })
-            }).then(() => {
-                alert('✅ تم إرسال طلب السلفة');
+                body: JSON.stringify({ employeeId, deviceId, type: 'loan', amount, reason })
+            }).then(r => r.json()).then(d => {
+                if (!d.success) throw new Error(d.message || 'فشل الإرسال');
+                alert('✅ تم إرسال طلب السلفة إلى لوحة المدير');
                 closeModal('loanModal');
-            }).catch(() => alert('❌ فشل الإرسال'));
+            }).catch(e => alert('❌ ' + e.message));
         }
 
         function submitLeave() {
-            const type = document.getElementById('leaveType').value;
+            const leaveType = document.getElementById('leaveType').value;
             const period = document.getElementById('leavePeriod').value;
             const reason = document.getElementById('leaveReason').value;
-            if (!period || !reason) { alert('⚠️ يرجى ملء جميع الحقول'); return; }
-            fetch(SERVER_URL + '/api/leaves', {
+            if (!period || !reason) { alert('⚠️ يرجى تحديد الفترة وسبب الإجازة'); return; }
+            const requestedDate = period === 'tomorrow'
+                ? new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+                : new Date().toISOString().slice(0, 10);
+            fetch(SERVER_URL + '/api/employee/service-request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ employeeId, type, period, reason })
-            }).then(() => {
-                alert('✅ تم إرسال طلب الإجازة');
+                body: JSON.stringify({ employeeId, deviceId, type: 'leave', requestedDate, reason: `نوع الإجازة: ${leaveType} – ${reason}` })
+            }).then(r => r.json()).then(d => {
+                if (!d.success) throw new Error(d.message || 'فشل الإرسال');
+                alert('✅ تم إرسال طلب الإجازة إلى لوحة المدير');
                 closeModal('leaveModal');
-            }).catch(() => alert('❌ فشل الإرسال'));
+            }).catch(e => alert('❌ ' + e.message));
         }
 
         // ===== دوال البطاقات =====
         function fetchNotifications() {
-            fetch(SERVER_URL + '/api/notifications?employeeId=' + employeeId)
+            fetch(SERVER_URL + '/api/employee/notifications?employeeId=' + encodeURIComponent(employeeId) + '&deviceId=' + encodeURIComponent(deviceId))
                 .then(r => r.json())
                 .then(data => alert('🔔 ' + (data.notifications || ['لا توجد إشعارات']).join('\n')))
                 .catch(() => alert('⚠️ تعذر جلب الإشعارات'));
         }
         function fetchAttendanceLog() {
-            fetch(SERVER_URL + '/api/attendance/log?employeeId=' + employeeId)
+            fetch(SERVER_URL + '/api/employees/' + encodeURIComponent(employeeId) + '/attendance')
                 .then(r => r.json())
                 .then(data => alert('📋 ' + (data.logs || ['لا توجد حركات']).join('\n')))
                 .catch(() => alert('⚠️ تعذر جلب سجل الحضور'));
         }
         function checkAccountStatus() {
-            fetch(SERVER_URL + '/api/account/status?employeeId=' + employeeId)
+            fetch(SERVER_URL + '/api/employees/' + encodeURIComponent(employeeId))
                 .then(r => r.json())
-                .then(data => alert('📶 حالة الحساب: ' + (data.status || 'نشط')))
+                .then(data => alert('📶 حالة الحساب: ' + (data.employee && data.employee.credentialsStatus === 'active' ? 'نشط' : 'قيد التفعيل')))
                 .catch(() => alert('⚠️ تعذر جلب حالة الحساب'));
         }
         function fetchRewards() {
-            fetch(SERVER_URL + '/api/rewards?employeeId=' + employeeId)
-                .then(r => r.json())
-                .then(data => alert('🎁 ' + (data.rewards || ['لا توجد مكافآت']).join('\n')))
-                .catch(() => alert('⚠️ تعذر جلب المكافآت'));
+            alert('🎁 المكافآت والخصومات: لا توجد بيانات مسجلة حالياً');
         }
 
         document.getElementById('connection').textContent = '● متصل';

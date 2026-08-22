@@ -55,6 +55,8 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(160deg,
     <div class="grid" style="margin-top:12px">
       <button class="service-card" type="button" onclick="openLoanModal()"><span class="icon">💰</span><h3>طلب سلفة</h3><p>إرسال طلب سلفة مباشرة إلى المدير</p></button>
       <button class="service-card" type="button" onclick="openLeaveModal()"><span class="icon">📅</span><h3>طلب إجازة</h3><p>تقديم طلب إجازة مع التاريخ والسبب</p></button>
+      <button class="service-card" type="button" onclick="location.href='employee_attendance.html?employeeId='+encodeURIComponent(employeeId)+'&name='+encodeURIComponent(employeeName)+'&company='+encodeURIComponent(companyId)+'&deviceId='+encodeURIComponent(deviceId)"><span class="icon">🖐️</span><h3>البصمة والحضور</h3><p>تسجيل الحضور والانصراف بالبصمة والموقع</p></button>
+      <button class="service-card" type="button" onclick="fetchMyRequests(true)"><span class="icon">📄</span><h3>حالة طلباتي</h3><p>سلفة / إجازة وحالة الموافقة</p></button>
       <button class="service-card" type="button" onclick="fetchNotifications(true)"><span class="icon">🔔</span><h3>إشعارات المدير</h3><p>رسائل الإدارة وآخر التنبيهات</p></button>
       <button class="service-card" type="button" onclick="fetchAttendanceLog(true)"><span class="icon">📋</span><h3>سجل الحضور</h3><p>عرض حركات البصمة المسجلة فعلياً</p></button>
       <button class="service-card" type="button" onclick="checkAccountStatus(true)"><span class="icon">📶</span><h3>حالة الحساب</h3><p>فحص السيرفر والجهاز المرتبط</p></button>
@@ -193,6 +195,19 @@ async function fetchNotifications(open=true){
     $('tickerText').innerHTML='<span>📢</span> '+items.slice(0,3).map(n=>esc(n.message||'تنبيه من الإدارة')).join(' <span>•</span> ');
     if(open)showData('🔔 إشعارات المدير',html);
   }catch(e){if(open)showData('🔔 إشعارات المدير',`<div class="empty">❌ ${esc(e.message)}</div>`);toast('تعذر جلب الإشعارات','error')}
+}
+
+async function fetchMyRequests(open=true){
+  if(!requireIdentity())return;
+  if(open)showData('📄 حالة طلباتي',loadingData());
+  try{
+    const data=await api(`/api/employee/service-requests?employeeId=${encodeURIComponent(employeeId)}&deviceId=${encodeURIComponent(deviceId)}`);
+    const items=data.requests||[];
+    if(!items.length){showData('📄 حالة طلباتي','<div class="empty">لا توجد طلبات سلفة أو إجازة بعد.</div>');return}
+    const badge=s=>s==='approved'?'<span style="color:#166534;font-weight:800">✅ مقبول</span>':s==='rejected'?'<span style="color:#991b1b;font-weight:800">❌ مرفوض</span>':'<span style="color:#92400e;font-weight:800">⏳ قيد المراجعة</span>';
+    const rows=items.map(r=>`<div class="empty" style="text-align:right"><b>${r.type==='loan'?'💰 سلفة':'📝 إجازة'}</b> – ${esc(r.reason||'')} ${r.amount?'– المبلغ: '+esc(r.amount)+' د.ع':''}<br>التاريخ: ${formatDate(r.requestedDate||r.createdAt)}<br>الحالة: ${badge(r.status)}</div>`).join('');
+    showData('📄 حالة طلباتي',rows);
+  }catch(e){toast('❌ '+e.message,'error')}
 }
 
 async function fetchAttendanceLog(open=true){

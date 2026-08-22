@@ -21,6 +21,7 @@
         <button class="tab-btn active" data-tab="shifts" onclick="switchTab('shifts')">⏰ الشفتات</button>
         <button class="tab-btn" data-tab="loans" onclick="switchTab('loans')">💳 السلف</button>
         <button class="tab-btn" data-tab="salaries" onclick="switchTab('salaries')">💰 الرواتب</button>
+        <button class="tab-btn" data-tab="requests" onclick="switchTab('requests');loadServiceRequests()">📨 طلبات الموظفين</button>
     </div>
 
     <!-- تبويب الشفتات -->
@@ -58,6 +59,20 @@
             <button class="btn btn-blue" onclick="loadSalaries()">🔄 تحديث</button>
         </div>
         <div id="salariesContainer"><div class="loading-spinner"></div> جاري التحميل...</div>
+    </div>
+
+    <div id="tab-requests" class="tab-content">
+        <div class="filter-bar">
+            <button class="btn btn-blue" onclick="loadServiceRequests()">🔄 تحديث</button>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>#</th><th>اسم الموظف</th><th>نوع الطلب</th><th>التفاصيل</th><th>المبلغ</th><th>تاريخ الطلب</th><th>الحالة</th><th>الإجراء</th></tr>
+                </thead>
+                <tbody id="serviceRequestsTable"><tr><td colspan="8"><div class="loading-spinner"></div> جاري التحميل...</td></tr></tbody>
+            </table>
+        </div>
     </div>
 
     <div id="status" class="status">✓ جاري تحميل البيانات...</div>
@@ -391,6 +406,66 @@
     // ============================================================
     // 💰 الرواتب
     // ============================================================
+    async function loadServiceRequests() {
+        const tbody = document.getElementById('serviceRequestsTable');
+        try {
+            const r = await fetch(API + '/api/admin/service-requests', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const d = await r.json();
+            if (d.success) {
+                const requests = d.requests || [];
+                tbody.innerHTML = requests.length === 0 ?
+                    '<tr><td colspan="8" style="color:#64748b;">لا توجد طلبات سلفة أو إجازة</td></tr>' :
+                    requests.map((q, i) => {
+                        const type = q.type === 'loan' ? '💰 سلفة' : '📝 إجازة';
+                        const details = (q.reason || '—') + (q.requestedDate ? ' — تاريخ الإجازة: ' + new Date(q.requestedDate).toLocaleDateString('ar-IQ') : '');
+                        const badge = q.status === 'approved' ? 'status-approved' : q.status === 'rejected' ? 'status-rejected' : 'status-pending';
+                        const statusText = q.status === 'approved' ? '✅ مقبول' : q.status === 'rejected' ? '❌ مرفوض' : '⏳ قيد المراجعة';
+                        const actions = q.status === 'pending'
+                            ? `<button class="btn btn-green" style="padding:4px 10px;font-size:11px;" onclick="decideRequest('${q._id}','approved')">قبول</button>
+                               <button class="btn btn-red" style="padding:4px 10px;font-size:11px;" onclick="decideRequest('${q._id}','rejected')">رفض</button>`
+                            : '—';
+                        return `<tr>
+                            <td>${i+1}</td>
+                            <td><b>${q.employeeName || '—'}</b></td>
+                            <td>${type}</td>
+                            <td style="max-width:260px;">${details}</td>
+                            <td>${q.amount ? Number(q.amount).toLocaleString() + ' د.ع' : '—'}</td>
+                            <td>${new Date(q.createdAt).toLocaleString('ar-IQ')}</td>
+                            <td><span class="status-badge ${badge}">${statusText}</span></td>
+                            <td>${actions}</td>
+                        </tr>`;
+                    }).join('');
+                showStatus('✅ تم تحميل ' + requests.length + ' طلب', '');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;">❌ فشل التحميل</td></tr>';
+            }
+        } catch {
+            tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;">❌ فشل الاتصال بالسيرفر</td></tr>';
+        }
+    }
+
+    async function decideRequest(requestId, status) {
+        if (!confirm(status === 'approved' ? 'هل توافق على هذا الطلب؟' : 'هل ترفض هذا الطلب؟')) return;
+        try {
+            const r = await fetch(API + '/api/admin/service-requests/' + requestId, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ status })
+            });
+            const d = await r.json();
+            if (r.ok && d.success) {
+                showStatus(status === 'approved' ? '✅ تم قبول الطلب' : '✅ تم رفض الطلب', '');
+                loadServiceRequests();
+            } else {
+                showStatus('❌ ' + (d.message || 'فشل تحديث الطلب'), 'error');
+            }
+        } catch {
+            showStatus('❌ فشل الاتصال بالسيرفر', 'error');
+        }
+    }
+
     async function loadSalaries() {
         const container = document.getElementById('salariesContainer');
         container.innerHTML = `<div class="loading-spinner"></div> جاري التحميل...`;
