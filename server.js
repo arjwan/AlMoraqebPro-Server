@@ -570,6 +570,74 @@ const Notification =
         notificationSchema
     );
 
+/*
+=========================================================
+  SHIFT MODEL (جديد)
+=========================================================
+*/
+const shiftSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true },
+    name: { type: String, enum: ['صباحي', 'مسائي', 'ليلي', 'طارئ'], required: true },
+    branch: { type: String, default: '' },
+    employeeIds: { type: [String], default: [] },
+    attendanceStart: { type: String, default: '' },
+    attendanceEnd: { type: String, default: '' },
+    departureStart: { type: String, default: '' },
+    departureEnd: { type: String, default: '' },
+    overtimeStart: { type: String, default: '' },
+    overtimeEnd: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now }
+});
+const Shift = mongoose.model('Shift', shiftSchema);
+
+/*
+=========================================================
+  SALARY RECORD MODEL (جديد)
+=========================================================
+*/
+const salaryRecordSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true },
+    employeeId: { type: String, required: true, index: true },
+    employeeName: { type: String, default: '' },
+    specialty: { type: String, default: '' },
+    workplace: { type: String, default: '' },
+    shiftName: { type: String, default: '' },
+    socialSecurity: { type: String, default: 'غير مسجل' },
+    basicSalary: { type: Number, default: 0 },
+    allowances: { type: Number, default: 0 },
+    loans: { type: Number, default: 0 },
+    loanDeduction: { type: Number, default: 0 },
+    securityDeduction: { type: Number, default: 0 },
+    otherDeductions: { type: Number, default: 0 },
+    bonuses: { type: Number, default: 0 },
+    totalDeductions: { type: Number, default: 0 },
+    netSalary: { type: Number, default: 0 },
+    createdAt: { type: Date, default: Date.now }
+});
+const SalaryRecord = mongoose.model('SalaryRecord', salaryRecordSchema);
+
+/*
+=========================================================
+  LOAN RECORD MODEL (جديد)
+=========================================================
+*/
+const loanRecordSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true },
+    employeeId: { type: String, required: true, index: true },
+    employeeName: { type: String, default: '' },
+    specialty: { type: String, default: '' },
+    workplace: { type: String, default: '' },
+    totalLoanAmount: { type: Number, default: 0 },
+    loanDate: { type: Date, default: Date.now },
+    repayments: [{
+        date: { type: Date, default: Date.now },
+        amount: { type: Number, default: 0 }
+    }],
+    remainingAmount: { type: Number, default: 0 },
+    createdAt: { type: Date, default: Date.now }
+});
+const LoanRecord = mongoose.model('LoanRecord', loanRecordSchema);
+
 
 /*
 =========================================================
@@ -1803,6 +1871,18 @@ app.delete(
                 }),
 
                 Notification.deleteMany({
+                    companyId
+                }),
+
+                Shift.deleteMany({
+                    companyId
+                }),
+
+                SalaryRecord.deleteMany({
+                    companyId
+                }),
+
+                LoanRecord.deleteMany({
                     companyId
                 })
 
@@ -3413,6 +3493,26 @@ app.post(
                 loans: []
             }).save();
 
+            // ✅ إنشاء سجل راتب تلقائياً عند إضافة الموظف
+            await new SalaryRecord({
+                companyId,
+                employeeId: String(employee._id),
+                employeeName: employee.name,
+                specialty: employee.specialty || '',
+                workplace: employee.workplace || '',
+                shiftName: '',
+                socialSecurity: 'غير مسجل',
+                basicSalary: employee.salary || 0,
+                allowances: 0,
+                loans: 0,
+                loanDeduction: 0,
+                securityDeduction: 0,
+                otherDeductions: 0,
+                bonuses: 0,
+                totalDeductions: 0,
+                netSalary: employee.salary || 0
+            }).save();
+
             await Company.updateOne(
                 { companyId },
                 { $set: { lastSeenAt: new Date() } }
@@ -3584,6 +3684,12 @@ app.put(
 
             await employee.save();
 
+            // تحديث سجل الراتب إذا وُجد
+            await SalaryRecord.updateOne(
+                { companyId: employee.companyId, employeeId: String(employee._id) },
+                { $set: { employeeName: employee.name, specialty: employee.specialty || '', workplace: employee.workplace || '', basicSalary: employee.salary || 0, netSalary: employee.salary || 0 } }
+            );
+
             return res.json({
                 success: true,
                 message: 'تم تعديل الموظف بنجاح',
@@ -3619,7 +3725,12 @@ app.delete(
                 });
             }
 
+            const empId = String(employee._id);
             await Employee.deleteOne({ _id: employee._id });
+
+            // حذف سجلات الرواتب والسلف المرتبطة
+            await SalaryRecord.deleteMany({ companyId: employee.companyId, employeeId: empId });
+            await LoanRecord.deleteMany({ companyId: employee.companyId, employeeId: empId });
 
             return res.json({
                 success: true,
@@ -4450,7 +4561,6 @@ app.patch(
 /*
 =========================================================
   ADMIN EMPLOYEE LOCATIONS (لصفحة الخريطة)
-  يجلب آخر موقع مسجل لكل موظف تابع للشركة
 =========================================================
 */
 app.get(
@@ -4553,6 +4663,183 @@ app.get(
         }
     }
 );
+
+/*
+=========================================================
+  SHIFTS API (جديد)
+=========================================================
+*/
+app.get('/api/admin/shifts', requireAdmin, async (req, res) => {
+    try {
+        const shifts = await Shift.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
+        res.json({ success: true, shifts });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
+    try {
+        const { name, branch, employeeIds, attendanceStart, attendanceEnd, departureStart, departureEnd, overtimeStart, overtimeEnd } = req.body;
+        if (!name || !branch) return res.status(400).json({ success: false, message: 'اسم الشفت والفرع مطلوبان' });
+        const shift = await new Shift({
+            companyId: req.session.companyId,
+            name,
+            branch,
+            employeeIds: employeeIds || [],
+            attendanceStart,
+            attendanceEnd,
+            departureStart,
+            departureEnd,
+            overtimeStart,
+            overtimeEnd
+        }).save();
+        res.status(201).json({ success: true, shift });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
+    try {
+        const shift = await Shift.findOne({ _id: req.params.id, companyId: req.session.companyId });
+        if (!shift) return res.status(404).json({ success: false, message: 'الشفت غير موجود' });
+        Object.assign(shift, req.body);
+        await shift.save();
+        res.json({ success: true, shift });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.delete('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
+    try {
+        const shift = await Shift.findOneAndDelete({ _id: req.params.id, companyId: req.session.companyId });
+        if (!shift) return res.status(404).json({ success: false, message: 'الشفت غير موجود' });
+        res.json({ success: true, message: 'تم حذف الشفت' });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+/*
+=========================================================
+  SALARY RECORDS API (جديد)
+=========================================================
+*/
+app.get('/api/admin/salaries', requireAdmin, async (req, res) => {
+    try {
+        const salaries = await SalaryRecord.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
+        res.json({ success: true, salaries });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.post('/api/admin/salaries', requireAdmin, async (req, res) => {
+    try {
+        const { employeeId, employeeName, specialty, workplace, shiftName, socialSecurity, basicSalary, allowances, loans, loanDeduction, securityDeduction, otherDeductions, bonuses } = req.body;
+        if (!employeeId) return res.status(400).json({ success: false, message: 'employeeId مطلوب' });
+        const existing = await SalaryRecord.findOne({ companyId: req.session.companyId, employeeId });
+        if (existing) return res.status(409).json({ success: false, message: 'سجل راتب موجود مسبقاً' });
+        const totalDeductions = (loanDeduction || 0) + (securityDeduction || 0) + (otherDeductions || 0);
+        const netSalary = (basicSalary || 0) + (allowances || 0) + (loans || 0) + (bonuses || 0) - totalDeductions;
+        const salary = await new SalaryRecord({
+            companyId: req.session.companyId,
+            employeeId,
+            employeeName: employeeName || '',
+            specialty: specialty || '',
+            workplace: workplace || '',
+            shiftName: shiftName || '',
+            socialSecurity: socialSecurity || 'غير مسجل',
+            basicSalary: basicSalary || 0,
+            allowances: allowances || 0,
+            loans: loans || 0,
+            loanDeduction: loanDeduction || 0,
+            securityDeduction: securityDeduction || 0,
+            otherDeductions: otherDeductions || 0,
+            bonuses: bonuses || 0,
+            totalDeductions,
+            netSalary
+        }).save();
+        res.status(201).json({ success: true, salary });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.put('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
+    try {
+        const salary = await SalaryRecord.findOne({ _id: req.params.id, companyId: req.session.companyId });
+        if (!salary) return res.status(404).json({ success: false, message: 'السجل غير موجود' });
+        const { basicSalary, allowances, loans, loanDeduction, securityDeduction, otherDeductions, bonuses, socialSecurity } = req.body;
+        salary.socialSecurity = socialSecurity ?? salary.socialSecurity;
+        salary.basicSalary = basicSalary ?? salary.basicSalary;
+        salary.allowances = allowances ?? salary.allowances;
+        salary.loans = loans ?? salary.loans;
+        salary.loanDeduction = loanDeduction ?? salary.loanDeduction;
+        salary.securityDeduction = securityDeduction ?? salary.securityDeduction;
+        salary.otherDeductions = otherDeductions ?? salary.otherDeductions;
+        salary.bonuses = bonuses ?? salary.bonuses;
+        salary.totalDeductions = salary.loanDeduction + salary.securityDeduction + salary.otherDeductions;
+        salary.netSalary = salary.basicSalary + salary.allowances + salary.loans + salary.bonuses - salary.totalDeductions;
+        await salary.save();
+        res.json({ success: true, salary });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.delete('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
+    try {
+        const salary = await SalaryRecord.findOneAndDelete({ _id: req.params.id, companyId: req.session.companyId });
+        if (!salary) return res.status(404).json({ success: false, message: 'السجل غير موجود' });
+        res.json({ success: true, message: 'تم حذف السجل' });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+/*
+=========================================================
+  LOAN RECORDS API (جديد)
+=========================================================
+*/
+app.get('/api/admin/loans', requireAdmin, async (req, res) => {
+    try {
+        const loans = await LoanRecord.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
+        loans.forEach(loan => {
+            const totalRepayments = (loan.repayments || []).reduce((sum, r) => sum + (r.amount || 0), 0);
+            loan.remainingAmount = loan.totalLoanAmount - totalRepayments;
+        });
+        res.json({ success: true, loans });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.post('/api/admin/loans', requireAdmin, async (req, res) => {
+    try {
+        const { employeeId, employeeName, specialty, workplace, totalLoanAmount, loanDate } = req.body;
+        if (!employeeId || !totalLoanAmount || totalLoanAmount <= 0) return res.status(400).json({ success: false, message: 'بيانات السلفة ناقصة' });
+        const loan = await new LoanRecord({
+            companyId: req.session.companyId,
+            employeeId,
+            employeeName: employeeName || '',
+            specialty: specialty || '',
+            workplace: workplace || '',
+            totalLoanAmount,
+            loanDate: loanDate ? new Date(loanDate) : new Date(),
+            repayments: [],
+            remainingAmount: totalLoanAmount
+        }).save();
+        res.status(201).json({ success: true, loan });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.post('/api/admin/loans/:employeeId/repayments', requireAdmin, async (req, res) => {
+    try {
+        const { date, amount } = req.body;
+        if (!date || !amount || amount <= 0) return res.status(400).json({ success: false, message: 'بيانات التسديد ناقصة' });
+        const loan = await LoanRecord.findOne({ companyId: req.session.companyId, employeeId: req.params.employeeId });
+        if (!loan) return res.status(404).json({ success: false, message: 'السلفة غير موجودة' });
+        loan.repayments.push({ date: new Date(date), amount });
+        const totalRepayments = loan.repayments.reduce((sum, r) => sum + r.amount, 0);
+        loan.remainingAmount = loan.totalLoanAmount - totalRepayments;
+        await loan.save();
+        res.json({ success: true, loan });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.delete('/api/admin/loans/:id', requireAdmin, async (req, res) => {
+    try {
+        const loan = await LoanRecord.findOneAndDelete({ _id: req.params.id, companyId: req.session.companyId });
+        if (!loan) return res.status(404).json({ success: false, message: 'السلفة غير موجودة' });
+        res.json({ success: true, message: 'تم حذف السلفة' });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
 
 
 /*
