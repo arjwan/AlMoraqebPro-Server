@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مشغل القنوات M3U/M3U8 - المراقب برو</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #172554 55%, #0c4a6e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .player-container {
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(14px);
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 12px;
+        }
+        .player-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .player-header h2 i { color: #38bdf8; }
+
+        .video-wrapper {
+            position: relative;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #000;
+            aspect-ratio: 16/9;
+            width: 100%;
+        }
+        .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+
+        .video-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 30px;
+            background: #0284c7;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover { background: #0369a1; transform: translateY(-2px); }
+        .btn-warning { background: #f59e0b; }
+        .btn-warning:hover { background: #d97706; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-outline { background: transparent; border: 1px solid #38bdf8; color: #38bdf8; }
+        .btn-outline:hover { background: rgba(56,189,248,0.1); }
+
+        .file-input-wrapper { position: relative; overflow: hidden; }
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* قائمة القنوات */
+        .channel-menu-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100vh;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            justify-content: flex-end;
+        }
+        .channel-menu {
+            width: 420px;
+            height: 100%;
+            background: rgba(15,23,42,0.98);
+            border-left: 3px solid #38bdf8;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        .menu-header button {
+            background: transparent;
+            border: none;
+            color: #38bdf8;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .channel-group-title {
+            color: #38bdf8;
+            font-size: 1rem;
+            margin: 15px 0 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 5px;
+        }
+        .channel-item {
+            padding: 10px 15px;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
+        .channel-item:hover { background: rgba(56,189,248,0.2); color: #38bdf8; }
+        .channel-item .play-btn { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .channel-item .del-btn { display: none; color: #ef4444; font-size: 1.1rem; }
+        .channel-item.edit-mode .del-btn { display: block; }
+
+        .add-channel-form {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            flex-direction: column;
+            gap: 10px;
+        }
+        .add-channel-form input {
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(0,0,0,0.4);
+            color: #fff;
+            font-size: 0.9rem;
+        }
+        .add-channel-form button {
+            padding: 8px;
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .size-controls {
+            display: flex;
+            gap: 5px;
+        }
+        .size-controls button {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            .channel-menu { width: 85%; }
+            .btn { padding: 8px 12px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="player-container">
+    <div class="player-header">
+        <h2><i class="fas fa-tv"></i> مشغل القنوات M3U/M3U8</h2>
+        <button class="btn btn-outline" onclick="history.back()">⬅ رجوع</button>
+    </div>
+
+    <div class="video-wrapper" id="videoWrapper">
+        <video id="mainVideoPlayer" controls playsinline></video>
+    </div>
+
+    <div class="video-controls">
+        <button class="btn" onclick="openChannelMenu()"><i class="fas fa-list-ul"></i> اختر قناة</button>
+        <div class="file-input-wrapper">
+            <button class="btn btn-warning"><i class="fas fa-folder-open"></i> ملف فيديو</button>
+            <input type="file" id="fileInput" accept="video/*" onchange="loadLocalVideo(event)">
+        </div>
+        <div class="size-controls">
+            <button onclick="toggleSize('max')" title="ملء الشاشة"><i class="fas fa-expand"></i></button>
+            <button onclick="toggleSize('min')" title="تصغير"><i class="fas fa-compress"></i></button>
+        </div>
+    </div>
+</div>
+
+<!-- قائمة القنوات -->
+<div class="channel-menu-overlay" id="channelMenuOverlay" onclick="closeChannelMenu(event)">
+    <div class="channel-menu" id="channelMenu">
+        <div class="menu-header">
+            <span>📺 قائمة القنوات</span>
+            <div>
+                <button id="toggleEditBtn" onclick="toggleEditMode()" style="font-size:0.9rem; margin-left:10px; background:#38bdf8; color:#0f172a; border-radius:15px; padding:3px 12px;">🛠️ إدارة</button>
+                <button onclick="closeChannelMenuDirect()"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div id="channelListContainer"></div>
+        <div class="add-channel-form" id="addChannelForm">
+            <input type="text" id="newChannelName" placeholder="اسم القناة الجديدة">
+            <input type="text" id="newChannelUrl" placeholder="رابط القناة (يجب أن ينتهي بـ .m3u8)">
+            <button onclick="addNewChannel()">➕ إضافة القناة</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const videoPlayer = document.getElementById('mainVideoPlayer');
+    let hlsInstance = null;
+    let isEditMode = false;
+
+    const defaultChannels = {
+        "📖 القرآن والدين": {
+            'القرآن الكريم': 'https://ktvlive.online/stream/hls/ch1.m3u8',
+            'كربلاء وثائقي': 'https://ktvlive.online/stream/hls/ch3.m3u8',
+            'قناة العباسية': 'https://stream.alabbassia.com/live/alabbassia/index.m3u8',
+            'الائمه': 'https://alaimma.tv/live/index.m3u8',
+            'الجوادين': 'https://live.aljawadain.org/live/aljawadaintv/playlist.m3u8',
+            'إقرار قرآن': 'https://playlist.fasttvcdn.com/pl/dlkqw1ftuvuuzkcb4pxdcg/Iqraafasttv2/playlist.m3u8',
+            'قطر القرآن': 'https://qatartv.akamaized.net/hls/live/20000612/qtvquran/master.m3u8'
+        },
+        "📰 الأخبار": {
+            'العراقية نيوز': 'https://imn-live.esite-lab.com/hls/iraqia-news.m3u8',
+            'الشرقية نيوز': 'https://5d94523502c2d.streamlock.net/alsharqiyalive/mystream/playlist.m3u8',
+            'سكاي نيوز': 'https://live-stream.skynewsarabia.com/c-horizontal-channel/horizontal-stream/index.m3u8',
+            'الجزيرة': 'https://live-hls-apps-aja-fa.getaj.net/AJA/01.m3u8',
+            'العربية': 'https://live.alarabiya.net/alarabiapublish/alarabiya.smil/playlist.m3u8',
+            'الحرة عراق': 'https://mbn-ingest-worldsafe.akamaized.net/hls/live/2038899/MBN_Iraq_Worldsafe_HLS/master.m3u8',
+            'الحدث': 'https://shd-gcp-live.edgenextcdn.net/live/bitmovin-hadath/2ff87ec4c2f3ede35295a20637d9f8fd/index.m3u8'
+        },
+        "📺 تلفزيون عام": {
+            'الشرقية': 'http://185.9.2.18/chid_144/index.m3u8',
+            'MBC العراق': 'https://shd-gcp-live.edgenextcdn.net/live/bitmovin-mbc-iraq/e38c44b1b43474e1c39cb5b90203691e/index.m3u8',
+            'العراقية': 'https://imn-live.esite-lab.com/hls/iraqia-general.m3u8',
+            'MBC 1': 'https://shd-gcp-live.edgenextcdn.net/live/bitmovin-mbc-1/15cf99af5de54063fdabfefe66adc075/index.m3u8',
+            'الراشد': 'https://media1.livaat.com/static/AL-RASHEED-HD/playlist.m3u8',
+            'السعودية': 'https://shd-gcp-live.edgenextcdn.net/live/bitmovin-saudi-tv/2ad66056b51fd8c1b624854623112e43/index.m3u8',
+            'قطر': 'https://live.kwikmotion.com/qtv1live/qtv1.smil/playlist.m3u8',
+            'دبي': 'http://185.9.2.18/chid_139/index.m3u8'
+        },
+        "🎵 ترفيه ورياضة": {
+            'روتانا موسيقى': 'https://rotana.hibridcdn.net/rotananet/music_net-7Y83PP5adWixDF93/playlist.m3u8',
+            'روتانا خليجية': 'https://rotana.hibridcdn.net/rotananet/khaleejiya_net-7Y83PP5adWixDF93/playlist.m3u8',
+            'الرياضية العراقية': 'https://imn-live.esite-lab.com/hls/iraqia-sports-1.m3u8',
+            'الرياضية قطر الكأس': 'https://liveeu-gcp.alkassdigital.net/alkass1-p/main.m3u8'
+        }
+    };
+
+    function getChannels() {
+        const saved = JSON.parse(localStorage.getItem('myChannels'));
+        if (saved && Object.keys(saved).length > 0) {
+            return saved;
+        }
+        localStorage.setItem('myChannels', JSON.stringify(defaultChannels));
+        return defaultChannels;
+    }
+
+    function renderChannels() {
+        const container = document.getElementById('channelListContainer');
+        const channels = getChannels();
+        let html = '';
+        for (const [groupName, chs] of Object.entries(channels)) {
+            html += `<div class="channel-group-title">${groupName}</div>`;
+            for (const [channelName, url] of Object.entries(chs)) {
+                html += `
+                    <div class="channel-item ${isEditMode ? 'edit-mode' : ''}" data-group="${groupName}" data-name="${channelName}">
+                        <div class="play-btn" onclick="playChannel('${channelName}', '${url}')">
+                            <i class="fas fa-play-circle" style="color: #38bdf8;"></i> ${channelName}
+                        </div>
+                        <span class="del-btn" onclick="deleteChannel('${groupName}', '${channelName}')"><i class="fas fa-trash-alt"></i></span>
+                    </div>
+                `;
+            }
+        }
+        container.innerHTML = html;
+        document.getElementById('addChannelForm').style.display = isEditMode ? 'flex' : 'none';
+    }
+
+    function openChannelMenu() {
+        renderChannels();
+        document.getElementById('channelMenuOverlay').style.display = 'flex';
+    }
+
+    function closeChannelMenu(event) {
+        if(event.target === document.getElementById('channelMenuOverlay')) {
+            document.getElementById('channelMenuOverlay').style.display = 'none';
+            isEditMode = false;
+        }
+    }
+    function closeChannelMenuDirect() {
+        document.getElementById('channelMenuOverlay').style.display = 'none';
+        isEditMode = false;
+    }
+
+    function toggleEditMode() {
+        isEditMode = !isEditMode;
+        document.getElementById('toggleEditBtn').innerText = isEditMode ? '✅ إغلاق الإدارة' : '🛠️ إدارة';
+        renderChannels();
+    }
+
+    function addNewChannel() {
+        const name = document.getElementById('newChannelName').value.trim();
+        const url = document.getElementById('newChannelUrl').value.trim();
+        if (!name || !url) {
+            alert('يرجى إدخال اسم القناة والرابط.');
+            return;
+        }
+        if (!url.includes('.m3u8')) {
+            alert('الرابط يجب أن يكون لبث مباشر (ينتهي بـ .m3u8).');
+            return;
+        }
+        const channels = getChannels();
+        if (!channels['📌 قنوات مخصصة']) {
+            channels['📌 قنوات مخصصة'] = {};
+        }
+        channels['📌 قنوات مخصصة'][name] = url;
+        localStorage.setItem('myChannels', JSON.stringify(channels));
+        document.getElementById('newChannelName').value = '';
+        document.getElementById('newChannelUrl').value = '';
+        renderChannels();
+        alert(`✅ تم إضافة قناة "${name}" بنجاح!`);
+    }
+
+    function deleteChannel(group, name) {
+        if (!confirm(`هل أنت متأكد من حذف قناة "${name}"؟`)) return;
+        const channels = getChannels();
+        if (channels[group]) {
+            delete channels[group][name];
+            if (Object.keys(channels[group]).length === 0) {
+                delete channels[group];
+            }
+            localStorage.setItem('myChannels', JSON.stringify(channels));
+            renderChannels();
+        }
+    }
+
+    function playChannel(name, url) {
+        document.getElementById('channelMenuOverlay').style.display = 'none';
+        isEditMode = false;
+        playM3U8(url);
+    }
+
+    function playM3U8(url) {
+        if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+            videoPlayer.src = url;
+        } else if (Hls.isSupported()) {
+            if (hlsInstance) { hlsInstance.destroy(); }
+            hlsInstance = new Hls();
+            hlsInstance.loadSource(url);
+            hlsInstance.attachMedia(videoPlayer);
+        } else {
+            alert('المتصفح لا يدعم هذا النوع من البث.');
+        }
+        videoPlayer.play().catch(() => {});
+    }
+
+    function loadLocalVideo(event) {
+        const file = event.target.files[0];
+        if (file) {
+            if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+            videoPlayer.src = URL.createObjectURL(file);
+            videoPlayer.load();
+            videoPlayer.play();
+        }
+    }
+
+    function toggleSize(size) {
+        const panel = document.getElementById('videoWrapper');
+        const controls = document.querySelector('.video-controls');
+        if(size === 'max') {
+            panel.style.position = 'fixed'; panel.style.top = '0'; panel.style.left = '0';
+            panel.style.width = '100vw'; panel.style.height = 'calc(100vh - 60px)';
+            panel.style.zIndex = '999'; panel.style.borderRadius = '0';
+            controls.style.position = 'fixed'; controls.style.bottom = '0'; controls.style.left = '0';
+            controls.style.width = '100%'; controls.style.zIndex = '1000';
+            controls.style.background = 'rgba(0,0,0,0.8)'; controls.style.padding = '10px';
+            controls.style.borderRadius = '0'; controls.style.justifyContent = 'center';
+        } else {
+            panel.style.position = 'relative'; panel.style.width = '100%'; panel.style.height = 'auto';
+            panel.style.zIndex = '0'; panel.style.borderRadius = '18px';
+            controls.style.position = 'relative'; controls.style.background = 'transparent';
+            controls.style.padding = '0'; controls.style.borderRadius = '0';
+            controls.style.width = '100%'; controls.style.zIndex = '0';
+            controls.style.justifyContent = 'center';
+        }
+    }
+</script>
+</body>
+</html>
