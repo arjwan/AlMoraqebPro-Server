@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>متابعة الموظف على الخريطة - المراقب برو</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body {
+            background: linear-gradient(160deg, #0f172a, #172554 55%, #0c4a6e);
+            min-height: 100vh;
+            padding: 20px;
+            color: #f8fafc;
+        }
+        .container {
+            max-width: 1300px;
+            margin: auto;
+            background: rgba(30,41,59,0.92);
+            backdrop-filter: blur(14px);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1 i { color: #38bdf8; }
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 30px;
+            background: #0284c7;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        .btn:hover { background: #0369a1; transform: translateY(-2px); }
+        .btn-outline { background: transparent; border: 1px solid #38bdf8; color: #38bdf8; }
+        .btn-outline:hover { background: rgba(56,189,248,0.1); }
+        .map-wrapper {
+            position: relative;
+            border-radius: 18px;
+            overflow: hidden;
+            height: 500px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #map { width: 100%; height: 100%; }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .employee-selector {
+            flex: 1;
+            min-width: 250px;
+        }
+        .employee-selector label {
+            font-weight: 800;
+            margin-bottom: 5px;
+            display: block;
+            color: #cbd5e1;
+        }
+        .employee-selector select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+        .selected-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .selected-chip {
+            background: #0284c7;
+            color: #fff;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .selected-chip i {
+            cursor: pointer;
+        }
+        .areas-list {
+            background: rgba(15,23,42,0.7);
+            border-radius: 14px;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+        }
+        .area-item {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .area-item i { color: #38bdf8; }
+        .loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+            .map-wrapper { height: 350px; }
+            .header h1 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-map-marker-alt"></i> متابعة الموظف على الخريطة</h1>
+        <button class="btn btn-outline" onclick="history.back()">⬅ رجوع للوحة</button>
+    </div>
+
+    <div class="controls">
+        <div class="employee-selector">
+            <label>اختر الموظفين (بحد أقصى 5):</label>
+            <select id="employeeSelect" onchange="addEmployee()">
+                <option value="">— اختر موظف —</option>
+            </select>
+        </div>
+        <button class="btn" onclick="loadLocations()"><i class="fas fa-sync-alt"></i> تحديث المواقع</button>
+    </div>
+
+    <div class="selected-list" id="selectedList"></div>
+
+    <div class="map-wrapper">
+        <div id="map"></div>
+    </div>
+
+    <h3 style="margin-bottom:10px"><i class="fas fa-list-ul"></i> المناطق المتواجدون فيها</h3>
+    <div class="areas-list" id="areasList"></div>
+</div>
+
+<script>
+const API = location.origin;
+let map = null;
+let selectedEmployees = []; // قائمة معرفات الموظفين المختارين
+let employees = []; // كل الموظفين
+
+function getToken() {
+    return sessionStorage.getItem('almoraqeb_admin_token') || '';
+}
+function getCompanyId() {
+    return new URLSearchParams(location.search).get('company') || localStorage.getItem('companyId') || '';
+}
+
+async function auth() {
+    const token = getToken();
+    const companyId = getCompanyId();
+    if (!token || !companyId) {
+        alert('يرجى تسجيل الدخول كمدير');
+        location.href = 'admin_login.html';
+        return false;
+    }
+    try {
+        const res = await fetch(API + '/api/admin/session', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) throw 0;
+        return true;
+    } catch {
+        alert('انتهت الجلسة');
+        location.href = 'admin_login.html';
+        return false;
+    }
+}
+
+async function loadEmployees() {
+    const companyId = getCompanyId();
+    const res = await fetch(API + '/api/employees?companyId=' + encodeURIComponent(companyId));
+    const data = await res.json();
+    if (data.success) {
+        employees = data.employees || [];
+        renderEmployeeOptions();
+    }
+}
+
+function renderEmployeeOptions() {
+    const select = document.getElementById('employeeSelect');
+    select.innerHTML = '<option value="">— اختر موظف —</option>';
+    employees.forEach(emp => {
+        const option = document.createElement('option');
+        option.value = emp._id || emp.id;
+        option.textContent = emp.name + ' (' + (emp.specialty || emp.workplace || '') + ')';
+        select.appendChild(option);
+    });
+}
+
+function addEmployee() {
+    const select = document.getElementById('employeeSelect');
+    const id = select.value;
+    if (!id) return;
+    if (selectedEmployees.length >= 5) {
+        alert('الحد الأقصى 5 موظفين للمتابعة');
+        return;
+    }
+    if (selectedEmployees.includes(id)) {
+        alert('تمت إضافة هذا الموظف بالفعل');
+        return;
+    }
+    selectedEmployees.push(id);
+    updateSelectedList();
+    select.value = '';
+}
+
+function removeEmployee(id) {
+    selectedEmployees = selectedEmployees.filter(e => e !== id);
+    updateSelectedList();
+}
+
+function updateSelectedList() {
+    const container = document.getElementById('selectedList');
+    container.innerHTML = '';
+    selectedEmployees.forEach(id => {
+        const emp = employees.find(e => (e._id || e.id) === id);
+        if (emp) {
+            const chip = document.createElement('span');
+            chip.className = 'selected-chip';
+            chip.innerHTML = `${emp.name} <i class="fas fa-times" onclick="removeEmployee('${id}')"></i>`;
+            container.appendChild(chip);
+        }
+    });
+}
+
+async function loadLocations() {
+    if (selectedEmployees.length === 0) {
+        alert('اختر موظفاً واحداً على الأقل');
+        return;
+    }
+
+    // مسح الطبقات السابقة
+    if (map) {
+        map.remove();
+    }
+
+    // إنشاء الخريطة
+    map = L.map('map').setView([33.3128, 44.3615], 6); // العراق كافتراضي
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const areas = [];
+    const bounds = [];
+
+    // لكل موظف جلب آخر موقع (يمكن تحسينه بجلب واحد من السيرفر)
+    for (const empId of selectedEmployees) {
+        try {
+            const res = await fetch(API + '/api/employees/' + encodeURIComponent(empId) + '/attendance?limit=1');
+            const data = await res.json();
+            if (data.success && data.attendance && data.attendance.length > 0) {
+                const last = data.attendance[0];
+                if (last.latitude && last.longitude) {
+                    const lat = Number(last.latitude);
+                    const lon = Number(last.longitude);
+                    const emp = employees.find(e => (e._id || e.id) === empId);
+
+                    // إضافة علامة
+                    L.marker([lat, lon]).addTo(map)
+                        .bindPopup(`<b>${emp ? emp.name : 'موظف'}</b><br>${last.type === 'attendance' ? 'حضور' : 'انصراف'}<br>${new Date(last.timestamp).toLocaleString('ar-IQ')}`)
+                        .openPopup();
+                    bounds.push([lat, lon]);
+
+                    // عكس الإحداثيات للحصول على اسم المنطقة
+                    try {
+                        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1&accept-language=ar`);
+                        const geoData = await geoRes.json();
+                        const areaName = geoData.address ? (geoData.address.suburb || geoData.address.neighbourhood || geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.county || geoData.address.state || 'غير محدد') : 'غير محدد';
+                        areas.push({ name: emp ? emp.name : 'موظف', area: areaName });
+                    } catch {
+                        areas.push({ name: emp ? emp.name : 'موظف', area: 'غير محدد' });
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('فشل جلب موقع الموظف', empId);
+        }
+    }
+
+    // توسيع حدود الخريطة لتناسب جميع النقاط
+    if (bounds.length > 0) {
+        map.fitBounds(bounds);
+    } else {
+        alert('لا توجد مواقع مسجلة للموظفين المختارين');
+    }
+
+    // عرض المناطق
+    renderAreas(areas);
+}
+
+function renderAreas(areas) {
+    const container = document.getElementById('areasList');
+    if (areas.length === 0) {
+        container.innerHTML = '<div style="color:#94a3b8">لا توجد بيانات</div>';
+        return;
+    }
+    container.innerHTML = areas.map(a => `<div class="area-item"><i class="fas fa-location-dot"></i> ${a.name}: ${a.area}</div>`).join('');
+}
+
+// تهيئة الصفحة
+(async function init() {
+    if (await auth()) {
+        await loadEmployees();
+        // تهيئة الخريطة بعد تحميل المكتبة
+        if (!L) {
+            alert('تعذر تحميل مكتبة الخريطة');
+        } else {
+            map = L.map('map').setView([33.3128, 44.3615], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+        }
+    }
+})();
+</script>
+</body>
+</html>
