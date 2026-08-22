@@ -6,6 +6,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -18,6 +19,12 @@ interface ApiService {
     suspend fun submitEmployeeRequest(
         @Body request: EmployeeRequestPayload
     ): Response<EmployeeRequestResponse>
+
+    @GET("api/attendance/challenge")
+    suspend fun attendanceChallenge(
+        @Query("employeeId") employeeId: String,
+        @Query("deviceId") deviceId: String
+    ): Response<AttendanceChallengeResponse>
 
     @POST("api/attendance")
     suspend fun sendAttendance(
@@ -75,9 +82,18 @@ data class EmployeeRequestResponse(
     val status: String? = null
 )
 
+data class AttendanceChallengeResponse(
+    val success: Boolean,
+    val challengeId: String? = null,
+    val challenge: String? = null,
+    val message: String? = null,
+    val error: String? = null
+)
+
 data class AttendanceRequest(
     val employeeId: String,
     val deviceId: String,
+    val challengeId: String,
     val fingerprintToken: String,
     val latitude: Double,
     val longitude: Double,

@@ -4652,6 +4652,102 @@ function haversineMeters(
 
 /*
 =========================================================
+  ATTENDANCE BIOMETRIC CHALLENGES
+
+  تحديات بصمة أحادية الاستخدام:
+  لا يمكن إرسال حضور بدون تحدي صادر من السيرفر
+  ومرتبط بالموظف وجهازه، وصلاحيته دقيقتان.
+=========================================================
+*/
+
+const attendanceChallenges = new Map();
+
+const CHALLENGE_TTL_MS = 2 * 60 * 1000;
+
+function issueAttendanceChallenge(employeeId, deviceId) {
+    const challengeId = require('crypto').randomBytes(16).toString('hex');
+    const nonce = require('crypto').randomBytes(32);
+    attendanceChallenges.set(challengeId, {
+        nonce: nonce.toString('hex'),
+        employeeId,
+        deviceId,
+        expiresAt: Date.now() + CHALLENGE_TTL_MS,
+        used: false
+    });
+    return {
+        challengeId,
+        challenge: nonce.toString('base64url'),
+        expiresInSeconds: CHALLENGE_TTL_MS / 1000
+    };
+}
+
+function consumeAttendanceChallenge(challengeId, employeeId, deviceId) {
+    const c = attendanceChallenges.get(String(challengeId || ''));
+    if (!c) return { ok: false, reason: 'تحدي البصمة غير موجود. أعد المحاولة.' };
+    if (c.used) return { ok: false, reason: 'تحدي البصمة مستخدم مسبقاً. أعد المحاولة.' };
+    if (Date.now() > c.expiresAt) {
+        attendanceChallenges.delete(challengeId);
+        return { ok: false, reason: 'انتهت صلاحية تحدي البصمة. أعد المحاولة.' };
+    }
+    if (c.employeeId !== String(employeeId) || c.deviceId !== String(deviceId)) {
+        return { ok: false, reason: 'تحدي البصمة لا يطابق هذا الموظف/الجهاز.' };
+    }
+    c.used = true;
+    setTimeout(() => attendanceChallenges.delete(challengeId), CHALLENGE_TTL_MS);
+    return { ok: true };
+}
+
+app.get(
+    '/api/attendance/challenge',
+    async (req, res) => {
+
+        try {
+
+            const employeeId =
+                String(req.query.employeeId || '').trim();
+
+            const deviceId =
+                String(req.query.deviceId || '').trim();
+
+            if (!employeeId || !deviceId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'employeeId وdeviceId مطلوبان'
+                });
+            }
+
+            const employee =
+                await Employee.findById(employeeId).lean();
+
+            if (
+                !employee ||
+                !employee.deviceId ||
+                employee.deviceId !== deviceId
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'هذا الجهاز غير مرتبط بالموظف'
+                });
+            }
+
+            res.json({
+                success: true,
+                ...issueAttendanceChallenge(employeeId, deviceId)
+            });
+
+        } catch (err) {
+            res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+
+    }
+);
+
+
+/*
+=========================================================
   ATTENDANCE
 =========================================================
 */
@@ -4695,6 +4791,12 @@ app.post(
                 Number(
                     req.body.longitude
                 );
+
+            const challengeId =
+                String(
+                    req.body.challengeId ||
+                    ''
+                ).trim();
 
             if (
                 !employeeId ||
@@ -4750,6 +4852,31 @@ app.post(
 
                     message:
                         'الموظف غير موجود'
+
+                });
+
+            }
+
+            /*
+             * التحقق الحقيقي من البصمة:
+             * لا يُقبل حضور بدون تحدي بصمة صالح صادر
+             * من السيرفر لهذا الموظف/الجهاز ولم يُستخدم.
+             */
+            const challengeCheck =
+                consumeAttendanceChallenge(
+                    challengeId,
+                    employeeId,
+                    deviceId
+                );
+
+            if (!challengeCheck.ok) {
+
+                return res.status(403).json({
+
+                    success: false,
+
+                    message:
+                        challengeCheck.reason
 
                 });
 

@@ -22,6 +22,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.mohmmedali.almoraqebpro.data.network.AttendanceChallengeResponse
 import com.mohmmedali.almoraqebpro.data.network.AttendanceRequest
 import com.mohmmedali.almoraqebpro.data.network.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
@@ -165,10 +166,69 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
 
+        // ===== 1) بصمة حقيقية عبر BiometricPrompt قبل أي إرسال =====
+        val executor: Executor = ContextCompat.getMainExecutor(this)
+        val biometricPrompt = BiometricPrompt(
+            this,
+            executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    // ===== 2) تحدي أحادي الاستخدام من السيرفر =====
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val chResponse = RetrofitClient.apiService.attendanceChallenge(employeeId, deviceId)
+                            val chBody = chResponse.body()
+                            val challengeId = chBody?.challengeId
+                            if (challengeId == null) {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(this@DashboardActivity, chBody?.message ?: "تعذر إصدار تحدي البصمة", Toast.LENGTH_LONG).show()
+                                }
+                                return@launch
+                            }
+                            doSubmitAttendance(type, latitude, longitude, employeeId, deviceId, challengeId)
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(this@DashboardActivity, "تعذر بدء التحقق بالبصمة: ${e.localizedMessage ?: "خطأ"}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    Toast.makeText(this@DashboardActivity, "فشل التحقق بالبصمة: $errString", Toast.LENGTH_LONG).show()
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    Toast.makeText(this@DashboardActivity, "البصمة غير صحيحة، حاول مرة أخرى", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("تأكيد البصمة")
+            .setSubtitle("يجب التحقق بالبصمة أو قفل الشاشة لتسجيل الحضور")
+            .setNegativeButtonText("إلغاء")
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
+    }
+
+    private fun doSubmitAttendance(
+        type: String,
+        latitude: Double,
+        longitude: Double,
+        employeeId: String,
+        deviceId: String,
+        challengeId: String
+    ) {
         val request = AttendanceRequest(
             employeeId = employeeId,
             deviceId = deviceId,
-            fingerprintToken = "device-biometric-${System.currentTimeMillis()}",
+            challengeId = challengeId,
+            fingerprintToken = "biometric-verified-${System.currentTimeMillis()}",
             latitude = latitude,
             longitude = longitude,
             type = type,
@@ -198,7 +258,7 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
                         else -> "تعذر إرسال الحضور: ${e.localizedMessage ?: "خطأ غير معروف"}"
                     }
                     Toast.makeText(this@DashboardActivity, message, Toast.LENGTH_LONG).show()
-                    Log.e(TAG, "Attendance error", e)
+                    Log.e(TAG, "Attendance submission failed", e)
                 }
             }
         }
@@ -216,14 +276,4 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == LOCATION_PERMISSION_REQUEST) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                fetchAndSaveLocation()
-            } else {
-                Toast.makeText(this, "تم رفض إذن الموقع، لا يمكن تسجيل الحضور بدون الموقع", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
 }

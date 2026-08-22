@@ -41,12 +41,13 @@ class MainViewModel : ViewModel() {
     }
 
     // دالة إرسال البصمة والموقع الجغرافي
-    fun submitAttendance(employeeId: String, deviceId: String, fingerprintToken: String, latitude: Double, longitude: Double) {
+    fun submitAttendance(employeeId: String, deviceId: String, challengeId: String, fingerprintToken: String, latitude: Double, longitude: Double) {
         val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
 
         val request = AttendanceRequest(
             employeeId = employeeId,
             deviceId = deviceId,
+            challengeId = challengeId,
             fingerprintToken = fingerprintToken,
             latitude = latitude,
             longitude = longitude,

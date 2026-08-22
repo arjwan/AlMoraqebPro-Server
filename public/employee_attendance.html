@@ -89,9 +89,14 @@ async function verifyFingerprint() {
         $('fpView').textContent = 'غير مدعوم';
         throw new Error('هذا الجهاز لا يدعم البصمة (WebAuthn). استخدم تطبيق الهاتف لتسجيل البصمة.');
     }
+    // 1) تحدي أحادي الاستخدام صادر من السيرفر ومرتبط بالموظف/الجهاز
+    const chRes = await fetch(SERVER_URL + '/api/attendance/challenge?employeeId=' + encodeURIComponent(employeeId) + '&deviceId=' + encodeURIComponent(deviceId));
+    const chData = await chRes.json();
+    if (!chRes.ok || !chData.success) throw new Error(chData.message || 'تعذر إصدار تحدي البصمة');
+
+    // 2) البصمة الحقيقية توقّع/تؤكد تحدي السيرفر نفسه
     try {
-        const challenge = new Uint8Array(32);
-        crypto.getRandomValues(challenge);
+        const challenge = Uint8Array.from(atob(chData.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
         const cred = await navigator.credentials.get({
             publicKey: { challenge, userVerification: 'required', timeout: 60000 }
         });
@@ -124,6 +129,7 @@ async function mark(type) {
             body: JSON.stringify({
                 employeeId,
                 deviceId,
+                challengeId: chData.challengeId,
                 fingerprintToken: token,
                 latitude: gps.latitude,
                 longitude: gps.longitude,
