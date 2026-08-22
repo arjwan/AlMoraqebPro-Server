@@ -6,7 +6,7 @@
 <title>الخدمات - المراقب برو</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#0284c7;--blue2:#0369a1;--navy:#0f172a;--muted:#64748b;--line:#dbe4ee;--green:#16a34a;--red:#dc2626;--amber:#d97706}
+:root{--blue:#0284c7;--blue2:#0369a1;--navy:#0f172a;--muted:#64748b;--line:#dbe4ee;--green:#16a34a;--red:#dc2626;--amber:#d97706;--purple:#7c3aed}
 body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(160deg,#0f172a,#172554 55%,#0c4a6e);min-height:100vh;padding:14px;color:#0f172a}
 .app{width:100%;max-width:500px;margin:auto;padding-bottom:20px}
 .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;color:#fff}
@@ -37,6 +37,18 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(160deg,
 .loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:18px;color:#475569;font-size:12px}.spinner{width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 .toast{position:fixed;right:14px;left:14px;bottom:14px;z-index:3000;background:#0f172a;color:#fff;border-radius:14px;padding:13px 15px;font-size:12px;font-weight:800;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);display:none}.toast.show{display:block;animation:fade .2s ease-out}@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @media(max-width:360px){.grid{grid-template-columns:1fr}.service-card{min-height:105px}}
+
+/* ===== تنسيقات الإسعافات الأولية ===== */
+.first-aid-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.fa-case{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;cursor:pointer;transition:.15s}.fa-case:hover{background:#f0f9ff;border-color:#7dd3fc}
+.fa-case h4{font-size:14px;color:#0f172a;margin-bottom:3px}
+.fa-case p{font-size:11px;color:var(--muted)}
+.fa-detail{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px;font-size:13px;line-height:1.9}
+.fa-detail .btn-listen{background:var(--purple);color:#fff;border:0;padding:8px 12px;border-radius:10px;font-weight:800;cursor:pointer;margin-top:8px;font-size:12px}
+.fa-detail .btn-listen:hover{filter:brightness(1.1)}
+.fa-detail video, .fa-detail iframe{width:100%;border-radius:12px;margin-top:10px}
+.zoom-controls{display:flex;gap:6px;margin-top:8px}
+.zoom-controls button{flex:1;background:#e2e8f0;border:0;border-radius:8px;padding:6px;font-weight:800;cursor:pointer}
 </style>
 </head>
 <body>
@@ -55,10 +67,10 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(160deg,
     <div class="grid" style="margin-top:12px">
       <button class="service-card" type="button" onclick="openLoanModal()"><span class="icon">💰</span><h3>طلب سلفة</h3><p>إرسال طلب سلفة مباشرة إلى المدير</p></button>
       <button class="service-card" type="button" onclick="openLeaveModal()"><span class="icon">📅</span><h3>طلب إجازة</h3><p>تقديم طلب إجازة مع التاريخ والسبب</p></button>
-      <button class="service-card" type="button" onclick="location.href='attachment.html?employeeId='+encodeURIComponent(employeeId)+'&name='+encodeURIComponent(employeeName)+'&company='+encodeURIComponent(companyId)+'&deviceId='+encodeURIComponent(deviceId)"><span class="icon">🖐️</span><h3>البصمة والحضور</h3><p>تسجيل الحضور والانصراف بالبصمة والموقع</p></button>
+      <button class="service-card" type="button" onclick="fetchAttendanceLog(true)"><span class="icon">🖐️</span><h3>سجل البصمات</h3><p>عرض حركات الحضور والانصراف من السيرفر</p></button>
       <button class="service-card" type="button" onclick="fetchMyRequests(true)"><span class="icon">📄</span><h3>حالة طلباتي</h3><p>سلفة / إجازة وحالة الموافقة</p></button>
       <button class="service-card" type="button" onclick="fetchNotifications(true)"><span class="icon">🔔</span><h3>إشعارات المدير</h3><p>رسائل الإدارة وآخر التنبيهات</p></button>
-      <button class="service-card" type="button" onclick="fetchAttendanceLog(true)"><span class="icon">📋</span><h3>سجل الحضور</h3><p>عرض حركات البصمة المسجلة فعلياً</p></button>
+      <button class="service-card" type="button" onclick="openFirstAid()"><span class="icon">⛑️</span><h3>الإسعافات الأولية</h3><p>شروحات طبية صوتية لحالات الطوارئ</p></button>
       <button class="service-card" type="button" onclick="checkAccountStatus(true)"><span class="icon">📶</span><h3>حالة الحساب</h3><p>فحص السيرفر والجهاز المرتبط</p></button>
       <button class="service-card" type="button" onclick="fetchRewards(true)"><span class="icon">🎁</span><h3>المكافآت والخصومات</h3><p>عرض البيانات المتاحة في النظام</p></button>
     </div>
@@ -67,6 +79,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(160deg,
   </div>
 </div>
 
+<!-- مودالات الطلبات -->
 <div class="overlay" id="loanModal"><div class="modal">
   <div class="modal-head"><h3>💰 طلب سلفة مالية</h3><button class="close" onclick="closeModal('loanModal')">×</button></div>
   <div class="field"><label>المبلغ بالدينار العراقي</label><input type="number" id="loanAmount" min="1" placeholder="500000"></div>
@@ -82,10 +95,18 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(160deg,
   <div class="actions"><button class="btn btn-gray" onclick="closeModal('leaveModal')">إلغاء</button><button class="btn btn-blue" id="leaveSubmit" onclick="submitLeave()">إرسال الطلب</button></div>
 </div></div>
 
+<!-- مودال عرض البيانات (سجل/إشعارات/حالة) -->
 <div class="overlay" id="dataModal"><div class="modal">
   <div class="modal-head"><h3 id="dataTitle">البيانات</h3><button class="close" onclick="closeModal('dataModal')">×</button></div>
   <div id="dataBody" class="result-list"></div>
   <button class="btn btn-gray" onclick="closeModal('dataModal')">إغلاق</button>
+</div></div>
+
+<!-- مودال الإسعافات الأولية -->
+<div class="overlay" id="firstAidModal"><div class="modal">
+  <div class="modal-head"><h3>⛑️ الإسعافات الأولية</h3><button class="close" onclick="closeModal('firstAidModal')">×</button></div>
+  <div id="firstAidList" class="first-aid-list"></div>
+  <div id="firstAidDetail" class="fa-detail" style="display:none"></div>
 </div></div>
 
 <div class="toast" id="toast"></div>
@@ -99,7 +120,7 @@ let employeeId = params.get('employeeId') || localStorage.getItem('employeeId') 
 let employeeName = params.get('name') || localStorage.getItem('activeUser') || 'الموظف';
 let deviceId = params.get('deviceId') || localStorage.getItem('almoraqeb_device_id') || '';
 
-// إذا لم تتوفر بعض البيانات، نحاول استخراجها من كائن الموظف المخزن
+// استخراج البيانات إن كانت ناقصة
 if (!employeeId || !companyId || !employeeName) {
     const empData = localStorage.getItem('almoraqeb_employee');
     if (empData) {
@@ -115,17 +136,10 @@ if (!employeeId || !companyId || !employeeName) {
     }
 }
 
-// ✅ ضمان وجود معرف الجهاز (إصلاح مشكلة "معرف الجهاز غير موجود")
 if (!deviceId) {
     deviceId = crypto.randomUUID ? crypto.randomUUID() : 'device-' + Date.now() + '-' + Math.random().toString(36).slice(2);
     localStorage.setItem('almoraqeb_device_id', deviceId);
 }
-
-// تخزين القيم القادمة من الرابط (إن وجدت) لضمان التوحيد
-if (params.get('company') || params.get('companyId')) localStorage.setItem('activeCompanyId', companyId);
-if (params.get('employeeId')) localStorage.setItem('employeeId', employeeId);
-if (params.get('name')) localStorage.setItem('activeUser', employeeName);
-if (params.get('deviceId')) localStorage.setItem('almoraqeb_device_id', deviceId);
 
 const $ = id => document.getElementById(id);
 $('companyView').textContent = companyId || 'غير محددة';
@@ -165,6 +179,7 @@ function speak(text){
   const u=new SpeechSynthesisUtterance(text);u.lang='ar-SA';u.rate=.9;u.pitch=1.12;
   const voices=window.speechSynthesis.getVoices();
   const candidates=voices.filter(v=>/^ar/i.test(v.lang));
+  // اختيار صوت أنثى إن وجد
   u.voice=candidates.find(v=>/female|أنث|امرأة|Google العربية|Arabic/i.test(v.name))||candidates.find(v=>/SA|AE|EG/i.test(v.lang))||candidates[0]||null;
   window.speechSynthesis.speak(u);
 }
@@ -176,8 +191,14 @@ function speakGreeting(){
 if('speechSynthesis' in window){speechSynthesis.onvoiceschanged=()=>{};setTimeout(speakGreeting,700)}
 
 function requireIdentity(){
-  if(!employeeId){toast('⚠️ لم يتم تمرير رقم الموظف. افتح الخدمات من داخل حساب الموظف.','error');return false}
-  if(!deviceId){toast('⚠️ لم يتم العثور على معرّف الجهاز المرتبط. ارجع إلى صفحة البصمة ثم افتح الخدمات من جديد.','error');return false}
+  if(!employeeId || employeeId === 'undefined' || employeeId === 'null' || employeeId === '') {
+    toast('⚠️ رقم الموظف غير موجود أو غير صحيح. يرجى إعادة تسجيل الدخول من بوابة الموظف.', 'error');
+    return false;
+  }
+  if(!deviceId || deviceId === 'undefined' || deviceId === 'null' || deviceId === '') {
+    toast('⚠️ لم يتم العثور على معرّف الجهاز المرتبط. ارجع إلى صفحة البصمة ثم افتح الخدمات من جديد.', 'error');
+    return false;
+  }
   return true;
 }
 
@@ -185,10 +206,16 @@ async function submitService(type,payload,buttonId,modalId,successText){
   if(!requireIdentity())return;
   setButtonLoading(buttonId,true);
   try{
-    const data=await api('/api/employee/service-request',{method:'POST',body:JSON.stringify({employeeId,deviceId,type,...payload})});
+    const body = { employeeId, deviceId, companyId, type, ...payload };
+    console.log('Sending service request:', body);
+    const data = await api('/api/employee/service-request', { method:'POST', body: JSON.stringify(body) });
     toast(`✅ ${data.message||successText}`,'success');
     closeModal(modalId); speak('تم إرسال طلبك إلى الإدارة بنجاح.');
-  }catch(e){toast('❌ '+e.message,'error');speak('تعذر إرسال الطلب. يرجى المحاولة مرة أخرى.');}
+  }catch(e){
+    console.error('Service request error:', e);
+    toast('❌ '+e.message,'error');
+    speak('تعذر إرسال الطلب. يرجى المحاولة مرة أخرى.');
+  }
   finally{setButtonLoading(buttonId,false,buttonId==='loanSubmit'?'إرسال الطلب':'إرسال الطلب')}
 }
 
@@ -241,13 +268,19 @@ async function fetchMyRequests(open=true){
 
 async function fetchAttendanceLog(open=true){
   if(!employeeId){toast('⚠️ رقم الموظف غير موجود','error');return}
-  if(open)showData('📋 سجل الحضور والانصراف',loadingData());
+  if(open)showData('🖐️ سجل البصمات (الحضور والانصراف)',loadingData());
   try{
-    const data=await api(`/api/employees/${encodeURIComponent(employeeId)}/attendance`);const items=data.attendance||[];
-    if(!items.length){if(open)showData('📋 سجل الحضور والانصراف','<div class="empty">لا توجد حركات بصمة محفوظة حتى الآن.</div>');return}
-    const html=items.map(a=>`<div class="record"><div class="record-top"><strong>${a.type==='exit'||a.type==='انصراف'?'🔴 انصراف':'🟢 حضور / بصمة'}</strong><span class="badge green">مسجل</span></div><div>الوقت: ${formatDate(a.timestamp)}</div><div>طريقة التحقق: ${esc(a.verificationMethod||'device-biometric')}</div>${Number.isFinite(Number(a.latitude))?`<div>الموقع: ${Number(a.latitude).toFixed(5)}, ${Number(a.longitude).toFixed(5)}</div>`:''}</div>`).join('');
-    if(open)showData('📋 سجل الحضور والانصراف',html);
-  }catch(e){if(open)showData('📋 سجل الحضور والانصراف',`<div class="empty">❌ ${esc(e.message)}</div>`);toast('تعذر جلب سجل الحضور','error')}
+    const data=await api(`/api/employees/${encodeURIComponent(employeeId)}/attendance`);
+    const items=data.attendance||[];
+    if(!items.length){if(open)showData('🖐️ سجل البصمات','<div class="empty">لا توجد حركات بصمة مسجلة حتى الآن.</div>');return}
+    const html=items.map(a=>{
+      const isExit = (a.type==='exit'||a.type==='انصراف'||a.type==='departure');
+      const icon = isExit ? '🔴 انصراف' : '🟢 حضور';
+      const badge = isExit ? '<span class="badge red">انصراف</span>' : '<span class="badge green">حضور</span>';
+      return `<div class="record"><div class="record-top"><strong>${icon}</strong>${badge}</div><div>الوقت: ${formatDate(a.timestamp)}</div><div>طريقة التحقق: ${esc(a.verificationMethod||'device-biometric')}</div>${Number.isFinite(Number(a.latitude))?`<div>الموقع: ${Number(a.latitude).toFixed(5)}, ${Number(a.longitude).toFixed(5)}</div>`:''}</div>`;
+    }).join('');
+    if(open)showData('🖐️ سجل البصمات (الحضور والانصراف)',html);
+  }catch(e){if(open)showData('🖐️ سجل البصمات',`<div class="empty">❌ ${esc(e.message)}</div>`);toast('تعذر جلب سجل الحضور','error')}
 }
 
 async function checkAccountStatus(open=true){
@@ -282,6 +315,79 @@ function goBackToMain(){
 
 window.addEventListener('online',()=>{ $('connection').textContent='● متصل';$('connection').className='connection ok';toast('✅ عاد اتصال الإنترنت','success');checkAccountStatus(false)});
 window.addEventListener('offline',()=>{ $('connection').textContent='● بدون إنترنت';$('connection').className='connection bad';toast('⚠️ لا يوجد اتصال بالإنترنت','error')});
+
+// ===== الإسعافات الأولية =====
+const firstAidCases = [
+  { id:'bleeding', title:'🩸 النزيف', desc:'وقف النزيف الخارجي', detail:'الضغط المباشر على الجرح بقطعة قماش نظيفة، رفع العضو المصاب، لا تقم بإزالة الجسم الغائر، اضغط بقوة حتى يتوقف النزيف، اطلب الإسعاف فوراً إذا كان النزيف حاداً.' },
+  { id:'burn', title:'🔥 الحروق', desc:'إسعاف الحروق الحرارية', detail:'برد الحرق بماء جارٍ بارد لمدة 15-20 دقيقة، لا تضع ثلجاً أو معجون أسنان أو زبدة، غطّ الحرق بضمادة معقمة غير لاصقة، لا تفقع الفقاعات.' },
+  { id:'fracture', title:'🦴 الكسور', desc:'تثبيت العضو المكسور', detail:'لا تحرك المصاب إلا للضرورة، ثبّت العضو المكسور بجبيرة مؤقتة (قطعة خشب وضمادة)، ضع كمادات باردة لتقليل التورم، اطلب الإسعاف.' },
+  { id:'choking', title:'😮 الاختناق', desc:'مناورة هيمليك', detail:'قف خلف المصاب، ضع قبضة يدك فوق السرة، أمسكها باليد الأخرى واضغط بقوة للداخل والأعلى 5 مرات، كرر حتى خروج الجسم الغريب.' },
+  { id:'cpr', title:'❤️ الإنعاش القلبي الرئوي', desc:'CPR للبالغين', detail:'تأكد من الوعي والتنفس، اتصل بالإسعاف، ابدأ ضغطات صدرية 30 ضغطة بمعدل 100-120/دقيقة، ثم نفسين إنقاذ، كرر الدورة حتى وصول الإسعاف.' },
+  { id:'fainting', title:'😵 الإغماء', desc:'إسعاف فقدان الوعي', detail:'مدد المصاب على ظهره، ارفع ساقيه 30 سم، فك الأزرار والملابس الضيقة، لا تعطه أي شيء بالفم، اطلب الإسعاف إذا استمر الإغماء.' },
+  { id:'poison', title:'☠️ التسمم', desc:'التعامل مع التسمم', detail:'لا تحاول إحداث التقيؤ إلا إذا طلب منك مركز السموم، اتصل بالإسعاف فوراً، احفظ عبوة المادة المسببة، راقب التنفس.' },
+  { id:'heat', title:'🌡️ ضربة الشمس', desc:'التبريد السريع', detail:'انقل المصاب لمكان بارد، أزل الملابس الزائدة، برد الجسم بمناشف مبللة، أعطه سوائل إذا كان واعياً، اطلب الإسعاف فوراً.' },
+  { id:'seizure', title:'⚡ التشنجات', desc:'حماية المصاب أثناء النوبة', detail:'ضع المصاب على الأرض بعيداً عن الأثاث، ضع شيئاً ناعماً تحت رأسه، لا تضع أي شيء في فمه، انتظر انتهاء النوبة ثم ضعه على جانبه.' },
+  { id:'wound', title:'🩹 الجروح', desc:'تنظيف وتضميد الجروح', detail:'اغسل الجرح بماء نظيف، طهره بمطهر، غطّه بضمادة معقمة، راقب علامات الالتهاب.' }
+];
+
+function openFirstAid(){
+  const list = $('firstAidList');
+  list.innerHTML = firstAidCases.map(c=>`<div class="fa-case" onclick="showFirstAidDetail('${c.id}')"><h4>${c.title}</h4><p>${c.desc}</p></div>`).join('');
+  $('firstAidDetail').style.display='none';
+  openModal('firstAidModal');
+}
+
+function showFirstAidDetail(id){
+  const c = firstAidCases.find(x=>x.id===id);
+  if(!c)return;
+  const detail = $('firstAidDetail');
+  detail.style.display='block';
+  detail.innerHTML = `
+    <h4 style="margin-bottom:6px">${c.title}</h4>
+    <p>${esc(c.detail)}</p>
+    <div class="zoom-controls">
+      <button onclick="changeFontSize(-1)">أ-</button>
+      <button onclick="changeFontSize(1)">أ+</button>
+    </div>
+    <button class="btn-listen" onclick="speakFirstAid('${c.id}')">🔊 استمع للشرح (صوت أنثى)</button>
+    <div style="margin-top:12px">
+      <p style="font-size:11px;color:#475569;margin-bottom:6px">🎬 فيديو تعليمي:</p>
+      <iframe width="100%" height="200" src="https://www.youtube.com/embed/${getVideoId(c.id)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+  `;
+}
+
+function getVideoId(id){
+  const map = {
+    bleeding:'dY9YWiS8F9I',
+    burn:'qQzQrWw3W9M',
+    fracture:'v3iQKxYX9w0',
+    choking:'tEI4UCnR7Jg',
+    cpr:'hYvP8sT0OcQ',
+    fainting:'Vv6MlD0T0Sg',
+    poison:'XpA8l2Q6vNk',
+    heat:'Vh5Ns6Zg1Ww',
+    seizure:'jO5yA3u6R8U',
+    wound:'5C9hF2nM4xA'
+  };
+  return map[id] || 'dY9YWiS8F9I';
+}
+
+function changeFontSize(delta){
+  const detail = $('firstAidDetail');
+  const current = parseFloat(window.getComputedStyle(detail).fontSize);
+  detail.style.fontSize = (current + delta) + 'px';
+}
+
+function speakFirstAid(id){
+  const c = firstAidCases.find(x=>x.id===id);
+  if(c){
+    speak(c.title + '. ' + c.detail);
+  }
+}
+
+// تحميل الأصوات عند التهيئة
+window.speechSynthesis && window.speechSynthesis.onvoiceschanged;
 
 (async function init(){
   try{await checkAccountStatus(false)}catch{}
