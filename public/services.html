@@ -55,7 +55,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(160deg,
     <div class="grid" style="margin-top:12px">
       <button class="service-card" type="button" onclick="openLoanModal()"><span class="icon">💰</span><h3>طلب سلفة</h3><p>إرسال طلب سلفة مباشرة إلى المدير</p></button>
       <button class="service-card" type="button" onclick="openLeaveModal()"><span class="icon">📅</span><h3>طلب إجازة</h3><p>تقديم طلب إجازة مع التاريخ والسبب</p></button>
-      <button class="service-card" type="button" onclick="location.href='employee_attendance.html?employeeId='+encodeURIComponent(employeeId)+'&name='+encodeURIComponent(employeeName)+'&company='+encodeURIComponent(companyId)+'&deviceId='+encodeURIComponent(deviceId)"><span class="icon">🖐️</span><h3>البصمة والحضور</h3><p>تسجيل الحضور والانصراف بالبصمة والموقع</p></button>
+      <button class="service-card" type="button" onclick="location.href='attachment.html?employeeId='+encodeURIComponent(employeeId)+'&name='+encodeURIComponent(employeeName)+'&company='+encodeURIComponent(companyId)+'&deviceId='+encodeURIComponent(deviceId)"><span class="icon">🖐️</span><h3>البصمة والحضور</h3><p>تسجيل الحضور والانصراف بالبصمة والموقع</p></button>
       <button class="service-card" type="button" onclick="fetchMyRequests(true)"><span class="icon">📄</span><h3>حالة طلباتي</h3><p>سلفة / إجازة وحالة الموافقة</p></button>
       <button class="service-card" type="button" onclick="fetchNotifications(true)"><span class="icon">🔔</span><h3>إشعارات المدير</h3><p>رسائل الإدارة وآخر التنبيهات</p></button>
       <button class="service-card" type="button" onclick="fetchAttendanceLog(true)"><span class="icon">📋</span><h3>سجل الحضور</h3><p>عرض حركات البصمة المسجلة فعلياً</p></button>
@@ -93,10 +93,39 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(160deg,
 <script>
 const SERVER_URL = location.origin;
 const params = new URLSearchParams(location.search);
-const companyId = params.get('company') || params.get('companyId') || localStorage.getItem('companyId') || '';
-const employeeId = params.get('employeeId') || localStorage.getItem('employeeId') || '';
-const employeeName = params.get('name') || localStorage.getItem('employeeName') || 'الموظف';
-const deviceId = params.get('deviceId') || localStorage.getItem('deviceId') || localStorage.getItem('employeeDeviceId') || localStorage.getItem('device_id') || '';
+
+let companyId = params.get('company') || params.get('companyId') || localStorage.getItem('activeCompanyId') || '';
+let employeeId = params.get('employeeId') || localStorage.getItem('employeeId') || '';
+let employeeName = params.get('name') || localStorage.getItem('activeUser') || 'الموظف';
+let deviceId = params.get('deviceId') || localStorage.getItem('almoraqeb_device_id') || '';
+
+// إذا لم تتوفر بعض البيانات، نحاول استخراجها من كائن الموظف المخزن
+if (!employeeId || !companyId || !employeeName) {
+    const empData = localStorage.getItem('almoraqeb_employee');
+    if (empData) {
+        try {
+            const emp = JSON.parse(empData);
+            employeeId = emp._id || emp.id || employeeId;
+            companyId = emp.companyId || companyId;
+            employeeName = emp.name || emp.username || employeeName;
+            localStorage.setItem('employeeId', employeeId);
+            localStorage.setItem('activeCompanyId', companyId);
+            localStorage.setItem('activeUser', employeeName);
+        } catch (e) {}
+    }
+}
+
+// ✅ ضمان وجود معرف الجهاز (إصلاح مشكلة "معرف الجهاز غير موجود")
+if (!deviceId) {
+    deviceId = crypto.randomUUID ? crypto.randomUUID() : 'device-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    localStorage.setItem('almoraqeb_device_id', deviceId);
+}
+
+// تخزين القيم القادمة من الرابط (إن وجدت) لضمان التوحيد
+if (params.get('company') || params.get('companyId')) localStorage.setItem('activeCompanyId', companyId);
+if (params.get('employeeId')) localStorage.setItem('employeeId', employeeId);
+if (params.get('name')) localStorage.setItem('activeUser', employeeName);
+if (params.get('deviceId')) localStorage.setItem('almoraqeb_device_id', deviceId);
 
 const $ = id => document.getElementById(id);
 $('companyView').textContent = companyId || 'غير محددة';
