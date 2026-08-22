@@ -260,7 +260,7 @@ body{
 
     </section>
 
-    <!-- طلب إضافة موظف جديد (بنفس التصميم) -->
+    <!-- طلب إضافة موظف جديد -->
     <section class="panel">
 
         <div class="section-title">
@@ -486,7 +486,7 @@ async function login(event) {
 
         const response =
             await fetch(
-                SERVER_URL + '/api/mobile/login',  // ✅ تم إصلاح المسار
+                SERVER_URL + '/api/mobile/login',
                 {
                     method:'POST',
                     headers:{
@@ -542,29 +542,20 @@ async function login(event) {
 
         }
 
-        message.className =
-            'error';
+        /*
+         * ✅ التحويل الفوري المطلوب:
+         * ننتقل دائماً إلى صفحة البصمة attachment.html
+         * بعد نجاح تسجيل الدخول، بغض النظر عن أي رابط آخر.
+         */
+        message.className = 'error';
+        message.style.display = 'block';
+        message.style.background = '#dcfce7';
+        message.style.color = '#166534';
+        message.textContent = '✅ تم تسجيل الدخول بنجاح! جارٍ التحويل...';
 
-        message.style.display =
-            'block';
-
-        message.style.background =
-            '#dcfce7';
-
-        message.style.color =
-            '#166534';
-
-        message.textContent =
-            'تم تسجيل الدخول بنجاح';
-
-        if (data.redirect) {
-
-            setTimeout(() => {
-                window.location.href =
-                    data.redirect;
-            }, 1000);
-
-        }
+        setTimeout(() => {
+            window.location.href = '/attachment.html';
+        }, 800);
 
     } catch (error) {
 
@@ -726,5 +717,6 @@ setInterval(
 );
 
 </script>
+
 </body>
 </html>
