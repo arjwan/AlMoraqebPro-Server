@@ -22,6 +22,10 @@ class RegisterEmployeeActivity : AppCompatActivity() {
 
     private var isSubmitting = false
 
+    private val pendingDao by lazy {
+        com.mohmmedali.almoraqebpro.AppDatabase.getDatabase(this).pendingRequestDao()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register_employee)
@@ -39,6 +43,9 @@ class RegisterEmployeeActivity : AppCompatActivity() {
         val socialSecurity = findViewById<EditText>(R.id.etSocialSecurity)
         val location = findViewById<EditText>(R.id.etLocation)
         val submit = findViewById<Button>(R.id.btnSubmitRequest)
+
+        // إعادة إرسال الطلبات المحفوظة محلياً عند توفر الاتصال
+        lifecycleScope.launch { flushPendingRequests() }
 
         submit.setOnClickListener {
             Log.d(TAG, "BUTTON_CLICK")
@@ -134,18 +141,96 @@ class RegisterEmployeeActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "EXCEPTION", e)
-                val message = when {
-                    e.message?.contains("timeout", true) == true -> "انتهت مهلة الاتصال بالسيرفر"
-                    e.message?.contains("Unable to resolve host", true) == true -> "لا يوجد اتصال بالإنترنت"
-                    else -> "تعذر الاتصال بالسيرفر. تحقق من الإنترنت وحاول مرة أخرى."
+                try {
+                    withContext(Dispatchers.IO) {
+                        pendingDao.insert(
+                            PendingEmployeeRequest(payloadJson = payloadToJson(payload))
+                        )
+                    }
+                    Log.w(TAG, "SAVED_OFFLINE pendingCount=${pendingDao.count()}")
+                    Toast.makeText(
+                        this@RegisterEmployeeActivity,
+                        "لا يوجد اتصال بالسيرفر، تم حفظ الطلب محلياً وسيتم إرساله لاحقاً",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } catch (saveErr: Exception) {
+                    Log.e(TAG, "OFFLINE_SAVE_FAILED", saveErr)
+                    Toast.makeText(
+                        this@RegisterEmployeeActivity,
+                        "تعذر الاتصال بالسيرفر. تحقق من الإنترنت وحاول مرة أخرى.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
-                Toast.makeText(this@RegisterEmployeeActivity, message, Toast.LENGTH_LONG).show()
             } finally {
                 isSubmitting = false
                 submit.isEnabled = true
                 submit.text = "إرسال الطلب"
                 Log.d(TAG, "REQUEST_ENDED (button re-enabled)")
             }
+        }
+    }
+
+    private fun payloadToJson(p: EmployeeRequestPayload): String {
+        return org.json.JSONObject().apply {
+            put("companyId", p.companyId)
+            put("companyName", p.companyName)
+            put("name", p.name)
+            put("phoneNumber", p.phoneNumber)
+            put("jobTitle", p.jobTitle)
+            put("workLocation", p.workLocation)
+            put("salary", p.salary ?: -1.0)
+            put("shift", p.shift)
+            put("workHours", p.workHours ?: -1)
+            put("wageType", p.wageType)
+            put("socialSecurity", p.socialSecurity)
+            put("location", p.location)
+            put("deviceId", p.deviceId)
+        }.toString()
+    }
+
+    private fun jsonToPayload(json: org.json.JSONObject): EmployeeRequestPayload {
+        return EmployeeRequestPayload(
+            companyId = json.getString("companyId"),
+            companyName = json.optString("companyName"),
+            name = json.getString("name"),
+            phoneNumber = json.optString("phoneNumber"),
+            jobTitle = json.optString("jobTitle"),
+            workLocation = json.optString("workLocation"),
+            salary = json.getDouble("salary").takeIf { it >= 0 },
+            shift = json.optString("shift"),
+            workHours = json.getInt("workHours").takeIf { it > 0 },
+            wageType = json.optString("wageType"),
+            socialSecurity = json.optString("socialSecurity"),
+            location = json.optString("location"),
+            deviceId = json.getString("deviceId")
+        )
+    }
+
+    private suspend fun flushPendingRequests() {
+        try {
+            val pending = withContext(Dispatchers.IO) { pendingDao.getAll() }
+            if (pending.isEmpty()) return
+            Log.d(TAG, "FLUSH_START count=${pending.size}")
+            for (item in pending) {
+                try {
+                    val payload = jsonToPayload(org.json.JSONObject(item.payloadJson))
+                    val response = withContext(Dispatchers.IO) {
+                        RetrofitClient.apiService.submitEmployeeRequest(payload)
+                    }
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        withContext(Dispatchers.IO) { pendingDao.deleteById(item.id) }
+                        Log.i(TAG, "FLUSH_SENT id=${item.id}")
+                    } else {
+                        Log.w(TAG, "FLUSH_RETRY_LATER id=${item.id} code=${response.code()}")
+                        break
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "FLUSH_OFFLINE id=${item.id}", e)
+                    break
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "FLUSH_ERROR", e)
         }
     }
 
