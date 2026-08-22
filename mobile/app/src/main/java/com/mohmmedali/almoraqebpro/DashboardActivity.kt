@@ -1,8 +1,11 @@
 package com.mohmmedali.almoraqebpro
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -22,7 +25,6 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.mohmmedali.almoraqebpro.data.network.AttendanceChallengeResponse
 import com.mohmmedali.almoraqebpro.data.network.AttendanceRequest
 import com.mohmmedali.almoraqebpro.data.network.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
@@ -39,6 +41,7 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
     companion object {
         private const val TAG = "DashboardActivity"
         private const val LOCATION_PERMISSION_REQUEST = 100
+        private const val GPS_REQUEST_CODE = 101
     }
 
     private lateinit var mMap: GoogleMap
@@ -69,7 +72,8 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
                 Toast.makeText(applicationContext, "تم التحقق من البصمة بنجاح", Toast.LENGTH_SHORT).show()
-                fetchCurrentLocationAndSendAttendance(pendingAttendanceType)
+                // بعد نجاح البصمة، نرسل الحضور بالموقع الذي تم جلبه مسبقاً
+                sendAttendanceToServer(pendingAttendanceType)
             }
 
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
@@ -84,10 +88,13 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             .setNegativeButtonText("إلغاء")
             .build()
 
-        btnBiometric.setOnClickListener { triggerBiometric("attendance") }
-        btnCheckIn.setOnClickListener { triggerBiometric("attendance") }
-        btnCheckOut.setOnClickListener { triggerBiometric("exit") }
+        btnBiometric.setOnClickListener { initiateAttendance("attendance") }
+        btnCheckIn.setOnClickListener { initiateAttendance("attendance") }
+        btnCheckOut.setOnClickListener { initiateAttendance("exit") }
         btnLocation.setOnClickListener { fetchAndSaveLocation() }
+
+        // طلب إذن الموقع تلقائياً إذا لم يمنح
+        requestLocationPermissionIfNeeded()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -97,59 +104,42 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 12f))
     }
 
-    private fun triggerBiometric(type: String) {
+    private fun initiateAttendance(type: String) {
+        if (!hasLocationPermission()) {
+            requestLocationPermissionIfNeeded()
+            Toast.makeText(this, "يجب منح إذن الموقع أولاً", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        if (!isGpsEnabled()) {
+            promptEnableGps()
+            return
+        }
+
         pendingAttendanceType = type
-        biometricPrompt.authenticate(promptInfo)
+        fetchCurrentLocationAndThenBiometric()
     }
 
-    private fun fetchAndSaveLocation() {
-        if (!hasLocationPermission()) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST)
-            return
-        }
-
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            if (location != null) {
-                val lat = location.latitude
-                val lon = location.longitude
-                updateMapToLocation(lat, lon)
-
-                val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-                val record = LocationRecord(latitude = lat, longitude = lon, timestamp = currentTime)
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    val db = AppDatabase.getDatabase(applicationContext)
-                    db.locationDao().insertLocation(record)
-                }
-
-                Toast.makeText(this, "تم حفظ الموقع المحلي بنجاح", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "تعذر جلب الموقع، تأكد من تشغيل GPS أو السماح بالموقع", Toast.LENGTH_LONG).show()
-            }
-        }.addOnFailureListener { e ->
-            Toast.makeText(this, "فشل في جلب الموقع: ${e.localizedMessage ?: "خطأ غير معروف"}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun fetchCurrentLocationAndSendAttendance(type: String) {
-        if (!hasLocationPermission()) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST)
-            Toast.makeText(this, "يجب منح إذن الموقع قبل تسجيل الحضور", Toast.LENGTH_LONG).show()
-            return
-        }
+    private fun fetchCurrentLocationAndThenBiometric() {
+        Toast.makeText(this, "جاري جلب الموقع...", Toast.LENGTH_SHORT).show()
 
         val cancellationTokenSource = CancellationTokenSource()
         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationTokenSource.token)
             .addOnSuccessListener { location ->
                 if (location == null) {
-                    Toast.makeText(this, "تعذر الحصول على الموقع الحالي، لا يمكن إرسال الحضور", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "تعذر الحصول على الموقع الحالي، تأكد من تشغيل GPS", Toast.LENGTH_LONG).show()
                     return@addOnSuccessListener
                 }
 
                 val lat = location.latitude
                 val lon = location.longitude
                 updateMapToLocation(lat, lon)
-                sendAttendanceToServer(type, lat, lon)
+
+                // حفظ الموقع مؤقتاً في SharedPreferences لاستخدامه بعد البصمة
+                prefs.edit().putString("lastLat", lat.toString()).putString("lastLon", lon.toString()).apply()
+
+                Toast.makeText(this, "تم تحديد الموقع، الآن سجل البصمة", Toast.LENGTH_SHORT).show()
+                biometricPrompt.authenticate(promptInfo)
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "فشل في الحصول على الموقع: ${e.localizedMessage ?: "خطأ غير معروف"}", Toast.LENGTH_LONG).show()
@@ -157,7 +147,7 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             }
     }
 
-    private fun sendAttendanceToServer(type: String, latitude: Double, longitude: Double) {
+    private fun sendAttendanceToServer(type: String) {
         val employeeId = prefs.getString("employeeId", "")?.trim().orEmpty()
         val deviceId = prefs.getString("deviceId", "") ?: Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
 
@@ -166,54 +156,33 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
 
-        // ===== 1) بصمة حقيقية عبر BiometricPrompt قبل أي إرسال =====
-        val executor: Executor = ContextCompat.getMainExecutor(this)
-        val biometricPrompt = BiometricPrompt(
-            this,
-            executor,
-            object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    super.onAuthenticationSucceeded(result)
-                    // ===== 2) تحدي أحادي الاستخدام من السيرفر =====
-                    CoroutineScope(Dispatchers.IO).launch {
-                        try {
-                            val chResponse = RetrofitClient.apiService.attendanceChallenge(employeeId, deviceId)
-                            val chBody = chResponse.body()
-                            val challengeId = chBody?.challengeId
-                            if (challengeId == null) {
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(this@DashboardActivity, chBody?.message ?: "تعذر إصدار تحدي البصمة", Toast.LENGTH_LONG).show()
-                                }
-                                return@launch
-                            }
-                            doSubmitAttendance(type, latitude, longitude, employeeId, deviceId, challengeId)
-                        } catch (e: Exception) {
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(this@DashboardActivity, "تعذر بدء التحقق بالبصمة: ${e.localizedMessage ?: "خطأ"}", Toast.LENGTH_LONG).show()
-                            }
-                        }
+        val latitude = prefs.getString("lastLat", "")?.toDoubleOrNull()
+        val longitude = prefs.getString("lastLon", "")?.toDoubleOrNull()
+
+        if (latitude == null || longitude == null) {
+            Toast.makeText(this, "لم يتم تحديد الموقع بعد، حاول مرة أخرى", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        // الحصول على تحدي بصمة من السيرفر
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val chResponse = RetrofitClient.apiService.attendanceChallenge(employeeId, deviceId)
+                val chBody = chResponse.body()
+                val challengeId = chBody?.challengeId
+                if (challengeId == null) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@DashboardActivity, chBody?.message ?: "تعذر إصدار تحدي البصمة", Toast.LENGTH_LONG).show()
                     }
+                    return@launch
                 }
-
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    super.onAuthenticationError(errorCode, errString)
-                    Toast.makeText(this@DashboardActivity, "فشل التحقق بالبصمة: $errString", Toast.LENGTH_LONG).show()
-                }
-
-                override fun onAuthenticationFailed() {
-                    super.onAuthenticationFailed()
-                    Toast.makeText(this@DashboardActivity, "البصمة غير صحيحة، حاول مرة أخرى", Toast.LENGTH_SHORT).show()
+                doSubmitAttendance(type, latitude, longitude, employeeId, deviceId, challengeId)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@DashboardActivity, "تعذر بدء التحقق بالبصمة: ${e.localizedMessage ?: "خطأ"}", Toast.LENGTH_LONG).show()
                 }
             }
-        )
-
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("تأكيد البصمة")
-            .setSubtitle("يجب التحقق بالبصمة أو قفل الشاشة لتسجيل الحضور")
-            .setNegativeButtonText("إلغاء")
-            .build()
-
-        biometricPrompt.authenticate(promptInfo)
+        }
     }
 
     private fun doSubmitAttendance(
@@ -264,6 +233,40 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    private fun fetchAndSaveLocation() {
+        if (!hasLocationPermission()) {
+            requestLocationPermissionIfNeeded()
+            return
+        }
+
+        if (!isGpsEnabled()) {
+            promptEnableGps()
+            return
+        }
+
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                val lat = location.latitude
+                val lon = location.longitude
+                updateMapToLocation(lat, lon)
+
+                val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                val record = LocationRecord(latitude = lat, longitude = lon, timestamp = currentTime)
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    val db = AppDatabase.getDatabase(applicationContext)
+                    db.locationDao().insertLocation(record)
+                }
+
+                Toast.makeText(this, "تم حفظ الموقع المحلي بنجاح", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "تعذر جلب الموقع، تأكد من تشغيل GPS أو السماح بالموقع", Toast.LENGTH_LONG).show()
+            }
+        }.addOnFailureListener { e ->
+            Toast.makeText(this, "فشل في جلب الموقع: ${e.localizedMessage ?: "خطأ غير معروف"}", Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun updateMapToLocation(latitude: Double, longitude: Double) {
         val currentLatLng = LatLng(latitude, longitude)
         mMap.clear()
@@ -276,4 +279,47 @@ class DashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
+    private fun requestLocationPermissionIfNeeded() {
+        if (!hasLocationPermission()) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                LOCATION_PERMISSION_REQUEST
+            )
+        }
+    }
+
+    private fun isGpsEnabled(): Boolean {
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    }
+
+    private fun promptEnableGps() {
+        Toast.makeText(this, "يرجى تفعيل GPS لتسجيل الحضور", Toast.LENGTH_LONG).show()
+        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+        startActivityForResult(intent, GPS_REQUEST_CODE)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == GPS_REQUEST_CODE) {
+            if (isGpsEnabled()) {
+                Toast.makeText(this, "تم تفعيل GPS، يمكنك المحاولة الآن", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "لم يتم تفعيل GPS", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_PERMISSION_REQUEST) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "تم منح إذن الموقع", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "تم رفض إذن الموقع، لا يمكن تسجيل الحضور", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 }
