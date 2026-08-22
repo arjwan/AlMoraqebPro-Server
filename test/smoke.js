@@ -66,7 +66,14 @@ async function waitForServer(url, retries, delay) {
         await waitForServer(BASE + '/', 200, 300);
 
         // Health check
-        const h = await (await fetch(BASE + '/health')).json();
+        let h = await (await fetch(BASE + '/health')).json();
+        if (dbUp) {
+            // انتظار بدء الاتصال بالـ Atlas (قد يتأخر على المجموعات المجانية)
+            for (let i = 0; i < 30 && h.database !== 'connected'; i++) {
+                await new Promise((x) => setTimeout(x, 1000));
+                h = await (await fetch(BASE + '/health')).json();
+            }
+        }
         if (dbUp) check('health => ok/connected', h.status === 'ok' && h.database === 'connected');
         else check('health => degraded (بدون قاعدة بيانات)', h.status === 'degraded' && (h.database === 'disconnected' || h.database === 'connecting'));
 
@@ -132,6 +139,52 @@ async function waitForServer(url, retries, delay) {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
             })).json();
             check('employees list includes approved employee', Array.isArray(employees.employees) && employees.employees.some(e => e.companyId === companyId && e.name === 'موظف اختبار'));
+
+            // === اختبارات صريحة للحقول الرقمية وphoneNumber ===
+            const approvedEmployee = employees.employees.find(e => e.companyId === companyId && e.name === 'موظف اختبار');
+            check('salary = 1200 persisted on Employee', approvedEmployee && Number(approvedEmployee.salary) === 1200);
+            check('workHours = 8 persisted on Employee', approvedEmployee && Number(approvedEmployee.workHours) === 8);
+
+            const badHours = await (await fetch(BASE + '/api/employee/request', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Object.assign({}, requestBody, { workHours: 'ثمانية', name: 'موظف ساعات خاطئة' }))
+            })).json();
+            check('non-numeric workHours rejected with 400-style message', badHours.success === false && !!badHours.message);
+
+            const badSalary = await (await fetch(BASE + '/api/employee/request', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Object.assign({}, requestBody, { salary: 'كثير', name: 'موظف راتب خاطئ' }))
+            })).json();
+            check('non-numeric salary rejected with 400-style message', badSalary.success === false && !!badSalary.message);
+
+            // المدير يضيف رقم الهاتف للموظف المعتمد أولاً
+            await fetch(BASE + '/api/employees/' + approvedEmployee._id, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ phoneNumber: '07700000000' })
+            });
+
+            // phoneNumber يربط موظفاً موجوداً بالجهاز دون إنشاء موظف جديد
+            const phoneLink = await (await fetch(BASE + '/api/employee/request', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    companyId, companyName: 'شركة الاختبار', name: approvedEmployee.name,
+                    phoneNumber: '07700000000', jobTitle: 'محاسب', workLocation: 'الفرع الرئيسي',
+                    salary: 1500, shift: 'صباحي', workHours: 8, wageType: 'شهري', socialSecurity: 'مسجل',
+                    location: '31.000,45.000', deviceId: 'new-device-' + Date.now()
+                })
+            })).json();
+            check('existing employee linked by phoneNumber (linked=true)', phoneLink.success === true && phoneLink.linked === true);
+
+            const afterLink = await (await fetch(BASE + '/api/employees?companyId=' + encodeURIComponent(companyId), {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('no duplicate Employee created after phone linking', afterLink.employees.filter(e => e.companyId === companyId).length === 1);
+
+            // approve مرة ثانية على نفس الطلب لا ينشئ موظفاً مكرراً
+            const reApprove = await (await fetch(BASE + '/api/employee/request/' + requestResult.requestId + '/approve', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+            })).json();
+            check('re-approve handled gracefully', reApprove.success === true);
         } else {
             skip('company register'); skip('duplicate company'); skip('developer companies list'); skip('admin login'); skip('employee request saved in EmployeeRequest'); skip('pending request visible to admin'); skip('approve request creates employee'); skip('employees list includes approved employee');
         }

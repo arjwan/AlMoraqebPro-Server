@@ -64,17 +64,17 @@ data class EmployeeRequestPayload(
     val companyId: String,
     val companyName: String = "",
     val name: String,
+    val phoneNumber: String = "",
     val jobTitle: String = "",
     val workLocation: String = "",
-    val salary: String = "",
+    val salary: Double? = null,
     val shift: String = "",
-    val workHours: String = "",
+    val workHours: Int? = null,
     val wageType: String = "",
     val socialSecurity: String = "",
     val location: String = "",
     val deviceId: String = ""
 )
-
 data class EmployeeRequestResponse(
     val success: Boolean,
     val message: String,

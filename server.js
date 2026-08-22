@@ -320,6 +320,8 @@ const employeeSchema = new mongoose.Schema({
 
     salary: Number,
 
+    workHours: Number,
+
     specialty: String,
 
     workplace: String,
@@ -2389,6 +2391,41 @@ app.post(
                 ).trim();
 
             /*
+             * تحويل آمن للحقول الرقمية:
+             * القيم النصية غير الرقمية تُرفض برسالة واضحة
+             * بدلاً من فشل Cast في MongoDB.
+             */
+            let salary;
+            if (
+                req.body.salary !== undefined &&
+                req.body.salary !== null &&
+                req.body.salary !== ''
+            ) {
+                salary = Number(req.body.salary);
+                if (!Number.isFinite(salary) || salary < 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'أدخل راتباً صحيحاً (0 أو أكثر)'
+                    });
+                }
+            }
+
+            let workHours;
+            if (
+                req.body.workHours !== undefined &&
+                req.body.workHours !== null &&
+                req.body.workHours !== ''
+            ) {
+                workHours = Number(req.body.workHours);
+                if (!Number.isInteger(workHours) || workHours <= 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'أدخل ساعات عمل صحيحة أكبر من صفر'
+                    });
+                }
+            }
+
+            /*
              * إذا وصل طلب من هاتف يحمل رقم موظف موجود مسبقاً
              * داخل نفس الشركة، نربط الجهاز بالموظف الحالي
              * ولا ننشئ موظفاً جديداً.
@@ -2506,14 +2543,9 @@ app.post(
 
                     name,
 
-                    salary:
-                        req.body.salary !==
-                        undefined &&
-                        req.body.salary !== ''
-                            ? Number(
-                                req.body.salary
-                            )
-                            : undefined,
+                    salary,
+
+                    workHours,
 
                     deviceId,
 
@@ -2819,6 +2851,9 @@ app.post(
 
                     salary:
                         request.salary,
+
+                    workHours:
+                        request.workHours,
 
                     specialty:
                         request.jobTitle,
@@ -3459,8 +3494,11 @@ app.put(
                 });
             }
 
+            const usernameProvided =
+                req.body.username !== undefined;
+
             const username =
-                req.body.username !== undefined
+                usernameProvided
                     ? String(req.body.username || '').trim()
                     : employee.username;
 
@@ -3469,7 +3507,12 @@ app.put(
                     ? String(req.body.password || '')
                     : '';
 
-            if (!username) {
+            /*
+             * اسم المستخدم مطلوب فقط عند تغييره صراحة.
+             * الموظفون المعتمدون من الطلبات لديهم username فارغ
+             * ويجب السماح بتعديل بياناتهم (كرقم الهاتف) دون فرضه.
+             */
+            if (usernameProvided && !username) {
                 return res.status(400).json({
                     success: false,
                     message: 'اسم المستخدم مطلوب'
@@ -3503,11 +3546,13 @@ app.put(
                 }
             }
 
-            const duplicate = await Employee.findOne({
-                _id: { $ne: employee._id },
-                companyId: employee.companyId,
-                username
-            }).lean();
+            const duplicate = username
+                ? await Employee.findOne({
+                    _id: { $ne: employee._id },
+                    companyId: employee.companyId,
+                    username
+                }).lean()
+                : null;
 
             if (duplicate) {
                 return res.status(409).json({

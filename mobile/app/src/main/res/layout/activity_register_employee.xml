@@ -47,6 +47,16 @@
             android:paddingEnd="12dp" />
 
         <EditText
+            android:id="@+id/etPhoneNumber"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:layout_marginBottom="10dp"
+            android:hint="رقم الهاتف"
+            android:inputType="phone"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp" />
+
+        <EditText
             android:id="@+id/etJobTitle"
             android:layout_width="match_parent"
             android:layout_height="55dp"

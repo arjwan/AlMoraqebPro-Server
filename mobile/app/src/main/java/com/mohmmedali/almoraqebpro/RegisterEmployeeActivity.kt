@@ -27,6 +27,7 @@ class RegisterEmployeeActivity : AppCompatActivity() {
         val companyId = findViewById<EditText>(R.id.etCompanyId)
         val companyName = findViewById<EditText>(R.id.etCompanyName)
         val name = findViewById<EditText>(R.id.etName)
+        val phoneNumber = findViewById<EditText>(R.id.etPhoneNumber)
         val jobTitle = findViewById<EditText>(R.id.etJobTitle)
         val workLocation = findViewById<EditText>(R.id.etWorkLocation)
         val salary = findViewById<EditText>(R.id.etSalary)
@@ -38,15 +39,29 @@ class RegisterEmployeeActivity : AppCompatActivity() {
         val submit = findViewById<Button>(R.id.btnSubmitRequest)
 
         submit.setOnClickListener {
+            // تحويل آمن للحقول الرقمية (بدون إرسال نصوص للسيرفر)
+            val salaryValue = salary.text.toString().trim().toDoubleOrNull()
+            val workHoursValue = workHours.text.toString().trim().toIntOrNull()
+
+            if (salaryValue == null || salaryValue <= 0) {
+                Toast.makeText(this, "⚠️ أدخل راتباً صحيحاً أكبر من صفر", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            if (workHoursValue == null || workHoursValue <= 0) {
+                Toast.makeText(this, "⚠️ أدخل ساعات عمل صحيحة أكبر من صفر", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
             val payload = EmployeeRequestPayload(
                 companyId = companyId.text.toString().trim(),
                 companyName = companyName.text.toString().trim(),
                 name = name.text.toString().trim(),
+                phoneNumber = phoneNumber.text.toString().trim(),
                 jobTitle = jobTitle.text.toString().trim(),
                 workLocation = workLocation.text.toString().trim(),
-                salary = salary.text.toString().trim(),
+                salary = salaryValue,
                 shift = shift.text.toString().trim(),
-                workHours = workHours.text.toString().trim(),
+                workHours = workHoursValue,
                 wageType = wageType.text.toString().trim(),
                 socialSecurity = socialSecurity.text.toString().trim(),
                 location = location.text.toString().trim(),
