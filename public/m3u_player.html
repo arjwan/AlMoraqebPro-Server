@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
-
         body {
             min-height: 100vh;
             background: linear-gradient(135deg, #0f172a 0%, #172554 55%, #0c4a6e 100%);
@@ -18,7 +17,6 @@
             align-items: center;
             padding: 20px;
         }
-
         .player-container {
             width: 100%;
             max-width: 1200px;
@@ -32,7 +30,6 @@
             flex-direction: column;
             gap: 15px;
         }
-
         .player-header {
             display: flex;
             align-items: center;
@@ -49,7 +46,6 @@
             gap: 10px;
         }
         .player-header h2 i { color: #38bdf8; }
-
         .video-wrapper {
             position: relative;
             border-radius: 18px;
@@ -64,7 +60,6 @@
             object-fit: contain;
             background: #000;
         }
-
         .video-controls {
             display: flex;
             flex-wrap: wrap;
@@ -72,7 +67,6 @@
             align-items: center;
             justify-content: center;
         }
-
         .btn {
             padding: 10px 18px;
             border: none;
@@ -94,22 +88,18 @@
         .btn-danger:hover { background: #dc2626; }
         .btn-outline { background: transparent; border: 1px solid #38bdf8; color: #38bdf8; }
         .btn-outline:hover { background: rgba(56,189,248,0.1); }
-
         .file-input-wrapper { position: relative; overflow: hidden; }
         .file-input-wrapper input[type="file"] {
             position: absolute;
-            left: 0;
-            top: 0;
+            left: 0; top: 0;
             opacity: 0;
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             cursor: pointer;
         }
 
         /* قائمة القنوات */
         .channel-menu-overlay {
-            position: fixed;
-            top: 0; left: 0;
+            position: fixed; top: 0; left: 0;
             width: 100%; height: 100vh;
             background: rgba(0,0,0,0.7);
             backdrop-filter: blur(5px);
@@ -118,8 +108,7 @@
             justify-content: flex-end;
         }
         .channel-menu {
-            width: 420px;
-            height: 100%;
+            width: 420px; height: 100%;
             background: rgba(15,23,42,0.98);
             border-left: 3px solid #38bdf8;
             padding: 20px;
@@ -133,86 +122,61 @@
             to { transform: translateX(0); opacity: 1; }
         }
         .menu-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             color: #fff;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             padding-bottom: 15px;
             margin-bottom: 15px;
         }
-        .menu-header button {
-            background: transparent;
-            border: none;
-            color: #38bdf8;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .channel-group-title {
-            color: #38bdf8;
-            font-size: 1rem;
-            margin: 15px 0 5px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 5px;
-        }
+        .menu-header button { background: transparent; border: none; color: #38bdf8; font-size: 1.5rem; cursor: pointer; }
+        .channel-group-title { color: #38bdf8; font-size: 1rem; margin: 15px 0 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
         .channel-item {
-            padding: 10px 15px;
-            color: #fff;
-            cursor: pointer;
-            border-radius: 10px;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 0.95rem;
-            margin-bottom: 5px;
+            padding: 10px 15px; color: #fff; cursor: pointer; border-radius: 10px;
+            transition: 0.2s; display: flex; align-items: center; justify-content: space-between;
+            font-size: 0.95rem; margin-bottom: 5px;
         }
         .channel-item:hover { background: rgba(56,189,248,0.2); color: #38bdf8; }
         .channel-item .play-btn { display: flex; align-items: center; gap: 10px; flex: 1; }
         .channel-item .del-btn { display: none; color: #ef4444; font-size: 1.1rem; }
         .channel-item.edit-mode .del-btn { display: block; }
-
         .add-channel-form {
-            display: none;
-            margin-top: 15px;
-            padding: 15px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            border: 1px solid rgba(255,255,255,0.1);
-            flex-direction: column;
-            gap: 10px;
+            display: none; margin-top: 15px; padding: 15px;
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1); flex-direction: column; gap: 10px;
         }
         .add-channel-form input {
-            padding: 10px;
-            border-radius: 10px;
-            border: none;
-            background: rgba(0,0,0,0.4);
-            color: #fff;
-            font-size: 0.9rem;
+            padding: 10px; border-radius: 10px; border: none;
+            background: rgba(0,0,0,0.4); color: #fff; font-size: 0.9rem;
         }
         .add-channel-form button {
-            padding: 8px;
-            background: #38bdf8;
-            color: #0f172a;
-            border: none;
-            border-radius: 10px;
-            font-weight: 700;
-            cursor: pointer;
+            padding: 8px; background: #38bdf8; color: #0f172a;
+            border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
+        }
+        .size-controls { display: flex; gap: 5px; }
+        .size-controls button {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px; padding: 8px 12px; color: #fff; cursor: pointer; font-size: 1.1rem;
         }
 
-        .size-controls {
-            display: flex;
-            gap: 5px;
+        /* نموذج إضافة رابط مباشر في الواجهة */
+        .url-form-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            z-index: 1100; display: none; justify-content: center; align-items: center; padding: 20px;
         }
-        .size-controls button {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            padding: 8px 12px;
-            color: #fff;
-            cursor: pointer;
-            font-size: 1.1rem;
+        .url-form-box {
+            background: #1e293b; border-radius: 20px; padding: 20px;
+            width: 100%; max-width: 400px; color: #fff;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .url-form-box h3 { margin-bottom: 15px; }
+        .url-form-box input {
+            width: 100%; padding: 10px; margin-bottom: 10px;
+            border-radius: 10px; border: none; background: rgba(0,0,0,0.4); color: #fff;
+        }
+        .url-form-box button {
+            width: 100%; padding: 10px; border: none; border-radius: 10px;
+            background: #38bdf8; color: #0f172a; font-weight: 700; cursor: pointer;
         }
 
         @media (max-width: 768px) {
@@ -235,6 +199,11 @@
 
     <div class="video-controls">
         <button class="btn" onclick="openChannelMenu()"><i class="fas fa-list-ul"></i> اختر قناة</button>
+        <button class="btn btn-warning" onclick="openUrlForm()"><i class="fas fa-link"></i> إضافة رابط M3U/M3U8</button>
+        <div class="file-input-wrapper">
+            <button class="btn btn-warning"><i class="fas fa-file-upload"></i> تحميل ملف M3U</button>
+            <input type="file" id="m3uFileInput" accept=".m3u,.m3u8,.txt" onchange="loadM3UFile(event)">
+        </div>
         <div class="file-input-wrapper">
             <button class="btn btn-warning"><i class="fas fa-folder-open"></i> ملف فيديو</button>
             <input type="file" id="fileInput" accept="video/*" onchange="loadLocalVideo(event)">
@@ -262,6 +231,17 @@
             <input type="text" id="newChannelUrl" placeholder="رابط القناة (يجب أن ينتهي بـ .m3u8)">
             <button onclick="addNewChannel()">➕ إضافة القناة</button>
         </div>
+    </div>
+</div>
+
+<!-- نموذج إضافة رابط مباشر -->
+<div class="url-form-overlay" id="urlFormOverlay">
+    <div class="url-form-box">
+        <h3><i class="fas fa-link"></i> إضافة رابط M3U/M3U8</h3>
+        <input type="text" id="directChannelName" placeholder="اسم القناة">
+        <input type="text" id="directChannelUrl" placeholder="رابط البث المباشر (M3U8)">
+        <button onclick="addDirectChannel()">➕ إضافة القناة</button>
+        <button class="btn btn-outline" style="margin-top:8px" onclick="closeUrlForm()">إلغاء</button>
     </div>
 </div>
 
@@ -314,6 +294,10 @@
         }
         localStorage.setItem('myChannels', JSON.stringify(defaultChannels));
         return defaultChannels;
+    }
+
+    function saveChannels(channels) {
+        localStorage.setItem('myChannels', JSON.stringify(channels));
     }
 
     function renderChannels() {
@@ -375,11 +359,80 @@
             channels['📌 قنوات مخصصة'] = {};
         }
         channels['📌 قنوات مخصصة'][name] = url;
-        localStorage.setItem('myChannels', JSON.stringify(channels));
+        saveChannels(channels);
         document.getElementById('newChannelName').value = '';
         document.getElementById('newChannelUrl').value = '';
         renderChannels();
         alert(`✅ تم إضافة قناة "${name}" بنجاح!`);
+    }
+
+    // فتح/إغلاق نموذج الرابط المباشر
+    function openUrlForm() {
+        document.getElementById('urlFormOverlay').style.display = 'flex';
+    }
+    function closeUrlForm() {
+        document.getElementById('urlFormOverlay').style.display = 'none';
+    }
+    function addDirectChannel() {
+        const name = document.getElementById('directChannelName').value.trim();
+        const url = document.getElementById('directChannelUrl').value.trim();
+        if (!name || !url) {
+            alert('يرجى إدخال اسم القناة والرابط.');
+            return;
+        }
+        if (!url.includes('.m3u8') && !url.includes('.m3u')) {
+            alert('الرابط يجب أن يكون لبث مباشر (M3U8 أو M3U).');
+            return;
+        }
+        const channels = getChannels();
+        if (!channels['📌 قنوات مخصصة']) {
+            channels['📌 قنوات مخصصة'] = {};
+        }
+        channels['📌 قنوات مخصصة'][name] = url;
+        saveChannels(channels);
+        document.getElementById('directChannelName').value = '';
+        document.getElementById('directChannelUrl').value = '';
+        closeUrlForm();
+        renderChannels();
+        alert(`✅ تم إضافة قناة "${name}" بنجاح!`);
+    }
+
+    // تحميل ملف M3U
+    function loadM3UFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            const lines = content.split(/\r?\n/);
+            const channels = getChannels();
+            let group = '📌 قنوات مخصصة';
+            if (!channels[group]) channels[group] = {};
+            let currentName = null;
+            let importedCount = 0;
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('#EXTINF')) {
+                    // استخراج الاسم من السطر
+                    const nameMatch = line.match(/,(.*)$/);
+                    if (nameMatch && nameMatch[1]) {
+                        currentName = nameMatch[1].trim();
+                    }
+                } else if (line && !line.startsWith('#')) {
+                    // رابط
+                    if (currentName) {
+                        channels[group][currentName] = line;
+                        importedCount++;
+                        currentName = null;
+                    }
+                }
+            }
+            saveChannels(channels);
+            renderChannels();
+            alert(`✅ تم استيراد ${importedCount} قناة من الملف.`);
+            event.target.value = ''; // إعادة تعيين الحقل
+        };
+        reader.readAsText(file);
     }
 
     function deleteChannel(group, name) {
@@ -390,7 +443,7 @@
             if (Object.keys(channels[group]).length === 0) {
                 delete channels[group];
             }
-            localStorage.setItem('myChannels', JSON.stringify(channels));
+            saveChannels(channels);
             renderChannels();
         }
     }
@@ -445,6 +498,13 @@
             controls.style.justifyContent = 'center';
         }
     }
+
+    // إغلاق النماذج عند النقر خارجها
+    window.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('urlFormOverlay')) {
+            closeUrlForm();
+        }
+    });
 </script>
 </body>
 </html>
