@@ -2,529 +2,664 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>العمليات - نظام المراقب برو</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>العمليات - الرواتب والسلف والشفتات</title>
     <style>
-        *{box-sizing:border-box}body{margin:0;background:#1e1b4b;color:#0f172a;font-family:'Segoe UI',Tahoma,sans-serif;padding:18px}.wrap{max-width:1500px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}.brand{font-size:24px;font-weight:900}.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px;margin-right:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;gap:7px;align-items:center;transition:transform .18s ease,box-shadow .18s ease}.btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px #0f172a26}.btn:active{transform:translateY(0) scale(.98)}.btn-blue{background:#0284c7;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-orange{background:#f59e0b;color:#fff}.btn-purple{background:#8b5cf6;color:#fff}.filter-bar{display:flex;gap:10px;margin-bottom:20px;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #cbd5e1;flex-wrap:wrap;align-items:center}.filter-bar input,.filter-bar select{padding:9px 12px;border:2px solid #94a3b8;border-radius:8px;font-size:14px;outline:none;background:#fff;font-weight:600;flex:1;min-width:180px}.filter-bar input:focus,.filter-bar select:focus{border-color:#0284c7}.tab-bar{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;border-bottom:2px solid #e2e8f0;padding-bottom:10px}.tab-btn{padding:10px 20px;border:0;border-radius:10px 10px 0 0;font-weight:800;cursor:pointer;background:#f1f5f9;color:#64748b;transition:all .2s ease}.tab-btn.active{background:#0284c7;color:#fff}.tab-btn:hover{background:#e2e8f0;transform:translateY(-2px)}.tab-content{display:none}.tab-content.active{display:block}.table-container{width:100%;overflow-x:auto;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:20px}table{width:100%;border-collapse:collapse;text-align:center;background:#fff}th{background:#1e293b;color:#fff;padding:12px;font-size:14px;font-weight:800;text-align:center}td{padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#1e293b;font-weight:600;text-align:center}tr:hover{background:#f1f5f9}.status-badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:bold;display:inline-block}.status-active{background:#d1fae5;color:#065f46}.status-inactive{background:#f1f5f9;color:#64748b}.status-pending{background:#fef3c7;color:#92400e}.status-approved{background:#d1fae5;color:#065f46}.status-rejected{background:#fee2e2;color:#991b1b}.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:999}.modal.show{display:flex}.modal-box{background:#fff;border-radius:16px;padding:30px;max-width:550px;width:90%;max-height:90vh;overflow-y:auto}.modal-box h3{margin-bottom:15px}.modal-box .form-group{margin-bottom:12px}.modal-box .form-group label{display:block;font-weight:bold;margin-bottom:4px}.modal-box .form-group input,.modal-box .form-group select{width:100%;padding:9px 12px;border:2px solid #94a3b8;border-radius:8px;font-size:14px;outline:none}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}.status{margin-top:16px;background:#10b981;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:900}.status.error{background:#ef4444}.status.warning{background:#f59e0b}.loading-spinner{display:inline-block;width:24px;height:24px;border:3px solid #f3f3f3;border-top:3px solid #0284c7;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.salary-card{background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.salary-card .name{font-weight:bold;font-size:16px}.salary-card .amount{font-size:18px;font-weight:900;color:#10b981}.salary-card .details{font-size:13px;color:#64748b}@media(max-width:700px){body{padding:8px}.wrap{padding:12px}.top{padding:12px}.brand{font-size:20px}}
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body {
+            background: linear-gradient(160deg, #0f172a, #172554 55%, #0c4a6e);
+            min-height: 100vh;
+            padding: 20px;
+            color: #f8fafc;
+        }
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            background: rgba(30,41,59,0.92);
+            backdrop-filter: blur(14px);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1 i { color: #38bdf8; }
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 30px;
+            background: #0284c7;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        .btn:hover { background: #0369a1; transform: translateY(-2px); }
+        .btn-outline { background: transparent; border: 1px solid #38bdf8; color: #38bdf8; }
+        .btn-outline:hover { background: rgba(56,189,248,0.1); }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: #cbd5e1;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #0284c7;
+            color: #fff;
+            border-color: #0284c7;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .card-panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card-panel h3 {
+            margin-bottom: 12px;
+            color: #38bdf8;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 1200px;
+        }
+        th, td {
+            padding: 10px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: right;
+        }
+        th {
+            background: rgba(2,132,199,0.2);
+            color: #fff;
+            font-weight: 900;
+        }
+        td input, td select {
+            width: 100%;
+            padding: 6px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #fff;
+            font-size: 0.8rem;
+        }
+        .btn-sm {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .btn-sm-blue { background: #0284c7; color: #fff; }
+        .btn-sm-red { background: #ef4444; color: #fff; }
+        .btn-sm-green { background: #10b981; color: #fff; }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            color: #fff;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .modal-box h3 { margin-bottom: 15px; }
+        .field { margin-bottom: 12px; }
+        .field label { display: block; margin-bottom: 5px; font-weight: 700; color: #cbd5e1; }
+        .field input, .field select, .field textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #fff;
+        }
+        .field textarea { min-height: 70px; }
+        .modal-actions { display: flex; gap: 8px; margin-top: 15px; }
+        .modal-actions .btn { flex: 1; }
+        .toast {
+            position: fixed;
+            right: 14px; left: 14px; bottom: 14px;
+            z-index: 3000;
+            background: #0f172a;
+            color: #fff;
+            border-radius: 14px;
+            padding: 13px 15px;
+            font-size: 12px;
+            font-weight: 800;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            display: none;
+        }
+        .toast.show { display: block; }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.3rem; }
+            .tabs { flex-wrap: nowrap; overflow-x: auto; }
+        }
     </style>
 </head>
 <body>
-<div class="wrap">
-    <div class="top">
-        <div class="brand">⚙️ العمليات <span id="companyBadge" class="badge">...</span></div>
-        <div class="actions">
-            <button class="btn btn-purple" onclick="goHome()">🏠 العودة للرئيسية</button>
-        </div>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-cogs"></i> العمليات - الرواتب والسلف والشفتات</h1>
+        <button class="btn btn-outline" onclick="history.back()">⬅ رجوع</button>
     </div>
 
-    <div class="tab-bar">
+    <div class="tabs">
         <button class="tab-btn active" data-tab="shifts" onclick="switchTab('shifts')">⏰ الشفتات</button>
-        <button class="tab-btn" data-tab="loans" onclick="switchTab('loans')">💳 السلف</button>
         <button class="tab-btn" data-tab="salaries" onclick="switchTab('salaries')">💰 الرواتب</button>
-        <button class="tab-btn" data-tab="requests" onclick="switchTab('requests');loadServiceRequests()">📨 طلبات الموظفين</button>
+        <button class="tab-btn" data-tab="loans" onclick="switchTab('loans')">💳 السلف</button>
     </div>
 
-    <!-- تبويب الشفتات -->
+    <!-- ================== الشفتات ================== -->
     <div id="tab-shifts" class="tab-content active">
-        <div class="filter-bar">
-            <button class="btn btn-green" onclick="showShiftModal()">➕ إضافة شفت</button>
-            <button class="btn btn-blue" onclick="loadShifts()">🔄 تحديث</button>
-        </div>
-        <div class="table-container">
-            <table>
-                <thead><tr><th>#</th><th>اسم الشفت</th><th>وقت الحضور</th><th>وقت الانصراف</th><th>فترة السماح</th><th>الإجراءات</th></tr></thead>
-                <tbody id="shiftsTable"><tr><td colspan="6"><div class="loading-spinner"></div> جاري التحميل...</td></tr></tbody>
-            </table>
+        <div class="card-panel">
+            <h3>إدارة الشفتات</h3>
+            <button class="btn btn-sm btn-blue" onclick="openShiftModal()">➕ إضافة شفت جديد</button>
+            <div class="table-wrapper" style="margin-top:12px">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم الشفت</th>
+                            <th>الفرع</th>
+                            <th>عدد الموظفين</th>
+                            <th>بداية الحضور</th>
+                            <th>نهاية الحضور</th>
+                            <th>بداية الانصراف</th>
+                            <th>نهاية الانصراف</th>
+                            <th>بداية الإضافي</th>
+                            <th>نهاية الإضافي</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shiftsTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- تبويب السلف -->
-    <div id="tab-loans" class="tab-content">
-        <div class="filter-bar">
-            <button class="btn btn-green" onclick="showLoanModal()">➕ إضافة سلفة</button>
-            <button class="btn btn-blue" onclick="loadLoans()">🔄 تحديث</button>
-        </div>
-        <div class="table-container">
-            <table>
-                <thead><tr><th>#</th><th>الموظف</th><th>المبلغ</th><th>المتبقي</th><th>عدد الأقساط</th><th>الحالة</th><th>الإجراءات</th></tr></thead>
-                <tbody id="loansTable"><tr><td colspan="7"><div class="loading-spinner"></div> جاري التحميل...</td></tr></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- تبويب الرواتب -->
+    <!-- ================== الرواتب ================== -->
     <div id="tab-salaries" class="tab-content">
-        <div class="filter-bar">
-            <button class="btn btn-green" onclick="calculateSalaries()">🧮 حساب الرواتب</button>
-            <button class="btn btn-blue" onclick="loadSalaries()">🔄 تحديث</button>
+        <div class="card-panel">
+            <h3>جدول الرواتب الشامل</h3>
+            <div class="table-wrapper">
+                <table id="salariesTable">
+                    <thead>
+                        <tr>
+                            <th>اسم الموظف</th>
+                            <th>الاختصاص</th>
+                            <th>موقع العمل</th>
+                            <th>الشفت</th>
+                            <th>الضمان</th>
+                            <th>الراتب الأساسي</th>
+                            <th>المخصصات</th>
+                            <th>السلف</th>
+                            <th>استقطاع السلفة</th>
+                            <th>استقطاع الضمان</th>
+                            <th>الخصومات</th>
+                            <th>المكافآت</th>
+                            <th>مجموع الاستقطاع</th>
+                            <th>الراتب الكلي</th>
+                            <th>حفظ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salariesTableBody"></tbody>
+                </table>
+            </div>
         </div>
-        <div id="salariesContainer"><div class="loading-spinner"></div> جاري التحميل...</div>
     </div>
 
-    <div id="tab-requests" class="tab-content">
-        <div class="filter-bar">
-            <button class="btn btn-blue" onclick="loadServiceRequests()">🔄 تحديث</button>
-        </div>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr><th>#</th><th>اسم الموظف</th><th>نوع الطلب</th><th>التفاصيل</th><th>المبلغ</th><th>تاريخ الطلب</th><th>الحالة</th><th>الإجراء</th></tr>
-                </thead>
-                <tbody id="serviceRequestsTable"><tr><td colspan="8"><div class="loading-spinner"></div> جاري التحميل...</td></tr></tbody>
-            </table>
+    <!-- ================== السلف ================== -->
+    <div id="tab-loans" class="tab-content">
+        <div class="card-panel">
+            <h3>سلف الموظفين</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم الموظف</th>
+                            <th>الاختصاص</th>
+                            <th>موقع العمل</th>
+                            <th>مجموع السلف</th>
+                            <th>تاريخ السلفة</th>
+                            <th>المبلغ المتبقي</th>
+                            <th>التسديدات</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loansTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
-
-    <div id="status" class="status">✓ جاري تحميل البيانات...</div>
 </div>
 
-<!-- مودال الشفتات -->
-<div class="modal" id="shiftModal">
+<!-- مودال إضافة/تعديل شفت -->
+<div class="modal-overlay" id="shiftModal">
     <div class="modal-box">
-        <h3>➕ إضافة شفت جديد</h3>
-        <form onsubmit="saveShift(event)">
-            <div class="form-group"><label>اسم الشفت</label><input type="text" id="shiftName" required></div>
-            <div class="form-group"><label>وقت الحضور</label><input type="time" id="shiftCheckIn" required></div>
-            <div class="form-group"><label>وقت الانصراف</label><input type="time" id="shiftCheckOut" required></div>
-            <div class="form-group"><label>فترة السماح (دقائق)</label><input type="number" id="shiftGrace" value="15"></div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-red" onclick="closeModal('shiftModal')">إلغاء</button>
-                <button type="submit" class="btn btn-green">💾 حفظ</button>
-            </div>
-        </form>
+        <h3 id="shiftModalTitle">إضافة شفت جديد</h3>
+        <div class="field"><label>اسم الشفت</label><select id="shiftName"><option value="صباحي">صباحي</option><option value="مسائي">مسائي</option><option value="ليلي">ليلي</option><option value="طارئ">طارئ</option></select></div>
+        <div class="field"><label>الفرع</label><input type="text" id="shiftBranch" placeholder="مثال: بغداد - الكرادة"></div>
+        <div class="field"><label>بداية تسجيل الحضور (من - إلى)</label><input type="text" id="shiftAttStart" placeholder="08:00 - 09:00"></div>
+        <div class="field"><label>بداية تسجيل الانصراف (من - إلى)</label><input type="text" id="shiftDepStart" placeholder="16:00 - 17:00"></div>
+        <div class="field"><label>بداية حساب الإضافي (من - إلى)</label><input type="text" id="shiftOvertime" placeholder="18:00 - 20:00"></div>
+        <div class="field"><label>الموظفون في الشفت</label><select id="shiftEmployees" multiple style="height:100px"></select></div>
+        <div class="modal-actions">
+            <button class="btn btn-gray" onclick="closeShiftModal()">إلغاء</button>
+            <button class="btn btn-blue" onclick="saveShift()">حفظ</button>
+        </div>
     </div>
 </div>
 
-<!-- مودال السلف -->
-<div class="modal" id="loanModal">
+<!-- مودال التسديدات -->
+<div class="modal-overlay" id="repayModal">
     <div class="modal-box">
-        <h3>💳 إضافة سلفة</h3>
-        <form onsubmit="saveLoan(event)">
-            <div class="form-group"><label>الموظف</label>
-                <select id="loanEmployee" required><option value="">اختر موظف...</option></select>
-            </div>
-            <div class="form-group"><label>المبلغ</label><input type="number" id="loanAmount" required></div>
-            <div class="form-group"><label>عدد الأقساط</label><input type="number" id="loanInstallments" value="3" required></div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-red" onclick="closeModal('loanModal')">إلغاء</button>
-                <button type="submit" class="btn btn-green">💾 حفظ</button>
-            </div>
-        </form>
+        <h3>تسديدات السلفة</h3>
+        <div id="repayList" style="margin-bottom:12px"></div>
+        <div class="field"><label>تاريخ التسديد</label><input type="date" id="repayDate"></div>
+        <div class="field"><label>المبلغ</label><input type="number" id="repayAmount" min="0"></div>
+        <div class="modal-actions">
+            <button class="btn btn-gray" onclick="closeRepayModal()">إغلاق</button>
+            <button class="btn btn-green" onclick="addRepayment()">إضافة تسديد</button>
+        </div>
     </div>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-    const API = location.origin;
-    let token = '', companyId = '';
+const API = location.origin;
+let token = sessionStorage.getItem('almoraqeb_admin_token') || '';
+let companyId = new URLSearchParams(location.search).get('company') || localStorage.getItem('companyId') || '';
 
-    function getSession() {
-        try { return JSON.parse(localStorage.getItem('almoraqeb_admin_session') || '{}'); } 
-        catch { return {}; }
-    }
+let allEmployees = [];
+let allShifts = [];
+let allSalaries = [];
+let allLoans = [];
+let currentShiftId = null;
+let currentLoanEmployeeId = null;
 
-    function getCompanyId() {
-        const s = getSession();
-        return String(s.companyId || new URLSearchParams(location.search).get('company') || localStorage.getItem('companyId') || '').trim();
-    }
+function toast(msg, type='info') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.background = type === 'error' ? '#991b1b' : type === 'success' ? '#166534' : '#0f172a';
+    el.classList.add('show');
+    clearTimeout(window.__toast);
+    window.__toast = setTimeout(() => el.classList.remove('show'), 3000);
+}
 
-    async function auth() {
-        token = sessionStorage.getItem('almoraqeb_admin_token') || '';
-        companyId = getCompanyId();
-        if (!token || !companyId) { location.href = 'admin_login.html'; return false; }
-        try {
-            const r = await fetch(API + '/api/admin/session', {
-                headers: { 'Authorization': 'Bearer ' + token },
-                cache: 'no-store'
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+    if (tab === 'shifts') loadShifts();
+    if (tab === 'salaries') loadSalaries();
+    if (tab === 'loans') loadLoans();
+}
+
+async function api(path, options = {}) {
+    const res = await fetch(API + path, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, ...(options.headers || {}) },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || data.error || 'خطأ');
+    return data;
+}
+
+// ========== تحميل الموظفين ==========
+async function loadEmployees() {
+    const data = await api('/api/employees?companyId=' + encodeURIComponent(companyId));
+    allEmployees = data.employees || [];
+    const select = document.getElementById('shiftEmployees');
+    select.innerHTML = '';
+    allEmployees.forEach(emp => {
+        const opt = document.createElement('option');
+        opt.value = emp._id || emp.id;
+        opt.textContent = emp.name + ' - ' + (emp.specialty || '');
+        select.appendChild(opt);
+    });
+}
+
+// ========== الشفتات ==========
+async function loadShifts() {
+    try {
+        const data = await api('/api/admin/shifts');
+        allShifts = data.shifts || [];
+        renderShifts();
+    } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+function renderShifts() {
+    const tbody = document.getElementById('shiftsTableBody');
+    tbody.innerHTML = '';
+    allShifts.forEach(shift => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${shift.name}</td>
+            <td>${shift.branch || ''}</td>
+            <td>${(shift.employeeIds || []).length}</td>
+            <td>${shift.attendanceStart || ''}</td>
+            <td>${shift.attendanceEnd || ''}</td>
+            <td>${shift.departureStart || ''}</td>
+            <td>${shift.departureEnd || ''}</td>
+            <td>${shift.overtimeStart || ''}</td>
+            <td>${shift.overtimeEnd || ''}</td>
+            <td>
+                <button class="btn-sm btn-blue" onclick="editShift('${shift._id}')">تعديل</button>
+                <button class="btn-sm btn-red" onclick="deleteShift('${shift._id}')">حذف</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function openShiftModal(shiftId = null) {
+    currentShiftId = shiftId;
+    document.getElementById('shiftModalTitle').textContent = shiftId ? 'تعديل شفت' : 'إضافة شفت جديد';
+    if (shiftId) {
+        const shift = allShifts.find(s => s._id === shiftId);
+        if (shift) {
+            document.getElementById('shiftName').value = shift.name;
+            document.getElementById('shiftBranch').value = shift.branch || '';
+            document.getElementById('shiftAttStart').value = shift.attendanceStart + ' - ' + shift.attendanceEnd;
+            document.getElementById('shiftDepStart').value = shift.departureStart + ' - ' + shift.departureEnd;
+            document.getElementById('shiftOvertime').value = shift.overtimeStart + ' - ' + shift.overtimeEnd;
+            const select = document.getElementById('shiftEmployees');
+            Array.from(select.options).forEach(opt => {
+                opt.selected = (shift.employeeIds || []).includes(opt.value);
             });
-            const d = await r.json();
-            if (!r.ok || !d.success) throw 0;
-            document.getElementById('companyBadge').textContent = companyId;
-            return true;
-        } catch {
-            location.href = 'admin_login.html';
-            return false;
         }
+    } else {
+        document.getElementById('shiftName').value = 'صباحي';
+        document.getElementById('shiftBranch').value = '';
+        document.getElementById('shiftAttStart').value = '';
+        document.getElementById('shiftDepStart').value = '';
+        document.getElementById('shiftOvertime').value = '';
+        Array.from(document.getElementById('shiftEmployees').options).forEach(opt => opt.selected = false);
+    }
+    document.getElementById('shiftModal').classList.add('open');
+}
+
+function closeShiftModal() {
+    document.getElementById('shiftModal').classList.remove('open');
+}
+
+async function saveShift() {
+    const name = document.getElementById('shiftName').value;
+    const branch = document.getElementById('shiftBranch').value.trim();
+    const attParts = document.getElementById('shiftAttStart').value.split('-').map(s => s.trim());
+    const depParts = document.getElementById('shiftDepStart').value.split('-').map(s => s.trim());
+    const overParts = document.getElementById('shiftOvertime').value.split('-').map(s => s.trim());
+    const employeeIds = Array.from(document.getElementById('shiftEmployees').selectedOptions).map(o => o.value);
+
+    if (!name || !branch || attParts.length < 2 || depParts.length < 2 || overParts.length < 2) {
+        toast('⚠️ يرجى ملء جميع الحقول بشكل صحيح', 'error');
+        return;
     }
 
-    function goHome() {
-        location.href = 'index.html?company=' + encodeURIComponent(companyId);
-    }
+    const payload = {
+        companyId,
+        name,
+        branch,
+        attendanceStart: attParts[0],
+        attendanceEnd: attParts[1],
+        departureStart: depParts[0],
+        departureEnd: depParts[1],
+        overtimeStart: overParts[0],
+        overtimeEnd: overParts[1],
+        employeeIds,
+    };
 
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('show');
-    }
-
-    function showStatus(text, type = '') {
-        const el = document.getElementById('status');
-        el.textContent = text;
-        el.className = 'status' + (type ? ' ' + type : '');
-    }
-
-    // ============================================================
-    // التبويبات
-    // ============================================================
-    function switchTab(tab) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tab).classList.add('active');
-        document.querySelector('.tab-btn[data-tab="' + tab + '"]').classList.add('active');
-        
-        if (tab === 'shifts') loadShifts();
-        else if (tab === 'loans') loadLoans();
-        else if (tab === 'salaries') loadSalaries();
-    }
-
-    // ============================================================
-    // ⏰ الشفتات
-    // ============================================================
-    async function loadShifts() {
-        const tbody = document.getElementById('shiftsTable');
-        tbody.innerHTML = `<tr><td colspan="6"><div class="loading-spinner"></div></td></tr>`;
-        try {
-            const r = await fetch(API + '/api/shifts?companyId=' + encodeURIComponent(companyId), {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
-            if (r.ok && d.success) {
-                const shifts = d.shifts || [];
-                tbody.innerHTML = shifts.length === 0 ?
-                    `<tr><td colspan="6" style="color:#64748b;">لا توجد شفتات</td></tr>` :
-                    shifts.map((s, i) => `
-                        <tr>
-                            <td>${i+1}</td>
-                            <td><b>${s.name}</b></td>
-                            <td>${s.checkIn}</td>
-                            <td>${s.checkOut}</td>
-                            <td>${s.gracePeriod || 0} دقيقة</td>
-                            <td><button class="btn btn-red" style="padding:4px 10px;font-size:11px;" onclick="deleteShift('${s._id}')">🗑️</button></td>
-                        </tr>
-                    `).join('');
-                showStatus('✅ تم تحميل ' + shifts.length + ' شفت', '');
-            } else {
-                tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444;">❌ فشل التحميل</td></tr>`;
-            }
-        } catch {
-            tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444;">❌ فشل الاتصال</td></tr>`;
+    try {
+        if (currentShiftId) {
+            await api('/api/admin/shifts/' + currentShiftId, { method: 'PUT', body: JSON.stringify(payload) });
+            toast('✅ تم تعديل الشفت');
+        } else {
+            await api('/api/admin/shifts', { method: 'POST', body: JSON.stringify(payload) });
+            toast('✅ تم إضافة الشفت');
         }
+        closeShiftModal();
+        loadShifts();
+    } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+function editShift(id) { openShiftModal(id); }
+
+async function deleteShift(id) {
+    if (!confirm('حذف هذا الشفت؟')) return;
+    try {
+        await api('/api/admin/shifts/' + id, { method: 'DELETE' });
+        toast('✅ تم حذف الشفت');
+        loadShifts();
+    } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+// ========== الرواتب ==========
+async function loadSalaries() {
+    try {
+        const data = await api('/api/admin/salaries');
+        allSalaries = data.salaries || [];
+        renderSalaries();
+    } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+function renderSalaries() {
+    const tbody = document.getElementById('salariesTableBody');
+    tbody.innerHTML = '';
+    allSalaries.forEach(salary => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${salary.employeeName || ''}</td>
+            <td>${salary.specialty || ''}</td>
+            <td>${salary.workplace || ''}</td>
+            <td>${salary.shiftName || ''}</td>
+            <td><select class="form-select" id="ss-${salary._id}"><option value="مسجل" ${salary.socialSecurity === 'مسجل' ? 'selected' : ''}>مسجل</option><option value="غير مسجل" ${salary.socialSecurity === 'غير مسجل' ? 'selected' : ''}>غير مسجل</option></select></td>
+            <td><input type="number" id="bs-${salary._id}" value="${salary.basicSalary || 0}"></td>
+            <td><input type="number" id="allow-${salary._id}" value="${salary.allowances || 0}"></td>
+            <td><input type="number" id="loans-${salary._id}" value="${salary.loans || 0}"></td>
+            <td><input type="number" id="lded-${salary._id}" value="${salary.loanDeduction || 0}"></td>
+            <td><input type="number" id="sec-${salary._id}" value="${salary.securityDeduction || 0}"></td>
+            <td><input type="number" id="ded-${salary._id}" value="${salary.otherDeductions || 0}"></td>
+            <td><input type="number" id="bon-${salary._id}" value="${salary.bonuses || 0}"></td>
+            <td id="totalDed-${salary._id}">${salary.totalDeductions || 0}</td>
+            <td id="net-${salary._id}">${salary.netSalary || 0}</td>
+            <td><button class="btn-sm btn-green" onclick="saveSalary('${salary._id}')">حفظ</button></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function recalcSalary(id) {
+    const basic = Number(document.getElementById('bs-' + id).value) || 0;
+    const allow = Number(document.getElementById('allow-' + id).value) || 0;
+    const loans = Number(document.getElementById('loans-' + id).value) || 0;
+    const lded = Number(document.getElementById('lded-' + id).value) || 0;
+    const sec = Number(document.getElementById('sec-' + id).value) || 0;
+    const ded = Number(document.getElementById('ded-' + id).value) || 0;
+    const bon = Number(document.getElementById('bon-' + id).value) || 0;
+    const totalDed = lded + sec + ded;
+    const net = basic + allow + loans + bon - totalDed;
+    document.getElementById('totalDed-' + id).textContent = totalDed;
+    document.getElementById('net-' + id).textContent = net;
+}
+
+document.addEventListener('input', (e) => {
+    if (e.target.id && e.target.id.startsWith('bs-') || e.target.id.startsWith('allow-') || e.target.id.startsWith('loans-') || e.target.id.startsWith('lded-') || e.target.id.startsWith('sec-') || e.target.id.startsWith('ded-') || e.target.id.startsWith('bon-')) {
+        const id = e.target.id.split('-')[1];
+        recalcSalary(id);
     }
+});
 
-    function showShiftModal() {
-        document.getElementById('shiftModal').classList.add('show');
-        document.getElementById('shiftName').value = '';
-        document.getElementById('shiftCheckIn').value = '';
-        document.getElementById('shiftCheckOut').value = '';
-        document.getElementById('shiftGrace').value = '15';
+async function saveSalary(id) {
+    const salary = allSalaries.find(s => s._id === id);
+    if (!salary) return;
+    const socialSecurity = document.getElementById('ss-' + id).value;
+    const basicSalary = Number(document.getElementById('bs-' + id).value) || 0;
+    const allowances = Number(document.getElementById('allow-' + id).value) || 0;
+    const loans = Number(document.getElementById('loans-' + id).value) || 0;
+    const loanDeduction = Number(document.getElementById('lded-' + id).value) || 0;
+    const securityDeduction = Number(document.getElementById('sec-' + id).value) || 0;
+    const otherDeductions = Number(document.getElementById('ded-' + id).value) || 0;
+    const bonuses = Number(document.getElementById('bon-' + id).value) || 0;
+    const totalDeductions = loanDeduction + securityDeduction + otherDeductions;
+    const netSalary = basicSalary + allowances + loans + bonuses - totalDeductions;
+
+    const payload = {
+        socialSecurity,
+        basicSalary,
+        allowances,
+        loans,
+        loanDeduction,
+        securityDeduction,
+        otherDeductions,
+        bonuses,
+        totalDeductions,
+        netSalary,
+    };
+
+    try {
+        await api('/api/admin/salaries/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+        toast('✅ تم حفظ بيانات الراتب');
+        loadSalaries();
+    } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+// ========== السلف ==========
+async function loadLoans() {
+    try {
+        const data = await api('/api/admin/loans');
+        allLoans = data.loans || [];
+        renderLoans();
+    } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+function renderLoans() {
+    const tbody = document.getElementById('loansTableBody');
+    tbody.innerHTML = '';
+    allLoans.forEach(loan => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${loan.employeeName || ''}</td>
+            <td>${loan.specialty || ''}</td>
+            <td>${loan.workplace || ''}</td>
+            <td>${loan.totalLoanAmount || 0}</td>
+            <td>${loan.loanDate ? new Date(loan.loanDate).toLocaleDateString('ar-IQ') : ''}</td>
+            <td>${loan.remainingAmount || 0}</td>
+            <td><button class="btn-sm btn-blue" onclick="openRepayModal('${loan.employeeId}')">تسديدات</button></td>
+            <td><button class="btn-sm btn-red" onclick="deleteLoan('${loan._id}')">حذف</button></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function openRepayModal(employeeId) {
+    currentLoanEmployeeId = employeeId;
+    const loan = allLoans.find(l => l.employeeId === employeeId);
+    if (!loan) return;
+    const list = document.getElementById('repayList');
+    list.innerHTML = '';
+    (loan.repayments || []).forEach(r => {
+        list.innerHTML += `<div>${new Date(r.date).toLocaleDateString('ar-IQ')} - ${r.amount} د.ع</div>`;
+    });
+    document.getElementById('repayModal').classList.add('open');
+}
+
+function closeRepayModal() {
+    document.getElementById('repayModal').classList.remove('open');
+}
+
+async function addRepayment() {
+    const date = document.getElementById('repayDate').value;
+    const amount = Number(document.getElementById('repayAmount').value);
+    if (!date || !amount || amount <= 0) {
+        toast('⚠️ أدخل تاريخ ومبلغ صحيح', 'error');
+        return;
     }
+    try {
+        await api('/api/admin/loans/' + currentLoanEmployeeId + '/repayments', { method: 'POST', body: JSON.stringify({ date, amount }) });
+        toast('✅ تم إضافة التسديد');
+        closeRepayModal();
+        loadLoans();
+    } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
 
-    async function saveShift(e) {
-        e.preventDefault();
-        const data = {
-            companyId: companyId,
-            name: document.getElementById('shiftName').value,
-            checkIn: document.getElementById('shiftCheckIn').value,
-            checkOut: document.getElementById('shiftCheckOut').value,
-            gracePeriod: parseInt(document.getElementById('shiftGrace').value) || 0
-        };
-        try {
-            const r = await fetch(API + '/api/shifts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify(data)
-            });
-            const result = await r.json();
-            if (r.ok && result.success) {
-                alert('✅ تم إضافة الشفت');
-                closeModal('shiftModal');
-                loadShifts();
-            } else {
-                alert('❌ ' + (result.message || 'فشل الإضافة'));
-            }
-        } catch {
-            alert('❌ فشل الاتصال');
-        }
+async function deleteLoan(id) {
+    if (!confirm('حذف السلفة؟')) return;
+    try {
+        await api('/api/admin/loans/' + id, { method: 'DELETE' });
+        toast('✅ تم حذف السلفة');
+        loadLoans();
+    } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+// تهيئة
+(async function init() {
+    try {
+        await loadEmployees();
+        await loadShifts();
+        await loadSalaries();
+        await loadLoans();
+    } catch (e) {
+        toast('❌ ' + e.message, 'error');
     }
-
-    async function deleteShift(id) {
-        if (!confirm('هل أنت متأكد من الحذف؟')) return;
-        try {
-            const r = await fetch(API + '/api/shifts/' + id, {
-                method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const result = await r.json();
-            if (r.ok && result.success) {
-                alert('✅ تم الحذف');
-                loadShifts();
-            } else {
-                alert('❌ ' + (result.message || 'فشل الحذف'));
-            }
-        } catch {
-            alert('❌ فشل الاتصال');
-        }
-    }
-
-    // ============================================================
-    // 💳 السلف
-    // ============================================================
-    async function loadLoans() {
-        const tbody = document.getElementById('loansTable');
-        tbody.innerHTML = `<tr><td colspan="7"><div class="loading-spinner"></div></td></tr>`;
-        try {
-            const r = await fetch(API + '/api/loans?companyId=' + encodeURIComponent(companyId), {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
-            if (r.ok && d.success) {
-                const loans = d.loans || [];
-                tbody.innerHTML = loans.length === 0 ?
-                    `<tr><td colspan="7" style="color:#64748b;">لا توجد سلف</td></tr>` :
-                    loans.map((l, i) => `
-                        <tr>
-                            <td>${i+1}</td>
-                            <td><b>${l.employeeName}</b></td>
-                            <td>${Number(l.amount).toLocaleString()} د.ع</td>
-                            <td>${Number(l.remaining).toLocaleString()} د.ع</td>
-                            <td>${l.installments || 0}</td>
-                            <td><span class="status-badge ${l.status === 'paid' ? 'status-approved' : 'status-pending'}">${l.status === 'paid' ? '✅ مسدد' : '⏳ قيد التقسيط'}</span></td>
-                            <td>
-                                ${l.status !== 'paid' ? `<button class="btn btn-green" style="padding:4px 10px;font-size:11px;" onclick="payLoan('${l._id}')">دفع قسط</button>` : ''}
-                                <button class="btn btn-red" style="padding:4px 10px;font-size:11px;" onclick="deleteLoan('${l._id}')">🗑️</button>
-                            </td>
-                        </tr>
-                    `).join('');
-                showStatus('✅ تم تحميل ' + loans.length + ' سلفة', '');
-            } else {
-                tbody.innerHTML = `<tr><td colspan="7" style="color:#ef4444;">❌ فشل التحميل</td></tr>`;
-            }
-        } catch {
-            tbody.innerHTML = `<tr><td colspan="7" style="color:#ef4444;">❌ فشل الاتصال</td></tr>`;
-        }
-    }
-
-    async function showLoanModal() {
-        try {
-            const r = await fetch(API + '/api/employees?companyId=' + encodeURIComponent(companyId), {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
-            const select = document.getElementById('loanEmployee');
-            select.innerHTML = '<option value="">اختر موظف...</option>';
-            if (d.success && d.employees) {
-                d.employees.forEach(e => {
-                    select.innerHTML += `<option value="${e._id}">${e.name}</option>`;
-                });
-            }
-            document.getElementById('loanModal').classList.add('show');
-            document.getElementById('loanAmount').value = '';
-            document.getElementById('loanInstallments').value = '3';
-        } catch {
-            alert('❌ فشل تحميل قائمة الموظفين');
-        }
-    }
-
-    async function saveLoan(e) {
-        e.preventDefault();
-        const employeeId = document.getElementById('loanEmployee').value;
-        const amount = parseInt(document.getElementById('loanAmount').value);
-        const installments = parseInt(document.getElementById('loanInstallments').value);
-        
-        if (!employeeId) { alert('⚠️ يرجى اختيار موظف'); return; }
-
-        try {
-            const r = await fetch(API + '/api/employees/' + employeeId, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
-            const employeeName = d.success && d.employee ? d.employee.name : 'غير معروف';
-
-            const data = {
-                companyId: companyId,
-                employeeId: employeeId,
-                employeeName: employeeName,
-                amount: amount,
-                remaining: amount,
-                installments: installments,
-                status: 'active'
-            };
-
-            const res = await fetch(API + '/api/loans', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify(data)
-            });
-            const result = await res.json();
-            if (res.ok && result.success) {
-                alert('✅ تم إضافة السلفة');
-                closeModal('loanModal');
-                loadLoans();
-            } else {
-                alert('❌ ' + (result.message || 'فشل الإضافة'));
-            }
-        } catch {
-            alert('❌ فشل الاتصال');
-        }
-    }
-
-    async function payLoan(id) {
-        if (!confirm('هل أنت متأكد من دفع قسط؟')) return;
-        try {
-            const r = await fetch(API + '/api/loans/' + id + '/pay', {
-                method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const result = await r.json();
-            if (r.ok && result.success) {
-                alert('✅ تم دفع القسط');
-                loadLoans();
-            } else {
-                alert('❌ ' + (result.message || 'فشل الدفع'));
-            }
-        } catch {
-            alert('❌ فشل الاتصال');
-        }
-    }
-
-    async function deleteLoan(id) {
-        if (!confirm('هل أنت متأكد من حذف هذه السلفة؟')) return;
-        try {
-            const r = await fetch(API + '/api/loans/' + id, {
-                method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const result = await r.json();
-            if (r.ok && result.success) {
-                alert('✅ تم الحذف');
-                loadLoans();
-            } else {
-                alert('❌ ' + (result.message || 'فشل الحذف'));
-            }
-        } catch {
-            alert('❌ فشل الاتصال');
-        }
-    }
-
-    // ============================================================
-    // 💰 الرواتب
-    // ============================================================
-    async function loadServiceRequests() {
-        const tbody = document.getElementById('serviceRequestsTable');
-        try {
-            const r = await fetch(API + '/api/admin/service-requests', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
-            if (d.success) {
-                const requests = d.requests || [];
-                tbody.innerHTML = requests.length === 0 ?
-                    '<tr><td colspan="8" style="color:#64748b;">لا توجد طلبات سلفة أو إجازة</td></tr>' :
-                    requests.map((q, i) => {
-                        const type = q.type === 'loan' ? '💰 سلفة' : '📝 إجازة';
-                        const details = (q.reason || '—') + (q.requestedDate ? ' — تاريخ الإجازة: ' + new Date(q.requestedDate).toLocaleDateString('ar-IQ') : '');
-                        const badge = q.status === 'approved' ? 'status-approved' : q.status === 'rejected' ? 'status-rejected' : 'status-pending';
-                        const statusText = q.status === 'approved' ? '✅ مقبول' : q.status === 'rejected' ? '❌ مرفوض' : '⏳ قيد المراجعة';
-                        const actions = q.status === 'pending'
-                            ? `<button class="btn btn-green" style="padding:4px 10px;font-size:11px;" onclick="decideRequest('${q._id}','approved')">قبول</button>
-                               <button class="btn btn-red" style="padding:4px 10px;font-size:11px;" onclick="decideRequest('${q._id}','rejected')">رفض</button>`
-                            : '—';
-                        return `<tr>
-                            <td>${i+1}</td>
-                            <td><b>${q.employeeName || '—'}</b></td>
-                            <td>${type}</td>
-                            <td style="max-width:260px;">${details}</td>
-                            <td>${q.amount ? Number(q.amount).toLocaleString() + ' د.ع' : '—'}</td>
-                            <td>${new Date(q.createdAt).toLocaleString('ar-IQ')}</td>
-                            <td><span class="status-badge ${badge}">${statusText}</span></td>
-                            <td>${actions}</td>
-                        </tr>`;
-                    }).join('');
-                showStatus('✅ تم تحميل ' + requests.length + ' طلب', '');
-            } else {
-                tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;">❌ فشل التحميل</td></tr>';
-            }
-        } catch {
-            tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;">❌ فشل الاتصال بالسيرفر</td></tr>';
-        }
-    }
-
-    async function decideRequest(requestId, status) {
-        if (!confirm(status === 'approved' ? 'هل توافق على هذا الطلب؟' : 'هل ترفض هذا الطلب؟')) return;
-        try {
-            const r = await fetch(API + '/api/admin/service-requests/' + requestId, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ status })
-            });
-            const d = await r.json();
-            if (r.ok && d.success) {
-                showStatus(status === 'approved' ? '✅ تم قبول الطلب' : '✅ تم رفض الطلب', '');
-                loadServiceRequests();
-            } else {
-                showStatus('❌ ' + (d.message || 'فشل تحديث الطلب'), 'error');
-            }
-        } catch {
-            showStatus('❌ فشل الاتصال بالسيرفر', 'error');
-        }
-    }
-
-    async function loadSalaries() {
-        const container = document.getElementById('salariesContainer');
-        container.innerHTML = `<div class="loading-spinner"></div> جاري التحميل...`;
-        try {
-            const r = await fetch(API + '/api/salaries?companyId=' + encodeURIComponent(companyId), {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
-            if (r.ok && d.success) {
-                const salaries = d.salaries || [];
-                if (salaries.length === 0) {
-                    container.innerHTML = `<p style="text-align:center;color:#64748b;padding:20px;">لا توجد بيانات رواتب</p>`;
-                } else {
-                    let html = '', total = 0;
-                    salaries.forEach(s => {
-                        total += Number(s.salary || 0);
-                        html += `<div class="salary-card"><div><div class="name">${s.name}</div><div class="details">${s.specialty || '—'} | ${s.location || '—'}</div></div><div class="amount">${Number(s.salary || 0).toLocaleString()} د.ع</div></div>`;
-                    });
-                    html += `<div style="text-align:center;margin-top:15px;font-weight:900;color:#0284c7;font-size:18px;">إجمالي الرواتب: ${total.toLocaleString()} د.ع</div>`;
-                    container.innerHTML = html;
-                    showStatus('✅ تم تحميل ' + salaries.length + ' راتب', '');
-                }
-            } else {
-                container.innerHTML = `<p style="text-align:center;color:#ef4444;">❌ فشل التحميل</p>`;
-            }
-        } catch {
-            container.innerHTML = `<p style="text-align:center;color:#ef4444;">❌ فشل الاتصال</p>`;
-        }
-    }
-
-    async function calculateSalaries() {
-        showStatus('🧮 جاري حساب الرواتب...', 'warning');
-        try {
-            const r = await fetch(API + '/api/salaries/calculate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ companyId: companyId })
-            });
-            const result = await r.json();
-            if (r.ok && result.success) {
-                showStatus('✅ تم حساب الرواتب', '');
-                loadSalaries();
-            } else {
-                showStatus('❌ ' + (result.message || 'فشل الحساب'), 'error');
-            }
-        } catch {
-            showStatus('❌ فشل الاتصال', 'error');
-        }
-    }
-
-    // ============================================================
-    // التهيئة
-    // ============================================================
-    (async () => {
-        if (await auth()) {
-            const tab = new URLSearchParams(location.search).get('tab') || 'shifts';
-            switchTab(tab);
-        }
-    })();
+})();
 </script>
 </body>
 </html>
