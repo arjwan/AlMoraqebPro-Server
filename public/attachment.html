@@ -240,18 +240,19 @@
 
 <script>
     const SERVER_URL = location.origin;  // يعمل على نفس السيرفر المنشور
+
     let employeeId = localStorage.getItem('employeeId') || '';
     let deviceId = localStorage.getItem('almoraqeb_device_id') || '';
     let companyId = localStorage.getItem('activeCompanyId') || '';
     let employeeName = localStorage.getItem('activeUser') || '';
 
     // إذا لم تتوفر البيانات، نحاول استخراجها من كائن الموظف المخزن
-    if (!employeeId) {
+    if (!employeeId || !companyId || !employeeName) {
         const empData = localStorage.getItem('almoraqeb_employee');
         if (empData) {
             try {
                 const emp = JSON.parse(empData);
-                employeeId = emp._id || emp.id || '';
+                employeeId = emp._id || emp.id || employeeId;
                 companyId = emp.companyId || companyId;
                 employeeName = emp.name || emp.username || employeeName;
                 localStorage.setItem('employeeId', employeeId);
@@ -261,8 +262,16 @@
         }
     }
 
-    // التحقق من وجود البيانات
-    if (!employeeId || !deviceId) {
+    // ✅ ضمان وجود معرف الجهاز (إصلاح مشكلة "معرف الجهاز غير موجود")
+    if (!deviceId) {
+        deviceId = crypto.randomUUID
+            ? crypto.randomUUID()
+            : 'device-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        localStorage.setItem('almoraqeb_device_id', deviceId);
+    }
+
+    // التحقق من وجود البيانات الأساسية (بعد الضمان)
+    if (!employeeId) {
         alert('بيانات الموظف غير مكتملة. يرجى تسجيل الدخول من جديد.');
         window.location.href = '/index.html';
     }
