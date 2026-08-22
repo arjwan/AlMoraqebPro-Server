@@ -254,7 +254,6 @@
                 employeeId = emp._id || emp.id || '';
                 companyId = emp.companyId || companyId;
                 employeeName = emp.name || emp.username || employeeName;
-                // حفظ للاستخدام المستقبلي
                 localStorage.setItem('employeeId', employeeId);
                 localStorage.setItem('activeCompanyId', companyId);
                 localStorage.setItem('activeUser', employeeName);
@@ -268,7 +267,6 @@
         window.location.href = '/index.html';
     }
 
-    // تحديث واجهة البيانات
     function updateEmpDetails() {
         document.getElementById('empDetails').innerText = 
             `الموظف: ${employeeName || 'غير معروف'} | الشركة: ${companyId || '---'}`;
@@ -308,28 +306,45 @@
         }
     }
 
-    // جلب الموقع الجغرافي بدقة
+    // جلب الموقع الجغرافي بدقة مع مهلة قسرية
     function getLocation() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
                 reject('المتصفح لا يدعم تحديد الموقع');
                 return;
             }
+
+            const timeoutId = setTimeout(() => {
+                reject('انتهت مهلة تحديد الموقع (20 ثانية). تأكد من تفعيل GPS وأنك في مكان مفتوح.');
+            }, 20000);
+
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
+                    clearTimeout(timeoutId);
                     resolve({
                         latitude: pos.coords.latitude,
                         longitude: pos.coords.longitude,
                         accuracy: pos.coords.accuracy
                     });
                 },
-                (err) => reject('فشل الحصول على الموقع: ' + (err.message || 'غير معروف')),
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                (err) => {
+                    clearTimeout(timeoutId);
+                    let msg = 'فشل الحصول على الموقع';
+                    if (err.code === err.PERMISSION_DENIED) {
+                        msg = 'تم رفض إذن الموقع. يرجى السماح بالوصول للموقع من إعدادات المتصفح.';
+                    } else if (err.code === err.TIMEOUT) {
+                        msg = 'انتهت مهلة تحديد الموقع. تأكد من تفعيل GPS وأنك في مكان مفتوح.';
+                    } else if (err.code === err.POSITION_UNAVAILABLE) {
+                        msg = 'معلومات الموقع غير متاحة حالياً. حاول مرة أخرى.';
+                    }
+                    reject(msg);
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         });
     }
 
-    // تحويل base64url إلى ArrayBuffer (لـ WebAuthn)
+    // تحويل base64url إلى ArrayBuffer
     function base64UrlToArrayBuffer(base64url) {
         const padding = '='.repeat((4 - (base64url.length % 4)) % 4);
         const base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -353,30 +368,65 @@
         return data;
     }
 
-    // التحقق من بصمة الإصبع عبر WebAuthn
+    // التحقق من بصمة الإصبع عبر WebAuthn (تجاهل المفاتيح المخزنة)
     async function verifyFingerprint(challengeB64Url) {
         if (!window.PublicKeyCredential) {
             throw new Error('متصفحك لا يدعم بصمة الإصبع عبر WebAuthn');
         }
+
         const challengeBuffer = base64UrlToArrayBuffer(challengeB64Url);
-        const publicKeyOptions = {
-            challenge: challengeBuffer,
-            timeout: 60000,
-            userVerification: 'required'
-        };
+
+        // المحاولة الأولى: طلب بصمة مباشرة مع تجاهل المفاتيح المخزنة
         try {
+            const publicKeyOptions = {
+                challenge: challengeBuffer,
+                timeout: 60000,
+                userVerification: 'required',
+                allowCredentials: []   // ✅ تجاهل المفاتيح المخزنة
+            };
+
             const credential = await navigator.credentials.get({ publicKey: publicKeyOptions });
             if (!credential) {
                 throw new Error('لم يتم تأكيد البصمة');
             }
-            // نستخدم الـ credential id كدليل على النجاح
             const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
             return credId;
-        } catch (err) {
-            if (err.name === 'NotAllowedError') {
+        } catch (firstErr) {
+            // إذا ألغى المستخدم، نعرض رسالة مناسبة ولا نجرب إنشاء مفتاح جديد
+            if (firstErr.name === 'NotAllowedError') {
                 throw new Error('تم إلغاء عملية البصمة من قبل المستخدم');
             }
-            throw new Error('فشل التحقق من بصمة الإصبع: ' + (err.message || 'خطأ غير معروف'));
+
+            // محاولة ثانية: إنشاء مفتاح جديد (يطلب بصمة أيضاً)
+            try {
+                const publicKeyCreateOptions = {
+                    challenge: challengeBuffer,
+                    rp: { name: 'المراقب برو', id: location.hostname },
+                    user: {
+                        id: new TextEncoder().encode(employeeId || 'employee'),
+                        name: employeeName || 'employee',
+                        displayName: employeeName || 'employee'
+                    },
+                    pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+                    timeout: 60000,
+                    authenticatorSelection: {
+                        authenticatorAttachment: 'platform',
+                        userVerification: 'required'
+                    },
+                    attestation: 'none'
+                };
+
+                const newCredential = await navigator.credentials.create({ publicKey: publicKeyCreateOptions });
+                if (!newCredential) {
+                    throw new Error('لم يتم تأكيد البصمة');
+                }
+                return btoa(String.fromCharCode(...new Uint8Array(newCredential.rawId)));
+            } catch (secondErr) {
+                if (secondErr.name === 'NotAllowedError') {
+                    throw new Error('تم إلغاء عملية البصمة من قبل المستخدم');
+                }
+                throw new Error('فشل التحقق من بصمة الإصبع: ' + (secondErr.message || 'خطأ غير معروف'));
+            }
         }
     }
 
@@ -401,18 +451,11 @@
                     body: JSON.stringify(record)
                 });
                 if (res.ok) {
-                    // نجح الإرسال، نزيل السجل
                     pending.splice(i, 1);
                     localStorage.setItem('pendingAttendanceRecords', JSON.stringify(pending));
-                } else {
-                    // فشل غير شبكي، نتوقف أو نتخطى؟
-                    // إذا كانت مشكلة تحدي منتهي، يجب إعادة الحصول على تحدي جديد
-                    console.warn('فشل مزامنة سجل:', record);
                 }
             } catch (e) {
-                // مشكلة شبكة، نوقف المحاولة
-                console.warn('تعذر المزامنة لعدم توفر اتصال');
-                break;
+                break;  // توقف عند انقطاع الشبكة
             }
         }
     }
@@ -423,7 +466,6 @@
         box.className = 'message ' + type;
         box.textContent = text;
         box.style.display = 'block';
-        // إخفاء تلقائي بعد 5 ثوان
         clearTimeout(box._timeout);
         box._timeout = setTimeout(() => {
             box.style.display = 'none';
@@ -450,13 +492,7 @@
         setButtonsDisabled(true, 'جاري المعالجة...');
 
         try {
-            // 1. فحص الاتصال
-            const online = await checkServer();
-            if (!online) {
-                // سنحاول إكمال العملية محليًا إذا كانت البصمة والموقع متاحين
-            }
-
-            // 2. الحصول على الموقع
+            // 1. الحصول على الموقع أولاً (يجب أن يكون داخل حدث المستخدم مباشرة)
             let location;
             try {
                 location = await getLocation();
@@ -466,6 +502,9 @@
                 showMessage('error', '❌ ' + locErr);
                 return;
             }
+
+            // 2. فحص الاتصال
+            const online = await checkServer();
 
             // 3. الحصول على تحدي البصمة من السيرفر (إذا متصل)
             let challengeId = null;
@@ -480,7 +519,6 @@
                     return;
                 }
             } else {
-                // بدون اتصال، ننشئ تحديًا محليًا وهميًا للبصمة فقط (لن يمر عبر السيرفر)
                 challengeId = 'offline-' + Date.now();
                 challengeB64Url = btoa(String.fromCharCode(...new Uint8Array(32)));
             }
@@ -499,7 +537,7 @@
                 employeeId,
                 deviceId,
                 fingerprintToken,
-                type: type,            // 'attendance' أو 'departure'
+                type: type,
                 latitude: location.latitude,
                 longitude: location.longitude,
                 challengeId,
@@ -520,12 +558,10 @@
                     }
                     showMessage('success', '✅ تم تسجيل ' + (type === 'attendance' ? 'الحضور' : 'الانصراف') + ' بنجاح وتم إرساله للوحة المدير.');
                 } catch (netErr) {
-                    // إذا فشل الإرسال بسبب الشبكة، نحفظ محليًا
                     saveOfflineRecord(record);
                     showMessage('error', '⚠️ تعذر الاتصال بالسيرفر. تم حفظ السجل محليًا وسيتم مزامنته عند عودة الاتصال.');
                 }
             } else {
-                // أوف لاين تمامًا، نحفظ محليًا
                 saveOfflineRecord(record);
                 showMessage('error', '📴 أنت غير متصل. تم حفظ سجل ' + (type === 'attendance' ? 'الحضور' : 'الانصراف') + ' محليًا وسيتم مزامنته عند الاتصال.');
             }
@@ -547,7 +583,7 @@
         updateEmpDetails();
         const online = await checkServer();
         if (online) {
-            await syncPendingAttendance(); // مزامنة أي سجلات معلقة
+            await syncPendingAttendance();
         }
     });
 
@@ -569,7 +605,7 @@
         if (online) {
             await syncPendingAttendance();
         }
-    }, 60000); // كل دقيقة
+    }, 60000);
 </script>
 </body>
 </html>
