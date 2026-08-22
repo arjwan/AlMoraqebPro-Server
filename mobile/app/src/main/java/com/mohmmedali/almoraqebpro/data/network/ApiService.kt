@@ -49,7 +49,7 @@ data class MobileLoginResponse(
 )
 
 data class EmployeeProfile(
-    val id: String,
+    @SerializedName("_id") val id: String? = null,
     val companyId: String,
     val username: String,
     val name: String,

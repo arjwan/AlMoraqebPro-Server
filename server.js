@@ -3737,6 +3737,24 @@ app.post(
 
             }
 
+            /*
+             * تسجيل تشخيصي آمن (بدون كلمات مرور):
+             * يحدد سبب فشل الدخول بالضبط.
+             */
+            const diagByCompany = await Employee.countDocuments({ companyId });
+            const diagByUsername = await Employee.countDocuments({ companyId, username });
+            const diagActive = await Employee.countDocuments({ companyId, username, credentialsStatus: 'active' });
+            const diagPassword = await Employee.countDocuments({ companyId, username, password });
+            console.log('[login-diag]', JSON.stringify({
+                companyId,
+                username,
+                employeesInCompany: diagByCompany,
+                usernameMatch: diagByUsername > 0,
+                credentialsActive: diagActive > 0,
+                passwordMatch: diagPassword > 0,
+                deviceIdProvided: Boolean(deviceId)
+            }));
+
             const employee =
                 await Employee.findOne({
 
@@ -3753,12 +3771,16 @@ app.post(
 
             if (!employee) {
 
+                let reason = 'بيانات الدخول غير صحيحة';
+                if (diagByUsername === 0) reason = 'لا يوجد موظف بهذا الاسم في هذه الشركة';
+                else if (diagPassword === 0) reason = 'كلمة المرور غير صحيحة';
+                else if (diagActive === 0) reason = 'الحساب غير مفعّل بعد. راجع مدير الشركة.';
+
                 return res.status(401).json({
 
                     success: false,
 
-                    message:
-                        'بيانات الدخول غير صحيحة'
+                    message: reason
 
                 });
 
