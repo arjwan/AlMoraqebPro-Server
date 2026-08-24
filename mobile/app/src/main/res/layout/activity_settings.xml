@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#0f172a">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/tvSettingsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="إعدادات التطبيق"
+            android:textColor="#38bdf8"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/tvEmployeeInfoTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="👤 بيانات الموظف"
+            android:textColor="#e2e8f0"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:id="@+id/tvEmployeeNameInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="الاسم: -"
+            android:textColor="#94a3b8"
+            android:textSize="15sp"
+            android:paddingBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvDeviceIdInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Device ID: -"
+            android:textColor="#94a3b8"
+            android:textSize="15sp"
+            android:paddingBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvCompanyIdInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="رمز الشركة: -"
+            android:textColor="#94a3b8"
+            android:textSize="15sp"
+            android:paddingBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvServerSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🌐 حالة السيرفر"
+            android:textColor="#e2e8f0"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:id="@+id/tvServerStatusSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⏳ غير مُختبر"
+            android:textColor="#facc15"
+            android:textSize="15sp"
+            android:paddingBottom="6dp" />
+
+        <Button
+            android:id="@+id/btnTestConnection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#0284c7"
+            android:text="🔄 اختبار الاتصال بالسيرفر"
+            android:textColor="#ffffff"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:id="@+id/tvLocationSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📍 حالة الموقع"
+            android:textColor="#e2e8f0"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:id="@+id/tvLocationStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="-"
+            android:textColor="#94a3b8"
+            android:textSize="15sp"
+            android:paddingBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvLanguageTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="اللغة"
+            android:textColor="#e2e8f0"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <RadioGroup
+            android:id="@+id/rgLanguage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/rbArabic"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="#38bdf8"
+                android:text="العربية"
+                android:textColor="#f8fafc"
+                android:textSize="16sp" />
+
+            <RadioButton
+                android:id="@+id/rbEnglish"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="#38bdf8"
+                android:text="English"
+                android:textColor="#f8fafc"
+                android:textSize="16sp" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/tvThemeTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="المظهر"
+            android:textColor="#e2e8f0"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="6dp" />
+
+        <RadioGroup
+            android:id="@+id/rgTheme"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/rbLight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="#38bdf8"
+                android:text="فاتح"
+                android:textColor="#f8fafc"
+                android:textSize="16sp" />
+
+            <RadioButton
+                android:id="@+id/rbDark"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="#38bdf8"
+                android:text="داكن"
+                android:textColor="#f8fafc"
+                android:textSize="16sp" />
+
+            <RadioButton
+                android:id="@+id/rbSystem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="#38bdf8"
+                android:text="حسب النظام"
+                android:textColor="#f8fafc"
+                android:textSize="16sp" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/tvAppInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📱 المراقب برو - إصدار 4.0.1"
+            android:textColor="#94a3b8"
+            android:textSize="14sp"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:id="@+id/btnDevInfoSettings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ℹ️ معلومات المطور"
+            android:textColor="#60a5fa"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:padding="8dp" />
+
+        <Button
+            android:id="@+id/btnLogoutSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#dc2626"
+            android:text="🚪 تسجيل الخروج"
+            android:textColor="#ffffff"
+            android:layout_marginTop="8dp" />
+
+        <Button
+            android:id="@+id/btnBackSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#475569"
+            android:text="عودة"
+            android:textColor="#ffffff"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="8dp" />
+
+    </LinearLayout>
+</ScrollView>

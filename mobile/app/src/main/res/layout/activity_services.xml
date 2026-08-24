@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp"
+    android:background="#FAFAFA">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvServicesTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="الخدمات والطلبات"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="طلب سلفة مالية"
+            android:textSize="18sp"
+            android:textColor="#333333"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etLoanAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="المبلغ (دينار عراقي)"
+            android:inputType="numberDecimal"
+            android:padding="14dp"
+            android:background="#ffffff"
+            android:textColor="#333333"
+            android:textColorHint="#666666"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/etLoanReason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="سبب السلفة"
+            android:inputType="text"
+            android:padding="14dp"
+            android:background="#ffffff"
+            android:textColor="#333333"
+            android:textColorHint="#666666"
+            android:layout_marginBottom="20dp" />
+
+        <Button
+            android:id="@+id/btnSubmitLoan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="💵 إرسال طلب السلفة"
+            android:padding="14dp"
+            android:textColor="#333333"
+            android:backgroundTint="#d97706"
+            android:layout_marginBottom="25dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="طلب إجازة"
+            android:textSize="18sp"
+            android:textColor="#333333"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etLeaveDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="تاريخ الإجازة (YYYY-MM-DD)"
+            android:inputType="text"
+            android:padding="14dp"
+            android:background="#ffffff"
+            android:textColor="#333333"
+            android:textColorHint="#666666"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/etLeaveReason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="سبب الإجازة"
+            android:inputType="text"
+            android:padding="14dp"
+            android:background="#ffffff"
+            android:textColor="#333333"
+            android:textColorHint="#666666"
+            android:layout_marginBottom="20dp" />
+
+        <Button
+            android:id="@+id/btnSubmitLeave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📅 إرسال طلب الإجازة"
+            android:padding="14dp"
+            android:textColor="#333333"
+            android:backgroundTint="#0284c7"
+            android:layout_marginBottom="15dp" />
+
+
+        <TextView
+            android:id="@+id/tvAmbulanceTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="طلب إسعاف / إسعافات أولية"
+            android:textSize="18sp"
+            android:textColor="#333333"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etAmbulanceReason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="وصف الحالة أو سبب طلب الإسعاف"
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:padding="14dp"
+            android:background="#ffffff"
+            android:textColor="#333333"
+            android:textColorHint="#666666"
+            android:layout_marginBottom="20dp" />
+
+        <Button
+            android:id="@+id/btnSubmitAmbulance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🚑 إرسال طلب إسعاف"
+            android:padding="14dp"
+            android:textColor="#333333"
+            android:backgroundTint="#dc2626"
+            android:layout_marginBottom="15dp" />
+
+    </LinearLayout>
+
+</ScrollView>

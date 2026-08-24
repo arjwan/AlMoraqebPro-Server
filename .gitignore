@@ -3,5 +3,16 @@ node_modules/
 *.db
 uploads/
 cloud_backup.json
-
 public/.idea/
+
+# Android
+mobile/.gradle/
+mobile/.idea/
+mobile/.cxx/
+mobile/local.properties
+mobile/app/build/
+mobile/build/
+**/*.log
+
+# Local Android dev copy (source lives in mobile/)
+almoraqbp0serves/
