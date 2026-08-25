@@ -33,4 +33,98 @@
         <div class="table-container">
             <table>
                 <thead><tr><th>#</th><th>الموظف</th><th>نوع البصمة</th><th>الموقع</th><th>التاريخ والوقت</th></tr></thead>
-                <tbody id="
+                <tbody id="attendanceTable"><tr><td colspan="5">جاري تحميل البصمات...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab-gps" class="tab-content"><div id="gpsRecords"></div></div>
+    <div id="tab-reports" class="tab-content">
+        <div class="filter-bar"><button class="btn btn-blue" onclick="loadAttendance()">تحديث التقارير</button></div>
+        <div id="reportSummary" class="gps-card"></div>
+    </div>
+    <div id="tab-settings" class="tab-content"><div class="gps-card"><span class="name">إعدادات الشركة</span><span id="settingsCompany" class="location"></span></div></div>
+    <div id="tab-archive" class="tab-content"><div id="archiveRecords" class="table-container"></div></div>
+    <div id="status" class="status">جاري تحميل بيانات الشركة...</div>
+</div>
+
+<script>
+const API = location.origin;
+let token = sessionStorage.getItem('almoraqeb_admin_token') || '';
+let companyId = '';
+let attendanceRecords = [];
+
+function escapeHtml(value) {
+    const node = document.createElement('span');
+    node.textContent = String(value ?? '');
+    return node.innerHTML;
+}
+
+function showStatus(message, error = false) {
+    const status = document.getElementById('status');
+    status.textContent = message;
+    status.className = 'status' + (error ? ' error' : '');
+}
+
+function goHome() {
+    location.href = 'admin.html?company=' + encodeURIComponent(companyId);
+}
+
+function switchTab(tab) {
+    const selected = document.getElementById('tab-' + tab);
+    if (!selected) return;
+    document.querySelectorAll('.tab-content').forEach(item => item.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(item => item.classList.remove('active'));
+    selected.classList.add('active');
+    document.querySelector('.tab-btn[data-tab="' + tab + '"]')?.classList.add('active');
+}
+
+function renderAttendance() {
+    const rows = attendanceRecords.map((record, index) => {
+        const type = record.type === 'attendance' ? 'حضور' : 'انصراف';
+        const location = Number(record.latitude).toFixed(5) + ', ' + Number(record.longitude).toFixed(5);
+        return `<tr><td>${index + 1}</td><td>${escapeHtml(record.employeeName)}</td><td>${type}</td><td>${escapeHtml(record.workplace || location)}</td><td>${new Date(record.timestamp).toLocaleString('ar-IQ')}</td></tr>`;
+    }).join('');
+    document.getElementById('attendanceTable').innerHTML = rows || '<tr><td colspan="5">لا توجد سجلات حضور أو انصراف</td></tr>';
+    document.getElementById('archiveRecords').innerHTML = `<table><thead><tr><th>#</th><th>الموظف</th><th>العملية</th><th>الموقع</th><th>الوقت</th></tr></thead><tbody>${rows || '<tr><td colspan="5">لا توجد سجلات مؤرشفة</td></tr>'}</tbody></table>`;
+    document.getElementById('gpsRecords').innerHTML = attendanceRecords.map(record => `<div class="gps-card"><span class="name">${escapeHtml(record.employeeName)}</span><span class="location">${Number(record.latitude).toFixed(5)}, ${Number(record.longitude).toFixed(5)}</span><span class="time">${new Date(record.timestamp).toLocaleString('ar-IQ')}</span></div>`).join('') || '<div class="gps-card">لا توجد مواقع مسجلة</div>';
+    const arrivals = attendanceRecords.filter(record => record.type === 'attendance').length;
+    document.getElementById('reportSummary').innerHTML = `<span class="name">إجمالي السجلات: ${attendanceRecords.length}</span><span class="location">الحضور: ${arrivals} | الانصراف: ${attendanceRecords.length - arrivals}</span>`;
+}
+
+async function loadAttendance() {
+    try {
+        const response = await fetch(API + '/api/admin/attendance', {
+            headers: { Authorization: 'Bearer ' + token }, cache: 'no-store'
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تحميل سجلات الحضور');
+        attendanceRecords = data.attendance || [];
+        renderAttendance();
+        showStatus('تم تحديث ' + attendanceRecords.length + ' سجل حضور وانصراف');
+    } catch (error) {
+        showStatus(error.message, true);
+    }
+}
+
+(async () => {
+    let session = {};
+    try { session = JSON.parse(localStorage.getItem('almoraqeb_admin_session') || '{}'); } catch (_) {}
+    companyId = String(session.companyId || new URLSearchParams(location.search).get('company') || localStorage.getItem('companyId') || '').trim();
+    if (!token || !companyId) { location.href = 'admin_login.html'; return; }
+    try {
+        const response = await fetch(API + '/api/admin/session', { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error('انتهت جلسة المدير');
+        document.getElementById('companyBadge').textContent = companyId;
+        document.getElementById('settingsCompany').textContent = companyId;
+        switchTab(new URLSearchParams(location.search).get('tab') || 'attendance');
+        await loadAttendance();
+        setInterval(loadAttendance, 30000);
+    } catch (_) {
+        location.href = 'admin_login.html';
+    }
+})();
+</script>
+</body>
+</html>

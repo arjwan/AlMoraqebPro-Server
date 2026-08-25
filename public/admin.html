@@ -77,8 +77,8 @@ async function auth(){
     }catch{location.href='admin_login.html';return false}
 }
 
-async function loadStats(){try{const r=await fetch(API+'/api/employees?companyId='+encodeURIComponent(companyId),{cache:'no-store'});const d=await r.json();if(r.ok&&d.success)document.getElementById('employees').textContent=(d.employees||[]).length}catch{}}
-async function loadPending(){try{const r=await fetch(API+'/api/employee/requests/'+encodeURIComponent(companyId)+'/pending',{cache:'no-store'});const d=await r.json();if(r.ok&&d.success){const n=(d.requests||[]).length;document.getElementById('pending').textContent=n;document.getElementById('reqBadge').textContent=n}}catch{}}
+async function loadStats(){try{const r=await fetch(API+'/api/employees?companyId='+encodeURIComponent(companyId),{headers:{Authorization:'Bearer '+token},cache:'no-store'});const d=await r.json();if(r.ok&&d.success)document.getElementById('employees').textContent=(d.employees||[]).length}catch{}}
+async function loadPending(){try{const headers={Authorization:'Bearer '+token};const responses=await Promise.all([fetch(API+'/api/employee/requests/'+encodeURIComponent(companyId)+'/pending',{headers,cache:'no-store'}),fetch(API+'/api/admin/service-requests',{headers,cache:'no-store'})]);const registration=await responses[0].json();const services=await responses[1].json();const registrationCount=responses[0].ok&&registration.success?(registration.requests||[]).length:0;const serviceCount=responses[1].ok&&services.success?(services.requests||[]).filter(request=>request.status==='pending').length:0;document.getElementById('pending').textContent=registrationCount+serviceCount;document.getElementById('reqBadge').textContent=registrationCount+serviceCount}catch{}}
 
 async function checkServer(button){const el=document.getElementById('status');markWorking(button,true);try{const r=await fetch(API+'/api/admin/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});el.textContent=r.ok?'✓ السيرفر متصل ويعمل بشكل طبيعي':'⚠️ تعذر التحقق من السيرفر';el.style.background=r.ok?'#10b981':'#f59e0b'}catch{el.textContent='❌ السيرفر غير متاح';el.style.background='#ef4444'}finally{markWorking(button,false)}}
 
@@ -92,6 +92,7 @@ document.querySelectorAll('.card').forEach(el=>el.addEventListener('keydown',e=>
     if(await auth()){
         await Promise.all([loadStats(),loadPending()]);
         await checkServer();
+        setInterval(()=>{loadStats();loadPending()},30000);
     }
 })();
 </script>

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#334155"
+    android:background="#F5F6FA"
     android:fillViewport="true">
 
     <LinearLayout
@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="طلب دعم"
-            android:textColor="#f8fafc"
+            android:textColor="#1E293B"
             android:textSize="26sp"
             android:textStyle="bold"
             android:layout_marginBottom="18dp" />
@@ -28,7 +28,7 @@
             android:layout_marginBottom="18dp"
             app:cardCornerRadius="18dp"
             app:cardElevation="8dp"
-            app:cardBackgroundColor="#111827">
+            app:cardBackgroundColor="#FFFFFF">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -40,7 +40,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="عنوان الطلب"
-                    android:textColor="#cbd5e1"
+                    android:textColor="#334155"
                     android:textSize="15sp"
                     android:layout_marginBottom="8dp" />
 
@@ -48,9 +48,9 @@
                     android:id="@+id/etSupportTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#475569"
-                    android:textColor="#f8fafc"
-                    android:textColorHint="#94a3b8"
+                    android:background="#F1F5F9"
+                    android:textColor="#1E293B"
+                    android:textColorHint="#64748B"
                     android:hint="مثال: مشكلة في تسجيل الحضور"
                     android:padding="14dp"
                     android:layout_marginBottom="16dp" />
@@ -59,7 +59,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="تفاصيل المشكلة"
-                    android:textColor="#cbd5e1"
+                    android:textColor="#334155"
                     android:textSize="15sp"
                     android:layout_marginBottom="8dp" />
 
@@ -67,9 +67,9 @@
                     android:id="@+id/etSupportDetails"
                     android:layout_width="match_parent"
                     android:layout_height="160dp"
-                    android:background="#475569"
-                    android:textColor="#f8fafc"
-                    android:textColorHint="#94a3b8"
+                    android:background="#F1F5F9"
+                    android:textColor="#1E293B"
+                    android:textColorHint="#64748B"
                     android:gravity="top|start"
                     android:hint="اكتب تفاصيل المشكلة أو السؤال..."
                     android:padding="14dp"

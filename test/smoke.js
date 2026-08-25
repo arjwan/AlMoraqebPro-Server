@@ -144,6 +144,7 @@ async function waitForServer(url, retries, delay) {
             const approvedEmployee = employees.employees.find(e => e.companyId === companyId && e.name === 'موظف اختبار');
             check('salary = 1200 persisted on Employee', approvedEmployee && Number(approvedEmployee.salary) === 1200);
             check('workHours = 8 persisted on Employee', approvedEmployee && Number(approvedEmployee.workHours) === 8);
+            check('requested shift persisted on approved employee', approvedEmployee && approvedEmployee.shift === 'صباحي');
 
             const badHours = await (await fetch(BASE + '/api/employee/request', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -176,6 +177,25 @@ async function waitForServer(url, retries, delay) {
             })).json();
             check('existing employee linked by phoneNumber (linked=true)', phoneLink.success === true && phoneLink.linked === true);
 
+            const ambulanceRequest = await (await fetch(BASE + '/api/employee/service-request', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employeeId: approvedEmployee._id, deviceId: linkedDeviceId,
+                    companyId, type: 'ambulance', reason: 'حالة طارئة' })
+            })).json();
+            check('employee ambulance request reaches server', ambulanceRequest.success === true && !!ambulanceRequest.requestId);
+
+            const managerRequests = await (await fetch(BASE + '/api/admin/service-requests', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('employee service request appears in manager dashboard API',
+                managerRequests.success === true && managerRequests.requests.some(request => request.type === 'ambulance'));
+
+            const processedRequest = await (await fetch(BASE + '/api/admin/service-requests/' + ambulanceRequest.requestId, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ status: 'approved' })
+            })).json();
+            check('manager can approve employee service request', processedRequest.success === true);
+
             const locationUpdate = await (await fetch(BASE + '/api/developer/companies/' + companyId, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + login.token },
@@ -207,7 +227,7 @@ async function waitForServer(url, retries, delay) {
             const shift = await (await fetch(BASE + '/api/admin/shifts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
-                body: JSON.stringify({ name: 'صباحي', branch: 'الفرع الثاني', employeeIds: [approvedEmployee._id],
+                body: JSON.stringify({ name: 'صباحي', branch: 'الفرع الثاني', employeeIds: [],
                     attendanceStart: '08:00', attendanceEnd: '09:00', departureStart: '16:00', departureEnd: '17:00' })
             })).json();
             check('employee attendance shift created', shift.success === true);
@@ -217,6 +237,13 @@ async function waitForServer(url, retries, delay) {
 
             const withinShift = await submitAttendance(31, 45, '2026-08-25T05:30:00.000Z');
             check('attendance accepted within assigned shift window', withinShift.status === 201 && withinShift.body.success === true);
+
+            const managerAttendance = await (await fetch(BASE + '/api/admin/attendance', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('attendance appears in manager dashboard with employee name', managerAttendance.success === true &&
+                managerAttendance.attendance.some(record => record.employeeId === approvedEmployee._id && record.employeeName === approvedEmployee.name));
+            check('manager attendance endpoint rejects anonymous access', (await fetch(BASE + '/api/admin/attendance')).status === 401);
 
             const afterLink = await (await fetch(BASE + '/api/employees?companyId=' + encodeURIComponent(companyId), {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
@@ -243,6 +270,10 @@ async function waitForServer(url, retries, delay) {
 
         const root = await fetch(BASE + '/');
         check('root serves index.html', root.status === 200 && (root.headers.get('content-type') || '').includes('text/html'));
+
+        const reportsPage = await (await fetch(BASE + '/admin_reports.html')).text();
+        check('manager reports page contains a complete attendance dashboard',
+            reportsPage.includes('id="attendanceTable"') && reportsPage.includes('/api/admin/attendance') && reportsPage.includes('</html>'));
 
         const sh = await fetch(BASE + '/health');
         check('X-Content-Type-Options => nosniff', sh.headers.get('x-content-type-options') === 'nosniff');

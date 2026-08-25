@@ -334,6 +334,8 @@ const employeeSchema = new mongoose.Schema({
 
     workplace: String,
 
+    shift: { type: String, default: '' },
+
     username: {
         type: String,
         default: ''
@@ -478,7 +480,8 @@ const serviceRequestSchema = new mongoose.Schema({
         type: String,
         enum: [
             'leave',
-            'loan'
+            'loan',
+            'ambulance'
         ],
         required: true
     },
@@ -2956,6 +2959,9 @@ app.post(
                     workplace:
                         request.workLocation,
 
+                    shift:
+                        request.shift || '',
+
                     username:
                         '',
 
@@ -3499,6 +3505,7 @@ app.post(
                     : undefined,
                 specialty: req.body.specialty || req.body.jobTitle || '',
                 workplace: req.body.workplace || req.body.workLocation || '',
+                shift: String(req.body.shift || '').trim(),
                 username,
                 password,
                 credentialsStatus: 'active',
@@ -3683,6 +3690,7 @@ app.put(
                 : employee.salary;
             employee.specialty = req.body.specialty ?? employee.specialty;
             employee.workplace = req.body.workplace ?? req.body.workLocation ?? employee.workplace;
+            employee.shift = req.body.shift !== undefined ? String(req.body.shift || '').trim() : employee.shift;
             employee.location = req.body.location ?? employee.location;
             employee.phoneNumber = phoneNumber;
             employee.username = username;
@@ -4188,7 +4196,8 @@ app.post(
                 !deviceId ||
                 ![
                     'leave',
-                    'loan'
+                    'loan',
+                    'ambulance'
                 ].includes(type)
             ) {
 
@@ -5444,10 +5453,20 @@ app.post(
 
             }
 
+            const shiftConditions = [{ employeeIds: String(employee._id) }];
+            if (employee.shift) shiftConditions.push({ name: employee.shift });
+            if (employee.workplace) shiftConditions.push({ branch: employee.workplace });
             const assignedShifts = await Shift.find({
                 companyId: employee.companyId,
-                employeeIds: String(employee._id)
+                $or: shiftConditions
             }).lean();
+
+            if (assignedShifts.length === 0 && await Shift.exists({ companyId: employee.companyId })) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'لم يتم تحديد شفت معتمد لهذا الموظف، راجع مدير الشركة'
+                });
+            }
 
             if (assignedShifts.length > 0) {
                 const timeParts = new Intl.DateTimeFormat('en-GB', {
@@ -5579,6 +5598,32 @@ app.post(
   ATTENDANCE HISTORY
 =========================================================
 */
+
+app.get('/api/admin/attendance', requireAdmin, async (req, res) => {
+    try {
+        const attendance = await Attendance.find({ companyId: req.session.companyId })
+            .sort({ timestamp: -1 })
+            .limit(500)
+            .lean();
+        const employeeIds = [...new Set(attendance.map(record => record.employeeId))];
+        const employees = await Employee.find({
+            _id: { $in: employeeIds },
+            companyId: req.session.companyId
+        }).select('_id name workplace').lean();
+        const employeeById = new Map(employees.map(employee => [String(employee._id), employee]));
+
+        res.json({
+            success: true,
+            attendance: attendance.map(record => ({
+                ...record,
+                employeeName: employeeById.get(String(record.employeeId))?.name || 'موظف',
+                workplace: employeeById.get(String(record.employeeId))?.workplace || ''
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'تعذر تحميل سجلات الحضور', error: error.message });
+    }
+});
 
 app.get(
     '/api/employees/:employeeId/attendance',

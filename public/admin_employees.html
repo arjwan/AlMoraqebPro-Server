@@ -31,6 +31,15 @@
     <div class="table-container">
         <table>
             <thead>
+                <tr><th>#</th><th>الموظف</th><th>نوع الطلب</th><th>التفاصيل</th><th>المبلغ / التاريخ</th><th>الحالة</th><th>إجراء</th></tr>
+            </thead>
+            <tbody id="serviceRequestsTable"><tr><td colspan="7"><div class="loading-spinner"></div> جاري تحميل طلبات الخدمات...</td></tr></tbody>
+        </table>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
                 <tr><th>#</th><th>اسم الطلب</th><th>رمز الشركة</th><th>الموقع</th><th>الجهاز</th><th>تاريخ الطلب</th><th>الحالة</th><th>إجراء</th></tr>
             </thead>
             <tbody id="pendingRequestsTable"><tr><td colspan="8"><div class="loading-spinner"></div> جاري تحميل الطلبات...</td></tr></tbody>
@@ -175,6 +184,52 @@
             }
         } catch {
             alert('❌ فشل الاتصال بالسيرفر');
+        }
+    }
+
+    function escapeHtml(value) {
+        const node = document.createElement('span');
+        node.textContent = String(value ?? '');
+        return node.innerHTML;
+    }
+
+    async function loadServiceRequests() {
+        const tbody = document.getElementById('serviceRequestsTable');
+        try {
+            const response = await fetch(API + '/api/admin/service-requests', {
+                headers: { Authorization: 'Bearer ' + token }, cache: 'no-store'
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تحميل طلبات الخدمات');
+            const labels = { loan: 'سلفة', leave: 'إجازة', ambulance: 'إسعاف' };
+            const statusLabels = { pending: 'معلق', approved: 'مقبول', rejected: 'مرفوض' };
+            tbody.innerHTML = data.requests.length ? data.requests.map((request, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(request.employeeName)}</td>
+                    <td>${escapeHtml(labels[request.type] || request.type)}</td>
+                    <td>${escapeHtml(request.reason || '—')}</td>
+                    <td>${request.amount ? escapeHtml(request.amount) : request.requestedDate ? new Date(request.requestedDate).toLocaleDateString('ar-IQ') : '—'}</td>
+                    <td><span class="status-badge status-${escapeHtml(request.status)}">${escapeHtml(statusLabels[request.status] || request.status)}</span></td>
+                    <td>${request.status === 'pending' ? `<button class="btn btn-green" onclick="processServiceRequest('${request._id}','approved')">قبول</button> <button class="btn btn-red" onclick="processServiceRequest('${request._id}','rejected')">رفض</button>` : '—'}</td>
+                </tr>`).join('') : '<tr><td colspan="7">لا توجد طلبات خدمات</td></tr>';
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="7">${escapeHtml(error.message)}</td></tr>`;
+        }
+    }
+
+    async function processServiceRequest(requestId, status) {
+        try {
+            const response = await fetch(API + '/api/admin/service-requests/' + encodeURIComponent(requestId), {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                body: JSON.stringify({ status })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'تعذر معالجة الطلب');
+            showStatus(status === 'approved' ? 'تم قبول طلب الموظف' : 'تم رفض طلب الموظف');
+            await loadServiceRequests();
+        } catch (error) {
+            showStatus(error.message, 'error');
         }
     }
 
@@ -337,7 +392,8 @@
     // ============================================================
     (async () => {
         if (await auth()) {
-            await Promise.all([loadPendingRequests(), loadEmployees()]);
+            await Promise.all([loadPendingRequests(), loadEmployees(), loadServiceRequests()]);
+            setInterval(() => { loadPendingRequests(); loadServiceRequests(); }, 30000);
         }
     })();
 </script>
