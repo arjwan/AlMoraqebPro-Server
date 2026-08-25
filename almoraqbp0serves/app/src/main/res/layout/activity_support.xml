@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0f172a"
+    android:background="#F8FAFC"
     android:fillViewport="true">
 
     <LinearLayout
@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="طلب دعم"
-            android:textColor="#f8fafc"
+            android:textColor="#0F172A"
             android:textSize="26sp"
             android:textStyle="bold"
             android:layout_marginBottom="18dp" />
@@ -40,7 +40,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="عنوان الطلب"
-                    android:textColor="#cbd5e1"
+                    android:textColor="#475569"
                     android:textSize="15sp"
                     android:layout_marginBottom="8dp" />
 
@@ -48,8 +48,8 @@
                     android:id="@+id/etSupportTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#1f2937"
-                    android:textColor="#f8fafc"
+                    android:background="#FFFFFF"
+                    android:textColor="#0F172A"
                     android:textColorHint="#94a3b8"
                     android:hint="مثال: مشكلة في تسجيل الحضور"
                     android:padding="14dp"
@@ -59,7 +59,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="تفاصيل المشكلة"
-                    android:textColor="#cbd5e1"
+                    android:textColor="#475569"
                     android:textSize="15sp"
                     android:layout_marginBottom="8dp" />
 
@@ -67,8 +67,8 @@
                     android:id="@+id/etSupportDetails"
                     android:layout_width="match_parent"
                     android:layout_height="160dp"
-                    android:background="#1f2937"
-                    android:textColor="#f8fafc"
+                    android:background="#FFFFFF"
+                    android:textColor="#0F172A"
                     android:textColorHint="#94a3b8"
                     android:gravity="top|start"
                     android:hint="اكتب تفاصيل المشكلة أو السؤال..."

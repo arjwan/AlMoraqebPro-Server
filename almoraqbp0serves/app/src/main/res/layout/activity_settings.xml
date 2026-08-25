@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="#0f172a">
+    android:background="#F8FAFC">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -26,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="👤 بيانات الموظف"
-            android:textColor="#e2e8f0"
+            android:textColor="#334155"
             android:textSize="18sp"
             android:textStyle="bold"
             android:layout_marginBottom="6dp" />
@@ -36,7 +36,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="الاسم: -"
-            android:textColor="#94a3b8"
+            android:textColor="#64748B"
             android:textSize="15sp"
             android:paddingBottom="4dp" />
 
@@ -45,7 +45,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Device ID: -"
-            android:textColor="#94a3b8"
+            android:textColor="#64748B"
             android:textSize="15sp"
             android:paddingBottom="4dp" />
 
@@ -54,7 +54,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="رمز الشركة: -"
-            android:textColor="#94a3b8"
+            android:textColor="#64748B"
             android:textSize="15sp"
             android:paddingBottom="12dp" />
 
@@ -63,7 +63,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="🌐 حالة السيرفر"
-            android:textColor="#e2e8f0"
+            android:textColor="#334155"
             android:textSize="18sp"
             android:textStyle="bold"
             android:layout_marginBottom="6dp" />
@@ -91,7 +91,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="📍 حالة الموقع"
-            android:textColor="#e2e8f0"
+            android:textColor="#334155"
             android:textSize="18sp"
             android:textStyle="bold"
             android:layout_marginTop="10dp"
@@ -102,7 +102,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="-"
-            android:textColor="#94a3b8"
+            android:textColor="#64748B"
             android:textSize="15sp"
             android:paddingBottom="12dp" />
 
@@ -111,7 +111,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="اللغة"
-            android:textColor="#e2e8f0"
+            android:textColor="#334155"
             android:textSize="18sp"
             android:textStyle="bold"
             android:layout_marginBottom="6dp" />
@@ -127,7 +127,7 @@
                 android:layout_height="wrap_content"
                 android:buttonTint="#38bdf8"
                 android:text="العربية"
-                android:textColor="#f8fafc"
+                android:textColor="#0F172A"
                 android:textSize="16sp" />
 
             <RadioButton
@@ -136,7 +136,7 @@
                 android:layout_height="wrap_content"
                 android:buttonTint="#38bdf8"
                 android:text="English"
-                android:textColor="#f8fafc"
+                android:textColor="#0F172A"
                 android:textSize="16sp" />
         </RadioGroup>
 
@@ -145,7 +145,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="المظهر"
-            android:textColor="#e2e8f0"
+            android:textColor="#334155"
             android:textSize="18sp"
             android:textStyle="bold"
             android:layout_marginTop="14dp"
@@ -162,7 +162,7 @@
                 android:layout_height="wrap_content"
                 android:buttonTint="#38bdf8"
                 android:text="فاتح"
-                android:textColor="#f8fafc"
+                android:textColor="#0F172A"
                 android:textSize="16sp" />
 
             <RadioButton
@@ -171,7 +171,7 @@
                 android:layout_height="wrap_content"
                 android:buttonTint="#38bdf8"
                 android:text="داكن"
-                android:textColor="#f8fafc"
+                android:textColor="#0F172A"
                 android:textSize="16sp" />
 
             <RadioButton
@@ -180,7 +180,7 @@
                 android:layout_height="wrap_content"
                 android:buttonTint="#38bdf8"
                 android:text="حسب النظام"
-                android:textColor="#f8fafc"
+                android:textColor="#0F172A"
                 android:textSize="16sp" />
         </RadioGroup>
 
@@ -189,7 +189,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="📱 المراقب برو - إصدار 4.0.1"
-            android:textColor="#94a3b8"
+            android:textColor="#64748B"
             android:textSize="14sp"
             android:layout_marginTop="16dp" />
 
