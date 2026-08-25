@@ -5477,52 +5477,246 @@ app.post(
 
             }
 
+            /*
+             * تحديد الشفت المرتبط بالموظف.
+             */
+            const shift =
+                await Shift.findOne({
+                    companyId: employee.companyId,
+                    employeeIds: String(employee._id)
+                }).lean();
+
+            if (!shift) {
+
+                return res.status(403).json({
+
+                    success: false,
+
+                    message:
+                        'لا يوجد شفت مسجل لهذا الموظف'
+
+                });
+
+            }
+
+            /*
+             * وقت العملية المعتمد.
+             * نستخدم وقت السيرفر عند عدم وجود وقت صالح من التطبيق.
+             */
+            let attendanceTime =
+                req.body.timestamp
+                    ? new Date(req.body.timestamp)
+                    : new Date();
+
             if (
-                Number.isFinite(
-                    company.latitude
-                ) &&
-                Number.isFinite(
-                    company.longitude
+                Number.isNaN(
+                    attendanceTime.getTime()
+                )
+            ) {
+                attendanceTime = new Date();
+            }
+
+            /*
+             * التحقق من وقت الشفت.
+             * attendance = حضور
+             * exit / departure = انصراف
+             */
+            const isCheckIn =
+                type === 'attendance';
+
+            const shiftStart =
+                isCheckIn
+                    ? shift.attendanceStart
+                    : shift.departureStart;
+
+            const shiftEnd =
+                isCheckIn
+                    ? shift.attendanceEnd
+                    : shift.departureEnd;
+
+            if (
+                !shiftStart ||
+                !shiftEnd
+            ) {
+
+                return res.status(403).json({
+
+                    success: false,
+
+                    message:
+                        isCheckIn
+                            ? 'أوقات الحضور غير محددة لهذا الشفت'
+                            : 'أوقات الانصراف غير محددة لهذا الشفت'
+
+                });
+
+            }
+
+            if (
+                !isWithinShiftWindow(
+                    attendanceTime,
+                    shiftStart,
+                    shiftEnd
                 )
             ) {
 
-                const radius =
-                    Number(
-                        company.geofenceRadiusMeters
-                    ) > 0
-                        ? Number(
-                            company.geofenceRadiusMeters
-                        )
-                        : 200;
+                return res.status(403).json({
 
-                const distance =
-                    haversineMeters(
+                    success: false,
 
-                        latitude,
+                    message:
+                        `البصمة خارج وقت ${isCheckIn ? 'الحضور' : 'الانصراف'} للشفت ${shift.name} (${shiftStart} - ${shiftEnd})`
 
-                        longitude,
+                });
 
-                        company.latitude,
+            }
 
-                        company.longitude
+            /*
+             * المواقع المسموح بها:
+             * 1- الموقع الرئيسي للشركة.
+             * 2- أي موقع إضافي مسجل في approvedLocations.
+             *
+             * وبذلك يستطيع الموظف التسجيل في أي موقع
+             * مسجل للشركة عندما يكون لديه واجب هناك.
+             */
+            const allowedLocations = [];
 
-                    );
+            if (
+                Number.isFinite(company.latitude) &&
+                Number.isFinite(company.longitude)
+            ) {
 
-                if (
-                    distance >
-                    radius
+                allowedLocations.push({
+
+                    name:
+                        company.name || 'الموقع الرئيسي',
+
+                    latitude:
+                        Number(company.latitude),
+
+                    longitude:
+                        Number(company.longitude),
+
+                    radiusMeters:
+                        Number(company.geofenceRadiusMeters) > 0
+                            ? Number(company.geofenceRadiusMeters)
+                            : 200
+
+                });
+
+            }
+
+            if (
+                Array.isArray(
+                    company.approvedLocations
+                )
+            ) {
+
+                for (
+                    const approved
+                    of company.approvedLocations
                 ) {
+
+                    const approvedLat =
+                        Number(approved.latitude);
+
+                    const approvedLng =
+                        Number(approved.longitude);
+
+                    if (
+                        Number.isFinite(approvedLat) &&
+                        Number.isFinite(approvedLng)
+                    ) {
+
+                        allowedLocations.push({
+
+                            name:
+                                approved.name ||
+                                'موقع معتمد',
+
+                            latitude:
+                                approvedLat,
+
+                            longitude:
+                                approvedLng,
+
+                            radiusMeters:
+                                Number(approved.radiusMeters) > 0
+                                    ? Number(approved.radiusMeters)
+                                    : 200
+
+                        });
+
+                    }
+
+                }
+
+            }
+
+            let matchedLocation = null;
+            let nearestDistance = null;
+
+            if (
+                allowedLocations.length > 0
+            ) {
+
+                for (
+                    const allowed
+                    of allowedLocations
+                ) {
+
+                    const distance =
+                        haversineMeters(
+                            latitude,
+                            longitude,
+                            allowed.latitude,
+                            allowed.longitude
+                        );
+
+                    if (
+                        nearestDistance === null ||
+                        distance < nearestDistance
+                    ) {
+                        nearestDistance = distance;
+                    }
+
+                    if (
+                        distance <=
+                        allowed.radiusMeters
+                    ) {
+
+                        matchedLocation =
+                            allowed;
+
+                        break;
+
+                    }
+
+                }
+
+                if (!matchedLocation) {
 
                     return res.status(403).json({
 
                         success: false,
 
                         message:
-                            `الموظف خارج نطاق الشركة المسموح (${Math.round(distance)}م من الموقع المعتمد)`
+                            `فشل تسجيل البصمة: الموظف خارج جميع المواقع المعتمدة للشركة${nearestDistance !== null ? ` (أقرب موقع ${Math.round(nearestDistance)}م)` : ''}`
 
                     });
 
                 }
+
+            } else {
+
+                return res.status(403).json({
+
+                    success: false,
+
+                    message:
+                        'لا توجد مواقع معتمدة للشركة لتسجيل البصمة'
+
+                });
 
             }
 
@@ -5544,16 +5738,25 @@ app.post(
                     verificationMethod:
                         'device-biometric',
 
+                    shiftId:
+                        String(
+                            shift._id
+                        ),
+
+                    shiftName:
+                        shift.name || '',
+
+                    workplace:
+                        matchedLocation
+                            ? matchedLocation.name
+                            : shift.branch || employee.workplace || '',
+
                     latitude,
 
                     longitude,
 
                     timestamp:
-                        req.body.timestamp
-                            ? new Date(
-                                req.body.timestamp
-                            )
-                            : new Date(),
+                        attendanceTime,
 
                     type
 
