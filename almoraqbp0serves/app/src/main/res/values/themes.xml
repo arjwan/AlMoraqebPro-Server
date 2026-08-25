@@ -1,0 +1,5 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.Almoraqbp0serves" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Theme.Almoraqbp0serves" parent="Base.Theme.Almoraqbp0serves" />
+
+</resources>

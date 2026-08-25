@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.mohmmedali.almoraqebpro-mergeDebugResources-41:/values-watch-v21/values-watch-v21.xml",
+            "map": [
+                {
+                    "source": "/home/mohmmedali/.gradle/caches/8.14.5/transforms/9b1f6fa81131005c9079e3ac7624e999/transformed/appcompat-1.6.1/res/values-watch-v21/values-watch-v21.xml",
+                    "from": {
+                        "startLines": "2,6,10",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,271,499",
+                        "endLines": "5,9,13",
+                        "endColumns": "12,12,12",
+                        "endOffsets": "266,494,724"
+                    }
+                }
+            ]
+        }
+    ]
+}

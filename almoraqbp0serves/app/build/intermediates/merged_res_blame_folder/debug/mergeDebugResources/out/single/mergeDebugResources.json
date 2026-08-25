@@ -1,0 +1,158 @@
+[
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-xxhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-anydpi_ic_launcher.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-anydpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_status_chip.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/status_chip.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_btn_blue_gradient.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/btn_blue_gradient.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-anydpi_ic_launcher_round.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-anydpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_card_white.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/card_white.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/xml_backup_rules.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_card_light.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/card_light.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/layout_activity_services.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_services.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-xxxhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_btn_green.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/btn_green.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_card_dark.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/card_dark.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-hdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_btn_red.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/btn_red.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/layout_activity_main.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/xml_data_extraction_rules.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/layout_activity_register_employee.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_register_employee.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_bg_gradient.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/bg_gradient.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-xhdpi_ic_launcher.webp.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-xhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_welcome_gradient.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/welcome_gradient.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-mdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/layout_activity_login.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_login.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-mdpi_ic_launcher_round.webp.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-mdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_card_blue_gradient.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/card_blue_gradient.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/layout_activity_simple_list.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_simple_list.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_field_rounded.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/field_rounded.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/layout_activity_dashboard.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_dashboard.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-xhdpi_ic_launcher_round.webp.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-xhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/layout_activity_support.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_support.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_chip_status.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/chip_status.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-xxhdpi_ic_launcher.webp.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-xxhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-hdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/layout_activity_settings.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/layout_activity_notifications.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_notifications.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_ticker_bg.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/ticker_bg.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/drawable_bg_app.xml.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/drawable/bg_app.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-debug-43:/mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/mipmap-xxxhdpi/ic_launcher_round.webp"
+    }
+]

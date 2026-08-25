@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar">
+
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".ui.DashboardActivity" android:exported="false" />
+        <activity android:name=".ui.SettingsActivity" android:exported="false" />
+        <activity android:name=".ui.SupportActivity" android:exported="false" />
+        <activity android:name=".ui.RegisterEmployeeActivity" android:exported="false" />
+        <activity android:name=".ui.MyRequestsActivity" android:exported="false" />
+        <activity android:name=".ui.AttendanceHistoryActivity" android:exported="false" />
+        <activity android:name=".ui.FirstAidActivity" android:exported="false" />
+        <activity android:name=".ui.AccountStatusActivity" android:exported="false" />
+        <activity android:name=".ui.ServicesActivity" android:exported="false" />
+        <activity android:name=".ui.NotificationActivity" android:exported="false" />
+
+    </application>
+</manifest>

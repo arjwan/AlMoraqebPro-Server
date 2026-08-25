@@ -1,0 +1,38 @@
+[
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-mergeDebugResources-42:/layout/activity_simple_list.xml",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_simple_list.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-mergeDebugResources-42:/layout/activity_register_employee.xml",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_register_employee.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-mergeDebugResources-42:/layout/activity_settings.xml",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-mergeDebugResources-42:/layout/activity_notifications.xml",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_notifications.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-mergeDebugResources-42:/layout/activity_support.xml",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_support.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-mergeDebugResources-42:/layout/activity_dashboard.xml",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_dashboard.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-mergeDebugResources-42:/layout/activity_login.xml",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_login.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-mergeDebugResources-42:/layout/activity_main.xml",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.mohmmedali.almoraqebpro.app-mergeDebugResources-42:/layout/activity_services.xml",
+        "source": "com.mohmmedali.almoraqebpro.app-main-45:/layout/activity_services.xml"
+    }
+]
