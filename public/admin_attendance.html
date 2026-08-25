@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>البصمة والحضور والإيفاد - المراقب برو</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#1e1b4b;color:#0f172a;font-family:"Segoe UI",Tahoma,sans-serif;padding:18px}
+.wrap{max-width:1550px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}
+.brand{font-size:24px;font-weight:900}.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px}
+.actions,.tabs,.filters{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}
+.blue{background:#0284c7;color:#fff}.green{background:#10b981;color:#fff}.red{background:#ef4444;color:#fff}.purple{background:#8b5cf6;color:#fff}.orange{background:#f59e0b;color:#fff}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.stat{border:1px solid #e2e8f0;border-radius:13px;padding:15px;background:#f8fafc}
+.stat span{display:block;color:#64748b;font-size:12px;font-weight:800}.stat b{font-size:23px}
+.tab{background:#e2e8f0}.tab.active{background:#0284c7;color:#fff}
+.filters{margin:14px 0}
+.filters input,.filters select{padding:10px;border:1px solid #cbd5e1;border-radius:9px;min-width:170px}
+.panel{display:none}.panel.active{display:block}
+.table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:12px}
+table{width:100%;border-collapse:collapse;min-width:1100px}
+th{background:#1e293b;color:#fff;padding:11px}td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:center}
+.modal{display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center;z-index:1000}
+.modal.show{display:flex}.box{background:#fff;width:min(760px,94%);border-radius:16px;padding:22px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.full{grid-column:1/-1}
+.field label{display:block;font-weight:800;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #94a3b8;border-radius:8px}
+.notice{margin-top:15px;padding:12px;border-radius:10px;text-align:center;background:#e0f2fe;color:#075985;font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top">
+<div class="brand">📍 البصمة والحضور والإيفاد <span id="companyBadge" class="badge">...</span></div>
+<div class="actions">
+<button class="btn orange" onclick="openDelegation()">✈️ إيفاد موظف</button>
+<button class="btn blue" onclick="loadAll()">🔄 تحديث</button>
+<button class="btn purple" onclick="goHome()">🏠 الرئيسية</button>
+</div>
+</div>
+
+<div class="stats">
+<div class="stat"><span>حضور اليوم</span><b id="stAttendance">0</b></div>
+<div class="stat"><span>انصراف اليوم</span><b id="stExit">0</b></div>
+<div class="stat"><span>غياب اليوم</span><b id="stAbsent">0</b></div>
+<div class="stat"><span>إجازات فعالة</span><b id="stLeave">0</b></div>
+<div class="stat"><span>إيفادات فعالة</span><b id="stDelegation">0</b></div>
+</div>
+
+<div class="tabs">
+<button class="btn tab active" onclick="switchTab('attendance',this)">البصمات</button>
+<button class="btn tab" onclick="switchTab('absence',this)">الغياب</button>
+<button class="btn tab" onclick="switchTab('leave',this)">الإجازات</button>
+<button class="btn tab" onclick="switchTab('delegation',this)">الإيفادات</button>
+</div>
+
+<div class="filters">
+<input id="search" placeholder="🔍 اسم الموظف..." oninput="renderAll()">
+<input id="fromDate" type="date" onchange="loadAttendance()">
+<input id="toDate" type="date" onchange="loadAttendance()">
+<select id="employeeFilter" onchange="loadAttendance()"><option value="">كل الموظفين</option></select>
+<select id="typeFilter" onchange="loadAttendance()">
+<option value="">حضور وانصراف</option>
+<option value="attendance">الحضور فقط</option>
+<option value="departure">الانصراف فقط</option>
+<option value="exit">الانصراف فقط - exit</option>
+</select>
+</div>
+
+<section id="panel-attendance" class="panel active"><div class="table-wrap"><table><thead><tr><th>#</th><th>الموظف</th><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>الشفت</th><th>الموقع</th><th>الحالة</th><th>GPS</th></tr></thead><tbody id="attendanceBody"></tbody></table></div></section>
+
+<section id="panel-absence" class="panel"><div class="table-wrap"><table><thead><tr><th>#</th><th>الموظف</th><th>الاختصاص</th><th>موقع العمل</th><th>الحالة</th></tr></thead><tbody id="absenceBody"></tbody></table></div></section>
+
+<section id="panel-leave" class="panel"><div class="table-wrap"><table><thead><tr><th>#</th><th>الموظف</th><th>من</th><th>إلى</th><th>نوع الأجر</th><th>السبب</th><th>الحالة</th></tr></thead><tbody id="leaveBody"></tbody></table></div></section>
+
+<section id="panel-delegation" class="panel"><div class="table-wrap"><table><thead><tr><th>#</th><th>الموظف</th><th>من</th><th>إلى</th><th>المحافظة</th><th>الموقع</th><th>السبب</th><th>إجراء</th></tr></thead><tbody id="delegationBody"></tbody></table></div></section>
+
+<div id="notice" class="notice">جاري تحميل البيانات...</div>
+</div>
+
+<div class="modal" id="delegationModal"><div class="box">
+<h3>✈️ اعتماد إيفاد موظف</h3>
+<div class="grid">
+<div class="field full"><label>الموظف</label><select id="delEmployee"></select></div>
+<div class="field"><label>من</label><input id="delFrom" type="datetime-local"></div>
+<div class="field"><label>إلى</label><input id="delTo" type="datetime-local"></div>
+<div class="field"><label>المحافظة</label><input id="delProvince"></div>
+<div class="field"><label>اسم الموقع</label><input id="delLocation"></div>
+<div class="field"><label>خط العرض</label><input id="delLat" type="number" step="any"></div>
+<div class="field"><label>خط الطول</label><input id="delLng" type="number" step="any"></div>
+<div class="field"><label>النطاق بالمتر</label><input id="delRadius" type="number" value="200"></div>
+<div class="field full"><label>سبب الإيفاد</label><textarea id="delReason" rows="3"></textarea></div>
+</div>
+<div class="actions" style="margin-top:16px">
+<button class="btn red" onclick="closeDelegation()">إلغاء</button>
+<button class="btn green" onclick="saveDelegation()">💾 اعتماد</button>
+</div>
+</div></div>
+
+<script>
+const API = location.origin;
+
+let token = '';
+let companyId = '';
+let employees = [];
+let attendance = [];
+let requests = [];
+
+function session(){
+    try{
+        return JSON.parse(
+            localStorage.getItem('almoraqeb_admin_session') || '{}'
+        );
+    }catch{
+        return {};
+    }
+}
+
+async function auth(){
+
+    token =
+        sessionStorage.getItem('almoraqeb_admin_token') || '';
+
+    const s = session();
+
+    companyId = String(
+        s.companyId ||
+        new URLSearchParams(location.search).get('company') ||
+        localStorage.getItem('companyId') ||
+        ''
+    ).trim();
+
+    if(!token || !companyId){
+        location.href='admin_login.html';
+        return false;
+    }
+
+    try{
+        const r=await fetch(API+'/api/admin/session',{
+            headers:{Authorization:'Bearer '+token},
+            cache:'no-store'
+        });
+
+        const d=await r.json();
+
+        if(!r.ok || !d.success) throw new Error();
+
+        document.getElementById('companyBadge').textContent=companyId;
+        return true;
+
+    }catch{
+        location.href='admin_login.html';
+        return false;
+    }
+}
+
+async function api(path,options={}){
+
+    const r=await fetch(API+path,{
+        ...options,
+        headers:{
+            'Content-Type':'application/json',
+            Authorization:'Bearer '+token,
+            ...(options.headers||{})
+        },
+        cache:'no-store'
+    });
+
+    const d=await r.json().catch(()=>({}));
+
+    if(!r.ok || d.success===false){
+        throw new Error(d.message || d.error || 'تعذر تنفيذ العملية');
+    }
+
+    return d;
+}
+
+function goHome(){
+    location.href=
+        'admin.html?company='+
+        encodeURIComponent(companyId);
+}
+
+function switchTab(name,button){
+
+    document.querySelectorAll('.panel')
+        .forEach(x=>x.classList.remove('active'));
+
+    document.querySelectorAll('.tab')
+        .forEach(x=>x.classList.remove('active'));
+
+    document.getElementById('panel-'+name)
+        .classList.add('active');
+
+    button.classList.add('active');
+}
+
+function esc(v){
+    const e=document.createElement('div');
+    e.textContent=String(v??'');
+    return e.innerHTML;
+}
+
+function fmtDate(v){
+    if(!v) return '—';
+    const d=new Date(v);
+    return Number.isNaN(d.getTime())
+        ? '—'
+        : d.toLocaleDateString('ar-IQ');
+}
+
+function fmtTime(v){
+    if(!v) return '—';
+    const d=new Date(v);
+    return Number.isNaN(d.getTime())
+        ? '—'
+        : d.toLocaleTimeString('ar-IQ',{
+            hour:'2-digit',
+            minute:'2-digit'
+        });
+}
+
+async function loadEmployees(){
+
+    const d=await api(
+        '/api/employees?companyId='+
+        encodeURIComponent(companyId)
+    );
+
+    employees=d.employees||[];
+
+    const filter=document.getElementById('employeeFilter');
+    const del=document.getElementById('delEmployee');
+
+    filter.innerHTML='<option value="">كل الموظفين</option>';
+    del.innerHTML='<option value="">اختر الموظف</option>';
+
+    employees.forEach(emp=>{
+        const id=emp._id||emp.id;
+
+        const a=document.createElement('option');
+        a.value=id;
+        a.textContent=emp.name||id;
+        filter.appendChild(a);
+
+        const b=document.createElement('option');
+        b.value=id;
+        b.textContent=emp.name||id;
+        del.appendChild(b);
+    });
+}
+
+async function loadAttendance(){
+
+    const qs=new URLSearchParams();
+
+    const employeeId=
+        document.getElementById('employeeFilter').value;
+
+    const type=
+        document.getElementById('typeFilter').value;
+
+    const from=
+        document.getElementById('fromDate').value;
+
+    const to=
+        document.getElementById('toDate').value;
+
+    if(employeeId) qs.set('employeeId',employeeId);
+    if(type) qs.set('type',type);
+    if(from) qs.set('from',from);
+    if(to) qs.set('to',to);
+
+    const d=await api(
+        '/api/admin/attendance'+
+        (qs.toString()?'?'+qs.toString():'')
+    );
+
+    attendance=d.attendance||[];
+    renderAll();
+}
+
+async function loadRequests(){
+
+    const d=await api('/api/admin/service-requests');
+    requests=d.requests||[];
+    renderAll();
+}
+
+function renderAttendance(){
+
+    const q=
+        document.getElementById('search')
+            .value.trim().toLowerCase();
+
+    const rows=attendance.filter(x=>
+        !q ||
+        String(x.employeeName||'').toLowerCase().includes(q)
+    );
+
+    document.getElementById('attendanceBody').innerHTML=
+        rows.length
+        ? rows.map((x,i)=>`
+        <tr>
+            <td>${i+1}</td>
+            <td><b>${esc(x.employeeName||x.employeeId)}</b></td>
+            <td>${x.type==='attendance'?'حضور':'انصراف'}</td>
+            <td>${fmtDate(x.timestamp)}</td>
+            <td>${fmtTime(x.timestamp)}</td>
+            <td>${esc(x.shiftName||'—')}</td>
+            <td>${esc(x.workplace||x.delegationLocationName||'—')}</td>
+            <td>
+                ${
+                    x.delegationApplied
+                    ? '<span class="tag tag-orange">إيفاد</span>'
+                    : '<span class="tag tag-green">اعتيادي</span>'
+                }
+            </td>
+            <td>${Number(x.latitude).toFixed(5)}, ${Number(x.longitude).toFixed(5)}</td>
+        </tr>
+        `).join('')
+        : '<tr><td colspan="9">لا توجد سجلات</td></tr>';
+}
+
+function renderLeaves(){
+
+    const q=
+        document.getElementById('search')
+            .value.trim().toLowerCase();
+
+    const leaves=requests.filter(x=>
+        x.type==='leave' &&
+        (!q || String(x.employeeName||'').toLowerCase().includes(q))
+    );
+
+    document.getElementById('leaveBody').innerHTML=
+        leaves.length
+        ? leaves.map((x,i)=>`
+        <tr>
+            <td>${i+1}</td>
+            <td>${esc(x.employeeName||'')}</td>
+            <td>${fmtDate(x.fromDate||x.requestedDate)}</td>
+            <td>${fmtDate(x.toDate||x.fromDate||x.requestedDate)}</td>
+            <td>${x.leavePaymentType==='unpaid'?'بدون راتب':'براتب'}</td>
+            <td>${esc(x.reason||'—')}</td>
+            <td>${esc(x.status||'pending')}</td>
+        </tr>
+        `).join('')
+        : '<tr><td colspan="7">لا توجد إجازات</td></tr>';
+}
+
+function activeDelegation(emp){
+
+    const d=emp.delegation||{};
+
+    if(d.active!==true || !d.from || !d.to)
+        return false;
+
+    const now=new Date();
+    const from=new Date(d.from);
+    const to=new Date(d.to);
+
+    return now>=from && now<=to;
+}
+
+function renderDelegations(){
+
+    const q=
+        document.getElementById('search')
+            .value.trim().toLowerCase();
+
+    const rows=employees.filter(emp=>
+        emp.delegation &&
+        emp.delegation.active===true &&
+        (!q || String(emp.name||'').toLowerCase().includes(q))
+    );
+
+    document.getElementById('delegationBody').innerHTML=
+        rows.length
+        ? rows.map((emp,i)=>{
+            const d=emp.delegation||{};
+            const id=emp._id||emp.id;
+
+            return `
+            <tr>
+                <td>${i+1}</td>
+                <td><b>${esc(emp.name||'')}</b></td>
+                <td>${fmtDate(d.from)} ${fmtTime(d.from)}</td>
+                <td>${fmtDate(d.to)} ${fmtTime(d.to)}</td>
+                <td>${esc(d.province||'—')}</td>
+                <td>${esc(d.locationName||'—')}</td>
+                <td>${esc(d.reason||'—')}</td>
+                <td>${activeDelegation(emp)?'فعال':'منتهي'}</td>
+                <td>
+                    <button class="btn red" onclick="endDelegation('${id}')">
+                        إنهاء الإيفاد
+                    </button>
+                </td>
+            </tr>
+            `;
+        }).join('')
+        : '<tr><td colspan="9">لا توجد إيفادات</td></tr>';
+}
+
+function renderAbsence(){
+
+    const today=new Date().toISOString().slice(0,10);
+
+    const presentIds=new Set(
+        attendance
+            .filter(x=>
+                x.type==='attendance' &&
+                new Date(x.timestamp).toISOString().slice(0,10)===today
+            )
+            .map(x=>String(x.employeeId))
+    );
+
+    const leaveIds=new Set(
+        requests
+            .filter(x=>{
+                if(x.type!=='leave' || x.status!=='approved') return false;
+
+                const from=new Date(x.fromDate||x.requestedDate);
+                const to=new Date(x.toDate||x.fromDate||x.requestedDate);
+                const now=new Date();
+
+                now.setHours(12,0,0,0);
+
+                return now>=from && now<=to;
+            })
+            .map(x=>String(x.employeeId))
+    );
+
+    const rows=employees.filter(emp=>{
+        const id=String(emp._id||emp.id);
+        return !presentIds.has(id) &&
+               !leaveIds.has(id) &&
+               !activeDelegation(emp);
+    });
+
+    document.getElementById('absenceBody').innerHTML=
+        rows.length
+        ? rows.map((emp,i)=>`
+        <tr>
+            <td>${i+1}</td>
+            <td><b>${esc(emp.name||'')}</b></td>
+            <td>${esc(emp.specialty||'—')}</td>
+            <td>${esc(emp.workplace||'—')}</td>
+            <td><span class="tag tag-red">غياب</span></td>
+        </tr>
+        `).join('')
+        : '<tr><td colspan="5">لا توجد حالات غياب</td></tr>';
+}
+
+function updateStats(){
+
+    const today=new Date().toISOString().slice(0,10);
+
+    document.getElementById('stAttendance').textContent=
+        attendance.filter(x=>
+            x.type==='attendance' &&
+            new Date(x.timestamp).toISOString().slice(0,10)===today
+        ).length;
+
+    document.getElementById('stExit').textContent=
+        attendance.filter(x=>
+            x.type!=='attendance' &&
+            new Date(x.timestamp).toISOString().slice(0,10)===today
+        ).length;
+
+    document.getElementById('stDelegation').textContent=
+        employees.filter(activeDelegation).length;
+
+    document.getElementById('stLeave').textContent=
+        requests.filter(x=>{
+            if(x.type!=='leave' || x.status!=='approved') return false;
+
+            const now=new Date();
+            const from=new Date(x.fromDate||x.requestedDate);
+            const to=new Date(x.toDate||x.fromDate||x.requestedDate);
+
+            return now>=from && now<=to;
+        }).length;
+
+    const present=new Set(
+        attendance
+            .filter(x=>
+                x.type==='attendance' &&
+                new Date(x.timestamp).toISOString().slice(0,10)===today
+            )
+            .map(x=>String(x.employeeId))
+    );
+
+    document.getElementById('stAbsent').textContent=
+        employees.filter(emp=>
+            !present.has(String(emp._id||emp.id)) &&
+            !activeDelegation(emp)
+        ).length;
+}
+
+function renderAll(){
+    renderAttendance();
+    renderLeaves();
+    renderDelegations();
+    renderAbsence();
+    updateStats();
+}
+
+function openDelegation(){
+    document.getElementById('delegationModal')
+        .classList.add('show');
+}
+
+function closeDelegation(){
+    document.getElementById('delegationModal')
+        .classList.remove('show');
+}
+
+async function saveDelegation(){
+
+    const employeeId=
+        document.getElementById('delEmployee').value;
+
+    if(!employeeId){
+        alert('اختر الموظف');
+        return;
+    }
+
+    const payload={
+        active:true,
+        from:document.getElementById('delFrom').value,
+        to:document.getElementById('delTo').value,
+        province:document.getElementById('delProvince').value.trim(),
+        locationName:document.getElementById('delLocation').value.trim(),
+        latitude:document.getElementById('delLat').value,
+        longitude:document.getElementById('delLng').value,
+        radiusMeters:Number(document.getElementById('delRadius').value||200),
+        reason:document.getElementById('delReason').value.trim()
+    };
+
+    try{
+        await api(
+            '/api/admin/employees/'+employeeId+'/delegation',
+            {
+                method:'PUT',
+                body:JSON.stringify(payload)
+            }
+        );
+
+        closeDelegation();
+        await loadEmployees();
+        renderAll();
+
+    }catch(e){
+        alert('❌ '+e.message);
+    }
+}
+
+async function endDelegation(employeeId){
+
+    if(!confirm('إنهاء إيفاد هذا الموظف؟'))
+        return;
+
+    try{
+        await api(
+            '/api/admin/employees/'+employeeId+'/delegation',
+            {
+                method:'PUT',
+                body:JSON.stringify({active:false})
+            }
+        );
+
+        await loadEmployees();
+        renderAll();
+
+    }catch(e){
+        alert('❌ '+e.message);
+    }
+}
+
+async function loadAll(){
+
+    const notice=document.getElementById('notice');
+
+    try{
+        await loadEmployees();
+        await Promise.all([
+            loadAttendance(),
+            loadRequests()
+        ]);
+
+        renderAll();
+
+        notice.textContent='✅ تم تحميل سجلات البصمة والحضور';
+        notice.style.background='#dcfce7';
+        notice.style.color='#166534';
+
+    }catch(e){
+        notice.textContent='❌ '+e.message;
+        notice.style.background='#fee2e2';
+        notice.style.color='#991b1b';
+    }
+}
+
+(async()=>{
+    if(await auth()){
+        await loadAll();
+    }
+})();
+</script>
+</body>
+</html>

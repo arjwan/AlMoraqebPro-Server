@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الأوقات والشفتات - المراقب برو</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#1e1b4b;color:#0f172a;font-family:"Segoe UI",Tahoma,sans-serif;padding:18px}
+.wrap{max-width:1500px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}
+.brand{font-size:24px;font-weight:900}
+.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer}
+.blue{background:#0284c7;color:#fff}.green{background:#10b981;color:#fff}.red{background:#ef4444;color:#fff}.purple{background:#8b5cf6;color:#fff}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{border:1px solid #e2e8f0;border-radius:14px;padding:16px;background:#f8fafc}
+.stat span{display:block;color:#64748b;font-size:13px;font-weight:800}.stat b{font-size:25px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.filters input,.filters select{padding:10px;border:1px solid #cbd5e1;border-radius:9px;min-width:180px;background:#fff}
+.table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:12px}
+table{width:100%;border-collapse:collapse;min-width:1200px}
+th{background:#1e293b;color:#fff;padding:12px;font-size:13px}
+td{padding:11px;border-bottom:1px solid #e2e8f0;text-align:center;font-size:13px}
+.modal{display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center;z-index:1000}
+.modal.show{display:flex}
+.box{background:#fff;width:min(850px,95%);max-height:92vh;overflow:auto;border-radius:16px;padding:22px}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.group label{display:block;font-weight:800;margin-bottom:5px}
+.group input,.group select{width:100%;padding:10px;border:1px solid #94a3b8;border-radius:8px}
+.full{grid-column:1/-1}
+.employee-list{border:1px solid #cbd5e1;border-radius:10px;padding:10px;max-height:220px;overflow:auto;background:#f8fafc}
+.employee-row{display:flex;gap:8px;align-items:center;padding:6px;border-bottom:1px solid #e2e8f0}
+.employee-row:last-child{border-bottom:0}
+.modal-actions{margin-top:18px;display:flex;gap:10px;justify-content:flex-end}
+.notice{margin-top:15px;padding:12px;border-radius:10px;text-align:center;background:#e0f2fe;color:#075985;font-weight:800}
+@media(max-width:800px){body{padding:8px}.stats{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+<div class="top">
+    <div class="brand">⏰ الأوقات والشفتات <span id="companyBadge" class="badge">...</span></div>
+    <div class="actions">
+        <button class="btn green" onclick="openAdd()">➕ إضافة شفت</button>
+        <button class="btn blue" onclick="loadAll()">🔄 تحديث</button>
+        <button class="btn purple" onclick="goHome()">🏠 الرئيسية</button>
+    </div>
+</div>
+
+<div class="stats">
+    <div class="stat"><span>إجمالي الشفتات</span><b id="totalCount">0</b></div>
+    <div class="stat"><span>الشفتات الصباحية</span><b id="morningCount">0</b></div>
+    <div class="stat"><span>الموظفون المرتبطون</span><b id="employeeCount">0</b></div>
+    <div class="stat"><span>المواقع المستخدمة</span><b id="locationCount">0</b></div>
+</div>
+
+<div class="filters">
+    <input id="search" placeholder="🔍 بحث باسم الشفت أو الموقع..." oninput="render()">
+    <select id="locationFilter" onchange="render()">
+        <option value="">كل المواقع</option>
+    </select>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+    <th>#</th>
+    <th>الشفت</th>
+    <th>الموقع</th>
+    <th>الموظفون</th>
+    <th>الحضور من</th>
+    <th>الحضور إلى</th>
+    <th>الانصراف من</th>
+    <th>الانصراف إلى</th>
+    <th>الإضافي من</th>
+    <th>الإضافي إلى</th>
+    <th>الإجراءات</th>
+</tr>
+</thead>
+<tbody id="shiftsTable">
+<tr><td colspan="11">جاري التحميل...</td></tr>
+</tbody>
+</table>
+</div>
+
+<div id="notice" class="notice">جاري الاتصال بالسيرفر...</div>
+</div>
+
+<div class="modal" id="shiftModal">
+<div class="box">
+<h3 id="modalTitle">إضافة شفت جديد</h3>
+<form id="shiftForm">
+<input type="hidden" id="editId">
+
+<div class="form-grid">
+<div class="group">
+<label>اسم الشفت</label>
+<select id="shiftName">
+<option value="صباحي">صباحي</option>
+<option value="مسائي">مسائي</option>
+<option value="ليلي">ليلي</option>
+<option value="طارئ">طارئ</option>
+</select>
+</div>
+
+<div class="group">
+<label>الموقع / الفرع</label>
+<select id="shiftLocation" required></select>
+</div>
+
+<div class="group">
+<label>بداية الحضور</label>
+<input id="attendanceStart" type="time" required>
+</div>
+
+<div class="group">
+<label>نهاية الحضور</label>
+<input id="attendanceEnd" type="time" required>
+</div>
+
+<div class="group">
+<label>بداية الانصراف</label>
+<input id="departureStart" type="time" required>
+</div>
+
+<div class="group">
+<label>نهاية الانصراف</label>
+<input id="departureEnd" type="time" required>
+</div>
+
+<div class="group">
+<label>بداية الإضافي</label>
+<input id="overtimeStart" type="time">
+</div>
+
+<div class="group">
+<label>نهاية الإضافي</label>
+<input id="overtimeEnd" type="time">
+</div>
+
+<div class="group full">
+<label>الموظفون في الشفت</label>
+<div id="employeeList" class="employee-list"></div>
+</div>
+</div>
+
+<div class="modal-actions">
+<button type="button" class="btn red" onclick="closeModal()">إلغاء</button>
+<button type="submit" class="btn green">💾 حفظ</button>
+</div>
+</form>
+</div>
+</div>
+
+<script>
+const API = location.origin;
+
+let token = '';
+let companyId = '';
+let shifts = [];
+let locations = [];
+let employees = [];
+
+function session(){
+    try{
+        return JSON.parse(
+            localStorage.getItem('almoraqeb_admin_session') || '{}'
+        );
+    }catch{
+        return {};
+    }
+}
+
+async function auth(){
+
+    token =
+        sessionStorage.getItem('almoraqeb_admin_token') || '';
+
+    const s = session();
+
+    companyId = String(
+        s.companyId ||
+        new URLSearchParams(location.search).get('company') ||
+        localStorage.getItem('companyId') ||
+        ''
+    ).trim();
+
+    if(!token || !companyId){
+        location.href='admin_login.html';
+        return false;
+    }
+
+    try{
+
+        const r = await fetch(
+            API+'/api/admin/session',
+            {
+                headers:{
+                    Authorization:'Bearer '+token
+                },
+                cache:'no-store'
+            }
+        );
+
+        const d = await r.json();
+
+        if(!r.ok || !d.success)
+            throw new Error();
+
+        document.getElementById('companyBadge').textContent =
+            companyId;
+
+        return true;
+
+    }catch{
+        location.href='admin_login.html';
+        return false;
+    }
+}
+
+function goHome(){
+    location.href =
+        'admin.html?company='+
+        encodeURIComponent(companyId);
+}
+
+function escapeHtml(value){
+    const el=document.createElement('div');
+    el.textContent=String(value ?? '');
+    return el.innerHTML;
+}
+
+async function api(path, options={}){
+
+    const r = await fetch(
+        API+path,
+        {
+            ...options,
+            headers:{
+                'Content-Type':'application/json',
+                Authorization:'Bearer '+token,
+                ...(options.headers || {})
+            },
+            cache:'no-store'
+        }
+    );
+
+    const d =
+        await r.json().catch(()=>({}));
+
+    if(!r.ok || d.success===false){
+        throw new Error(
+            d.message ||
+            d.error ||
+            'تعذر تنفيذ العملية'
+        );
+    }
+
+    return d;
+}
+
+async function loadLocations(){
+
+    const d =
+        await api('/api/admin/locations');
+
+    locations =
+        (d.locations || []).filter(
+            x =>
+                !x.isPrimary &&
+                x.active !== false
+        );
+
+    const select =
+        document.getElementById('shiftLocation');
+
+    const filter =
+        document.getElementById('locationFilter');
+
+    select.innerHTML =
+        '<option value="">اختر الموقع</option>';
+
+    filter.innerHTML =
+        '<option value="">كل المواقع</option>';
+
+    locations.forEach(x=>{
+
+        const label =
+            `${x.name} - ${x.province || ''}`;
+
+        const o1=document.createElement('option');
+        o1.value=x.id || x._id;
+        o1.textContent=label;
+        select.appendChild(o1);
+
+        const o2=document.createElement('option');
+        o2.value=x.id || x._id;
+        o2.textContent=label;
+        filter.appendChild(o2);
+    });
+}
+
+async function loadEmployees(){
+
+    const d =
+        await api(
+            '/api/employees?companyId='+
+            encodeURIComponent(companyId)
+        );
+
+    employees =
+        d.employees || [];
+
+    renderEmployeeChoices();
+}
+
+function renderEmployeeChoices(selected=[]){
+
+    const box =
+        document.getElementById('employeeList');
+
+    box.innerHTML='';
+
+    employees.forEach(emp=>{
+
+        const id =
+            String(emp._id || emp.id || '');
+
+        const checked =
+            selected.map(String).includes(id)
+                ? 'checked'
+                : '';
+
+        const row =
+            document.createElement('label');
+
+        row.className='employee-row';
+
+        row.innerHTML=`
+            <input
+                type="checkbox"
+                class="shift-employee"
+                value="${escapeHtml(id)}"
+                ${checked}
+            >
+            <span>
+                <b>${escapeHtml(emp.name || '')}</b>
+                ${emp.specialty
+                    ? ' - '+escapeHtml(emp.specialty)
+                    : ''}
+            </span>
+        `;
+
+        box.appendChild(row);
+    });
+}
+
+async function loadShifts(){
+
+    const d =
+        await api('/api/admin/shifts');
+
+    shifts =
+        d.shifts || [];
+
+    updateStats();
+    render();
+}
+
+async function loadAll(){
+
+    const notice =
+        document.getElementById('notice');
+
+    try{
+
+        await Promise.all([
+            loadLocations(),
+            loadEmployees()
+        ]);
+
+        await loadShifts();
+
+        notice.textContent =
+            '✅ تم تحميل الأوقات والشفتات';
+
+        notice.style.background='#dcfce7';
+        notice.style.color='#166534';
+
+    }catch(e){
+
+        notice.textContent='❌ '+e.message;
+        notice.style.background='#fee2e2';
+        notice.style.color='#991b1b';
+    }
+}
+
+function updateStats(){
+
+    document.getElementById('totalCount').textContent =
+        shifts.length;
+
+    document.getElementById('morningCount').textContent =
+        shifts.filter(x=>x.name==='صباحي').length;
+
+    const uniqueEmployees =
+        new Set();
+
+    const uniqueLocations =
+        new Set();
+
+    shifts.forEach(s=>{
+
+        (s.employeeIds || []).forEach(
+            id=>uniqueEmployees.add(String(id))
+        );
+
+        if(s.locationId)
+            uniqueLocations.add(String(s.locationId));
+        else if(s.branch)
+            uniqueLocations.add('old:'+s.branch);
+    });
+
+    document.getElementById('employeeCount').textContent =
+        uniqueEmployees.size;
+
+    document.getElementById('locationCount').textContent =
+        uniqueLocations.size;
+}
+
+function render(){
+
+    const search =
+        document.getElementById('search')
+            .value.trim().toLowerCase();
+
+    const locationFilter =
+        document.getElementById('locationFilter').value;
+
+    const rows =
+        shifts.filter(s=>{
+
+            const locationName =
+                String(
+                    s.locationName ||
+                    s.branch ||
+                    ''
+                ).toLowerCase();
+
+            const name =
+                String(s.name || '').toLowerCase();
+
+            if(
+                search &&
+                !name.includes(search) &&
+                !locationName.includes(search)
+            ){
+                return false;
+            }
+
+            if(
+                locationFilter &&
+                String(s.locationId || '') !==
+                String(locationFilter)
+            ){
+                return false;
+            }
+
+            return true;
+        });
+
+    const tbody =
+        document.getElementById('shiftsTable');
+
+    tbody.innerHTML =
+        rows.length
+        ? rows.map((s,i)=>`
+            <tr>
+                <td>${i+1}</td>
+                <td><b>${escapeHtml(s.name || '')}</b></td>
+                <td>${escapeHtml(s.locationName || s.branch || '—')}</td>
+                <td>${(s.employeeIds || []).length}</td>
+                <td>${escapeHtml(s.attendanceStart || '—')}</td>
+                <td>${escapeHtml(s.attendanceEnd || '—')}</td>
+                <td>${escapeHtml(s.departureStart || '—')}</td>
+                <td>${escapeHtml(s.departureEnd || '—')}</td>
+                <td>${escapeHtml(s.overtimeStart || '—')}</td>
+                <td>${escapeHtml(s.overtimeEnd || '—')}</td>
+                <td>
+                    <button
+                        class="btn blue"
+                        onclick="editShift('${s._id}')"
+                    >✏️ تعديل</button>
+
+                    <button
+                        class="btn red"
+                        onclick="deleteShift('${s._id}')"
+                    >🗑 حذف</button>
+                </td>
+            </tr>
+        `).join('')
+        : '<tr><td colspan="11">لا توجد شفتات مطابقة</td></tr>';
+}
+
+function openAdd(){
+
+    document.getElementById('shiftForm').reset();
+
+    document.getElementById('editId').value='';
+
+    document.getElementById('modalTitle').textContent =
+        '➕ إضافة شفت جديد';
+
+    renderEmployeeChoices([]);
+
+    document
+        .getElementById('shiftModal')
+        .classList.add('show');
+}
+
+function editShift(id){
+
+    const s =
+        shifts.find(
+            x=>String(x._id)===String(id)
+        );
+
+    if(!s) return;
+
+    document.getElementById('editId').value =
+        s._id;
+
+    document.getElementById('shiftName').value =
+        s.name || 'صباحي';
+
+    document.getElementById('shiftLocation').value =
+        s.locationId || '';
+
+    document.getElementById('attendanceStart').value =
+        s.attendanceStart || '';
+
+    document.getElementById('attendanceEnd').value =
+        s.attendanceEnd || '';
+
+    document.getElementById('departureStart').value =
+        s.departureStart || '';
+
+    document.getElementById('departureEnd').value =
+        s.departureEnd || '';
+
+    document.getElementById('overtimeStart').value =
+        s.overtimeStart || '';
+
+    document.getElementById('overtimeEnd').value =
+        s.overtimeEnd || '';
+
+    renderEmployeeChoices(
+        s.employeeIds || []
+    );
+
+    document.getElementById('modalTitle').textContent =
+        '✏️ تعديل الشفت';
+
+    document
+        .getElementById('shiftModal')
+        .classList.add('show');
+}
+
+function closeModal(){
+    document
+        .getElementById('shiftModal')
+        .classList.remove('show');
+}
+
+document
+    .getElementById('shiftForm')
+    .addEventListener(
+        'submit',
+        async e=>{
+
+            e.preventDefault();
+
+            const id =
+                document.getElementById('editId').value;
+
+            const employeeIds =
+                Array.from(
+                    document.querySelectorAll(
+                        '.shift-employee:checked'
+                    )
+                ).map(x=>x.value);
+
+            const payload = {
+                name:
+                    document.getElementById('shiftName').value,
+
+                locationId:
+                    document.getElementById('shiftLocation').value,
+
+                employeeIds,
+
+                attendanceStart:
+                    document.getElementById('attendanceStart').value,
+
+                attendanceEnd:
+                    document.getElementById('attendanceEnd').value,
+
+                departureStart:
+                    document.getElementById('departureStart').value,
+
+                departureEnd:
+                    document.getElementById('departureEnd').value,
+
+                overtimeStart:
+                    document.getElementById('overtimeStart').value,
+
+                overtimeEnd:
+                    document.getElementById('overtimeEnd').value
+            };
+
+            if(!payload.locationId){
+                alert('⚠ اختر موقع العمل');
+                return;
+            }
+
+            try{
+
+                if(id){
+
+                    await api(
+                        '/api/admin/shifts/'+id,
+                        {
+                            method:'PUT',
+                            body:JSON.stringify(payload)
+                        }
+                    );
+
+                }else{
+
+                    await api(
+                        '/api/admin/shifts',
+                        {
+                            method:'POST',
+                            body:JSON.stringify(payload)
+                        }
+                    );
+                }
+
+                closeModal();
+                await loadShifts();
+
+            }catch(err){
+                alert('❌ '+err.message);
+            }
+        }
+    );
+
+async function deleteShift(id){
+
+    if(!confirm('هل تريد حذف هذا الشفت؟'))
+        return;
+
+    try{
+
+        await api(
+            '/api/admin/shifts/'+id,
+            {method:'DELETE'}
+        );
+
+        await loadShifts();
+
+    }catch(err){
+        alert('❌ '+err.message);
+    }
+}
+
+(async()=>{
+    if(await auth()){
+        await loadAll();
+    }
+})();
+</script>
+</body>
+</html>

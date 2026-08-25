@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>العمليات - الرواتب والسلف والشفتات</title>
+    <title>العمليات - الرواتب والسلف</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body {
@@ -196,45 +196,17 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1><i class="fas fa-cogs"></i> العمليات - الرواتب والسلف والشفتات</h1>
+        <h1><i class="fas fa-cogs"></i> العمليات - الرواتب والسلف</h1>
         <button class="btn btn-outline" onclick="history.back()">⬅ رجوع</button>
     </div>
 
     <div class="tabs">
-        <button class="tab-btn active" data-tab="shifts" onclick="switchTab('shifts')">⏰ الشفتات</button>
-        <button class="tab-btn" data-tab="salaries" onclick="switchTab('salaries')">💰 الرواتب</button>
+        <button class="tab-btn active" data-tab="salaries" onclick="switchTab('salaries')">💰 الرواتب</button>
         <button class="tab-btn" data-tab="loans" onclick="switchTab('loans')">💳 السلف</button>
     </div>
 
-    <!-- ================== الشفتات ================== -->
-    <div id="tab-shifts" class="tab-content active">
-        <div class="card-panel">
-            <h3>إدارة الشفتات</h3>
-            <button class="btn btn-sm btn-blue" onclick="openShiftModal()">➕ إضافة شفت جديد</button>
-            <div class="table-wrapper" style="margin-top:12px">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>اسم الشفت</th>
-                            <th>الفرع</th>
-                            <th>عدد الموظفين</th>
-                            <th>بداية الحضور</th>
-                            <th>نهاية الحضور</th>
-                            <th>بداية الانصراف</th>
-                            <th>نهاية الانصراف</th>
-                            <th>بداية الإضافي</th>
-                            <th>نهاية الإضافي</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="shiftsTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
     <!-- ================== الرواتب ================== -->
-    <div id="tab-salaries" class="tab-content">
+    <div id="tab-salaries" class="tab-content active">
         <div class="card-panel">
             <h3>جدول الرواتب الشامل</h3>
             <div class="table-wrapper">
@@ -289,23 +261,6 @@
     </div>
 </div>
 
-<!-- مودال إضافة/تعديل شفت -->
-<div class="modal-overlay" id="shiftModal">
-    <div class="modal-box">
-        <h3 id="shiftModalTitle">إضافة شفت جديد</h3>
-        <div class="field"><label>اسم الشفت</label><select id="shiftName"><option value="صباحي">صباحي</option><option value="مسائي">مسائي</option><option value="ليلي">ليلي</option><option value="طارئ">طارئ</option></select></div>
-        <div class="field"><label>الفرع</label><input type="text" id="shiftBranch" placeholder="مثال: بغداد - الكرادة"></div>
-        <div class="field"><label>بداية تسجيل الحضور (من - إلى)</label><input type="text" id="shiftAttStart" placeholder="08:00 - 09:00"></div>
-        <div class="field"><label>بداية تسجيل الانصراف (من - إلى)</label><input type="text" id="shiftDepStart" placeholder="16:00 - 17:00"></div>
-        <div class="field"><label>بداية حساب الإضافي (من - إلى)</label><input type="text" id="shiftOvertime" placeholder="18:00 - 20:00"></div>
-        <div class="field"><label>الموظفون في الشفت</label><select id="shiftEmployees" multiple style="height:100px"></select></div>
-        <div class="modal-actions">
-            <button class="btn btn-gray" onclick="closeShiftModal()">إلغاء</button>
-            <button class="btn btn-blue" onclick="saveShift()">حفظ</button>
-        </div>
-    </div>
-</div>
-
 <!-- مودال التسديدات -->
 <div class="modal-overlay" id="repayModal">
     <div class="modal-box">
@@ -328,10 +283,8 @@ let token = sessionStorage.getItem('almoraqeb_admin_token') || '';
 let companyId = new URLSearchParams(location.search).get('company') || localStorage.getItem('companyId') || '';
 
 let allEmployees = [];
-let allShifts = [];
 let allSalaries = [];
 let allLoans = [];
-let currentShiftId = null;
 let currentLoanEmployeeId = null;
 
 function toast(msg, type='info') {
@@ -348,7 +301,6 @@ function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
     document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
-    if (tab === 'shifts') loadShifts();
     if (tab === 'salaries') loadSalaries();
     if (tab === 'loans') loadLoans();
 }
@@ -361,134 +313,6 @@ async function api(path, options = {}) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || data.error || 'خطأ');
     return data;
-}
-
-// ========== تحميل الموظفين ==========
-async function loadEmployees() {
-    const data = await api('/api/employees?companyId=' + encodeURIComponent(companyId));
-    allEmployees = data.employees || [];
-    const select = document.getElementById('shiftEmployees');
-    select.innerHTML = '';
-    allEmployees.forEach(emp => {
-        const opt = document.createElement('option');
-        opt.value = emp._id || emp.id;
-        opt.textContent = emp.name + ' - ' + (emp.specialty || '');
-        select.appendChild(opt);
-    });
-}
-
-// ========== الشفتات ==========
-async function loadShifts() {
-    try {
-        const data = await api('/api/admin/shifts');
-        allShifts = data.shifts || [];
-        renderShifts();
-    } catch (e) { toast('❌ ' + e.message, 'error'); }
-}
-
-function renderShifts() {
-    const tbody = document.getElementById('shiftsTableBody');
-    tbody.innerHTML = '';
-    allShifts.forEach(shift => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${shift.name}</td>
-            <td>${shift.branch || ''}</td>
-            <td>${(shift.employeeIds || []).length}</td>
-            <td>${shift.attendanceStart || ''}</td>
-            <td>${shift.attendanceEnd || ''}</td>
-            <td>${shift.departureStart || ''}</td>
-            <td>${shift.departureEnd || ''}</td>
-            <td>${shift.overtimeStart || ''}</td>
-            <td>${shift.overtimeEnd || ''}</td>
-            <td>
-                <button class="btn-sm btn-blue" onclick="editShift('${shift._id}')">تعديل</button>
-                <button class="btn-sm btn-red" onclick="deleteShift('${shift._id}')">حذف</button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-function openShiftModal(shiftId = null) {
-    currentShiftId = shiftId;
-    document.getElementById('shiftModalTitle').textContent = shiftId ? 'تعديل شفت' : 'إضافة شفت جديد';
-    if (shiftId) {
-        const shift = allShifts.find(s => s._id === shiftId);
-        if (shift) {
-            document.getElementById('shiftName').value = shift.name;
-            document.getElementById('shiftBranch').value = shift.branch || '';
-            document.getElementById('shiftAttStart').value = shift.attendanceStart + ' - ' + shift.attendanceEnd;
-            document.getElementById('shiftDepStart').value = shift.departureStart + ' - ' + shift.departureEnd;
-            document.getElementById('shiftOvertime').value = shift.overtimeStart + ' - ' + shift.overtimeEnd;
-            const select = document.getElementById('shiftEmployees');
-            Array.from(select.options).forEach(opt => {
-                opt.selected = (shift.employeeIds || []).includes(opt.value);
-            });
-        }
-    } else {
-        document.getElementById('shiftName').value = 'صباحي';
-        document.getElementById('shiftBranch').value = '';
-        document.getElementById('shiftAttStart').value = '';
-        document.getElementById('shiftDepStart').value = '';
-        document.getElementById('shiftOvertime').value = '';
-        Array.from(document.getElementById('shiftEmployees').options).forEach(opt => opt.selected = false);
-    }
-    document.getElementById('shiftModal').classList.add('open');
-}
-
-function closeShiftModal() {
-    document.getElementById('shiftModal').classList.remove('open');
-}
-
-async function saveShift() {
-    const name = document.getElementById('shiftName').value;
-    const branch = document.getElementById('shiftBranch').value.trim();
-    const attParts = document.getElementById('shiftAttStart').value.split('-').map(s => s.trim());
-    const depParts = document.getElementById('shiftDepStart').value.split('-').map(s => s.trim());
-    const overParts = document.getElementById('shiftOvertime').value.split('-').map(s => s.trim());
-    const employeeIds = Array.from(document.getElementById('shiftEmployees').selectedOptions).map(o => o.value);
-
-    if (!name || !branch || attParts.length < 2 || depParts.length < 2 || overParts.length < 2) {
-        toast('⚠️ يرجى ملء جميع الحقول بشكل صحيح', 'error');
-        return;
-    }
-
-    const payload = {
-        companyId,
-        name,
-        branch,
-        attendanceStart: attParts[0],
-        attendanceEnd: attParts[1],
-        departureStart: depParts[0],
-        departureEnd: depParts[1],
-        overtimeStart: overParts[0],
-        overtimeEnd: overParts[1],
-        employeeIds,
-    };
-
-    try {
-        if (currentShiftId) {
-            await api('/api/admin/shifts/' + currentShiftId, { method: 'PUT', body: JSON.stringify(payload) });
-            toast('✅ تم تعديل الشفت');
-        } else {
-            await api('/api/admin/shifts', { method: 'POST', body: JSON.stringify(payload) });
-            toast('✅ تم إضافة الشفت');
-        }
-        closeShiftModal();
-        loadShifts();
-    } catch (e) { toast('❌ ' + e.message, 'error'); }
-}
-
-function editShift(id) { openShiftModal(id); }
-
-async function deleteShift(id) {
-    if (!confirm('حذف هذا الشفت؟')) return;
-    try {
-        await api('/api/admin/shifts/' + id, { method: 'DELETE' });
-        toast('✅ تم حذف الشفت');
-        loadShifts();
-    } catch (e) { toast('❌ ' + e.message, 'error'); }
 }
 
 // ========== الرواتب ==========
@@ -652,8 +476,6 @@ async function deleteLoan(id) {
 // تهيئة
 (async function init() {
     try {
-        await loadEmployees();
-        await loadShifts();
         await loadSalaries();
         await loadLoans();
     } catch (e) {

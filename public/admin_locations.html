@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إدارة الفروع والمخازن - المراقب برو</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    background:#1e1b4b;
+    color:#0f172a;
+    font-family:"Segoe UI",Tahoma,sans-serif;
+    padding:18px
+}
+.wrap{
+    max-width:1500px;
+    margin:auto;
+    background:#fff;
+    border-radius:18px;
+    padding:20px;
+    box-shadow:0 12px 35px #0005
+}
+.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    border:1px solid #e2e8f0;
+    border-radius:14px;
+    padding:14px 18px;
+    margin-bottom:16px
+}
+.brand{font-size:24px;font-weight:900}
+.badge{
+    font-size:12px;
+    background:#0284c7;
+    color:#fff;
+    padding:6px 10px;
+    border-radius:8px
+}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{
+    border:0;
+    border-radius:10px;
+    padding:10px 15px;
+    font-weight:800;
+    cursor:pointer
+}
+.blue{background:#0284c7;color:#fff}
+.green{background:#10b981;color:#fff}
+.red{background:#ef4444;color:#fff}
+.purple{background:#8b5cf6;color:#fff}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-bottom:18px
+}
+.stat{
+    border:1px solid #e2e8f0;
+    border-radius:14px;
+    padding:16px;
+    background:#f8fafc
+}
+.stat span{display:block;color:#64748b;font-weight:700;font-size:13px}
+.stat b{font-size:25px}
+
+.filters{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:14px
+}
+.filters input,.filters select{
+    padding:10px;
+    border:1px solid #cbd5e1;
+    border-radius:9px;
+    background:#fff;
+    min-width:180px;
+    font-size:14px
+}
+
+.table-wrap{
+    overflow:auto;
+    border:1px solid #e2e8f0;
+    border-radius:12px
+}
+table{width:100%;border-collapse:collapse;min-width:1050px}
+th{
+    background:#1e293b;
+    color:#fff;
+    padding:12px;
+    font-size:13px
+}
+td{
+    padding:11px;
+    border-bottom:1px solid #e2e8f0;
+    text-align:center;
+    font-size:13px
+}
+tr:hover{background:#f8fafc}
+
+.status-on{color:#15803d;font-weight:900}
+.status-off{color:#dc2626;font-weight:900}
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:#0008;
+    align-items:center;
+    justify-content:center;
+    z-index:1000
+}
+.modal.show{display:flex}
+.box{
+    background:#fff;
+    width:min(700px,94%);
+    max-height:90%;
+    overflow:auto;
+    border-radius:16px;
+    padding:22px
+}
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px
+}
+.group label{
+    display:block;
+    font-weight:800;
+    margin-bottom:5px
+}
+.group input,.group select{
+    width:100%;
+    padding:10px;
+    border:1px solid #94a3b8;
+    border-radius:8px;
+    font-size:15px
+}
+.full{grid-column:1/-1}
+.modal-actions{
+    margin-top:18px;
+    display:flex;
+    gap:10px;
+    justify-content:flex-end
+}
+.notice{
+    margin-top:15px;
+    padding:12px;
+    border-radius:10px;
+    text-align:center;
+    background:#e0f2fe;
+    color:#075985;
+    font-weight:800
+}
+
+@media(max-width:800px){
+    body{padding:8px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .form-grid{grid-template-columns:1fr}
+    .full{grid-column:auto}
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<div class="top">
+    <div class="brand">
+        🏢 إدارة الفروع والمخازن
+        <span id="companyBadge" class="badge">...</span>
+    </div>
+
+    <div class="actions">
+        <button class="btn green" onclick="openAdd()">➕ إضافة موقع</button>
+        <button class="btn blue" onclick="loadLocations()">🔄 تحديث</button>
+        <button class="btn purple" onclick="goHome()">🏠 الرئيسية</button>
+    </div>
+</div>
+
+<div class="stats">
+    <div class="stat"><span>إجمالي المواقع</span><b id="totalCount">0</b></div>
+    <div class="stat"><span>الفروع</span><b id="branchCount">0</b></div>
+    <div class="stat"><span>المخازن</span><b id="warehouseCount">0</b></div>
+    <div class="stat"><span>المواقع النشطة</span><b id="activeCount">0</b></div>
+</div>
+
+<div class="filters">
+    <input id="search" placeholder="🔍 بحث باسم الموقع..." oninput="render()">
+
+    <select id="typeFilter" onchange="render()">
+        <option value="">كل الأنواع</option>
+        <option value="headquarters">المقر الرئيسي</option>
+        <option value="branch">فرع</option>
+        <option value="worksite">موقع عمل</option>
+        <option value="warehouse">مخزن</option>
+        <option value="project">مشروع</option>
+        <option value="temporary">موقع مؤقت</option>
+    </select>
+
+    <select id="statusFilter" onchange="render()">
+        <option value="">كل الحالات</option>
+        <option value="active">نشط</option>
+        <option value="inactive">موقوف</option>
+    </select>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+    <th>#</th>
+    <th>اسم الموقع</th>
+    <th>النوع</th>
+    <th>المحافظة</th>
+    <th>العنوان</th>
+    <th>الموقع الأب</th>
+    <th>GPS</th>
+    <th>نطاق البصمة</th>
+    <th>الحالة</th>
+    <th>الإجراءات</th>
+</tr>
+</thead>
+<tbody id="locationsTable">
+<tr><td colspan="10">جاري تحميل المواقع...</td></tr>
+</tbody>
+</table>
+</div>
+
+<div id="notice" class="notice">جاري الاتصال بالسيرفر...</div>
+
+</div>
+
+<div class="modal" id="locationModal">
+<div class="box">
+
+<h3 id="modalTitle">إضافة موقع جديد</h3>
+
+<form id="locationForm">
+<input type="hidden" id="editId">
+
+<div class="form-grid">
+
+<div class="group">
+<label>اسم الموقع</label>
+<input id="locName" required>
+</div>
+
+<div class="group">
+<label>نوع الموقع</label>
+<select id="locType" required>
+<option value="branch">فرع</option>
+<option value="worksite">موقع عمل</option>
+<option value="warehouse">مخزن</option>
+<option value="project">مشروع</option>
+<option value="temporary">موقع مؤقت</option>
+</select>
+</div>
+
+<div class="group">
+<label>المحافظة</label>
+<input id="locProvince" placeholder="مثال: بغداد">
+</div>
+
+<div class="group">
+<label>الموقع الأب</label>
+<select id="locParent">
+<option value="">بدون موقع أب / تابع للمقر الرئيسي</option>
+</select>
+</div>
+
+<div class="group full">
+<label>العنوان الكامل</label>
+<input id="locAddress" placeholder="المحافظة - القضاء - الناحية - الشارع...">
+</div>
+
+<div class="group">
+<label>خط العرض Latitude</label>
+<input id="locLatitude" type="number" step="any" required>
+</div>
+
+<div class="group">
+<label>خط الطول Longitude</label>
+<input id="locLongitude" type="number" step="any" required>
+</div>
+
+<div class="group">
+<label>نصف قطر قبول البصمة بالمتر</label>
+<input id="locRadius" type="number" min="1" value="200" required>
+</div>
+
+</div>
+
+<div class="modal-actions">
+<button type="button" class="btn red" onclick="closeModal()">إلغاء</button>
+<button type="submit" class="btn green">💾 حفظ</button>
+</div>
+
+</form>
+</div>
+</div>
+
+<script>
+const API = location.origin;
+let token = '';
+let companyId = '';
+let locations = [];
+
+const typeNames = {
+    headquarters:'المقر الرئيسي',
+    branch:'فرع',
+    worksite:'موقع عمل',
+    warehouse:'مخزن',
+    project:'مشروع',
+    temporary:'موقع مؤقت'
+};
+
+function session(){
+    try{
+        return JSON.parse(
+            localStorage.getItem('almoraqeb_admin_session') || '{}'
+        );
+    }catch{
+        return {};
+    }
+}
+
+async function auth(){
+    token = sessionStorage.getItem('almoraqeb_admin_token') || '';
+
+    const s = session();
+
+    companyId = String(
+        s.companyId ||
+        new URLSearchParams(location.search).get('company') ||
+        localStorage.getItem('companyId') ||
+        ''
+    ).trim();
+
+    if(!token || !companyId){
+        location.href='admin_login.html';
+        return false;
+    }
+
+    try{
+        const r = await fetch(API+'/api/admin/session',{
+            headers:{Authorization:'Bearer '+token},
+            cache:'no-store'
+        });
+
+        const d = await r.json();
+
+        if(!r.ok || !d.success) throw 0;
+
+        document.getElementById('companyBadge').textContent=companyId;
+
+        return true;
+
+    }catch{
+        location.href='admin_login.html';
+        return false;
+    }
+}
+
+function goHome(){
+    location.href=
+        'admin.html?company='+
+        encodeURIComponent(companyId);
+}
+
+function parentName(id){
+    if(!id) return 'المقر الرئيسي';
+
+    const found =
+        locations.find(x=>String(x.id)===String(id));
+
+    return found ? found.name : '—';
+}
+
+function render(){
+
+    const text =
+        document.getElementById('search')
+            .value.trim().toLowerCase();
+
+    const type =
+        document.getElementById('typeFilter').value;
+
+    const status =
+        document.getElementById('statusFilter').value;
+
+    let rows = locations.filter(x=>{
+
+        if(
+            text &&
+            !String(x.name||'').toLowerCase().includes(text) &&
+            !String(x.province||'').toLowerCase().includes(text)
+        ) return false;
+
+        if(type && x.type!==type) return false;
+
+        if(status==='active' && x.active===false) return false;
+        if(status==='inactive' && x.active!==false) return false;
+
+        return true;
+    });
+
+    document.getElementById('locationsTable').innerHTML =
+        rows.length
+        ? rows.map((x,i)=>`
+        <tr>
+            <td>${i+1}</td>
+
+            <td><b>${escapeHtml(x.name)}</b></td>
+
+            <td>${typeNames[x.type] || x.type}</td>
+
+            <td>${escapeHtml(x.province || '—')}</td>
+
+            <td>${escapeHtml(x.fullAddress || '—')}</td>
+
+            <td>${x.isPrimary ? '—' : escapeHtml(parentName(x.parentLocationId))}</td>
+
+            <td>
+                ${Number.isFinite(Number(x.latitude)) ? Number(x.latitude).toFixed(5) : '—'}
+                <br>
+                ${Number.isFinite(Number(x.longitude)) ? Number(x.longitude).toFixed(5) : '—'}
+            </td>
+
+            <td>${x.radiusMeters || 200} م</td>
+
+            <td class="${x.active!==false?'status-on':'status-off'}">
+                ${x.active!==false?'● نشط':'● موقوف'}
+            </td>
+
+            <td>
+                ${
+                    x.isPrimary
+                    ? '<span>المقر الرئيسي</span>'
+                    : `
+                    <button class="btn blue" onclick="editLocation('${x.id}')">✏️</button>
+                    <button class="btn ${x.active!==false?'red':'green'}"
+                        onclick="toggleLocation('${x.id}',${x.active===false})">
+                        ${x.active!==false?'إيقاف':'تفعيل'}
+                    </button>
+                    `
+                }
+            </td>
+        </tr>
+        `).join('')
+        : `<tr><td colspan="10">لا توجد مواقع مطابقة</td></tr>`;
+}
+
+function updateStats(){
+
+    document.getElementById('totalCount').textContent =
+        locations.length;
+
+    document.getElementById('branchCount').textContent =
+        locations.filter(x=>x.type==='branch').length;
+
+    document.getElementById('warehouseCount').textContent =
+        locations.filter(x=>x.type==='warehouse').length;
+
+    document.getElementById('activeCount').textContent =
+        locations.filter(x=>x.active!==false).length;
+}
+
+function fillParents(currentId=''){
+
+    const select =
+        document.getElementById('locParent');
+
+    select.innerHTML =
+        '<option value="">المقر الرئيسي</option>';
+
+    locations
+        .filter(x=>
+            !x.isPrimary &&
+            x.active!==false &&
+            String(x.id)!==String(currentId)
+        )
+        .forEach(x=>{
+            const option=document.createElement('option');
+            option.value=x.id;
+            option.textContent=
+                `${x.name} - ${typeNames[x.type] || x.type}`;
+            select.appendChild(option);
+        });
+}
+
+function openAdd(){
+
+    document.getElementById('locationForm').reset();
+    document.getElementById('editId').value='';
+    document.getElementById('locRadius').value='200';
+    document.getElementById('modalTitle').textContent='➕ إضافة موقع جديد';
+
+    fillParents();
+
+    document.getElementById('locationModal').classList.add('show');
+}
+
+function editLocation(id){
+
+    const x=locations.find(v=>String(v.id)===String(id));
+
+    if(!x) return;
+
+    document.getElementById('editId').value=id;
+    document.getElementById('locName').value=x.name || '';
+    document.getElementById('locType').value=x.type || 'worksite';
+    document.getElementById('locProvince').value=x.province || '';
+    document.getElementById('locAddress').value=x.fullAddress || '';
+    document.getElementById('locLatitude').value=x.latitude ?? '';
+    document.getElementById('locLongitude').value=x.longitude ?? '';
+    document.getElementById('locRadius').value=x.radiusMeters || 200;
+
+    fillParents(id);
+
+    document.getElementById('locParent').value =
+        x.parentLocationId || '';
+
+    document.getElementById('modalTitle').textContent =
+        '✏️ تعديل الموقع';
+
+    document.getElementById('locationModal').classList.add('show');
+}
+
+function closeModal(){
+    document.getElementById('locationModal').classList.remove('show');
+}
+
+function escapeHtml(value){
+    const d=document.createElement('div');
+    d.textContent=String(value ?? '');
+    return d.innerHTML;
+}
+
+async function loadLocations(){
+
+    const notice=document.getElementById('notice');
+
+    try{
+
+        const r=await fetch(API+'/api/admin/locations',{
+            headers:{Authorization:'Bearer '+token},
+            cache:'no-store'
+        });
+
+        const d=await r.json();
+
+        if(!r.ok || !d.success)
+            throw new Error(d.message || 'تعذر تحميل المواقع');
+
+        locations=d.locations || [];
+
+        updateStats();
+        render();
+
+        notice.textContent='✅ تم تحميل مواقع الشركة';
+        notice.style.background='#dcfce7';
+        notice.style.color='#166534';
+
+    }catch(e){
+
+        notice.textContent='❌ '+e.message;
+        notice.style.background='#fee2e2';
+        notice.style.color='#991b1b';
+    }
+}
+
+document.getElementById('locationForm').addEventListener('submit',async e=>{
+
+    e.preventDefault();
+
+    const id=document.getElementById('editId').value;
+
+    const body={
+        name:document.getElementById('locName').value.trim(),
+        type:document.getElementById('locType').value,
+        province:document.getElementById('locProvince').value.trim(),
+        fullAddress:document.getElementById('locAddress').value.trim(),
+        parentLocationId:document.getElementById('locParent').value,
+        latitude:Number(document.getElementById('locLatitude').value),
+        longitude:Number(document.getElementById('locLongitude').value),
+        radiusMeters:Number(document.getElementById('locRadius').value)
+    };
+
+    try{
+
+        const r=await fetch(
+            API+'/api/admin/locations'+(id?'/'+id:''),
+            {
+                method:id?'PUT':'POST',
+                headers:{
+                    'Content-Type':'application/json',
+                    Authorization:'Bearer '+token
+                },
+                body:JSON.stringify(body)
+            }
+        );
+
+        const d=await r.json();
+
+        if(!r.ok || !d.success)
+            throw new Error(d.message || 'تعذر حفظ الموقع');
+
+        closeModal();
+        await loadLocations();
+
+    }catch(e){
+        alert('❌ '+e.message);
+    }
+});
+
+async function toggleLocation(id,active){
+
+    if(!confirm(active?'تفعيل هذا الموقع؟':'إيقاف هذا الموقع؟'))
+        return;
+
+    try{
+
+        const r=await fetch(
+            API+'/api/admin/locations/'+id+'/status',
+            {
+                method:'PATCH',
+                headers:{
+                    'Content-Type':'application/json',
+                    Authorization:'Bearer '+token
+                },
+                body:JSON.stringify({active})
+            }
+        );
+
+        const d=await r.json();
+
+        if(!r.ok || !d.success)
+            throw new Error(d.message || 'تعذر تغيير حالة الموقع');
+
+        await loadLocations();
+
+    }catch(e){
+        alert('❌ '+e.message);
+    }
+}
+
+(async()=>{
+    if(await auth()){
+        await loadLocations();
+    }
+})();
+</script>
+</body>
+</html>

@@ -193,10 +193,57 @@ const companySchema = new mongoose.Schema({
     },
 
     approvedLocations: [{
-        name: { type: String, default: '' },
+        name: {
+            type: String,
+            default: ''
+        },
+
+        type: {
+            type: String,
+            enum: [
+                'headquarters',
+                'branch',
+                'worksite',
+                'warehouse',
+                'project',
+                'temporary'
+            ],
+            default: 'worksite'
+        },
+
+        province: {
+            type: String,
+            default: ''
+        },
+
+        fullAddress: {
+            type: String,
+            default: ''
+        },
+
+        parentLocationId: {
+            type: String,
+            default: ''
+        },
+
         latitude: Number,
+
         longitude: Number,
-        radiusMeters: { type: Number, default: 200 }
+
+        radiusMeters: {
+            type: Number,
+            default: 200
+        },
+
+        active: {
+            type: Boolean,
+            default: true
+        },
+
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
     }],
 
     /*
@@ -327,6 +374,18 @@ const employeeSchema = new mongoose.Schema({
 
     salary: Number,
 
+    wageType: {
+        type: String,
+        enum: ['monthly', 'weekly', 'daily'],
+        default: 'monthly'
+    },
+
+    employeeSerial: {
+        type: String,
+        default: '',
+        index: true
+    },
+
     workHours: Number,
 
     specialty: String,
@@ -369,6 +428,84 @@ const employeeSchema = new mongoose.Schema({
     photoUrl: String,
 
     location: String,
+
+    province: {
+        type: String,
+        default: ''
+    },
+
+    district: {
+        type: String,
+        default: ''
+    },
+
+    fullAddress: {
+        type: String,
+        default: ''
+    },
+
+    branch: {
+        type: String,
+        default: ''
+    },
+
+    hireDate: Date,
+
+    employmentStatus: {
+        type: String,
+        enum: ['active', 'inactive', 'suspended'],
+        default: 'active'
+    },
+
+    documents: [{
+        type: {
+            type: String,
+            default: 'other'
+        },
+        title: {
+            type: String,
+            default: ''
+        },
+        fileUrl: {
+            type: String,
+            default: ''
+        },
+        uploadedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+
+    delegation: {
+        active: {
+            type: Boolean,
+            default: false
+        },
+        from: Date,
+        to: Date,
+        province: {
+            type: String,
+            default: ''
+        },
+        locationName: {
+            type: String,
+            default: ''
+        },
+        latitude: Number,
+        longitude: Number,
+        radiusMeters: {
+            type: Number,
+            default: 200
+        },
+        allowProvinceWide: {
+            type: Boolean,
+            default: false
+        },
+        reason: {
+            type: String,
+            default: ''
+        }
+    },
 
     createdAt: {
         type: Date,
@@ -441,6 +578,59 @@ const attendanceSchema = new mongoose.Schema({
     type: {
         type: String,
         default: 'attendance'
+    },
+
+    employeeName: {
+        type: String,
+        default: ''
+    },
+
+    attendanceStatus: {
+        type: String,
+        enum: [
+            'normal',
+            'delegation'
+        ],
+        default: 'normal',
+        index: true
+    },
+
+    delegationApplied: {
+        type: Boolean,
+        default: false
+    },
+
+    delegationReason: {
+        type: String,
+        default: ''
+    },
+
+    delegationProvince: {
+        type: String,
+        default: ''
+    },
+
+    delegationLocationName: {
+        type: String,
+        default: ''
+    },
+
+    locationStatus: {
+        type: String,
+        enum: [
+            'approved',
+            'delegation'
+        ],
+        default: 'approved'
+    },
+
+    timeStatus: {
+        type: String,
+        enum: [
+            'within-shift',
+            'delegation'
+        ],
+        default: 'within-shift'
     }
 
 });
@@ -494,6 +684,23 @@ const serviceRequestSchema = new mongoose.Schema({
     amount: Number,
 
     requestedDate: Date,
+
+    fromDate: Date,
+
+    toDate: Date,
+
+    leavePaymentType: {
+        type: String,
+        enum: ['paid', 'unpaid'],
+        default: 'paid'
+    },
+
+    payrollApplied: {
+        type: Boolean,
+        default: false
+    },
+
+    payrollAppliedAt: Date,
 
     deviceId: {
         type: String,
@@ -590,6 +797,18 @@ const shiftSchema = new mongoose.Schema({
     companyId: { type: String, required: true, index: true },
     name: { type: String, enum: ['صباحي', 'مسائي', 'ليلي', 'طارئ'], required: true },
     branch: { type: String, default: '' },
+
+    locationId: {
+        type: String,
+        default: '',
+        index: true
+    },
+
+    locationName: {
+        type: String,
+        default: ''
+    },
+
     employeeIds: { type: [String], default: [] },
     attendanceStart: { type: String, default: '' },
     attendanceEnd: { type: String, default: '' },
@@ -614,18 +833,67 @@ const salaryRecordSchema = new mongoose.Schema({
     workplace: { type: String, default: '' },
     shiftName: { type: String, default: '' },
     socialSecurity: { type: String, default: 'غير مسجل' },
+    employeeSerial: { type: String, default: '', index: true },
+
+    wageType: {
+        type: String,
+        enum: ['monthly', 'weekly', 'daily'],
+        default: 'monthly'
+    },
+
+    payrollFrom: Date,
+    payrollTo: Date,
+
     basicSalary: { type: Number, default: 0 },
+
+    dailyRate: { type: Number, default: 0 },
+    weeklyRate: { type: Number, default: 0 },
+
     allowances: { type: Number, default: 0 },
+
     loans: { type: Number, default: 0 },
     loanDeduction: { type: Number, default: 0 },
+
+    replacementDeduction: { type: Number, default: 0 },
+    absenceDeduction: { type: Number, default: 0 },
+
+    socialSecurityStatus: {
+        type: String,
+        enum: ['registered', 'unregistered'],
+        default: 'unregistered'
+    },
+
+    socialSecurityDeduction: { type: Number, default: 0 },
+
     securityDeduction: { type: Number, default: 0 },
     otherDeductions: { type: Number, default: 0 },
+
     bonuses: { type: Number, default: 0 },
+    overtimeAmount: { type: Number, default: 0 },
+
+    paidLeaveDays: { type: Number, default: 0 },
+    unpaidLeaveDays: { type: Number, default: 0 },
+    absenceDays: { type: Number, default: 0 },
+
+    replacementDays: { type: Number, default: 0 },
+
     totalDeductions: { type: Number, default: 0 },
+    grossSalary: { type: Number, default: 0 },
     netSalary: { type: Number, default: 0 },
+
     attendanceDays: { type: Number, default: 0 },
     attendanceCount: { type: Number, default: 0 },
+
+    calculatedAt: Date,
+
+    calculationKey: {
+        type: String,
+        default: '',
+        index: true
+    },
+
     lastAttendanceAt: Date,
+
     createdAt: { type: Date, default: Date.now }
 });
 const SalaryRecord = mongoose.model('SalaryRecord', salaryRecordSchema);
@@ -651,6 +919,129 @@ const loanRecordSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 const LoanRecord = mongoose.model('LoanRecord', loanRecordSchema);
+
+
+/*
+=========================================================
+  DAILY WORKER / REPLACEMENT RECORD
+=========================================================
+*/
+const dailyWorkerRecordSchema = new mongoose.Schema({
+
+    companyId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    branch: {
+        type: String,
+        default: '',
+        index: true
+    },
+
+    workerName: {
+        type: String,
+        required: true
+    },
+
+    specialty: {
+        type: String,
+        default: ''
+    },
+
+    workplace: {
+        type: String,
+        default: ''
+    },
+
+    workDate: {
+        type: Date,
+        required: true,
+        index: true
+    },
+
+    days: {
+        type: Number,
+        default: 1
+    },
+
+    dailyRate: {
+        type: Number,
+        required: true,
+        min: 0
+    },
+
+    totalAmount: {
+        type: Number,
+        default: 0
+    },
+
+    isReplacement: {
+        type: Boolean,
+        default: false
+    },
+
+    replacementForEmployeeId: {
+        type: String,
+        default: '',
+        index: true
+    },
+
+    replacementForEmployeeName: {
+        type: String,
+        default: ''
+    },
+
+    deductionPolicy: {
+        type: String,
+        enum: ['company', 'employee'],
+        default: 'company'
+    },
+
+    payrollApplied: {
+        type: Boolean,
+        default: false
+    },
+
+    payrollAppliedAt: Date,
+
+    notes: {
+        type: String,
+        default: ''
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+
+});
+
+dailyWorkerRecordSchema.pre('save', function(next) {
+
+    const days =
+        Number(this.days) > 0
+            ? Number(this.days)
+            : 1;
+
+    const rate =
+        Number(this.dailyRate) >= 0
+            ? Number(this.dailyRate)
+            : 0;
+
+    this.totalAmount =
+        days * rate;
+
+    next();
+
+});
+
+const DailyWorkerRecord =
+    mongoose.model(
+        'DailyWorkerRecord',
+        dailyWorkerRecordSchema
+    );
 
 
 /*
@@ -1897,6 +2288,10 @@ app.delete(
                 }),
 
                 LoanRecord.deleteMany({
+                    companyId
+                }),
+
+                DailyWorkerRecord.deleteMany({
                     companyId
                 })
 
@@ -4253,19 +4648,183 @@ app.post(
 
             }
 
-            if (
-                type === 'leave' &&
-                !req.body.requestedDate
-            ) {
+            let leaveFromDate;
+            let leaveToDate;
+            let leavePaymentType = 'paid';
 
-                return res.status(400).json({
+            if (type === 'leave') {
 
-                    success: false,
+                /*
+                 * توافق مع التطبيق الحالي:
+                 * requestedDate القديم = إجازة ليوم واحد.
+                 * والنسخة الجديدة يمكنها إرسال fromDate وtoDate.
+                 */
+                const rawFromDate =
+                    req.body.fromDate ||
+                    req.body.requestedDate;
 
-                    message:
-                        'حدد تاريخ الإجازة'
+                const rawToDate =
+                    req.body.toDate ||
+                    req.body.fromDate ||
+                    req.body.requestedDate;
 
-                });
+                if (!rawFromDate || !rawToDate) {
+
+                    return res.status(400).json({
+
+                        success: false,
+
+                        message:
+                            'حدد تاريخ بداية ونهاية الإجازة'
+
+                    });
+
+                }
+
+                leaveFromDate =
+                    new Date(rawFromDate);
+
+                leaveToDate =
+                    new Date(rawToDate);
+
+                if (
+                    Number.isNaN(leaveFromDate.getTime()) ||
+                    Number.isNaN(leaveToDate.getTime())
+                ) {
+
+                    return res.status(400).json({
+
+                        success: false,
+
+                        message:
+                            'تاريخ الإجازة غير صحيح'
+
+                    });
+
+                }
+
+                /*
+                 * نهاية اليوم حتى تشمل الإجازة اليوم الأخير كاملاً.
+                 */
+                leaveFromDate.setHours(0, 0, 0, 0);
+                leaveToDate.setHours(23, 59, 59, 999);
+
+                if (
+                    leaveToDate <
+                    leaveFromDate
+                ) {
+
+                    return res.status(400).json({
+
+                        success: false,
+
+                        message:
+                            'تاريخ نهاية الإجازة يجب أن يكون بعد تاريخ البداية'
+
+                    });
+
+                }
+
+                /*
+                 * المدير هو صاحب القرار النهائي في مدفوعة/غير مدفوعة.
+                 * نقبل القيمة إن جاءت من لوحة الإدارة لاحقاً،
+                 * وإلا تبقى paid افتراضياً حتى المعالجة.
+                 */
+                leavePaymentType =
+                    req.body.leavePaymentType === 'unpaid'
+                        ? 'unpaid'
+                        : 'paid';
+
+                /*
+                 * منع الإجازات المتكررة أو المتداخلة.
+                 * يشمل الطلبات القديمة التي كانت تحتوي requestedDate فقط.
+                 */
+                const existingLeaves =
+                    await ServiceRequest.find({
+
+                        companyId:
+                            employee.companyId,
+
+                        employeeId:
+                            String(employee._id),
+
+                        type:
+                            'leave',
+
+                        status: {
+                            $in: [
+                                'pending',
+                                'approved'
+                            ]
+                        }
+
+                    }).lean();
+
+                const overlappingLeave =
+                    existingLeaves.find(existing => {
+
+                        const existingStart =
+                            new Date(
+                                existing.fromDate ||
+                                existing.requestedDate
+                            );
+
+                        const existingEnd =
+                            new Date(
+                                existing.toDate ||
+                                existing.fromDate ||
+                                existing.requestedDate
+                            );
+
+                        if (
+                            Number.isNaN(existingStart.getTime()) ||
+                            Number.isNaN(existingEnd.getTime())
+                        ) {
+                            return false;
+                        }
+
+                        existingStart.setHours(
+                            0, 0, 0, 0
+                        );
+
+                        existingEnd.setHours(
+                            23, 59, 59, 999
+                        );
+
+                        return (
+                            leaveFromDate <= existingEnd &&
+                            leaveToDate >= existingStart
+                        );
+
+                    });
+
+                if (overlappingLeave) {
+
+                    return res.status(409).json({
+
+                        success: false,
+
+                        code:
+                            'OVERLAPPING_LEAVE',
+
+                        message:
+                            'يوجد طلب إجازة آخر لنفس الموظف ضمن هذه الفترة',
+
+                        existingRequestId:
+                            overlappingLeave._id,
+
+                        existingFromDate:
+                            overlappingLeave.fromDate ||
+                            overlappingLeave.requestedDate,
+
+                        existingToDate:
+                            overlappingLeave.toDate ||
+                            overlappingLeave.fromDate ||
+                            overlappingLeave.requestedDate
+
+                    });
+
+                }
 
             }
 
@@ -4296,10 +4855,29 @@ app.post(
                     amount,
 
                     requestedDate:
-                        req.body.requestedDate
-                            ? new Date(
+                        type === 'leave'
+                            ? leaveFromDate
+                            : (
                                 req.body.requestedDate
-                            )
+                                    ? new Date(
+                                        req.body.requestedDate
+                                    )
+                                    : undefined
+                            ),
+
+                    fromDate:
+                        type === 'leave'
+                            ? leaveFromDate
+                            : undefined,
+
+                    toDate:
+                        type === 'leave'
+                            ? leaveToDate
+                            : undefined,
+
+                    leavePaymentType:
+                        type === 'leave'
+                            ? leavePaymentType
                             : undefined
 
                 }).save();
@@ -4683,6 +5261,368 @@ app.get(
   SHIFTS API (جديد)
 =========================================================
 */
+
+/*
+=========================================================
+  COMPANY LOCATIONS
+=========================================================
+*/
+
+
+app.post('/api/admin/locations', requireAdmin, async (req, res) => {
+    try {
+        const company = await Company.findOne({
+            companyId: req.session.companyId
+        });
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'الشركة غير موجودة'
+            });
+        }
+
+        const name = String(req.body.name || '').trim();
+        const type = String(req.body.type || 'worksite').trim();
+        const province = String(req.body.province || '').trim();
+        const fullAddress = String(req.body.fullAddress || '').trim();
+        const parentLocationId =
+            String(req.body.parentLocationId || '').trim();
+
+        const latitude = Number(req.body.latitude);
+        const longitude = Number(req.body.longitude);
+        const radiusMeters = Number(req.body.radiusMeters || 200);
+
+        const allowedTypes = [
+            'branch',
+            'worksite',
+            'warehouse',
+            'project',
+            'temporary'
+        ];
+
+        if (!name) {
+            return res.status(400).json({
+                success: false,
+                message: 'اسم الموقع مطلوب'
+            });
+        }
+
+        if (!allowedTypes.includes(type)) {
+            return res.status(400).json({
+                success: false,
+                message: 'نوع الموقع غير صحيح'
+            });
+        }
+
+        if (
+            !Number.isFinite(latitude) ||
+            latitude < -90 ||
+            latitude > 90 ||
+            !Number.isFinite(longitude) ||
+            longitude < -180 ||
+            longitude > 180
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'إحداثيات الموقع غير صحيحة'
+            });
+        }
+
+        if (
+            !Number.isFinite(radiusMeters) ||
+            radiusMeters <= 0
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'نصف قطر الموقع غير صحيح'
+            });
+        }
+
+        company.approvedLocations.push({
+            name,
+            type,
+            province,
+            fullAddress,
+            parentLocationId,
+            latitude,
+            longitude,
+            radiusMeters,
+            active: true
+        });
+
+        await company.save();
+
+        const location =
+            company.approvedLocations[
+                company.approvedLocations.length - 1
+            ];
+
+        return res.status(201).json({
+            success: true,
+            message: 'تمت إضافة الموقع بنجاح',
+            location
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+
+app.put('/api/admin/locations/:id', requireAdmin, async (req, res) => {
+    try {
+        const company = await Company.findOne({
+            companyId: req.session.companyId
+        });
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'الشركة غير موجودة'
+            });
+        }
+
+        const location =
+            company.approvedLocations.id(req.params.id);
+
+        if (!location) {
+            return res.status(404).json({
+                success: false,
+                message: 'الموقع غير موجود'
+            });
+        }
+
+        if (req.body.name !== undefined) {
+            location.name =
+                String(req.body.name || '').trim();
+        }
+
+        if (req.body.type !== undefined) {
+            const allowedTypes = [
+                'branch',
+                'worksite',
+                'warehouse',
+                'project',
+                'temporary'
+            ];
+
+            if (!allowedTypes.includes(req.body.type)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'نوع الموقع غير صحيح'
+                });
+            }
+
+            location.type = req.body.type;
+        }
+
+        if (req.body.province !== undefined) {
+            location.province =
+                String(req.body.province || '').trim();
+        }
+
+        if (req.body.fullAddress !== undefined) {
+            location.fullAddress =
+                String(req.body.fullAddress || '').trim();
+        }
+
+        if (req.body.parentLocationId !== undefined) {
+            location.parentLocationId =
+                String(req.body.parentLocationId || '').trim();
+        }
+
+        if (req.body.latitude !== undefined) {
+            const latitude = Number(req.body.latitude);
+
+            if (
+                !Number.isFinite(latitude) ||
+                latitude < -90 ||
+                latitude > 90
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'خط العرض غير صحيح'
+                });
+            }
+
+            location.latitude = latitude;
+        }
+
+        if (req.body.longitude !== undefined) {
+            const longitude = Number(req.body.longitude);
+
+            if (
+                !Number.isFinite(longitude) ||
+                longitude < -180 ||
+                longitude > 180
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'خط الطول غير صحيح'
+                });
+            }
+
+            location.longitude = longitude;
+        }
+
+        if (req.body.radiusMeters !== undefined) {
+            const radius =
+                Number(req.body.radiusMeters);
+
+            if (
+                !Number.isFinite(radius) ||
+                radius <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'نصف القطر غير صحيح'
+                });
+            }
+
+            location.radiusMeters = radius;
+        }
+
+        await company.save();
+
+        return res.json({
+            success: true,
+            message: 'تم تعديل الموقع',
+            location
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+
+app.patch('/api/admin/locations/:id/status', requireAdmin, async (req, res) => {
+    try {
+        const company = await Company.findOne({
+            companyId: req.session.companyId
+        });
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'الشركة غير موجودة'
+            });
+        }
+
+        const location =
+            company.approvedLocations.id(req.params.id);
+
+        if (!location) {
+            return res.status(404).json({
+                success: false,
+                message: 'الموقع غير موجود'
+            });
+        }
+
+        location.active =
+            req.body.active === true ||
+            req.body.active === 'true';
+
+        await company.save();
+
+        return res.json({
+            success: true,
+            message:
+                location.active
+                    ? 'تم تفعيل الموقع'
+                    : 'تم إيقاف الموقع',
+            location
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+app.get('/api/admin/locations', requireAdmin, async (req, res) => {
+    try {
+        const company = await Company.findOne({
+            companyId: req.session.companyId
+        }).lean();
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'الشركة غير موجودة'
+            });
+        }
+
+        const locations = [];
+
+        /*
+         * إبقاء الموقع الرئيسي القديم متوافقاً مع النظام.
+         */
+        if (
+            Number.isFinite(Number(company.latitude)) &&
+            Number.isFinite(Number(company.longitude))
+        ) {
+            locations.push({
+                id: 'headquarters',
+                name: company.name || 'المقر الرئيسي',
+                type: 'headquarters',
+                province: '',
+                fullAddress: '',
+                parentLocationId: '',
+                latitude: Number(company.latitude),
+                longitude: Number(company.longitude),
+                radiusMeters:
+                    Number(company.geofenceRadiusMeters) > 0
+                        ? Number(company.geofenceRadiusMeters)
+                        : 200,
+                active: true,
+                isPrimary: true
+            });
+        }
+
+        for (const location of company.approvedLocations || []) {
+            locations.push({
+                id: String(location._id),
+                name: location.name || 'موقع بدون اسم',
+                type: location.type || 'worksite',
+                province: location.province || '',
+                fullAddress: location.fullAddress || '',
+                parentLocationId: location.parentLocationId || '',
+                latitude: location.latitude,
+                longitude: location.longitude,
+                radiusMeters:
+                    Number(location.radiusMeters) > 0
+                        ? Number(location.radiusMeters)
+                        : 200,
+                active: location.active !== false,
+                isPrimary: false,
+                createdAt: location.createdAt
+            });
+        }
+
+        return res.json({
+            success: true,
+            total: locations.length,
+            locations
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
 app.get('/api/admin/shifts', requireAdmin, async (req, res) => {
     try {
         const shifts = await Shift.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
@@ -4692,32 +5632,324 @@ app.get('/api/admin/shifts', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
     try {
-        const { name, branch, employeeIds, attendanceStart, attendanceEnd, departureStart, departureEnd, overtimeStart, overtimeEnd } = req.body;
-        if (!name || !branch) return res.status(400).json({ success: false, message: 'اسم الشفت والفرع مطلوبان' });
-        const shift = await new Shift({
-            companyId: req.session.companyId,
+        const companyId = req.session.companyId;
+
+        const {
             name,
-            branch,
-            employeeIds: employeeIds || [],
+            locationId,
+            employeeIds,
             attendanceStart,
             attendanceEnd,
             departureStart,
             departureEnd,
             overtimeStart,
             overtimeEnd
+        } = req.body;
+
+        if (!name) {
+            return res.status(400).json({
+                success: false,
+                message: 'اسم الشفت مطلوب'
+            });
+        }
+
+        if (!locationId) {
+            return res.status(400).json({
+                success: false,
+                message: 'يجب اختيار موقع العمل'
+            });
+        }
+
+        const company = await Company.findOne({
+            companyId
+        });
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'الشركة غير موجودة'
+            });
+        }
+
+        /*
+         * البحث عن الموقع داخل مواقع نفس الشركة فقط.
+         * الموقع الموقوف لا يمكن ربط شفت جديد به.
+         */
+        const location = (company.approvedLocations || []).find(
+            item =>
+                String(item._id) === String(locationId)
+        );
+
+        if (!location) {
+            return res.status(404).json({
+                success: false,
+                message: 'موقع العمل غير موجود ضمن مواقع الشركة'
+            });
+        }
+
+        if (location.active === false) {
+            return res.status(400).json({
+                success: false,
+                message: 'لا يمكن ربط الشفت بموقع موقوف'
+            });
+        }
+
+        /*
+         * التحقق من أن الموظفين تابعون لنفس الشركة.
+         */
+        const requestedEmployeeIds =
+            Array.isArray(employeeIds)
+                ? [...new Set(employeeIds.map(String))]
+                : [];
+
+        if (requestedEmployeeIds.length) {
+
+            const employees = await Employee.find({
+                _id: { $in: requestedEmployeeIds },
+                companyId
+            }).select('_id').lean();
+
+            if (employees.length !== requestedEmployeeIds.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'أحد الموظفين المحددين لا يتبع هذه الشركة'
+                });
+            }
+        }
+
+        const locationName =
+            String(location.name || '').trim();
+
+        const shift = await new Shift({
+            companyId,
+
+            name,
+
+            /*
+             * branch يبقى للتوافق مع النظام القديم.
+             */
+            branch: locationName,
+
+            locationId:
+                String(location._id),
+
+            locationName,
+
+            employeeIds:
+                requestedEmployeeIds,
+
+            attendanceStart:
+                String(attendanceStart || ''),
+
+            attendanceEnd:
+                String(attendanceEnd || ''),
+
+            departureStart:
+                String(departureStart || ''),
+
+            departureEnd:
+                String(departureEnd || ''),
+
+            overtimeStart:
+                String(overtimeStart || ''),
+
+            overtimeEnd:
+                String(overtimeEnd || '')
         }).save();
-        res.status(201).json({ success: true, shift });
-    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+
+        return res.status(201).json({
+            success: true,
+            message: 'تم إنشاء الشفت وربطه بالموقع بنجاح',
+            shift
+        });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
 });
 
 app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
     try {
-        const shift = await Shift.findOne({ _id: req.params.id, companyId: req.session.companyId });
-        if (!shift) return res.status(404).json({ success: false, message: 'الشفت غير موجود' });
-        Object.assign(shift, req.body);
+        const companyId = req.session.companyId;
+
+        const shift = await Shift.findOne({
+            _id: req.params.id,
+            companyId
+        });
+
+        if (!shift) {
+            return res.status(404).json({
+                success: false,
+                message: 'الشفت غير موجود'
+            });
+        }
+
+        const {
+            name,
+            locationId,
+            employeeIds,
+            attendanceStart,
+            attendanceEnd,
+            departureStart,
+            departureEnd,
+            overtimeStart,
+            overtimeEnd
+        } = req.body;
+
+        /*
+         * عند تغيير الموقع نتحقق أنه:
+         * 1- تابع لنفس الشركة
+         * 2- موجود
+         * 3- غير موقوف
+         */
+        if (locationId !== undefined) {
+
+            if (!locationId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'يجب اختيار موقع العمل'
+                });
+            }
+
+            const company = await Company.findOne({
+                companyId
+            });
+
+            if (!company) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'الشركة غير موجودة'
+                });
+            }
+
+            const location =
+                (company.approvedLocations || []).find(
+                    item =>
+                        String(item._id) ===
+                        String(locationId)
+                );
+
+            if (!location) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'موقع العمل غير موجود ضمن مواقع الشركة'
+                });
+            }
+
+            if (location.active === false) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'لا يمكن ربط الشفت بموقع موقوف'
+                });
+            }
+
+            const locationName =
+                String(location.name || '').trim();
+
+            shift.locationId =
+                String(location._id);
+
+            shift.locationName =
+                locationName;
+
+            // للتوافق مع النظام القديم
+            shift.branch =
+                locationName;
+        }
+
+        /*
+         * التحقق من الموظفين قبل إضافتهم للشفت.
+         */
+        if (employeeIds !== undefined) {
+
+            if (!Array.isArray(employeeIds)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'قائمة الموظفين غير صحيحة'
+                });
+            }
+
+            const requestedEmployeeIds =
+                [...new Set(
+                    employeeIds.map(String)
+                )];
+
+            if (requestedEmployeeIds.length) {
+
+                const employees =
+                    await Employee.find({
+                        _id: {
+                            $in:
+                                requestedEmployeeIds
+                        },
+                        companyId
+                    })
+                    .select('_id')
+                    .lean();
+
+                if (
+                    employees.length !==
+                    requestedEmployeeIds.length
+                ) {
+                    return res.status(400).json({
+                        success: false,
+                        message:
+                            'أحد الموظفين المحددين لا يتبع هذه الشركة'
+                    });
+                }
+            }
+
+            shift.employeeIds =
+                requestedEmployeeIds;
+        }
+
+        if (name !== undefined)
+            shift.name = name;
+
+        if (attendanceStart !== undefined)
+            shift.attendanceStart =
+                String(attendanceStart || '');
+
+        if (attendanceEnd !== undefined)
+            shift.attendanceEnd =
+                String(attendanceEnd || '');
+
+        if (departureStart !== undefined)
+            shift.departureStart =
+                String(departureStart || '');
+
+        if (departureEnd !== undefined)
+            shift.departureEnd =
+                String(departureEnd || '');
+
+        if (overtimeStart !== undefined)
+            shift.overtimeStart =
+                String(overtimeStart || '');
+
+        if (overtimeEnd !== undefined)
+            shift.overtimeEnd =
+                String(overtimeEnd || '');
+
         await shift.save();
-        res.json({ success: true, shift });
-    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+
+        return res.json({
+            success: true,
+            message:
+                'تم تحديث الشفت بنجاح',
+            shift
+        });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
 });
 
 app.delete('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
@@ -4733,14 +5965,372 @@ app.delete('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
   SALARY RECORDS API (جديد)
 =========================================================
 */
+
+/*
+=========================================================
+  EMPLOYEE DELEGATION / إيفاد
+=========================================================
+*/
+
+app.put(
+    '/api/admin/employees/:employeeId/delegation',
+    requireAdmin,
+    async (req, res) => {
+
+        try {
+
+            const companyId =
+                req.session.companyId;
+
+            const employee =
+                await Employee.findOne({
+                    _id: req.params.employeeId,
+                    companyId
+                });
+
+            if (!employee) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'الموظف غير موجود'
+                });
+            }
+
+            const active =
+                req.body.active === true ||
+                req.body.active === 'true';
+
+            /*
+             * إلغاء الإيفاد.
+             */
+            if (!active) {
+
+                employee.delegation = {
+                    active: false,
+                    from: null,
+                    to: null,
+                    province: '',
+                    locationName: '',
+                    latitude: null,
+                    longitude: null,
+                    radiusMeters: 200,
+                    allowProvinceWide: false,
+                    reason: ''
+                };
+
+                await employee.save();
+
+                return res.json({
+                    success: true,
+                    message: 'تم إنهاء إيفاد الموظف',
+                    delegation: employee.delegation
+                });
+            }
+
+            const from =
+                new Date(req.body.from);
+
+            const to =
+                new Date(req.body.to);
+
+            if (
+                Number.isNaN(from.getTime()) ||
+                Number.isNaN(to.getTime())
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'تاريخ بداية ونهاية الإيفاد مطلوبان'
+                });
+            }
+
+            if (to <= from) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'نهاية الإيفاد يجب أن تكون بعد البداية'
+                });
+            }
+
+            const province =
+                String(
+                    req.body.province || ''
+                ).trim();
+
+            const locationName =
+                String(
+                    req.body.locationName || ''
+                ).trim();
+
+            const reason =
+                String(
+                    req.body.reason || ''
+                ).trim();
+
+            const allowProvinceWide =
+                req.body.allowProvinceWide === true ||
+                req.body.allowProvinceWide === 'true';
+
+            let latitude = null;
+            let longitude = null;
+
+            if (
+                req.body.latitude !== undefined &&
+                req.body.latitude !== ''
+            ) {
+                latitude =
+                    Number(req.body.latitude);
+            }
+
+            if (
+                req.body.longitude !== undefined &&
+                req.body.longitude !== ''
+            ) {
+                longitude =
+                    Number(req.body.longitude);
+            }
+
+            if (
+                latitude !== null &&
+                (
+                    !Number.isFinite(latitude) ||
+                    latitude < -90 ||
+                    latitude > 90
+                )
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'خط العرض غير صحيح'
+                });
+            }
+
+            if (
+                longitude !== null &&
+                (
+                    !Number.isFinite(longitude) ||
+                    longitude < -180 ||
+                    longitude > 180
+                )
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'خط الطول غير صحيح'
+                });
+            }
+
+            const radiusMeters =
+                Number(
+                    req.body.radiusMeters || 200
+                );
+
+            if (
+                !Number.isFinite(radiusMeters) ||
+                radiusMeters <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'نصف قطر الإيفاد غير صحيح'
+                });
+            }
+
+            employee.delegation = {
+                active: true,
+                from,
+                to,
+                province,
+                locationName,
+                latitude,
+                longitude,
+                radiusMeters,
+                allowProvinceWide,
+                reason
+            };
+
+            await employee.save();
+
+            return res.json({
+                success: true,
+                message: 'تم اعتماد إيفاد الموظف',
+                employeeId: String(employee._id),
+                employeeName: employee.name,
+                delegation: employee.delegation
+            });
+
+        } catch (err) {
+
+            return res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+    }
+);
+
 app.get('/api/admin/attendance', requireAdmin, async (req, res) => {
     try {
-        const employeeId = String(req.query.employeeId || '').trim();
-        const query = { companyId: req.session.companyId };
-        if (employeeId) query.employeeId = employeeId;
-        const attendance = await Attendance.find(query).sort({ timestamp: -1 }).limit(500).lean();
-        res.json({ success: true, attendance });
-    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+
+        const companyId =
+            req.session.companyId;
+
+        const employeeId =
+            String(
+                req.query.employeeId || ''
+            ).trim();
+
+        const type =
+            String(
+                req.query.type || ''
+            ).trim();
+
+        const status =
+            String(
+                req.query.status || ''
+            ).trim();
+
+        const query = {
+            companyId
+        };
+
+        if (employeeId) {
+            query.employeeId =
+                employeeId;
+        }
+
+        if (type) {
+            query.type =
+                type;
+        }
+
+        if (status === 'delegation') {
+            query.delegationApplied =
+                true;
+        }
+
+        if (status === 'normal') {
+            query.delegationApplied =
+                false;
+        }
+
+        if (
+            req.query.from ||
+            req.query.to
+        ) {
+
+            query.timestamp = {};
+
+            if (req.query.from) {
+
+                const from =
+                    new Date(req.query.from);
+
+                if (
+                    Number.isNaN(
+                        from.getTime()
+                    )
+                ) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'تاريخ البداية غير صحيح'
+                    });
+                }
+
+                from.setHours(
+                    0, 0, 0, 0
+                );
+
+                query.timestamp.$gte =
+                    from;
+            }
+
+            if (req.query.to) {
+
+                const to =
+                    new Date(req.query.to);
+
+                if (
+                    Number.isNaN(
+                        to.getTime()
+                    )
+                ) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'تاريخ النهاية غير صحيح'
+                    });
+                }
+
+                to.setHours(
+                    23, 59, 59, 999
+                );
+
+                query.timestamp.$lte =
+                    to;
+            }
+        }
+
+        const attendance =
+            await Attendance
+                .find(query)
+                .sort({
+                    timestamp: -1
+                })
+                .limit(2000)
+                .lean();
+
+        /*
+         * تعبئة أسماء السجلات القديمة
+         * التي سبقت إضافة employeeName.
+         */
+        const missingIds =
+            [...new Set(
+                attendance
+                    .filter(x=>!x.employeeName)
+                    .map(x=>x.employeeId)
+            )];
+
+        let nameMap = {};
+
+        if (missingIds.length) {
+
+            const employees =
+                await Employee.find({
+                    _id: {
+                        $in: missingIds
+                    },
+                    companyId
+                })
+                .select('_id name')
+                .lean();
+
+            nameMap =
+                Object.fromEntries(
+                    employees.map(
+                        e=>[
+                            String(e._id),
+                            e.name || ''
+                        ]
+                    )
+                );
+        }
+
+        const records =
+            attendance.map(row=>({
+                ...row,
+                employeeName:
+                    row.employeeName ||
+                    nameMap[row.employeeId] ||
+                    ''
+            }));
+
+        return res.json({
+            success: true,
+            total: records.length,
+            attendance: records
+        });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
 });
 
 app.get('/api/employee/payroll', async (req, res) => {
@@ -4879,6 +6469,231 @@ app.delete('/api/admin/loans/:id', requireAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+
+
+/*
+=========================================================
+  DAILY WORKERS / REPLACEMENTS
+=========================================================
+*/
+
+
+app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
+    try {
+        const companyId = req.session.companyId;
+
+        const workerName =
+            String(req.body.workerName || '').trim();
+
+        const specialty =
+            String(req.body.specialty || '').trim();
+
+        const workplace =
+            String(req.body.workplace || '').trim();
+
+        const branch =
+            String(req.body.branch || '').trim();
+
+        const replacementForEmployeeId =
+            String(req.body.replacementForEmployeeId || '').trim();
+
+        const dailyRate =
+            Number(req.body.dailyRate ?? req.body.dailyWage ?? 0);
+
+        const workDate =
+            req.body.workDate
+                ? new Date(req.body.workDate)
+                : new Date();
+
+        if (!workerName) {
+            return res.status(400).json({
+                success: false,
+                message: 'اسم الأجير اليومي مطلوب'
+            });
+        }
+
+        if (
+            !Number.isFinite(dailyRate) ||
+            dailyRate <= 0
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'الأجر اليومي يجب أن يكون أكبر من صفر'
+            });
+        }
+
+        if (Number.isNaN(workDate.getTime())) {
+            return res.status(400).json({
+                success: false,
+                message: 'تاريخ العمل غير صحيح'
+            });
+        }
+
+        let replacementForEmployeeName = '';
+
+        if (replacementForEmployeeId) {
+
+            const employee =
+                await Employee.findOne({
+                    _id: replacementForEmployeeId,
+                    companyId
+                }).lean();
+
+            if (!employee) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'الموظف الأصلي غير موجود'
+                });
+            }
+
+            replacementForEmployeeName =
+                employee.name || '';
+
+            const dayStart =
+                new Date(workDate);
+
+            dayStart.setHours(0, 0, 0, 0);
+
+            const dayEnd =
+                new Date(workDate);
+
+            dayEnd.setHours(23, 59, 59, 999);
+
+            const duplicate =
+                await DailyWorkerRecord.findOne({
+                    companyId,
+                    replacementForEmployeeId,
+                    workDate: {
+                        $gte: dayStart,
+                        $lte: dayEnd
+                    }
+                }).lean();
+
+            if (duplicate) {
+                return res.status(409).json({
+                    success: false,
+                    code: 'DUPLICATE_REPLACEMENT',
+                    message:
+                        'يوجد بديل مسجل لهذا الموظف في هذا اليوم مسبقاً'
+                });
+            }
+        }
+
+        const record =
+            await new DailyWorkerRecord({
+                companyId,
+                workerName,
+                specialty,
+                workplace,
+                branch,
+                dailyRate,
+                workDate,
+                isReplacement:
+                    Boolean(replacementForEmployeeId),
+
+                replacementForEmployeeId:
+                    replacementForEmployeeId || '',
+                replacementForEmployeeName
+            }).save();
+
+        return res.status(201).json({
+            success: true,
+            message:
+                replacementForEmployeeId
+                    ? 'تم تسجيل البديل بنجاح'
+                    : 'تم تسجيل الأجير اليومي بنجاح',
+            record
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+app.get('/api/admin/daily-workers', requireAdmin, async (req, res) => {
+    try {
+        const query = {
+            companyId: req.session.companyId
+        };
+
+        const search = String(req.query.search || '').trim();
+        const branch = String(req.query.branch || '').trim();
+        const employeeId = String(req.query.employeeId || '').trim();
+
+        if (branch) {
+            query.branch = branch;
+        }
+
+        if (employeeId) {
+            query.replacementForEmployeeId = employeeId;
+        }
+
+        if (req.query.from || req.query.to) {
+            query.workDate = {};
+
+            if (req.query.from) {
+                const from = new Date(req.query.from);
+
+                if (Number.isNaN(from.getTime())) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'تاريخ البداية غير صحيح'
+                    });
+                }
+
+                from.setHours(0, 0, 0, 0);
+                query.workDate.$gte = from;
+            }
+
+            if (req.query.to) {
+                const to = new Date(req.query.to);
+
+                if (Number.isNaN(to.getTime())) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'تاريخ النهاية غير صحيح'
+                    });
+                }
+
+                to.setHours(23, 59, 59, 999);
+                query.workDate.$lte = to;
+            }
+        }
+
+        if (search) {
+            const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(escaped, 'i');
+
+            query.$or = [
+                { workerName: regex },
+                { specialty: regex },
+                { workplace: regex },
+                { replacementForEmployeeName: regex }
+            ];
+        }
+
+        const records = await DailyWorkerRecord
+            .find(query)
+            .sort({ workDate: -1, createdAt: -1 })
+            .limit(1000)
+            .lean();
+
+        return res.json({
+            success: true,
+            total: records.length,
+            records
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
 
 /*
 =========================================================
@@ -5478,30 +7293,7 @@ app.post(
             }
 
             /*
-             * تحديد الشفت المرتبط بالموظف.
-             */
-            const shift =
-                await Shift.findOne({
-                    companyId: employee.companyId,
-                    employeeIds: String(employee._id)
-                }).lean();
-
-            if (!shift) {
-
-                return res.status(403).json({
-
-                    success: false,
-
-                    message:
-                        'لا يوجد شفت مسجل لهذا الموظف'
-
-                });
-
-            }
-
-            /*
              * وقت العملية المعتمد.
-             * نستخدم وقت السيرفر عند عدم وجود وقت صالح من التطبيق.
              */
             let attendanceTime =
                 req.body.timestamp
@@ -5517,6 +7309,58 @@ app.post(
             }
 
             /*
+             * الإيفاد يكون فعّالاً فقط داخل الفترة المحددة.
+             */
+            const delegation =
+                employee.delegation || {};
+
+            const delegationFrom =
+                delegation.from
+                    ? new Date(delegation.from)
+                    : null;
+
+            const delegationTo =
+                delegation.to
+                    ? new Date(delegation.to)
+                    : null;
+
+            const activeDelegation =
+                delegation.active === true &&
+                delegationFrom &&
+                delegationTo &&
+                !Number.isNaN(delegationFrom.getTime()) &&
+                !Number.isNaN(delegationTo.getTime()) &&
+                attendanceTime >= delegationFrom &&
+                attendanceTime <= delegationTo;
+
+            /*
+             * تحديد الشفت المرتبط بالموظف.
+             */
+            const shift =
+                await Shift.findOne({
+                    companyId: employee.companyId,
+                    employeeIds: String(employee._id)
+                }).lean();
+
+            /*
+             * الموظف العادي يجب أن يمتلك شفتاً.
+             * الموظف الموفد يمكنه التسجيل أثناء فترة الإيفاد
+             * حتى لو لم يكن وقت الشفت الحالي مناسباً.
+             */
+            if (!shift && !activeDelegation) {
+
+                return res.status(403).json({
+
+                    success: false,
+
+                    message:
+                        'لا يوجد شفت مسجل لهذا الموظف'
+
+                });
+
+            }
+
+            /*
              * التحقق من وقت الشفت.
              * attendance = حضور
              * exit / departure = انصراف
@@ -5525,140 +7369,263 @@ app.post(
                 type === 'attendance';
 
             const shiftStart =
-                isCheckIn
-                    ? shift.attendanceStart
-                    : shift.departureStart;
+                shift
+                    ? (
+                        isCheckIn
+                            ? shift.attendanceStart
+                            : shift.departureStart
+                    )
+                    : '';
 
             const shiftEnd =
-                isCheckIn
-                    ? shift.attendanceEnd
-                    : shift.departureEnd;
-
-            if (
-                !shiftStart ||
-                !shiftEnd
-            ) {
-
-                return res.status(403).json({
-
-                    success: false,
-
-                    message:
+                shift
+                    ? (
                         isCheckIn
-                            ? 'أوقات الحضور غير محددة لهذا الشفت'
-                            : 'أوقات الانصراف غير محددة لهذا الشفت'
+                            ? shift.attendanceEnd
+                            : shift.departureEnd
+                    )
+                    : '';
 
-                });
+            if (!activeDelegation) {
 
-            }
-
-            if (
-                !isWithinShiftWindow(
-                    attendanceTime,
-                    shiftStart,
-                    shiftEnd
-                )
-            ) {
-
-                return res.status(403).json({
-
-                    success: false,
-
-                    message:
-                        `البصمة خارج وقت ${isCheckIn ? 'الحضور' : 'الانصراف'} للشفت ${shift.name} (${shiftStart} - ${shiftEnd})`
-
-                });
-
-            }
-
-            /*
-             * المواقع المسموح بها:
-             * 1- الموقع الرئيسي للشركة.
-             * 2- أي موقع إضافي مسجل في approvedLocations.
-             *
-             * وبذلك يستطيع الموظف التسجيل في أي موقع
-             * مسجل للشركة عندما يكون لديه واجب هناك.
-             */
-            const allowedLocations = [];
-
-            if (
-                Number.isFinite(company.latitude) &&
-                Number.isFinite(company.longitude)
-            ) {
-
-                allowedLocations.push({
-
-                    name:
-                        company.name || 'الموقع الرئيسي',
-
-                    latitude:
-                        Number(company.latitude),
-
-                    longitude:
-                        Number(company.longitude),
-
-                    radiusMeters:
-                        Number(company.geofenceRadiusMeters) > 0
-                            ? Number(company.geofenceRadiusMeters)
-                            : 200
-
-                });
-
-            }
-
-            if (
-                Array.isArray(
-                    company.approvedLocations
-                )
-            ) {
-
-                for (
-                    const approved
-                    of company.approvedLocations
+                if (
+                    !shiftStart ||
+                    !shiftEnd
                 ) {
 
-                    const approvedLat =
-                        Number(approved.latitude);
+                    return res.status(403).json({
 
-                    const approvedLng =
-                        Number(approved.longitude);
+                        success: false,
 
-                    if (
-                        Number.isFinite(approvedLat) &&
-                        Number.isFinite(approvedLng)
-                    ) {
+                        message:
+                            isCheckIn
+                                ? 'أوقات الحضور غير محددة لهذا الشفت'
+                                : 'أوقات الانصراف غير محددة لهذا الشفت'
 
-                        allowedLocations.push({
+                    });
 
-                            name:
-                                approved.name ||
-                                'موقع معتمد',
+                }
 
-                            latitude:
-                                approvedLat,
+                if (
+                    !isWithinShiftWindow(
+                        attendanceTime,
+                        shiftStart,
+                        shiftEnd
+                    )
+                ) {
 
-                            longitude:
-                                approvedLng,
+                    return res.status(403).json({
 
-                            radiusMeters:
-                                Number(approved.radiusMeters) > 0
-                                    ? Number(approved.radiusMeters)
-                                    : 200
+                        success: false,
 
-                        });
+                        message:
+                            `البصمة خارج وقت ${isCheckIn ? 'الحضور' : 'الانصراف'} للشفت ${shift.name} (${shiftStart} - ${shiftEnd})`
 
-                    }
+                    });
 
                 }
 
             }
 
+            /*
+             * التحقق من الموقع:
+             *
+             * الموظف العادي:
+             *   يجب أن يكون داخل أحد مواقع الشركة المعتمدة.
+             *
+             * الموظف الموفد:
+             *   يسمح له بالتسجيل خارج مواقع الشركة.
+             *   وإذا حدد المدير موقعاً جغرافياً للإيفاد
+             *   فيجب أن يكون داخل نطاق ذلك الموقع.
+             */
+            const allowedLocations = [];
+
             let matchedLocation = null;
             let nearestDistance = null;
 
-            if (
-                allowedLocations.length > 0
-            ) {
+            if (activeDelegation) {
+
+                const delegationLat =
+                    Number(delegation.latitude);
+
+                const delegationLng =
+                    Number(delegation.longitude);
+
+                const delegationRadius =
+                    Number(delegation.radiusMeters) > 0
+                        ? Number(delegation.radiusMeters)
+                        : 200;
+
+                /*
+                 * إذا حدد المدير إحداثيات للإيفاد،
+                 * نتحقق من وجود الموظف داخل نطاق الإيفاد.
+                 */
+                if (
+                    Number.isFinite(delegationLat) &&
+                    Number.isFinite(delegationLng)
+                ) {
+
+                    const delegationDistance =
+                        haversineMeters(
+                            latitude,
+                            longitude,
+                            delegationLat,
+                            delegationLng
+                        );
+
+                    if (
+                        delegationDistance >
+                        delegationRadius
+                    ) {
+
+                        return res.status(403).json({
+
+                            success: false,
+
+                            message:
+                                `فشل تسجيل البصمة: الموظف خارج موقع الإيفاد المحدد (${Math.round(delegationDistance)}م)`
+
+                        });
+
+                    }
+
+                    matchedLocation = {
+
+                        name:
+                            delegation.locationName ||
+                            delegation.province ||
+                            'موقع الإيفاد',
+
+                        latitude:
+                            delegationLat,
+
+                        longitude:
+                            delegationLng,
+
+                        radiusMeters:
+                            delegationRadius
+
+                    };
+
+                } else {
+
+                    /*
+                     * إيفاد بدون إحداثيات:
+                     * يسمح بالبصمة خارج مواقع الشركة
+                     * لأن المدير اعتمد الإيفاد مسبقاً.
+                     */
+                    matchedLocation = {
+
+                        name:
+                            delegation.locationName ||
+                            delegation.province ||
+                            'إيفاد خارجي',
+
+                        latitude,
+                        longitude,
+                        radiusMeters: 0
+
+                    };
+
+                }
+
+            } else {
+
+                /*
+                 * الموظف غير الموفد:
+                 * الموقع الرئيسي للشركة.
+                 */
+                if (
+                    Number.isFinite(company.latitude) &&
+                    Number.isFinite(company.longitude)
+                ) {
+
+                    allowedLocations.push({
+
+                        name:
+                            company.name ||
+                            'الموقع الرئيسي',
+
+                        latitude:
+                            Number(company.latitude),
+
+                        longitude:
+                            Number(company.longitude),
+
+                        radiusMeters:
+                            Number(company.geofenceRadiusMeters) > 0
+                                ? Number(company.geofenceRadiusMeters)
+                                : 200
+
+                    });
+
+                }
+
+                /*
+                 * المواقع والفروع الإضافية المعتمدة.
+                 */
+                if (
+                    Array.isArray(
+                        company.approvedLocations
+                    )
+                ) {
+
+                    for (
+                        const approved
+                        of company.approvedLocations
+                    ) {
+
+                        const approvedLat =
+                            Number(approved.latitude);
+
+                        const approvedLng =
+                            Number(approved.longitude);
+
+                        if (
+                            approved.active !== false &&
+                            Number.isFinite(approvedLat) &&
+                            Number.isFinite(approvedLng)
+                        ) {
+
+                            allowedLocations.push({
+
+                                name:
+                                    approved.name ||
+                                    'موقع معتمد',
+
+                                latitude:
+                                    approvedLat,
+
+                                longitude:
+                                    approvedLng,
+
+                                radiusMeters:
+                                    Number(approved.radiusMeters) > 0
+                                        ? Number(approved.radiusMeters)
+                                        : 200
+
+                            });
+
+                        }
+
+                    }
+
+                }
+
+                if (
+                    allowedLocations.length === 0
+                ) {
+
+                    return res.status(403).json({
+
+                        success: false,
+
+                        message:
+                            'لا توجد مواقع معتمدة للشركة لتسجيل البصمة'
+
+                    });
+
+                }
 
                 for (
                     const allowed
@@ -5677,7 +7644,8 @@ app.post(
                         nearestDistance === null ||
                         distance < nearestDistance
                     ) {
-                        nearestDistance = distance;
+                        nearestDistance =
+                            distance;
                     }
 
                     if (
@@ -5707,14 +7675,46 @@ app.post(
 
                 }
 
-            } else {
+            }
 
-                return res.status(403).json({
+            /*
+             * منع تكرار نفس عملية البصمة خلال دقيقتين.
+             * يحمي من الضغط المتكرر أو إعادة إرسال الطلب.
+             */
+            const duplicateSince =
+                new Date(
+                    attendanceTime.getTime() -
+                    (2 * 60 * 1000)
+                );
+
+            const duplicateAttendance =
+                await Attendance.findOne({
+
+                    companyId:
+                        employee.companyId,
+
+                    employeeId:
+                        String(employee._id),
+
+                    type,
+
+                    timestamp: {
+                        $gte: duplicateSince,
+                        $lte: attendanceTime
+                    }
+
+                }).lean();
+
+            if (duplicateAttendance) {
+
+                return res.status(409).json({
 
                     success: false,
 
                     message:
-                        'لا توجد مواقع معتمدة للشركة لتسجيل البصمة'
+                        isCheckIn
+                            ? 'تم تسجيل حضور الموظف مسبقاً قبل قليل'
+                            : 'تم تسجيل انصراف الموظف مسبقاً قبل قليل'
 
                 });
 
@@ -5728,8 +7728,44 @@ app.post(
                             employee._id
                         ),
 
+                    employeeName:
+                        employee.name || '',
+
                     companyId:
                         employee.companyId,
+
+                    attendanceStatus:
+                        activeDelegation
+                            ? 'delegation'
+                            : 'normal',
+
+                    delegationApplied:
+                        activeDelegation,
+
+                    delegationReason:
+                        activeDelegation
+                            ? String(delegation.reason || '')
+                            : '',
+
+                    delegationProvince:
+                        activeDelegation
+                            ? String(delegation.province || '')
+                            : '',
+
+                    delegationLocationName:
+                        activeDelegation
+                            ? String(delegation.locationName || '')
+                            : '',
+
+                    locationStatus:
+                        activeDelegation
+                            ? 'delegation'
+                            : 'approved',
+
+                    timeStatus:
+                        activeDelegation
+                            ? 'delegation'
+                            : 'within-shift',
 
                     deviceId,
 
@@ -5739,12 +7775,14 @@ app.post(
                         'device-biometric',
 
                     shiftId:
-                        String(
-                            shift._id
-                        ),
+                        shift
+                            ? String(shift._id)
+                            : '',
 
                     shiftName:
-                        shift.name || '',
+                        shift
+                            ? (shift.name || '')
+                            : '',
 
                     workplace:
                         matchedLocation
