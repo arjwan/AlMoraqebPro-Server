@@ -192,6 +192,14 @@ const companySchema = new mongoose.Schema({
         default: 200
     },
 
+    allowedLocations: [{
+        name: { type: String, default: '' },
+        latitude: Number,
+        longitude: Number,
+        radius: { type: Number, default: 200 },
+        employeeIds: { type: [String], default: [] }
+    }],
+
     /*
      * آخر نشاط حقيقي للشركة.
      */
@@ -1677,7 +1685,9 @@ app.patch(
 
                 'longitude',
 
-                'geofenceRadiusMeters'
+                'geofenceRadiusMeters',
+
+                'allowedLocations'
 
             ];
 
@@ -2294,6 +2304,11 @@ app.post(
                                 req.body.geofenceRadiusMeters
                             )
                             : 200,
+
+                    allowedLocations:
+                        Array.isArray(req.body.allowedLocations)
+                            ? req.body.allowedLocations
+                            : [],
 
                     lastSeenAt:
                         null
@@ -5243,6 +5258,15 @@ app.post(
                     'attendance'
                 ).trim();
 
+            if (!['attendance', 'exit', 'departure'].includes(type)) {
+                return res.status(400).json({ success: false, message: 'نوع عملية الحضور غير صحيح' });
+            }
+
+            const operationTime = req.body.timestamp ? new Date(req.body.timestamp) : new Date();
+            if (Number.isNaN(operationTime.getTime())) {
+                return res.status(400).json({ success: false, message: 'وقت عملية الحضور غير صحيح' });
+            }
+
             const latitude =
                 Number(
                     req.body.latitude
@@ -5420,53 +5444,67 @@ app.post(
 
             }
 
-            if (
-                Number.isFinite(
-                    company.latitude
-                ) &&
-                Number.isFinite(
-                    company.longitude
-                )
-            ) {
+            const assignedShifts = await Shift.find({
+                companyId: employee.companyId,
+                employeeIds: String(employee._id)
+            }).lean();
 
-                const radius =
-                    Number(
-                        company.geofenceRadiusMeters
-                    ) > 0
-                        ? Number(
-                            company.geofenceRadiusMeters
-                        )
-                        : 200;
+            if (assignedShifts.length > 0) {
+                const timeParts = new Intl.DateTimeFormat('en-GB', {
+                    timeZone: process.env.ATTENDANCE_TIMEZONE || 'Asia/Baghdad',
+                    hour: '2-digit', minute: '2-digit', hour12: false
+                }).formatToParts(operationTime);
+                const currentMinutes = Number(timeParts.find(part => part.type === 'hour').value) * 60 +
+                    Number(timeParts.find(part => part.type === 'minute').value);
+                const isAttendance = type === 'attendance';
+                const withinShift = assignedShifts.some(shift => {
+                    const start = isAttendance ? shift.attendanceStart : shift.departureStart;
+                    const end = isAttendance ? shift.attendanceEnd : shift.departureEnd;
+                    if (!start || !end) return true;
+                    const [startHour, startMinute] = start.split(':').map(Number);
+                    const [endHour, endMinute] = end.split(':').map(Number);
+                    const startMinutes = startHour * 60 + startMinute;
+                    const endMinutes = endHour * 60 + endMinute;
+                    return startMinutes <= endMinutes
+                        ? currentMinutes >= startMinutes && currentMinutes <= endMinutes
+                        : currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+                });
 
-                const distance =
-                    haversineMeters(
-
-                        latitude,
-
-                        longitude,
-
-                        company.latitude,
-
-                        company.longitude
-
-                    );
-
-                if (
-                    distance >
-                    radius
-                ) {
-
+                if (!withinShift) {
                     return res.status(403).json({
-
                         success: false,
-
-                        message:
-                            `الموظف خارج نطاق الشركة المسموح (${Math.round(distance)}م من الموقع المعتمد)`
-
+                        message: isAttendance ? 'التسجيل خارج وقت الحضور المحدد للشفت' : 'التسجيل خارج وقت الانصراف المحدد للشفت'
                     });
-
                 }
+            }
 
+            const permittedLocations = (company.allowedLocations || [])
+                .filter(location => !location.employeeIds.length || location.employeeIds.includes(String(employee._id)))
+                .filter(location => Number.isFinite(location.latitude) && Number.isFinite(location.longitude));
+
+            if (Number.isFinite(company.latitude) && Number.isFinite(company.longitude)) {
+                permittedLocations.push({
+                    latitude: company.latitude,
+                    longitude: company.longitude,
+                    radius: Number(company.geofenceRadiusMeters) > 0 ? Number(company.geofenceRadiusMeters) : 200
+                });
+            }
+
+            if (permittedLocations.length > 0) {
+                const distances = permittedLocations.map(location => ({
+                    distance: haversineMeters(latitude, longitude, location.latitude, location.longitude),
+                    radius: Number(location.radius || location.geofenceRadiusMeters) > 0
+                        ? Number(location.radius || location.geofenceRadiusMeters)
+                        : 200
+                }));
+
+                if (!distances.some(location => location.distance <= location.radius)) {
+                    const nearestDistance = Math.min(...distances.map(location => location.distance));
+                    return res.status(403).json({
+                        success: false,
+                        message: `الموظف خارج نطاق المواقع المصرح بها (${Math.round(nearestDistance)}م من أقرب موقع معتمد)`
+                    });
+                }
             }
 
             const attendance =
@@ -5491,12 +5529,7 @@ app.post(
 
                     longitude,
 
-                    timestamp:
-                        req.body.timestamp
-                            ? new Date(
-                                req.body.timestamp
-                            )
-                            : new Date(),
+                    timestamp: operationTime,
 
                     type
 

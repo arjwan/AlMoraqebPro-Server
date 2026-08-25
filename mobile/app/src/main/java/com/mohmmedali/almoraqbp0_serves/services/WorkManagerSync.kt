@@ -15,8 +15,7 @@ class SyncWorker(
         return try {
             val db = AppDatabase.getDatabase(applicationContext)
             val syncManager = SyncManager(db, RetrofitClient.apiService)
-            syncManager.syncPendingAttendance()
-            Result.success()
+            if (syncManager.syncPendingAttendance()) Result.success() else Result.retry()
         } catch (e: Exception) {
             Result.retry()
         }

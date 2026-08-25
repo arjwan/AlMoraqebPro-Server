@@ -15,6 +15,8 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.work.ExistingWorkPolicy
+import androidx.work.Constraints
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.mohmmedali.almoraqebpro.data.AppDatabase
@@ -33,6 +35,8 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
+import org.json.JSONObject
 
 class DashboardActivity : AppCompatActivity() {
 
@@ -101,6 +105,7 @@ class DashboardActivity : AppCompatActivity() {
         binding.btnSendLocation.setOnClickListener { sendCurrentLocation() }
 
         checkServerStatus()
+        scheduleSync()
         requestPermissionsIfNeeded()
 
         // حركة ظهور خفيفة للبطاقات (روح التطبيق القديم)
@@ -206,16 +211,26 @@ class DashboardActivity : AppCompatActivity() {
         val deviceId = prefs.getString("deviceId", "")
             ?: Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
 
-        val timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date())
+        val timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }.format(Date())
         var challengeId = "offline-${System.currentTimeMillis()}"
         var fingerprintToken = "biometric-verified-${System.currentTimeMillis()}"
 
         try {
             // محاولة جلب تحدي حقيقي من السيرفر
             val challengeRes = RetrofitClient.apiService.getChallenge(employeeId, deviceId)
-            if (challengeRes.isSuccessful && challengeRes.body()?.challengeId != null) {
-                challengeId = challengeRes.body()!!.challengeId!!
+            if (!challengeRes.isSuccessful || challengeRes.body()?.success != true || challengeRes.body()?.challengeId.isNullOrBlank()) {
+                if (challengeRes.code() >= 500 || challengeRes.code() == 429) {
+                    savePendingAttendance(employeeId, deviceId, challengeId, fingerprintToken, location, type, timestamp)
+                    scheduleSync()
+                    showAttendanceMessage("تعذر الاتصال بالخادم، حُفظت العملية للمزامنة لاحقًا")
+                } else {
+                    showAttendanceMessage(readErrorMessage(challengeRes.errorBody()?.string(), "تعذر التحقق من البصمة والجهاز"))
+                }
+                return
             }
+            challengeId = challengeRes.body()!!.challengeId!!
 
             val request = AttendanceRequest(
                 employeeId = employeeId,
@@ -238,13 +253,12 @@ class DashboardActivity : AppCompatActivity() {
                     ).show()
                 }
             } else {
-                savePendingAttendance(employeeId, deviceId, challengeId, fingerprintToken, location, type, timestamp)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@DashboardActivity,
-                        "⚠️ فشل الإرسال، تم حفظ السجل محليًا",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                if (response.code() >= 500 || response.code() == 429) {
+                    savePendingAttendance(employeeId, deviceId, challengeId, fingerprintToken, location, type, timestamp)
+                    scheduleSync()
+                    showAttendanceMessage("تعذر التسجيل مؤقتًا، حُفظت العملية للمزامنة لاحقًا")
+                } else {
+                    showAttendanceMessage(readErrorMessage(response.errorBody()?.string(), "رفض الخادم تسجيل العملية"))
                 }
             }
         } catch (e: Exception) {
@@ -257,6 +271,20 @@ class DashboardActivity : AppCompatActivity() {
                 ).show()
             }
             scheduleSync()
+        }
+    }
+
+    private suspend fun showAttendanceMessage(message: String) {
+        withContext(Dispatchers.Main) {
+            Toast.makeText(this@DashboardActivity, message, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun readErrorMessage(body: String?, fallback: String): String {
+        return try {
+            if (body.isNullOrBlank()) fallback else JSONObject(body).optString("message", fallback)
+        } catch (_: Exception) {
+            fallback
         }
     }
 
@@ -345,10 +373,15 @@ class DashboardActivity : AppCompatActivity() {
     }
 
     private fun scheduleSync() {
-        val work = OneTimeWorkRequestBuilder<SyncWorker>().build()
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+        val work = OneTimeWorkRequestBuilder<SyncWorker>()
+            .setConstraints(constraints)
+            .build()
         WorkManager.getInstance(this).enqueueUniqueWork(
             "sync_attendance",
-            ExistingWorkPolicy.REPLACE,
+            ExistingWorkPolicy.KEEP,
             work
         )
     }

@@ -164,16 +164,59 @@ async function waitForServer(url, retries, delay) {
             });
 
             // phoneNumber يربط موظفاً موجوداً بالجهاز دون إنشاء موظف جديد
+            const linkedDeviceId = 'new-device-' + Date.now();
             const phoneLink = await (await fetch(BASE + '/api/employee/request', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     companyId, companyName: 'شركة الاختبار', name: approvedEmployee.name,
                     phoneNumber: '07700000000', jobTitle: 'محاسب', workLocation: 'الفرع الرئيسي',
                     salary: 1500, shift: 'صباحي', workHours: 8, wageType: 'شهري', socialSecurity: 'مسجل',
-                    location: '31.000,45.000', deviceId: 'new-device-' + Date.now()
+                    location: '31.000,45.000', deviceId: linkedDeviceId
                 })
             })).json();
             check('existing employee linked by phoneNumber (linked=true)', phoneLink.success === true && phoneLink.linked === true);
+
+            const locationUpdate = await (await fetch(BASE + '/api/developer/companies/' + companyId, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + login.token },
+                body: JSON.stringify({
+                    latitude: 33.3152, longitude: 44.3661, geofenceRadiusMeters: 200,
+                    allowedLocations: [{ name: 'الفرع الثاني', latitude: 31, longitude: 45, radius: 250, employeeIds: [approvedEmployee._id] }]
+                })
+            })).json();
+            check('multiple authorized company locations saved', locationUpdate.success === true);
+
+            async function submitAttendance(latitude, longitude, timestamp) {
+                const challenge = await (await fetch(BASE + '/api/attendance/challenge?employeeId=' +
+                    encodeURIComponent(approvedEmployee._id) + '&deviceId=' + encodeURIComponent(linkedDeviceId))).json();
+                const response = await fetch(BASE + '/api/attendance', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employeeId: approvedEmployee._id, deviceId: linkedDeviceId,
+                        challengeId: challenge.challengeId, fingerprintToken: 'biometric-test',
+                        latitude, longitude, type: 'attendance', timestamp })
+                });
+                return { status: response.status, body: await response.json() };
+            }
+
+            const secondLocation = await submitAttendance(31, 45, new Date().toISOString());
+            check('attendance accepted at secondary authorized location', secondLocation.status === 201 && secondLocation.body.success === true);
+
+            const invalidLocation = await submitAttendance(30, 46, new Date().toISOString());
+            check('attendance rejected outside every authorized location', invalidLocation.status === 403 && invalidLocation.body.success === false);
+
+            const shift = await (await fetch(BASE + '/api/admin/shifts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ name: 'صباحي', branch: 'الفرع الثاني', employeeIds: [approvedEmployee._id],
+                    attendanceStart: '08:00', attendanceEnd: '09:00', departureStart: '16:00', departureEnd: '17:00' })
+            })).json();
+            check('employee attendance shift created', shift.success === true);
+
+            const outsideShift = await submitAttendance(31, 45, '2026-08-25T09:00:00.000Z');
+            check('attendance rejected outside assigned shift window', outsideShift.status === 403 && outsideShift.body.success === false);
+
+            const withinShift = await submitAttendance(31, 45, '2026-08-25T05:30:00.000Z');
+            check('attendance accepted within assigned shift window', withinShift.status === 201 && withinShift.body.success === true);
 
             const afterLink = await (await fetch(BASE + '/api/employees?companyId=' + encodeURIComponent(companyId), {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }

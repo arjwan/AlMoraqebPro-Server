@@ -9,27 +9,37 @@ class SyncManager(
     private val api: ApiService
 ) {
 
-    suspend fun syncPendingAttendance() {
+    suspend fun syncPendingAttendance(): Boolean {
         val pending = db.attendanceDao().getUnsynced()
         for (record in pending) {
-            val request = AttendanceRequest(
+            try {
+                val challenge = api.getChallenge(record.employeeId, record.deviceId)
+                val challengeId = challenge.body()?.challengeId
+                if (!challenge.isSuccessful || challenge.body()?.success != true || challengeId.isNullOrBlank()) {
+                    return false
+                }
+                val request = AttendanceRequest(
                 employeeId = record.employeeId,
                 deviceId = record.deviceId,
-                challengeId = record.challengeId,
+                challengeId = challengeId,
                 fingerprintToken = record.fingerprintToken,
                 latitude = record.latitude,
                 longitude = record.longitude,
                 type = record.type,
                 timestamp = record.timestamp
-            )
-            try {
+                )
                 val response = api.sendAttendance(request)
                 if (response.isSuccessful && response.body()?.success == true) {
                     db.attendanceDao().markSynced(record.id)
+                } else if (response.code() >= 500 || response.code() == 429) {
+                    return false
+                } else {
+                    db.attendanceDao().markSynced(record.id)
                 }
             } catch (e: Exception) {
-                break
+                return false
             }
         }
+        return true
     }
 }
