@@ -192,12 +192,11 @@ const companySchema = new mongoose.Schema({
         default: 200
     },
 
-    allowedLocations: [{
+    approvedLocations: [{
         name: { type: String, default: '' },
         latitude: Number,
         longitude: Number,
-        radius: { type: Number, default: 200 },
-        employeeIds: { type: [String], default: [] }
+        radiusMeters: { type: Number, default: 200 }
     }],
 
     /*
@@ -334,8 +333,6 @@ const employeeSchema = new mongoose.Schema({
 
     workplace: String,
 
-    shift: { type: String, default: '' },
-
     username: {
         type: String,
         default: ''
@@ -428,6 +425,10 @@ const attendanceSchema = new mongoose.Schema({
         default: 'device-biometric'
     },
 
+    shiftId: { type: String, default: '', index: true },
+    shiftName: { type: String, default: '' },
+    workplace: { type: String, default: '' },
+
     latitude: Number,
 
     longitude: Number,
@@ -480,8 +481,7 @@ const serviceRequestSchema = new mongoose.Schema({
         type: String,
         enum: [
             'leave',
-            'loan',
-            'ambulance'
+            'loan'
         ],
         required: true
     },
@@ -623,6 +623,9 @@ const salaryRecordSchema = new mongoose.Schema({
     bonuses: { type: Number, default: 0 },
     totalDeductions: { type: Number, default: 0 },
     netSalary: { type: Number, default: 0 },
+    attendanceDays: { type: Number, default: 0 },
+    attendanceCount: { type: Number, default: 0 },
+    lastAttendanceAt: Date,
     createdAt: { type: Date, default: Date.now }
 });
 const SalaryRecord = mongoose.model('SalaryRecord', salaryRecordSchema);
@@ -1688,9 +1691,7 @@ app.patch(
 
                 'longitude',
 
-                'geofenceRadiusMeters',
-
-                'allowedLocations'
+                'geofenceRadiusMeters'
 
             ];
 
@@ -2307,11 +2308,6 @@ app.post(
                                 req.body.geofenceRadiusMeters
                             )
                             : 200,
-
-                    allowedLocations:
-                        Array.isArray(req.body.allowedLocations)
-                            ? req.body.allowedLocations
-                            : [],
 
                     lastSeenAt:
                         null
@@ -2959,9 +2955,6 @@ app.post(
                     workplace:
                         request.workLocation,
 
-                    shift:
-                        request.shift || '',
-
                     username:
                         '',
 
@@ -3505,7 +3498,6 @@ app.post(
                     : undefined,
                 specialty: req.body.specialty || req.body.jobTitle || '',
                 workplace: req.body.workplace || req.body.workLocation || '',
-                shift: String(req.body.shift || '').trim(),
                 username,
                 password,
                 credentialsStatus: 'active',
@@ -3690,7 +3682,6 @@ app.put(
                 : employee.salary;
             employee.specialty = req.body.specialty ?? employee.specialty;
             employee.workplace = req.body.workplace ?? req.body.workLocation ?? employee.workplace;
-            employee.shift = req.body.shift !== undefined ? String(req.body.shift || '').trim() : employee.shift;
             employee.location = req.body.location ?? employee.location;
             employee.phoneNumber = phoneNumber;
             employee.username = username;
@@ -4196,8 +4187,7 @@ app.post(
                 !deviceId ||
                 ![
                     'leave',
-                    'loan',
-                    'ambulance'
+                    'loan'
                 ].includes(type)
             ) {
 
@@ -4743,6 +4733,30 @@ app.delete('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
   SALARY RECORDS API (جديد)
 =========================================================
 */
+app.get('/api/admin/attendance', requireAdmin, async (req, res) => {
+    try {
+        const employeeId = String(req.query.employeeId || '').trim();
+        const query = { companyId: req.session.companyId };
+        if (employeeId) query.employeeId = employeeId;
+        const attendance = await Attendance.find(query).sort({ timestamp: -1 }).limit(500).lean();
+        res.json({ success: true, attendance });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.get('/api/employee/payroll', async (req, res) => {
+    try {
+        const employeeId = String(req.query.employeeId || '').trim();
+        const deviceId = String(req.query.deviceId || '').trim();
+        if (!employeeId || !deviceId) return res.status(400).json({ success: false, message: 'بيانات الموظف والجهاز مطلوبة' });
+        const employee = await Employee.findById(employeeId).lean();
+        if (!employee || employee.deviceId !== deviceId || employee.credentialsStatus !== 'active') {
+            return res.status(403).json({ success: false, message: 'الجهاز أو حساب الموظف غير معتمد' });
+        }
+        const salary = await SalaryRecord.findOne({ companyId: employee.companyId, employeeId }).lean();
+        res.json({ success: true, salary: salary || null });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 app.get('/api/admin/salaries', requireAdmin, async (req, res) => {
     try {
         const salaries = await SalaryRecord.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
@@ -5182,6 +5196,25 @@ function consumeAttendanceChallenge(challengeId, employeeId, deviceId) {
     return { ok: true };
 }
 
+function shiftTimeInMinutes(value) {
+    const match = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(value || '').trim());
+    return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
+
+function isWithinShiftWindow(timestamp, start, end) {
+    const startMinutes = shiftTimeInMinutes(start);
+    const endMinutes = shiftTimeInMinutes(end);
+    if (startMinutes === null || endMinutes === null) return false;
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Baghdad', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(timestamp);
+    const minutes = Number(parts.find(part => part.type === 'hour').value) * 60 +
+        Number(parts.find(part => part.type === 'minute').value);
+    return startMinutes <= endMinutes
+        ? minutes >= startMinutes && minutes <= endMinutes
+        : minutes >= startMinutes || minutes <= endMinutes;
+}
+
 app.get(
     '/api/attendance/challenge',
     async (req, res) => {
@@ -5266,15 +5299,6 @@ app.post(
                     req.body.type ||
                     'attendance'
                 ).trim();
-
-            if (!['attendance', 'exit', 'departure'].includes(type)) {
-                return res.status(400).json({ success: false, message: 'نوع عملية الحضور غير صحيح' });
-            }
-
-            const operationTime = req.body.timestamp ? new Date(req.body.timestamp) : new Date();
-            if (Number.isNaN(operationTime.getTime())) {
-                return res.status(400).json({ success: false, message: 'وقت عملية الحضور غير صحيح' });
-            }
 
             const latitude =
                 Number(
@@ -5453,77 +5477,53 @@ app.post(
 
             }
 
-            const shiftConditions = [{ employeeIds: String(employee._id) }];
-            if (employee.shift) shiftConditions.push({ name: employee.shift });
-            if (employee.workplace) shiftConditions.push({ branch: employee.workplace });
-            const assignedShifts = await Shift.find({
-                companyId: employee.companyId,
-                $or: shiftConditions
-            }).lean();
+            if (
+                Number.isFinite(
+                    company.latitude
+                ) &&
+                Number.isFinite(
+                    company.longitude
+                )
+            ) {
 
-            if (assignedShifts.length === 0 && await Shift.exists({ companyId: employee.companyId })) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'لم يتم تحديد شفت معتمد لهذا الموظف، راجع مدير الشركة'
-                });
-            }
+                const radius =
+                    Number(
+                        company.geofenceRadiusMeters
+                    ) > 0
+                        ? Number(
+                            company.geofenceRadiusMeters
+                        )
+                        : 200;
 
-            if (assignedShifts.length > 0) {
-                const timeParts = new Intl.DateTimeFormat('en-GB', {
-                    timeZone: process.env.ATTENDANCE_TIMEZONE || 'Asia/Baghdad',
-                    hour: '2-digit', minute: '2-digit', hour12: false
-                }).formatToParts(operationTime);
-                const currentMinutes = Number(timeParts.find(part => part.type === 'hour').value) * 60 +
-                    Number(timeParts.find(part => part.type === 'minute').value);
-                const isAttendance = type === 'attendance';
-                const withinShift = assignedShifts.some(shift => {
-                    const start = isAttendance ? shift.attendanceStart : shift.departureStart;
-                    const end = isAttendance ? shift.attendanceEnd : shift.departureEnd;
-                    if (!start || !end) return true;
-                    const [startHour, startMinute] = start.split(':').map(Number);
-                    const [endHour, endMinute] = end.split(':').map(Number);
-                    const startMinutes = startHour * 60 + startMinute;
-                    const endMinutes = endHour * 60 + endMinute;
-                    return startMinutes <= endMinutes
-                        ? currentMinutes >= startMinutes && currentMinutes <= endMinutes
-                        : currentMinutes >= startMinutes || currentMinutes <= endMinutes;
-                });
+                const distance =
+                    haversineMeters(
 
-                if (!withinShift) {
+                        latitude,
+
+                        longitude,
+
+                        company.latitude,
+
+                        company.longitude
+
+                    );
+
+                if (
+                    distance >
+                    radius
+                ) {
+
                     return res.status(403).json({
+
                         success: false,
-                        message: isAttendance ? 'التسجيل خارج وقت الحضور المحدد للشفت' : 'التسجيل خارج وقت الانصراف المحدد للشفت'
+
+                        message:
+                            `الموظف خارج نطاق الشركة المسموح (${Math.round(distance)}م من الموقع المعتمد)`
+
                     });
+
                 }
-            }
 
-            const permittedLocations = (company.allowedLocations || [])
-                .filter(location => !location.employeeIds.length || location.employeeIds.includes(String(employee._id)))
-                .filter(location => Number.isFinite(location.latitude) && Number.isFinite(location.longitude));
-
-            if (Number.isFinite(company.latitude) && Number.isFinite(company.longitude)) {
-                permittedLocations.push({
-                    latitude: company.latitude,
-                    longitude: company.longitude,
-                    radius: Number(company.geofenceRadiusMeters) > 0 ? Number(company.geofenceRadiusMeters) : 200
-                });
-            }
-
-            if (permittedLocations.length > 0) {
-                const distances = permittedLocations.map(location => ({
-                    distance: haversineMeters(latitude, longitude, location.latitude, location.longitude),
-                    radius: Number(location.radius || location.geofenceRadiusMeters) > 0
-                        ? Number(location.radius || location.geofenceRadiusMeters)
-                        : 200
-                }));
-
-                if (!distances.some(location => location.distance <= location.radius)) {
-                    const nearestDistance = Math.min(...distances.map(location => location.distance));
-                    return res.status(403).json({
-                        success: false,
-                        message: `الموظف خارج نطاق المواقع المصرح بها (${Math.round(nearestDistance)}م من أقرب موقع معتمد)`
-                    });
-                }
             }
 
             const attendance =
@@ -5548,7 +5548,12 @@ app.post(
 
                     longitude,
 
-                    timestamp: operationTime,
+                    timestamp:
+                        req.body.timestamp
+                            ? new Date(
+                                req.body.timestamp
+                            )
+                            : new Date(),
 
                     type
 
@@ -5598,32 +5603,6 @@ app.post(
   ATTENDANCE HISTORY
 =========================================================
 */
-
-app.get('/api/admin/attendance', requireAdmin, async (req, res) => {
-    try {
-        const attendance = await Attendance.find({ companyId: req.session.companyId })
-            .sort({ timestamp: -1 })
-            .limit(500)
-            .lean();
-        const employeeIds = [...new Set(attendance.map(record => record.employeeId))];
-        const employees = await Employee.find({
-            _id: { $in: employeeIds },
-            companyId: req.session.companyId
-        }).select('_id name workplace').lean();
-        const employeeById = new Map(employees.map(employee => [String(employee._id), employee]));
-
-        res.json({
-            success: true,
-            attendance: attendance.map(record => ({
-                ...record,
-                employeeName: employeeById.get(String(record.employeeId))?.name || 'موظف',
-                workplace: employeeById.get(String(record.employeeId))?.workplace || ''
-            }))
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'تعذر تحميل سجلات الحضور', error: error.message });
-    }
-});
 
 app.get(
     '/api/employees/:employeeId/attendance',

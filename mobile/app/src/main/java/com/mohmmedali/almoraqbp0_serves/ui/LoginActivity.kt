@@ -54,6 +54,32 @@ class LoginActivity : AppCompatActivity() {
         binding.btnAddEmployee.setOnClickListener {
             startActivity(Intent(this, RegisterEmployeeActivity::class.java))
         }
+
+        // البلاطة الداكنة "تسجيل دخول" تنزل إلى النموذج
+        binding.btnDevInfo.setOnClickListener {
+            binding.etCompanyId.requestFocus()
+            findViewById<android.view.View>(android.R.id.content).scrollTo(0, 400)
+        }
+
+        binding.btnWhatsApp.setOnClickListener {
+            try {
+                startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://wa.me/9647807807491")))
+            } catch (e: Exception) {
+                Toast.makeText(this, "واتساب غير متوفر على هذا الجهاز", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        binding.btnEmail.setOnClickListener {
+            try {
+                startActivity(android.content.Intent(android.content.Intent.ACTION_SENDTO,
+                    android.net.Uri.parse("mailto:mohmmed1628@gmail.com")))
+            } catch (e: Exception) {
+                Toast.makeText(this, "تطبيق البريد غير متوفر", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        binding.cardDevInfo.setOnClickListener { showDeveloperInfoDialog() }
         binding.btnDevInfo.setOnClickListener { showDeveloperInfoDialog() }
     }
 
@@ -87,11 +113,28 @@ class LoginActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("ℹ️ معلومات المطور")
             .setMessage(
-                "التطبيق: المراقب برو - تطبيق الموظفين\n" +
-                "الإصدار: 4.0.1\n\n" +
-                "لتواصل والدعم الفني يرجى مراجعة إدارة الشركة."
+                "🏢 شركة الارجوان للبرمجيات\n" +
+                "👨‍💻 المطور: محمد العبيدي\n" +
+                "📱 واتساب: 07807807491\n" +
+                "✉️ البريد: mohmmed1628@gmail.com"
             )
-            .setPositiveButton("حسناً", null)
+            .setPositiveButton("💬 واتساب") { _, _ ->
+                try {
+                    startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://wa.me/9647807807491")))
+                } catch (e: Exception) {
+                    Toast.makeText(this, "واتساب غير متوفر على هذا الجهاز", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNeutralButton("✉️ بريد") { _, _ ->
+                try {
+                    startActivity(android.content.Intent(android.content.Intent.ACTION_SENDTO,
+                        android.net.Uri.parse("mailto:mohmmed1628@gmail.com")))
+                } catch (e: Exception) {
+                    Toast.makeText(this, "تطبيق البريد غير متوفر", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("إغلاق", null)
             .show()
     }
 
@@ -111,6 +154,8 @@ class LoginActivity : AppCompatActivity() {
                             .putString("companyId", emp.companyId ?: companyId)
                             .putString("employeeName", emp.name)
                             .putString("deviceId", deviceId)
+                            .putString("username", username)
+                            .putBoolean("authenticated", true)
                             .apply()
 
                         withContext(Dispatchers.Main) {

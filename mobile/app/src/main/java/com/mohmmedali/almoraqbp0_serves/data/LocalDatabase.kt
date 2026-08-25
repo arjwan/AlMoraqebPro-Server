@@ -36,6 +36,12 @@ interface AttendanceDao {
     @Query("SELECT * FROM pending_attendance WHERE synced = 0 ORDER BY id ASC")
     suspend fun getUnsynced(): List<PendingAttendance>
 
+    @Query("SELECT * FROM pending_attendance WHERE employeeId = :employeeId ORDER BY timestamp DESC")
+    suspend fun getForEmployee(employeeId: String): List<PendingAttendance>
+
+    @Query("SELECT COUNT(*) FROM pending_attendance WHERE employeeId = :employeeId AND synced = 0")
+    suspend fun countUnsynced(employeeId: String): Int
+
     @Query("UPDATE pending_attendance SET synced = 1 WHERE id = :id")
     suspend fun markSynced(id: Long)
 }

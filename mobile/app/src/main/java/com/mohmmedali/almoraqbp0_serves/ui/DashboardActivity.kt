@@ -8,6 +8,7 @@ import android.location.Location
 import android.location.LocationManager as SystemLocationManager
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -35,8 +36,6 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.TimeZone
-import org.json.JSONObject
 
 class DashboardActivity : AppCompatActivity() {
 
@@ -60,6 +59,18 @@ class DashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val prefs = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
+        val actualDeviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+        if (!prefs.getBoolean("authenticated", false) ||
+            prefs.getString("employeeId", "").isNullOrBlank() ||
+            prefs.getString("companyId", "").isNullOrBlank() ||
+            prefs.getString("username", "").isNullOrBlank() ||
+            prefs.getString("deviceId", "") != actualDeviceId) {
+            startActivity(Intent(this, LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            })
+            finish()
+            return
+        }
         val language = prefs.getString("app_language", "ar") ?: "ar"
         val themeMode = prefs.getInt("app_theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
 
@@ -77,50 +88,50 @@ class DashboardActivity : AppCompatActivity() {
         // عرض Device ID ورمز الشركة
         val shownDeviceId = prefs.getString("deviceId", "")
             ?: Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
-        binding.tvDeviceInfo.text = "Device ID: ${shownDeviceId ?: "-"}"
+        binding.tvDeviceInfo.text = shortDeviceId(shownDeviceId ?: "-")
+        binding.tvEmployeeIdTile.text = "الموظف: ${prefs.getString("employeeId", "-") ?: "-"}"
         binding.tvCompanyInfo.text = "رمز الشركة: ${prefs.getString("companyId", "-") ?: "-"}"
 
-        // أزرار النسخة القديمة (btnCheckIn/btnCheckOut) + زر البصمة
+        // أزرار البصمة (الصورة المرجعية 2)
         binding.btnCheckIn.setOnClickListener { startAttendance("attendance") }
         binding.btnCheckOut.setOnClickListener { startAttendance("exit") }
-        binding.btnBiometricAttendance.setOnClickListener { startAttendance("attendance") }
-        binding.btnServices.setOnClickListener {
-            startActivity(Intent(this, ServicesActivity::class.java))
+
+        // شريط التنقل السفلي
+        binding.navServices.setOnClickListener { startActivity(Intent(this, ServicesActivity::class.java)) }
+        binding.navNotif.setOnClickListener { startActivity(Intent(this, NotificationActivity::class.java)) }
+        binding.navSettings.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
+        binding.navHome.setOnClickListener {
+            Toast.makeText(this, "أنت في الصفحة الرئيسية للبصمة والموقع", Toast.LENGTH_SHORT).show()
         }
-        binding.btnNotifications.setOnClickListener {
-            startActivity(Intent(this, NotificationActivity::class.java))
-        }
-        binding.btnSettings.setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-        binding.btnSupport.setOnClickListener {
-            startActivity(Intent(this, SupportActivity::class.java))
-        }
-        binding.btnLogout.setOnClickListener {
-            prefs.edit().clear().apply()
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
-        }
+        binding.btnBackTop.setOnClickListener { finish() }
+
+
+
+
+
 
         binding.btnSendLocation.setOnClickListener { sendCurrentLocation() }
 
         checkServerStatus()
-        scheduleSync()
         requestPermissionsIfNeeded()
 
-        // حركة ظهور خفيفة للبطاقات (روح التطبيق القديم)
-        val cards = listOf(binding.btnBiometricAttendance, binding.btnCheckIn, binding.btnCheckOut,
-            binding.btnSendLocation, binding.btnServices, binding.btnNotifications)
+        // حركة ظهور خفيفة للعناصر (الصورة المرجعية 2)
+        val cards = listOf<View>(binding.btnSendLocation, binding.btnCheckIn, binding.btnCheckOut)
         cards.forEachIndexed { i, v ->
             v.alpha = 0f
             v.translationY = 40f
-            v.animate().alpha(1f).translationY(0f).setDuration(350).setStartDelay((i * 70L)).start()
+            v.animate().alpha(1f).translationY(0f).setDuration(350).setStartDelay((i * 80L)).start()
         }
+        updateGpsTile()
+        refreshSyncStatus()
+        scheduleSync()
     }
 
     override fun onResume() {
         super.onResume()
         checkServerStatus()
+        updateGpsTile()
+        refreshSyncStatus()
     }
 
     private fun checkServerStatus() {
@@ -140,6 +151,17 @@ class DashboardActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun shortDeviceId(id: String): String {
+        val clean = id.replace("-", "")
+        return if (clean.length > 12) clean.take(4) + "..." + clean.takeLast(4) else id
+    }
+
+    private fun updateGpsTile() {
+        val on = isGpsEnabled()
+        binding.tvGpsStatus.text = if (on) "مفعل" else "مغلق"
+        binding.tvGpsStatus.setTextColor(if (on) 0xFF22C55E.toInt() else 0xFFEF4444.toInt())
     }
 
     /** التحقق من تفعيل GPS/خدمات الموقع على الجهاز */
@@ -211,26 +233,16 @@ class DashboardActivity : AppCompatActivity() {
         val deviceId = prefs.getString("deviceId", "")
             ?: Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
 
-        val timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }.format(Date())
+        val timestamp = java.time.Instant.now().toString()
         var challengeId = "offline-${System.currentTimeMillis()}"
         var fingerprintToken = "biometric-verified-${System.currentTimeMillis()}"
 
         try {
             // محاولة جلب تحدي حقيقي من السيرفر
             val challengeRes = RetrofitClient.apiService.getChallenge(employeeId, deviceId)
-            if (!challengeRes.isSuccessful || challengeRes.body()?.success != true || challengeRes.body()?.challengeId.isNullOrBlank()) {
-                if (challengeRes.code() >= 500 || challengeRes.code() == 429) {
-                    savePendingAttendance(employeeId, deviceId, challengeId, fingerprintToken, location, type, timestamp)
-                    scheduleSync()
-                    showAttendanceMessage("تعذر الاتصال بالخادم، حُفظت العملية للمزامنة لاحقًا")
-                } else {
-                    showAttendanceMessage(readErrorMessage(challengeRes.errorBody()?.string(), "تعذر التحقق من البصمة والجهاز"))
-                }
-                return
+            if (challengeRes.isSuccessful && challengeRes.body()?.challengeId != null) {
+                challengeId = challengeRes.body()!!.challengeId!!
             }
-            challengeId = challengeRes.body()!!.challengeId!!
 
             val request = AttendanceRequest(
                 employeeId = employeeId,
@@ -246,6 +258,8 @@ class DashboardActivity : AppCompatActivity() {
             val response = RetrofitClient.apiService.sendAttendance(request)
             if (response.isSuccessful && response.body()?.success == true) {
                 withContext(Dispatchers.Main) {
+                    binding.tvFingerprintStatus.text = "تمت المزامنة"
+                    binding.tvFingerprintStatus.setTextColor(0xFF22C55E.toInt())
                     Toast.makeText(
                         this@DashboardActivity,
                         "✅ تم تسجيل ${if (type == "attendance") "الحضور" else "الانصراف"} بنجاح",
@@ -253,17 +267,28 @@ class DashboardActivity : AppCompatActivity() {
                     ).show()
                 }
             } else {
-                if (response.code() >= 500 || response.code() == 429) {
-                    savePendingAttendance(employeeId, deviceId, challengeId, fingerprintToken, location, type, timestamp)
-                    scheduleSync()
-                    showAttendanceMessage("تعذر التسجيل مؤقتًا، حُفظت العملية للمزامنة لاحقًا")
+                if (response.code() in 400..499) {
+                    val message = response.errorBody()?.string()?.let {
+                        runCatching { org.json.JSONObject(it).optString("message") }.getOrNull()
+                    } ?: response.body()?.message ?: "تعذر قبول البصمة"
+                    withContext(Dispatchers.Main) {
+                        binding.tvFingerprintStatus.text = "مرفوضة"
+                        binding.tvFingerprintStatus.setTextColor(0xFFEF4444.toInt())
+                        Toast.makeText(this@DashboardActivity, "❌ $message", Toast.LENGTH_LONG).show()
+                    }
                 } else {
-                    showAttendanceMessage(readErrorMessage(response.errorBody()?.string(), "رفض الخادم تسجيل العملية"))
+                    savePendingAttendance(employeeId, deviceId, challengeId, fingerprintToken, location, type, timestamp)
+                    withContext(Dispatchers.Main) {
+                        refreshSyncStatus()
+                        Toast.makeText(this@DashboardActivity, "⚠️ تم حفظ البصمة محليًا بانتظار المزامنة", Toast.LENGTH_LONG).show()
+                    }
+                    scheduleSync()
                 }
             }
         } catch (e: Exception) {
             savePendingAttendance(employeeId, deviceId, challengeId, fingerprintToken, location, type, timestamp)
             withContext(Dispatchers.Main) {
+                refreshSyncStatus()
                 Toast.makeText(
                     this@DashboardActivity,
                     "📴 لا يوجد اتصال، تم حفظ السجل محليًا وستتم المزامنة لاحقًا",
@@ -271,20 +296,6 @@ class DashboardActivity : AppCompatActivity() {
                 ).show()
             }
             scheduleSync()
-        }
-    }
-
-    private suspend fun showAttendanceMessage(message: String) {
-        withContext(Dispatchers.Main) {
-            Toast.makeText(this@DashboardActivity, message, Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun readErrorMessage(body: String?, fallback: String): String {
-        return try {
-            if (body.isNullOrBlank()) fallback else JSONObject(body).optString("message", fallback)
-        } catch (_: Exception) {
-            fallback
         }
     }
 
@@ -301,6 +312,11 @@ class DashboardActivity : AppCompatActivity() {
             if (location == null) {
                 Toast.makeText(this, "تعذر الحصول على الموقع، تأكد من تفعيل GPS", Toast.LENGTH_LONG).show()
                 return@getCurrentLocation
+            }
+            runOnUiThread {
+                binding.tvLastLocation.text = "تم التحديث الآن"
+                binding.tvLastLocation.setTextColor(0xFF22C55E.toInt())
+                binding.tvAccuracy.text = String.format(Locale.US, "%.0f متر", location.accuracy)
             }
             CoroutineScope(Dispatchers.IO).launch {
                 val prefs = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
@@ -373,16 +389,30 @@ class DashboardActivity : AppCompatActivity() {
     }
 
     private fun scheduleSync() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
         val work = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setConstraints(constraints)
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
         WorkManager.getInstance(this).enqueueUniqueWork(
             "sync_attendance",
             ExistingWorkPolicy.KEEP,
             work
         )
+    }
+
+    private fun refreshSyncStatus() {
+        val employeeId = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
+            .getString("employeeId", "") ?: return
+        CoroutineScope(Dispatchers.IO).launch {
+            val pending = db.attendanceDao().countUnsynced(employeeId)
+            withContext(Dispatchers.Main) {
+                if (pending > 0) {
+                    binding.tvFingerprintStatus.text = "بانتظار المزامنة ($pending)"
+                    binding.tvFingerprintStatus.setTextColor(0xFFFACC15.toInt())
+                } else {
+                    binding.tvFingerprintStatus.text = "جاهزة ومتزامنة"
+                    binding.tvFingerprintStatus.setTextColor(0xFF22C55E.toInt())
+                }
+            }
+        }
     }
 }

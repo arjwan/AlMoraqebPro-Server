@@ -2,8 +2,8 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="#F5F6FA">
+    android:background="@drawable/bg_app"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -11,143 +11,242 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- حالة السيرفر -->
-        <TextView
-            android:id="@+id/tvServerStatus"
+        <!-- العنوان -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="⏳ جارٍ فحص الاتصال..."
-            android:textSize="14sp"
-            android:textStyle="bold"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnBackTop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="←"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="البصمة والموقع"
+                android:textColor="#FFFFFF"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:text=" " />
+        </LinearLayout>
+
+        <!-- بطاقة الموظف -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/card_dark"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvWelcome"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="مرحباً بك"
+                    android:textColor="#FFFFFF"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvEmployeeIdTile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="الموظف: -"
+                    android:textColor="#FACC15"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvCompanyInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="الشركة: -"
+                    android:textColor="#93A4BD"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:background="@drawable/chip_status"
+                android:gravity="center"
+                android:text="👤"
+                android:textSize="26sp" />
+        </LinearLayout>
+
+        <!-- شبكة الحالة 3×2 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <LinearLayout style="@style/StatusTile">
+                <TextView style="@style/StatusLabel" android:text="حالة البصمة" />
+                <TextView android:id="@+id/tvFingerprintStatus" style="@style/StatusValue" android:text="جاهزة" android:textColor="#22C55E" />
+                <TextView style="@style/StatusIcon" android:text="🫆" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusTile">
+                <TextView style="@style/StatusLabel" android:text="GPS" />
+                <TextView android:id="@+id/tvGpsStatus" style="@style/StatusValue" android:text="مفعل" android:textColor="#22C55E" />
+                <TextView style="@style/StatusIcon" android:text="📍" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusTile">
+                <TextView style="@style/StatusLabel" android:text="حالة السيرفر" />
+                <TextView android:id="@+id/tvServerStatus" style="@style/StatusValue" android:text="جارٍ الفحص" android:textColor="#FACC15" />
+                <TextView style="@style/StatusIcon" android:text="🗄️" />
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <LinearLayout style="@style/StatusTile">
+                <TextView style="@style/StatusLabel" android:text="Device ID" />
+                <TextView android:id="@+id/tvDeviceInfo" style="@style/StatusValue" android:text="-" android:textColor="#38BDF8" />
+                <TextView style="@style/StatusIcon" android:text="📱" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusTile">
+                <TextView style="@style/StatusLabel" android:text="آخر موقع" />
+                <TextView android:id="@+id/tvLastLocation" style="@style/StatusValue" android:text="لم يتم التحديث" android:textColor="#93A4BD" />
+                <TextView style="@style/StatusIcon" android:text="🎯" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusTile">
+                <TextView style="@style/StatusLabel" android:text="الدقة" />
+                <TextView android:id="@+id/tvAccuracy" style="@style/StatusValue" android:text="-" android:textColor="#93A4BD" />
+                <TextView style="@style/StatusIcon" android:text="✳️" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- بطاقة جاهز للتسجيل -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/card_dark"
             android:gravity="center"
-            android:padding="10dp"
-            android:background="#EEEEEE"
-            android:textColor="#B45309" />
+            android:orientation="horizontal"
+            android:padding="18dp">
 
-        <!-- ترحيب (نفس ID القديم tvWelcome) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:text="🛡️"
+                android:textSize="34sp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="جاهز للتسجيل"
+                    android:textColor="#FFFFFF"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="اضغط بصمة الإصبع للتأكد"
+                    android:textColor="#93A4BD"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- إرسال الموقع -->
         <TextView
-            android:id="@+id/tvWelcome"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="مرحباً بك في المراقب برو"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="#1E293B"
-            android:layout_marginTop="14dp"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:id="@+id/tvDeviceInfo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Device ID: -"
-            android:textColor="#666666"
-            android:textSize="13sp"
-            android:paddingBottom="2dp" />
-
-        <TextView
-            android:id="@+id/tvCompanyInfo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="رمز الشركة: -"
-            android:textColor="#666666"
-            android:textSize="13sp"
-            android:layout_marginBottom="14dp" />
-
-        <!-- البصمة: تسجيل حضور بالبصمة (زر النسخة القديمة) -->
-        <Button
-            android:id="@+id/btnBiometricAttendance"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:backgroundTint="#4CAF50"
-            android:text="تسجيل حضور (بصمة)"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="10dp" />
-
-        <!-- حضور (ID القديم btnCheckIn) -->
-        <Button
-            android:id="@+id/btnCheckIn"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:backgroundTint="#4CAF50"
-            android:text="حضور"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:layout_marginBottom="10dp" />
-
-        <!-- انصراف (ID القديم btnCheckOut) -->
-        <Button
-            android:id="@+id/btnCheckOut"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:backgroundTint="#F44336"
-            android:text="تسجيل انصراف (بصمة)"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:layout_marginBottom="10dp" />
-
-        <!-- تحديث الموقع المحلي (زر النسخة القديمة btnLocation) + إرسال الموقع الحالي -->
-        <Button
             android:id="@+id/btnSendLocation"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:backgroundTint="#0891B2"
-            android:text="📍 إرسال الموقع الحالي"
+            android:layout_height="52dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/btn_green"
+            android:elevation="6dp"
+            android:gravity="center"
+            android:text="📍 إرسال موقعي الحالي"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:layout_marginBottom="14dp" />
+            android:textSize="15sp"
+            android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btnServices"
+        <!-- حضور / انصراف -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:backgroundTint="#2563EB"
-            android:text="📁 الخدمات والطلبات"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:layout_marginBottom="10dp" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/btnNotifications"
+            <TextView
+                android:id="@+id/btnCheckIn"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_green"
+                android:elevation="6dp"
+                android:gravity="center"
+                android:text="🫆 تسجيل حضور"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnCheckOut"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_red"
+                android:elevation="6dp"
+                android:gravity="center"
+                android:text="🫆 تسجيل انصراف"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- شريط التنقل السفلي -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:backgroundTint="#D97706"
-            android:text="🔔 الإشعارات"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:layout_marginBottom="10dp" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/card_dark"
+            android:orientation="horizontal"
+            android:padding="10dp">
 
-        <Button
-            android:id="@+id/btnSettings"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:backgroundTint="#7C3AED"
-            android:text="⚙️ إعدادات التطبيق"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:layout_marginBottom="10dp" />
-
-        <Button
-            android:id="@+id/btnSupport"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:backgroundTint="#0F766E"
-            android:text="🛟 طلب دعم"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:layout_marginBottom="10dp" />
-
-        <Button
-            android:id="@+id/btnLogout"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:backgroundTint="#475569"
-            android:text="🚪 تسجيل الخروج"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp" />
-
+            <TextView android:id="@+id/navSettings" style="@style/NavItem" android:text="⚙️\nالإعدادات" />
+            <TextView android:id="@+id/navServices" style="@style/NavItem" android:text="🔲\nالخدمات" />
+            <TextView android:id="@+id/navBioActive" style="@style/NavItemActive" android:text="🫆\nالبصمة والموقع" />
+            <TextView android:id="@+id/navNotif" style="@style/NavItem" android:text="🔔\nالإشعارات" />
+            <TextView android:id="@+id/navHome" style="@style/NavItem" android:text="🏠\nالرئيسية" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

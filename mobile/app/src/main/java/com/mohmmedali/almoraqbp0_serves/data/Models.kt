@@ -82,6 +82,7 @@ data class Notification(
 
 data class NotificationsResponse(
     val success: Boolean,
+    val message: String?,
     val notifications: List<Notification>?
 )
 
@@ -95,6 +96,7 @@ data class ServiceRequestItem(
 
 data class MyRequestsResponse(
     val success: Boolean,
+    val message: String?,
     val requests: List<ServiceRequestItem>?
 )
 
@@ -107,6 +109,7 @@ data class AttendanceItem(
 
 data class AttendanceHistoryResponse(
     val success: Boolean,
+    val message: String?,
     val attendance: List<AttendanceItem>?
 )
 // ========== فحص الاتصال بالسيرفر ==========
