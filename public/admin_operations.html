@@ -315,75 +315,369 @@ async function api(path, options = {}) {
     return data;
 }
 
-// ========== الرواتب ==========
-async function loadSalaries() {
-    try {
-        const data = await api('/api/admin/salaries');
-        allSalaries = data.salaries || [];
-        renderSalaries();
-    } catch (e) { toast('❌ ' + e.message, 'error'); }
+// ============================================================
+// التخزين المحلي للرواتب والسلف
+// ============================================================
+
+async function getLocalOperationsStore(storeName) {
+
+    if (!window.AlMoraqebOfflineDB)
+        return [];
+
+    return AlMoraqebOfflineDB
+        .getCompanyData(
+            storeName,
+            companyId
+        );
 }
 
+async function saveLocalSalaries() {
+
+    if (!window.AlMoraqebOfflineDB)
+        return;
+
+    await AlMoraqebOfflineDB
+        .replaceCompanyData(
+            AlMoraqebOfflineDB.STORES.salaries,
+            companyId,
+            allSalaries.map(x => ({
+                ...x,
+                companyId,
+                _id:
+                    x._id ||
+                    x.id ||
+                    x._offlineKey
+            }))
+        );
+}
+
+async function saveLocalLoans() {
+
+    if (!window.AlMoraqebOfflineDB)
+        return;
+
+    await AlMoraqebOfflineDB
+        .replaceCompanyData(
+            AlMoraqebOfflineDB.STORES.loans,
+            companyId,
+            allLoans.map(x => ({
+                ...x,
+                companyId,
+                _id:
+                    x._id ||
+                    x.id ||
+                    x._offlineKey
+            }))
+        );
+}
+
+
+// ========== الرواتب ==========
+async function loadSalaries() {
+
+    try {
+
+        const data =
+            await api('/api/admin/salaries');
+
+        allSalaries =
+            data.salaries || [];
+
+        await saveLocalSalaries();
+
+        renderSalaries();
+
+    } catch (e) {
+
+        try {
+
+            allSalaries =
+                await getLocalOperationsStore(
+                    AlMoraqebOfflineDB
+                        .STORES
+                        .salaries
+                );
+
+            renderSalaries();
+
+            toast(
+                '⚠ تم عرض الرواتب من النسخة المحلية',
+                'info'
+            );
+
+        } catch (_) {
+
+            allSalaries = [];
+            renderSalaries();
+
+            toast(
+                '❌ لا توجد نسخة محلية للرواتب',
+                'error'
+            );
+        }
+    }
+}
+
+
 function renderSalaries() {
-    const tbody = document.getElementById('salariesTableBody');
+
+    const tbody =
+        document.getElementById(
+            'salariesTableBody'
+        );
+
     tbody.innerHTML = '';
+
     allSalaries.forEach(salary => {
-        const row = document.createElement('tr');
+
+        const id =
+            salary._id ||
+            salary.id ||
+            salary._offlineKey;
+
+        const row =
+            document.createElement('tr');
+
         row.innerHTML = `
             <td>${salary.employeeName || ''}</td>
             <td>${salary.specialty || ''}</td>
             <td>${salary.workplace || ''}</td>
             <td>${salary.shiftName || ''}</td>
-            <td><select class="form-select" id="ss-${salary._id}"><option value="مسجل" ${salary.socialSecurity === 'مسجل' ? 'selected' : ''}>مسجل</option><option value="غير مسجل" ${salary.socialSecurity === 'غير مسجل' ? 'selected' : ''}>غير مسجل</option></select></td>
-            <td><input type="number" id="bs-${salary._id}" value="${salary.basicSalary || 0}"></td>
-            <td><input type="number" id="allow-${salary._id}" value="${salary.allowances || 0}"></td>
-            <td><input type="number" id="loans-${salary._id}" value="${salary.loans || 0}"></td>
-            <td><input type="number" id="lded-${salary._id}" value="${salary.loanDeduction || 0}"></td>
-            <td><input type="number" id="sec-${salary._id}" value="${salary.securityDeduction || 0}"></td>
-            <td><input type="number" id="ded-${salary._id}" value="${salary.otherDeductions || 0}"></td>
-            <td><input type="number" id="bon-${salary._id}" value="${salary.bonuses || 0}"></td>
-            <td id="totalDed-${salary._id}">${salary.totalDeductions || 0}</td>
-            <td id="net-${salary._id}">${salary.netSalary || 0}</td>
-            <td><button class="btn-sm btn-green" onclick="saveSalary('${salary._id}')">حفظ</button></td>
+
+            <td>
+                <select class="form-select" id="ss-${id}">
+                    <option value="مسجل"
+                        ${salary.socialSecurity === 'مسجل' ? 'selected' : ''}>
+                        مسجل
+                    </option>
+                    <option value="غير مسجل"
+                        ${salary.socialSecurity !== 'مسجل' ? 'selected' : ''}>
+                        غير مسجل
+                    </option>
+                </select>
+            </td>
+
+            <td><input type="number" id="bs-${id}" value="${salary.basicSalary || 0}"></td>
+            <td><input type="number" id="allow-${id}" value="${salary.allowances || 0}"></td>
+            <td><input type="number" id="loans-${id}" value="${salary.loans || 0}"></td>
+            <td><input type="number" id="lded-${id}" value="${salary.loanDeduction || 0}"></td>
+            <td><input type="number" id="sec-${id}" value="${salary.securityDeduction || 0}"></td>
+            <td><input type="number" id="ded-${id}" value="${salary.otherDeductions || 0}"></td>
+            <td><input type="number" id="bon-${id}" value="${salary.bonuses || 0}"></td>
+
+            <td id="totalDed-${id}">
+                ${salary.totalDeductions || 0}
+            </td>
+
+            <td id="net-${id}">
+                ${salary.netSalary || 0}
+            </td>
+
+            <td>
+                <button
+                    class="btn-sm btn-green"
+                    onclick="saveSalary('${id}')">
+                    حفظ
+                </button>
+            </td>
         `;
+
         tbody.appendChild(row);
     });
 }
 
+
 function recalcSalary(id) {
-    const basic = Number(document.getElementById('bs-' + id).value) || 0;
-    const allow = Number(document.getElementById('allow-' + id).value) || 0;
-    const loans = Number(document.getElementById('loans-' + id).value) || 0;
-    const lded = Number(document.getElementById('lded-' + id).value) || 0;
-    const sec = Number(document.getElementById('sec-' + id).value) || 0;
-    const ded = Number(document.getElementById('ded-' + id).value) || 0;
-    const bon = Number(document.getElementById('bon-' + id).value) || 0;
-    const totalDed = lded + sec + ded;
-    const net = basic + allow + loans + bon - totalDed;
-    document.getElementById('totalDed-' + id).textContent = totalDed;
-    document.getElementById('net-' + id).textContent = net;
+
+    const basic =
+        Number(
+            document.getElementById(
+                'bs-' + id
+            ).value
+        ) || 0;
+
+    const allow =
+        Number(
+            document.getElementById(
+                'allow-' + id
+            ).value
+        ) || 0;
+
+    const loans =
+        Number(
+            document.getElementById(
+                'loans-' + id
+            ).value
+        ) || 0;
+
+    const lded =
+        Number(
+            document.getElementById(
+                'lded-' + id
+            ).value
+        ) || 0;
+
+    const sec =
+        Number(
+            document.getElementById(
+                'sec-' + id
+            ).value
+        ) || 0;
+
+    const ded =
+        Number(
+            document.getElementById(
+                'ded-' + id
+            ).value
+        ) || 0;
+
+    const bon =
+        Number(
+            document.getElementById(
+                'bon-' + id
+            ).value
+        ) || 0;
+
+    const totalDed =
+        lded + sec + ded;
+
+    const net =
+        basic +
+        allow +
+        loans +
+        bon -
+        totalDed;
+
+    document
+        .getElementById(
+            'totalDed-' + id
+        ).textContent =
+        totalDed;
+
+    document
+        .getElementById(
+            'net-' + id
+        ).textContent =
+        net;
 }
 
-document.addEventListener('input', (e) => {
-    if (e.target.id && e.target.id.startsWith('bs-') || e.target.id.startsWith('allow-') || e.target.id.startsWith('loans-') || e.target.id.startsWith('lded-') || e.target.id.startsWith('sec-') || e.target.id.startsWith('ded-') || e.target.id.startsWith('bon-')) {
-        const id = e.target.id.split('-')[1];
+
+document.addEventListener(
+    'input',
+    e => {
+
+        if (!e.target.id)
+            return;
+
+        const prefixes = [
+            'bs-',
+            'allow-',
+            'loans-',
+            'lded-',
+            'sec-',
+            'ded-',
+            'bon-'
+        ];
+
+        const prefix =
+            prefixes.find(
+                p =>
+                    e.target.id.startsWith(p)
+            );
+
+        if (!prefix)
+            return;
+
+        const id =
+            e.target.id.substring(
+                prefix.length
+            );
+
         recalcSalary(id);
     }
-});
+);
+
 
 async function saveSalary(id) {
-    const salary = allSalaries.find(s => s._id === id);
-    if (!salary) return;
-    const socialSecurity = document.getElementById('ss-' + id).value;
-    const basicSalary = Number(document.getElementById('bs-' + id).value) || 0;
-    const allowances = Number(document.getElementById('allow-' + id).value) || 0;
-    const loans = Number(document.getElementById('loans-' + id).value) || 0;
-    const loanDeduction = Number(document.getElementById('lded-' + id).value) || 0;
-    const securityDeduction = Number(document.getElementById('sec-' + id).value) || 0;
-    const otherDeductions = Number(document.getElementById('ded-' + id).value) || 0;
-    const bonuses = Number(document.getElementById('bon-' + id).value) || 0;
-    const totalDeductions = loanDeduction + securityDeduction + otherDeductions;
-    const netSalary = basicSalary + allowances + loans + bonuses - totalDeductions;
+
+    const salary =
+        allSalaries.find(
+            s =>
+                String(
+                    s._id ||
+                    s.id ||
+                    s._offlineKey
+                ) === String(id)
+        );
+
+    if (!salary)
+        return;
+
+    const socialSecurity =
+        document.getElementById(
+            'ss-' + id
+        ).value;
+
+    const basicSalary =
+        Number(
+            document.getElementById(
+                'bs-' + id
+            ).value
+        ) || 0;
+
+    const allowances =
+        Number(
+            document.getElementById(
+                'allow-' + id
+            ).value
+        ) || 0;
+
+    const loans =
+        Number(
+            document.getElementById(
+                'loans-' + id
+            ).value
+        ) || 0;
+
+    const loanDeduction =
+        Number(
+            document.getElementById(
+                'lded-' + id
+            ).value
+        ) || 0;
+
+    const securityDeduction =
+        Number(
+            document.getElementById(
+                'sec-' + id
+            ).value
+        ) || 0;
+
+    const otherDeductions =
+        Number(
+            document.getElementById(
+                'ded-' + id
+            ).value
+        ) || 0;
+
+    const bonuses =
+        Number(
+            document.getElementById(
+                'bon-' + id
+            ).value
+        ) || 0;
+
+    const totalDeductions =
+        loanDeduction +
+        securityDeduction +
+        otherDeductions;
+
+    const netSalary =
+        basicSalary +
+        allowances +
+        loans +
+        bonuses -
+        totalDeductions;
 
     const payload = {
         socialSecurity,
@@ -395,82 +689,514 @@ async function saveSalary(id) {
         otherDeductions,
         bonuses,
         totalDeductions,
-        netSalary,
+        netSalary
     };
 
-    try {
-        await api('/api/admin/salaries/' + id, { method: 'PUT', body: JSON.stringify(payload) });
-        toast('✅ تم حفظ بيانات الراتب');
-        loadSalaries();
-    } catch (e) { toast('❌ ' + e.message, 'error'); }
+    /*
+     * نجرب السيرفر أولاً.
+     */
+    if (navigator.onLine) {
+
+        try {
+
+            await api(
+                '/api/admin/salaries/' +
+                encodeURIComponent(id),
+                {
+                    method: 'PUT',
+                    body:
+                        JSON.stringify(
+                            payload
+                        )
+                }
+            );
+
+            toast(
+                '✅ تم حفظ بيانات الراتب',
+                'success'
+            );
+
+            await loadSalaries();
+            return;
+
+        } catch (e) {
+
+            /*
+             * HTTP validation error:
+             * لا نحوله إلى Offline.
+             *
+             * أما TypeError فعادة يعني
+             * أن الاتصال الفعلي بالسيرفر تعذر.
+             */
+            if (!(e instanceof TypeError)) {
+
+                toast(
+                    '❌ ' + e.message,
+                    'error'
+                );
+
+                return;
+            }
+        }
+    }
+
+    /*
+     * OFFLINE
+     */
+    Object.assign(
+        salary,
+        payload,
+        {
+            _offlinePending: true
+        }
+    );
+
+    await saveLocalSalaries();
+
+    await AlMoraqebOfflineSync
+        .queueOperation(
+            '/api/admin/salaries/' +
+            encodeURIComponent(id),
+            'PUT',
+            payload
+        );
+
+    renderSalaries();
+
+    toast(
+        '✅ تم حفظ الراتب على الجهاز وسيتم مزامنته عند عودة الإنترنت',
+        'success'
+    );
 }
+
 
 // ========== السلف ==========
 async function loadLoans() {
+
     try {
-        const data = await api('/api/admin/loans');
-        allLoans = data.loans || [];
+
+        const data =
+            await api(
+                '/api/admin/loans'
+            );
+
+        allLoans =
+            data.loans || [];
+
+        await saveLocalLoans();
+
         renderLoans();
-    } catch (e) { toast('❌ ' + e.message, 'error'); }
+
+    } catch (e) {
+
+        try {
+
+            allLoans =
+                await getLocalOperationsStore(
+                    AlMoraqebOfflineDB
+                        .STORES
+                        .loans
+                );
+
+            /*
+             * إعادة حساب المتبقي محلياً.
+             */
+            allLoans.forEach(loan => {
+
+                const paid =
+                    (loan.repayments || [])
+                        .reduce(
+                            (sum, r) =>
+                                sum +
+                                Number(
+                                    r.amount || 0
+                                ),
+                            0
+                        );
+
+                loan.remainingAmount =
+                    Number(
+                        loan.totalLoanAmount ||
+                        0
+                    ) - paid;
+            });
+
+            renderLoans();
+
+            toast(
+                '⚠ تم عرض السلف من النسخة المحلية',
+                'info'
+            );
+
+        } catch (_) {
+
+            allLoans = [];
+            renderLoans();
+
+            toast(
+                '❌ لا توجد نسخة محلية للسلف',
+                'error'
+            );
+        }
+    }
 }
 
+
 function renderLoans() {
-    const tbody = document.getElementById('loansTableBody');
+
+    const tbody =
+        document.getElementById(
+            'loansTableBody'
+        );
+
     tbody.innerHTML = '';
+
     allLoans.forEach(loan => {
-        const row = document.createElement('tr');
+
+        const id =
+            loan._id ||
+            loan.id ||
+            loan._offlineKey;
+
+        const row =
+            document.createElement('tr');
+
         row.innerHTML = `
             <td>${loan.employeeName || ''}</td>
             <td>${loan.specialty || ''}</td>
             <td>${loan.workplace || ''}</td>
             <td>${loan.totalLoanAmount || 0}</td>
-            <td>${loan.loanDate ? new Date(loan.loanDate).toLocaleDateString('ar-IQ') : ''}</td>
+
+            <td>
+                ${
+                    loan.loanDate
+                        ? new Date(
+                            loan.loanDate
+                        ).toLocaleDateString(
+                            'ar-IQ'
+                        )
+                        : ''
+                }
+            </td>
+
             <td>${loan.remainingAmount || 0}</td>
-            <td><button class="btn-sm btn-blue" onclick="openRepayModal('${loan.employeeId}')">تسديدات</button></td>
-            <td><button class="btn-sm btn-red" onclick="deleteLoan('${loan._id}')">حذف</button></td>
+
+            <td>
+                <button
+                    class="btn-sm btn-blue"
+                    onclick="openRepayModal('${loan.employeeId}')">
+                    تسديدات
+                </button>
+            </td>
+
+            <td>
+                <button
+                    class="btn-sm btn-red"
+                    onclick="deleteLoan('${id}')">
+                    حذف
+                </button>
+            </td>
         `;
+
         tbody.appendChild(row);
     });
 }
 
+
 function openRepayModal(employeeId) {
-    currentLoanEmployeeId = employeeId;
-    const loan = allLoans.find(l => l.employeeId === employeeId);
-    if (!loan) return;
-    const list = document.getElementById('repayList');
+
+    currentLoanEmployeeId =
+        employeeId;
+
+    const loan =
+        allLoans.find(
+            l =>
+                String(l.employeeId) ===
+                String(employeeId)
+        );
+
+    if (!loan)
+        return;
+
+    const list =
+        document.getElementById(
+            'repayList'
+        );
+
     list.innerHTML = '';
-    (loan.repayments || []).forEach(r => {
-        list.innerHTML += `<div>${new Date(r.date).toLocaleDateString('ar-IQ')} - ${r.amount} د.ع</div>`;
-    });
-    document.getElementById('repayModal').classList.add('open');
+
+    (loan.repayments || [])
+        .forEach(r => {
+
+            list.innerHTML += `
+                <div>
+                    ${
+                        new Date(
+                            r.date
+                        ).toLocaleDateString(
+                            'ar-IQ'
+                        )
+                    }
+                    -
+                    ${r.amount} د.ع
+                    ${
+                        r._offlinePending
+                            ? ' ⏳'
+                            : ''
+                    }
+                </div>
+            `;
+        });
+
+    document
+        .getElementById(
+            'repayModal'
+        )
+        .classList
+        .add('open');
 }
+
 
 function closeRepayModal() {
-    document.getElementById('repayModal').classList.remove('open');
+
+    document
+        .getElementById(
+            'repayModal'
+        )
+        .classList
+        .remove('open');
 }
+
 
 async function addRepayment() {
-    const date = document.getElementById('repayDate').value;
-    const amount = Number(document.getElementById('repayAmount').value);
-    if (!date || !amount || amount <= 0) {
-        toast('⚠️ أدخل تاريخ ومبلغ صحيح', 'error');
+
+    const date =
+        document.getElementById(
+            'repayDate'
+        ).value;
+
+    const amount =
+        Number(
+            document.getElementById(
+                'repayAmount'
+            ).value
+        );
+
+    if (
+        !date ||
+        !amount ||
+        amount <= 0
+    ) {
+
+        toast(
+            '⚠ أدخل تاريخ ومبلغ صحيح',
+            'error'
+        );
+
         return;
     }
-    try {
-        await api('/api/admin/loans/' + currentLoanEmployeeId + '/repayments', { method: 'POST', body: JSON.stringify({ date, amount }) });
-        toast('✅ تم إضافة التسديد');
-        closeRepayModal();
-        loadLoans();
-    } catch (e) { toast('❌ ' + e.message, 'error'); }
+
+    const loan =
+        allLoans.find(
+            l =>
+                String(l.employeeId) ===
+                String(
+                    currentLoanEmployeeId
+                )
+        );
+
+    if (!loan) {
+
+        toast(
+            '❌ السلفة غير موجودة',
+            'error'
+        );
+
+        return;
+    }
+
+    const clientOfflineId =
+        'repay-' +
+        crypto.randomUUID();
+
+    const payload = {
+        date,
+        amount,
+        clientOfflineId
+    };
+
+    /*
+     * ONLINE
+     */
+    if (navigator.onLine) {
+
+        try {
+
+            await api(
+                '/api/admin/loans/' +
+                encodeURIComponent(
+                    currentLoanEmployeeId
+                ) +
+                '/repayments',
+                {
+                    method: 'POST',
+                    body:
+                        JSON.stringify(
+                            payload
+                        )
+                }
+            );
+
+            toast(
+                '✅ تم إضافة التسديد',
+                'success'
+            );
+
+            closeRepayModal();
+
+            await loadLoans();
+
+            return;
+
+        } catch (e) {
+
+            if (!(e instanceof TypeError)) {
+
+                toast(
+                    '❌ ' + e.message,
+                    'error'
+                );
+
+                return;
+            }
+        }
+    }
+
+    /*
+     * OFFLINE
+     */
+    loan.repayments =
+        loan.repayments || [];
+
+    loan.repayments.push({
+        date,
+        amount,
+        clientOfflineId,
+        _offlinePending: true
+    });
+
+    const paid =
+        loan.repayments.reduce(
+            (sum, r) =>
+                sum +
+                Number(
+                    r.amount || 0
+                ),
+            0
+        );
+
+    loan.remainingAmount =
+        Number(
+            loan.totalLoanAmount || 0
+        ) - paid;
+
+    await saveLocalLoans();
+
+    await AlMoraqebOfflineSync
+        .queueOperation(
+            '/api/admin/loans/' +
+            encodeURIComponent(
+                currentLoanEmployeeId
+            ) +
+            '/repayments',
+            'POST',
+            payload
+        );
+
+    toast(
+        '✅ تم تسجيل التسديد على الجهاز وسيتم مزامنته عند عودة الإنترنت',
+        'success'
+    );
+
+    closeRepayModal();
+    renderLoans();
 }
 
+
 async function deleteLoan(id) {
-    if (!confirm('حذف السلفة؟')) return;
-    try {
-        await api('/api/admin/loans/' + id, { method: 'DELETE' });
-        toast('✅ تم حذف السلفة');
-        loadLoans();
-    } catch (e) { toast('❌ ' + e.message, 'error'); }
+
+    if (!confirm('حذف السلفة؟'))
+        return;
+
+    /*
+     * ONLINE
+     */
+    if (navigator.onLine) {
+
+        try {
+
+            await api(
+                '/api/admin/loans/' +
+                encodeURIComponent(id),
+                {
+                    method:
+                        'DELETE'
+                }
+            );
+
+            toast(
+                '✅ تم حذف السلفة',
+                'success'
+            );
+
+            await loadLoans();
+
+            return;
+
+        } catch (e) {
+
+            if (!(e instanceof TypeError)) {
+
+                toast(
+                    '❌ ' + e.message,
+                    'error'
+                );
+
+                return;
+            }
+        }
+    }
+
+    /*
+     * OFFLINE
+     */
+    allLoans =
+        allLoans.filter(
+            loan =>
+                String(
+                    loan._id ||
+                    loan.id ||
+                    loan._offlineKey
+                ) !==
+                String(id)
+        );
+
+    await saveLocalLoans();
+
+    await AlMoraqebOfflineSync
+        .queueOperation(
+            '/api/admin/loans/' +
+            encodeURIComponent(id),
+            'DELETE',
+            {}
+        );
+
+    renderLoans();
+
+    toast(
+        '✅ تم حذف السلفة محلياً وسيتم تحديث السيرفر عند عودة الإنترنت',
+        'success'
+    );
 }
 
 // تهيئة
@@ -483,5 +1209,11 @@ async function deleteLoan(id) {
     }
 })();
 </script>
+
+<script src="/offline_db.js"></script>
+<script src="/offline_sync.js"></script>
+<script src="/offline_auth.js"></script>
+<script src="/offline_boot.js"></script>
+
 </body>
 </html>

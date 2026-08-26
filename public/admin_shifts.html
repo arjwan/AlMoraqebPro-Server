@@ -179,48 +179,98 @@ function session(){
 async function auth(){
 
     token =
-        sessionStorage.getItem('almoraqeb_admin_token') || '';
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
 
-    const s = session();
+    const s =
+        typeof session === 'function'
+            ? session()
+            : (
+                typeof getSession === 'function'
+                    ? getSession()
+                    : {}
+            );
 
     companyId = String(
         s.companyId ||
-        new URLSearchParams(location.search).get('company') ||
-        localStorage.getItem('companyId') ||
+        new URLSearchParams(
+            location.search
+        ).get('company') ||
+        localStorage.getItem(
+            'companyId'
+        ) ||
         ''
     ).trim();
 
-    if(!token || !companyId){
-        location.href='admin_login.html';
+    if(
+        !companyId ||
+        !window.AlMoraqebOfflineAuth
+    ){
+        location.href =
+            'admin_login.html';
         return false;
     }
 
-    try{
+    const result =
+        await AlMoraqebOfflineAuth
+            .authorizePage({
+                companyId
+            });
 
-        const r = await fetch(
-            API+'/api/admin/session',
-            {
-                headers:{
-                    Authorization:'Bearer '+token
-                },
-                cache:'no-store'
-            }
+    if(!result.ok){
+        location.href =
+            'admin_login.html';
+        return false;
+    }
+
+    companyId =
+        result.companyId ||
+        companyId;
+
+    /*
+     * أثناء Offline لا نستخدم Token وهمي
+     * في طلبات الشبكة إلا أن بعض الدوال
+     * تحتاج القيمة لمعرفة وجود الجلسة.
+     */
+    token =
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
+
+    const badge =
+        document.getElementById(
+            'companyBadge'
         );
 
-        const d = await r.json();
-
-        if(!r.ok || !d.success)
-            throw new Error();
-
-        document.getElementById('companyBadge').textContent =
+    if(badge)
+        badge.textContent =
             companyId;
 
-        return true;
+    const companyLabel =
+        document.getElementById(
+            'company'
+        );
 
-    }catch{
-        location.href='admin_login.html';
-        return false;
-    }
+    if(companyLabel)
+        companyLabel.textContent =
+            companyId;
+
+    const companyStat =
+        document.getElementById(
+            'companyStat'
+        );
+
+    if(companyStat)
+        companyStat.textContent =
+            companyId;
+
+    document.documentElement.dataset.offline =
+        result.offline
+            ? 'true'
+            : 'false';
+
+    return true;
 }
 
 function goHome(){
@@ -264,17 +314,99 @@ async function api(path, options={}){
     return d;
 }
 
+async function getLocalStore(storeName){
+
+    if(!window.AlMoraqebOfflineDB)
+        return [];
+
+    return AlMoraqebOfflineDB
+        .getCompanyData(
+            storeName,
+            companyId
+        );
+}
+
+
+async function saveLocalShifts(){
+
+    if(!window.AlMoraqebOfflineDB)
+        return;
+
+    await AlMoraqebOfflineDB
+        .replaceCompanyData(
+            AlMoraqebOfflineDB
+                .STORES
+                .shifts,
+            companyId,
+            shifts.map(s=>({
+                ...s,
+                companyId,
+                _id:
+                    s._id ||
+                    s.id ||
+                    s._offlineKey
+            }))
+        );
+}
+
+
 async function loadLocations(){
 
-    const d =
-        await api('/api/admin/locations');
+    try{
 
-    locations =
-        (d.locations || []).filter(
-            x =>
-                !x.isPrimary &&
-                x.active !== false
-        );
+        const d =
+            await api('/api/admin/locations');
+
+        locations =
+            (d.locations || []).filter(
+                x =>
+                    !x.isPrimary &&
+                    x.active !== false
+            );
+
+        if(window.AlMoraqebOfflineDB){
+
+            await AlMoraqebOfflineDB
+                .replaceCompanyData(
+                    AlMoraqebOfflineDB
+                        .STORES
+                        .locations,
+                    companyId,
+                    locations.map(x=>({
+                        ...x,
+                        companyId,
+                        _id:
+                            x._id ||
+                            x.id ||
+                            x._offlineKey
+                    }))
+                );
+        }
+
+    }catch{
+
+        const local =
+            await getLocalStore(
+                AlMoraqebOfflineDB
+                    .STORES
+                    .locations
+            );
+
+        locations =
+            (local || [])
+                .filter(
+                    x =>
+                        !x.isPrimary &&
+                        x.active !== false
+                )
+                .map(x=>({
+                    ...x,
+                    id:
+                        x.id ||
+                        x._id ||
+                        x._offlineKey
+                }));
+    }
 
     const select =
         document.getElementById('shiftLocation');
@@ -290,34 +422,69 @@ async function loadLocations(){
 
     locations.forEach(x=>{
 
+        const id =
+            x.id ||
+            x._id ||
+            x._offlineKey;
+
         const label =
             `${x.name} - ${x.province || ''}`;
 
-        const o1=document.createElement('option');
-        o1.value=x.id || x._id;
-        o1.textContent=label;
+        const o1 =
+            document.createElement('option');
+
+        o1.value = id;
+        o1.textContent = label;
         select.appendChild(o1);
 
-        const o2=document.createElement('option');
-        o2.value=x.id || x._id;
-        o2.textContent=label;
+        const o2 =
+            document.createElement('option');
+
+        o2.value = id;
+        o2.textContent = label;
         filter.appendChild(o2);
     });
 }
 
+
 async function loadEmployees(){
 
-    const d =
-        await api(
-            '/api/employees?companyId='+
-            encodeURIComponent(companyId)
-        );
+    try{
 
-    employees =
-        d.employees || [];
+        const d =
+            await api(
+                '/api/employees?companyId='+
+                encodeURIComponent(companyId)
+            );
+
+        employees =
+            d.employees || [];
+
+        if(window.AlMoraqebOfflineDB){
+
+            await AlMoraqebOfflineDB
+                .replaceCompanyData(
+                    AlMoraqebOfflineDB
+                        .STORES
+                        .employees,
+                    companyId,
+                    employees
+                );
+        }
+
+    }catch{
+
+        employees =
+            await getLocalStore(
+                AlMoraqebOfflineDB
+                    .STORES
+                    .employees
+            );
+    }
 
     renderEmployeeChoices();
 }
+
 
 function renderEmployeeChoices(selected=[]){
 
@@ -329,7 +496,12 @@ function renderEmployeeChoices(selected=[]){
     employees.forEach(emp=>{
 
         const id =
-            String(emp._id || emp.id || '');
+            String(
+                emp._id ||
+                emp.id ||
+                emp._offlineKey ||
+                ''
+            );
 
         const checked =
             selected.map(String).includes(id)
@@ -350,9 +522,11 @@ function renderEmployeeChoices(selected=[]){
             >
             <span>
                 <b>${escapeHtml(emp.name || '')}</b>
-                ${emp.specialty
-                    ? ' - '+escapeHtml(emp.specialty)
-                    : ''}
+                ${
+                    emp.specialty
+                        ? ' - '+escapeHtml(emp.specialty)
+                        : ''
+                }
             </span>
         `;
 
@@ -360,17 +534,67 @@ function renderEmployeeChoices(selected=[]){
     });
 }
 
+
 async function loadShifts(){
 
-    const d =
-        await api('/api/admin/shifts');
+    const notice =
+        document.getElementById('notice');
 
-    shifts =
-        d.shifts || [];
+    try{
+
+        const d =
+            await api('/api/admin/shifts');
+
+        shifts =
+            d.shifts || [];
+
+        if(window.AlMoraqebOfflineDB){
+
+            await AlMoraqebOfflineDB
+                .replaceCompanyData(
+                    AlMoraqebOfflineDB
+                        .STORES
+                        .shifts,
+                    companyId,
+                    shifts
+                );
+        }
+
+        notice.textContent =
+            '✅ تم تحميل الأوقات والشفتات';
+
+        notice.style.background='#dcfce7';
+        notice.style.color='#166534';
+
+    }catch{
+
+        shifts =
+            await getLocalStore(
+                AlMoraqebOfflineDB
+                    .STORES
+                    .shifts
+            );
+
+        shifts =
+            (shifts || []).map(s=>({
+                ...s,
+                _id:
+                    s._id ||
+                    s.id ||
+                    s._offlineKey
+            }));
+
+        notice.textContent =
+            '⚠ عرض الشفتات من النسخة المحلية - بدون إنترنت';
+
+        notice.style.background='#fef3c7';
+        notice.style.color='#92400e';
+    }
 
     updateStats();
     render();
 }
+
 
 async function loadAll(){
 
@@ -386,19 +610,16 @@ async function loadAll(){
 
         await loadShifts();
 
-        notice.textContent =
-            '✅ تم تحميل الأوقات والشفتات';
-
-        notice.style.background='#dcfce7';
-        notice.style.color='#166534';
-
     }catch(e){
 
-        notice.textContent='❌ '+e.message;
+        notice.textContent =
+            '❌ ' + e.message;
+
         notice.style.background='#fee2e2';
         notice.style.color='#991b1b';
     }
 }
+
 
 function updateStats(){
 
@@ -432,6 +653,7 @@ function updateStats(){
     document.getElementById('locationCount').textContent =
         uniqueLocations.size;
 }
+
 
 function render(){
 
@@ -495,7 +717,7 @@ function render(){
                     <button
                         class="btn blue"
                         onclick="editShift('${s._id}')"
-                    >✏️ تعديل</button>
+                    >✏ تعديل</button>
 
                     <button
                         class="btn red"
@@ -506,6 +728,7 @@ function render(){
         `).join('')
         : '<tr><td colspan="11">لا توجد شفتات مطابقة</td></tr>';
 }
+
 
 function openAdd(){
 
@@ -522,6 +745,7 @@ function openAdd(){
         .getElementById('shiftModal')
         .classList.add('show');
 }
+
 
 function editShift(id){
 
@@ -564,18 +788,21 @@ function editShift(id){
     );
 
     document.getElementById('modalTitle').textContent =
-        '✏️ تعديل الشفت';
+        '✏ تعديل الشفت';
 
     document
         .getElementById('shiftModal')
         .classList.add('show');
 }
 
+
 function closeModal(){
+
     document
         .getElementById('shiftModal')
         .classList.remove('show');
 }
+
 
 document
     .getElementById('shiftForm')
@@ -595,12 +822,23 @@ document
                     )
                 ).map(x=>x.value);
 
+            const locationId =
+                document.getElementById('shiftLocation').value;
+
+            const selectedLocation =
+                locations.find(x=>
+                    String(
+                        x.id ||
+                        x._id ||
+                        x._offlineKey
+                    ) === String(locationId)
+                );
+
             const payload = {
                 name:
                     document.getElementById('shiftName').value,
 
-                locationId:
-                    document.getElementById('shiftLocation').value,
+                locationId,
 
                 employeeIds,
 
@@ -628,55 +866,293 @@ document
                 return;
             }
 
-            try{
+            /*
+             * ONLINE
+             */
+            if(
+                navigator.onLine &&
+                !String(id).startsWith('local-')
+            ){
+                try{
 
-                if(id){
+                    if(id){
 
-                    await api(
-                        '/api/admin/shifts/'+id,
-                        {
-                            method:'PUT',
-                            body:JSON.stringify(payload)
-                        }
-                    );
+                        await api(
+                            '/api/admin/shifts/'+id,
+                            {
+                                method:'PUT',
+                                body:JSON.stringify(payload)
+                            }
+                        );
 
-                }else{
+                    }else{
 
-                    await api(
+                        await api(
+                            '/api/admin/shifts',
+                            {
+                                method:'POST',
+                                body:JSON.stringify(payload)
+                            }
+                        );
+                    }
+
+                    closeModal();
+                    await loadShifts();
+                    return;
+
+                }catch(err){
+
+                    if(navigator.onLine){
+                        alert('❌ '+err.message);
+                        return;
+                    }
+                }
+            }
+
+            /*
+             * OFFLINE
+             */
+            if(!window.AlMoraqebOfflineSync){
+                alert('❌ نظام Offline غير جاهز');
+                return;
+            }
+
+            if(!id){
+
+                const localId =
+                    'local-' + crypto.randomUUID();
+
+                payload.clientOfflineId =
+                    localId;
+
+                shifts.unshift({
+                    ...payload,
+                    _id:localId,
+                    id:localId,
+                    companyId,
+                    clientOfflineId:localId,
+                    locationName:
+                        selectedLocation
+                            ? selectedLocation.name
+                            : '',
+                    branch:
+                        selectedLocation
+                            ? selectedLocation.name
+                            : '',
+                    _offlinePending:true,
+                    createdAt:
+                        new Date().toISOString()
+                });
+
+                await saveLocalShifts();
+
+                await AlMoraqebOfflineSync
+                    .queueOperation(
                         '/api/admin/shifts',
-                        {
-                            method:'POST',
-                            body:JSON.stringify(payload)
-                        }
+                        'POST',
+                        payload
                     );
+
+                alert(
+                    '✅ تم حفظ الشفت على الجهاز وسيتم مزامنته عند عودة الإنترنت'
+                );
+
+            }else if(
+                String(id).startsWith('local-')
+            ){
+
+                const index =
+                    shifts.findIndex(
+                        x=>String(x._id)===String(id)
+                    );
+
+                if(index !== -1){
+
+                    shifts[index] = {
+                        ...shifts[index],
+                        ...payload,
+                        _id:id,
+                        clientOfflineId:id,
+                        locationName:
+                            selectedLocation
+                                ? selectedLocation.name
+                                : shifts[index].locationName,
+                        branch:
+                            selectedLocation
+                                ? selectedLocation.name
+                                : shifts[index].branch,
+                        _offlinePending:true
+                    };
                 }
 
-                closeModal();
-                await loadShifts();
+                const pending =
+                    await AlMoraqebOfflineDB
+                        .getPendingOperations(
+                            companyId
+                        );
 
-            }catch(err){
-                alert('❌ '+err.message);
+                const createOperation =
+                    pending.find(op =>
+                        op.method === 'POST' &&
+                        op.path === '/api/admin/shifts' &&
+                        op.body &&
+                        op.body.clientOfflineId === id
+                    );
+
+                if(!createOperation){
+                    alert(
+                        '❌ تعذر العثور على عملية إنشاء الشفت المحلية'
+                    );
+                    return;
+                }
+
+                createOperation.body = {
+                    ...createOperation.body,
+                    ...payload,
+                    clientOfflineId:id
+                };
+
+                await AlMoraqebOfflineDB
+                    .updateQueuedOperation(
+                        createOperation
+                    );
+
+                await saveLocalShifts();
+
+                alert(
+                    '✅ تم تعديل الشفت محلياً وسيتم مزامنته لاحقاً'
+                );
+
+            }else{
+
+                const index =
+                    shifts.findIndex(
+                        x=>String(x._id)===String(id)
+                    );
+
+                if(index !== -1){
+
+                    shifts[index] = {
+                        ...shifts[index],
+                        ...payload,
+                        locationName:
+                            selectedLocation
+                                ? selectedLocation.name
+                                : shifts[index].locationName,
+                        branch:
+                            selectedLocation
+                                ? selectedLocation.name
+                                : shifts[index].branch,
+                        _offlinePending:true
+                    };
+                }
+
+                await saveLocalShifts();
+
+                await AlMoraqebOfflineSync
+                    .queueOperation(
+                        '/api/admin/shifts/' +
+                        encodeURIComponent(id),
+                        'PUT',
+                        payload
+                    );
+
+                alert(
+                    '✅ تم تعديل الشفت محلياً وسيتم مزامنته عند عودة الإنترنت'
+                );
             }
+
+            closeModal();
+            updateStats();
+            render();
         }
     );
+
 
 async function deleteShift(id){
 
     if(!confirm('هل تريد حذف هذا الشفت؟'))
         return;
 
-    try{
+    /*
+     * ONLINE
+     */
+    if(
+        navigator.onLine &&
+        !String(id).startsWith('local-')
+    ){
 
-        await api(
-            '/api/admin/shifts/'+id,
-            {method:'DELETE'}
+        try{
+
+            await api(
+                '/api/admin/shifts/'+id,
+                {method:'DELETE'}
+            );
+
+            await loadShifts();
+            return;
+
+        }catch(err){
+
+            if(navigator.onLine){
+                alert('❌ '+err.message);
+                return;
+            }
+        }
+    }
+
+    /*
+     * OFFLINE
+     */
+    if(
+        String(id).startsWith('local-')
+    ){
+
+        const pending =
+            await AlMoraqebOfflineDB
+                .getPendingOperations(
+                    companyId
+                );
+
+        for(const op of pending){
+
+            if(
+                op.method === 'POST' &&
+                op.path === '/api/admin/shifts' &&
+                op.body &&
+                op.body.clientOfflineId === id
+            ){
+                await AlMoraqebOfflineDB
+                    .deleteQueuedOperation(
+                        op.id
+                    );
+            }
+        }
+
+    }else{
+
+        await AlMoraqebOfflineSync
+            .queueOperation(
+                '/api/admin/shifts/' +
+                encodeURIComponent(id),
+                'DELETE',
+                {}
+            );
+    }
+
+    shifts =
+        shifts.filter(
+            x=>String(x._id)!==String(id)
         );
 
-        await loadShifts();
+    await saveLocalShifts();
 
-    }catch(err){
-        alert('❌ '+err.message);
-    }
+    updateStats();
+    render();
+
+    alert(
+        '✅ تم حذف الشفت محلياً وسيتم تحديث السيرفر عند توفر الإنترنت'
+    );
 }
 
 (async()=>{
@@ -685,5 +1161,11 @@ async function deleteShift(id){
     }
 })();
 </script>
+
+<script src="/offline_db.js"></script>
+<script src="/offline_sync.js"></script>
+<script src="/offline_auth.js"></script>
+<script src="/offline_boot.js"></script>
+
 </body>
 </html>

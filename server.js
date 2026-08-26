@@ -192,6 +192,18 @@ const companySchema = new mongoose.Schema({
         default: 200
     },
 
+    uiLanguage: {
+        type: String,
+        enum: ['ar', 'en'],
+        default: 'ar'
+    },
+
+    uiTheme: {
+        type: String,
+        enum: ['light', 'dark'],
+        default: 'light'
+    },
+
     approvedLocations: [{
         name: {
             type: String,
@@ -240,6 +252,11 @@ const companySchema = new mongoose.Schema({
             default: true
         },
 
+        clientOfflineId: {
+            type: String,
+            default: ''
+        },
+
         createdAt: {
             type: Date,
             default: Date.now
@@ -267,6 +284,63 @@ const companySchema = new mongoose.Schema({
 
 const Company =
     mongoose.model('Company', companySchema);
+
+/*
+=========================================================
+  DEVELOPER SUPPORT REQUEST
+=========================================================
+*/
+const supportRequestSchema = new mongoose.Schema({
+
+    companyId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    companyName: {
+        type: String,
+        default: ''
+    },
+
+    subject: {
+        type: String,
+        required: true
+    },
+
+    message: {
+        type: String,
+        required: true
+    },
+
+    priority: {
+        type: String,
+        enum: ['normal', 'high', 'urgent'],
+        default: 'normal'
+    },
+
+    status: {
+        type: String,
+        enum: ['open', 'in_progress', 'closed'],
+        default: 'open',
+        index: true
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+
+    closedAt: Date
+});
+
+const SupportRequest =
+    mongoose.model(
+        'SupportRequest',
+        supportRequestSchema
+    );
+
+
 
 
 /*
@@ -381,6 +455,16 @@ const employeeSchema = new mongoose.Schema({
     },
 
     employeeSerial: {
+        type: String,
+        default: '',
+        index: true
+    },
+
+    /*
+     * معرف العملية عند إنشاء الموظف Offline.
+     * يستخدم لمنع التكرار عند إعادة المزامنة.
+     */
+    clientOfflineId: {
         type: String,
         default: '',
         index: true
@@ -816,6 +900,13 @@ const shiftSchema = new mongoose.Schema({
     departureEnd: { type: String, default: '' },
     overtimeStart: { type: String, default: '' },
     overtimeEnd: { type: String, default: '' },
+
+    clientOfflineId: {
+        type: String,
+        default: '',
+        index: true
+    },
+
     createdAt: { type: Date, default: Date.now }
 });
 const Shift = mongoose.model('Shift', shiftSchema);
@@ -900,6 +991,108 @@ const SalaryRecord = mongoose.model('SalaryRecord', salaryRecordSchema);
 
 /*
 =========================================================
+  EMPLOYEE EVALUATION
+=========================================================
+*/
+const employeeEvaluationSchema = new mongoose.Schema({
+
+    companyId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    employeeId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    employeeName: {
+        type: String,
+        default: ''
+    },
+
+    branch: {
+        type: String,
+        default: '',
+        index: true
+    },
+
+    periodType: {
+        type: String,
+        enum: ['monthly', 'semiannual', 'annual'],
+        required: true,
+        index: true
+    },
+
+    fromDate: {
+        type: Date,
+        required: true
+    },
+
+    toDate: {
+        type: Date,
+        required: true
+    },
+
+    attendanceScore: {
+        type: Number,
+        default: 0
+    },
+
+    punctualityScore: {
+        type: Number,
+        default: 0
+    },
+
+    disciplineScore: {
+        type: Number,
+        default: 0
+    },
+
+    performanceScore: {
+        type: Number,
+        default: 0
+    },
+
+    managerScore: {
+        type: Number,
+        default: 0
+    },
+
+    totalScore: {
+        type: Number,
+        default: 0
+    },
+
+    grade: {
+        type: String,
+        default: ''
+    },
+
+    notes: {
+        type: String,
+        default: ''
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+
+});
+
+const EmployeeEvaluation =
+    mongoose.model(
+        'EmployeeEvaluation',
+        employeeEvaluationSchema
+    );
+
+
+
+/*
+=========================================================
   LOAN RECORD MODEL (جديد)
 =========================================================
 */
@@ -913,9 +1106,21 @@ const loanRecordSchema = new mongoose.Schema({
     loanDate: { type: Date, default: Date.now },
     repayments: [{
         date: { type: Date, default: Date.now },
-        amount: { type: Number, default: 0 }
+        amount: { type: Number, default: 0 },
+
+        clientOfflineId: {
+            type: String,
+            default: ''
+        }
     }],
     remainingAmount: { type: Number, default: 0 },
+
+    clientOfflineId: {
+        type: String,
+        default: '',
+        index: true
+    },
+
     createdAt: { type: Date, default: Date.now }
 });
 const LoanRecord = mongoose.model('LoanRecord', loanRecordSchema);
@@ -2472,6 +2677,456 @@ app.post(
 =========================================================
 */
 
+
+/*
+=========================================================
+  ADMIN COMPANY SETTINGS
+=========================================================
+*/
+
+
+/*
+=========================================================
+  ADMIN SUPPORT + SAFE SYSTEM STATUS
+=========================================================
+*/
+
+app.get('/api/admin/system-info', requireAdmin, async (req, res) => {
+    try {
+
+        let appVersion = '1.0.0';
+
+        try {
+            const packageJson =
+                JSON.parse(
+                    fs.readFileSync(
+                        path.join(__dirname, 'package.json'),
+                        'utf8'
+                    )
+                );
+
+            appVersion =
+                packageJson.version || appVersion;
+        } catch (_) {}
+
+        const dbConnected =
+            mongoose.connection.readyState === 1;
+
+        return res.json({
+            success: true,
+
+            version:
+                appVersion,
+
+            serverStatus:
+                'online',
+
+            databaseStatus:
+                dbConnected
+                    ? 'connected'
+                    : 'disconnected',
+
+            checkedAt:
+                new Date(),
+
+            /*
+             * لا نوفر أي معلومات بنية تحتية،
+             * ولا روابط Render/GitHub ولا أوامر تشغيل.
+             */
+            updateManagedByDeveloper:
+                true
+        });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+
+app.get('/api/admin/support-requests', requireAdmin, async (req, res) => {
+    try {
+
+        const requests =
+            await SupportRequest
+                .find({
+                    companyId:
+                        req.session.companyId
+                })
+                .sort({
+                    createdAt: -1
+                })
+                .limit(50)
+                .lean();
+
+        return res.json({
+            success: true,
+            requests
+        });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+
+app.post('/api/admin/support-requests', requireAdmin, async (req, res) => {
+    try {
+
+        const company =
+            await Company.findOne({
+                companyId:
+                    req.session.companyId
+            }).lean();
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'الشركة غير موجودة'
+            });
+        }
+
+        const subject =
+            String(
+                req.body.subject || ''
+            ).trim();
+
+        const message =
+            String(
+                req.body.message || ''
+            ).trim();
+
+        const priority =
+            ['normal', 'high', 'urgent']
+                .includes(req.body.priority)
+                ? req.body.priority
+                : 'normal';
+
+        if (!subject || !message) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'عنوان الطلب وتفاصيله مطلوبان'
+            });
+        }
+
+        const request =
+            await new SupportRequest({
+
+                companyId:
+                    company.companyId,
+
+                companyName:
+                    company.name || '',
+
+                subject,
+
+                message,
+
+                priority,
+
+                status:
+                    'open'
+
+            }).save();
+
+        return res.status(201).json({
+            success: true,
+            message:
+                'تم إرسال طلب الدعم إلى المطور',
+            request
+        });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+
+app.post('/api/admin/request-update', requireAdmin, async (req, res) => {
+    try {
+
+        const company =
+            await Company.findOne({
+                companyId:
+                    req.session.companyId
+            }).lean();
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message:
+                    'الشركة غير موجودة'
+            });
+        }
+
+        let currentVersion = '1.0.0';
+
+        try {
+            const packageJson =
+                JSON.parse(
+                    fs.readFileSync(
+                        path.join(__dirname, 'package.json'),
+                        'utf8'
+                    )
+                );
+
+            currentVersion =
+                packageJson.version ||
+                currentVersion;
+        } catch (_) {}
+
+        const existing =
+            await SupportRequest.findOne({
+                companyId:
+                    company.companyId,
+
+                subject:
+                    'طلب تحديث النسخة',
+
+                status: {
+                    $in: [
+                        'open',
+                        'in_progress'
+                    ]
+                }
+            }).lean();
+
+        if (existing) {
+            return res.status(409).json({
+                success: false,
+                message:
+                    'يوجد طلب تحديث مفتوح مسبقاً'
+            });
+        }
+
+        const request =
+            await new SupportRequest({
+
+                companyId:
+                    company.companyId,
+
+                companyName:
+                    company.name || '',
+
+                subject:
+                    'طلب تحديث النسخة',
+
+                message:
+                    `طلب تحديث النظام. النسخة الحالية: ${currentVersion}`,
+
+                priority:
+                    'normal',
+
+                status:
+                    'open'
+
+            }).save();
+
+        return res.status(201).json({
+            success: true,
+            message:
+                'تم إرسال طلب تحديث النسخة إلى المطور',
+            request
+        });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+app.get('/api/admin/settings', requireAdmin, async (req, res) => {
+    try {
+
+        const company =
+            await Company.findOne({
+                companyId: req.session.companyId
+            }).lean();
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'الشركة غير موجودة'
+            });
+        }
+
+        return res.json({
+            success: true,
+            settings: {
+                companyId: company.companyId,
+                name: company.name || '',
+                email: company.email || '',
+                phone: company.phone || '',
+                managerName: company.managerName || '',
+                managerPhone: company.managerPhone || '',
+                adminUsername: company.adminUsername || 'admin',
+
+                uiLanguage:
+                    company.uiLanguage || 'ar',
+
+                uiTheme:
+                    company.uiTheme || 'light',
+
+                /*
+                 * للعرض فقط في صفحة المدير.
+                 * لا يسمح بتعديلها من API المدير.
+                 */
+                subscription: company.subscription || '',
+                systemState: company.systemState || '',
+                subscriptionStartDate: company.subscriptionStartDate || null,
+                subscriptionEndDate: company.subscriptionEndDate || null
+            }
+        });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+
+app.put('/api/admin/settings', requireAdmin, async (req, res) => {
+    try {
+
+        const company =
+            await Company.findOne({
+                companyId: req.session.companyId
+            });
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'الشركة غير موجودة'
+            });
+        }
+
+        if (req.body.name !== undefined) {
+            const name =
+                String(req.body.name || '').trim();
+
+            if (!name) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'اسم الشركة مطلوب'
+                });
+            }
+
+            company.name = name;
+        }
+
+        if (req.body.email !== undefined)
+            company.email =
+                String(req.body.email || '').trim();
+
+        if (req.body.phone !== undefined)
+            company.phone =
+                String(req.body.phone || '').trim();
+
+        if (req.body.managerName !== undefined)
+            company.managerName =
+                String(req.body.managerName || '').trim();
+
+        if (req.body.managerPhone !== undefined)
+            company.managerPhone =
+                String(req.body.managerPhone || '').trim();
+
+        if (req.body.adminUsername !== undefined) {
+
+            const username =
+                String(req.body.adminUsername || '').trim();
+
+            if (!username) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'اسم مستخدم المدير مطلوب'
+                });
+            }
+
+            company.adminUsername =
+                username;
+        }
+
+        if (req.body.uiLanguage !== undefined) {
+
+            const language =
+                String(req.body.uiLanguage || '').trim();
+
+            if (!['ar', 'en'].includes(language)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'اللغة غير مدعومة'
+                });
+            }
+
+            company.uiLanguage = language;
+        }
+
+        if (req.body.uiTheme !== undefined) {
+
+            const theme =
+                String(req.body.uiTheme || '').trim();
+
+            if (!['light', 'dark'].includes(theme)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'وضع العرض غير مدعوم'
+                });
+            }
+
+            company.uiTheme = theme;
+        }
+
+        if (req.body.adminPassword) {
+
+            const password =
+                String(req.body.adminPassword);
+
+            if (password.length < 4) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        'كلمة مرور المدير يجب أن تكون 4 أحرف على الأقل'
+                });
+            }
+
+            company.adminPasswordHash =
+                hashPassword(password);
+        }
+
+        await company.save();
+
+        return res.json({
+            success: true,
+            message: 'تم حفظ إعدادات الشركة بنجاح'
+        });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
 app.get(
     '/api/admin/session',
     requireAdmin,
@@ -3832,6 +4487,36 @@ app.post(
             const password =
                 String(req.body.password || '');
 
+            const clientOfflineId =
+                String(
+                    req.body.clientOfflineId || ''
+                ).trim();
+
+            /*
+             * Idempotency للمزامنة:
+             * إذا وصلت نفس عملية الإنشاء مرة ثانية
+             * نعيد الموظف الموجود ولا ننشئ نسخة مكررة.
+             */
+            if (clientOfflineId) {
+
+                const existingOfflineEmployee =
+                    await Employee.findOne({
+                        companyId,
+                        clientOfflineId
+                    });
+
+                if (existingOfflineEmployee) {
+                    return res.status(200).json({
+                        success: true,
+                        alreadySynced: true,
+                        employee:
+                            publicEmployee(
+                                existingOfflineEmployee
+                            )
+                    });
+                }
+            }
+
             if (!companyId || !name) {
                 return res.status(400).json({
                     success: false,
@@ -3888,6 +4573,8 @@ app.post(
                 name,
                 email: req.body.email || '',
                 phoneNumber,
+                clientOfflineId,
+
                 salary: req.body.salary !== undefined && req.body.salary !== ''
                     ? Number(req.body.salary)
                     : undefined,
@@ -5275,6 +5962,41 @@ app.post('/api/admin/locations', requireAdmin, async (req, res) => {
             companyId: req.session.companyId
         });
 
+        const clientOfflineId =
+            String(req.body.clientOfflineId || '').trim();
+
+        if (company && clientOfflineId) {
+
+            const existingOfflineLocation =
+                (company.approvedLocations || [])
+                    .find(location =>
+                        String(location.clientOfflineId || '') ===
+                        clientOfflineId
+                    );
+
+            if (existingOfflineLocation) {
+                return res.status(200).json({
+                    success: true,
+                    alreadySynced: true,
+                    location: {
+                        id: String(existingOfflineLocation._id),
+                        _id: String(existingOfflineLocation._id),
+                        name: existingOfflineLocation.name || '',
+                        type: existingOfflineLocation.type || 'worksite',
+                        province: existingOfflineLocation.province || '',
+                        fullAddress: existingOfflineLocation.fullAddress || '',
+                        parentLocationId: existingOfflineLocation.parentLocationId || '',
+                        latitude: existingOfflineLocation.latitude,
+                        longitude: existingOfflineLocation.longitude,
+                        radiusMeters: existingOfflineLocation.radiusMeters || 200,
+                        active: existingOfflineLocation.active !== false,
+                        clientOfflineId
+                    }
+                });
+            }
+        }
+
+
         if (!company) {
             return res.status(404).json({
                 success: false,
@@ -5340,6 +6062,7 @@ app.post('/api/admin/locations', requireAdmin, async (req, res) => {
         }
 
         company.approvedLocations.push({
+            clientOfflineId,
             name,
             type,
             province,
@@ -5632,6 +6355,27 @@ app.get('/api/admin/shifts', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
     try {
+
+        const clientOfflineId =
+            String(req.body.clientOfflineId || '').trim();
+
+        if (clientOfflineId) {
+
+            const existingOfflineShift =
+                await Shift.findOne({
+                    companyId: req.session.companyId,
+                    clientOfflineId
+                });
+
+            if (existingOfflineShift) {
+                return res.status(200).json({
+                    success: true,
+                    alreadySynced: true,
+                    shift: existingOfflineShift
+                });
+            }
+        }
+
         const companyId = req.session.companyId;
 
         const {
@@ -5675,9 +6419,18 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
          * البحث عن الموقع داخل مواقع نفس الشركة فقط.
          * الموقع الموقوف لا يمكن ربط شفت جديد به.
          */
+        /*
+         * دعم معرفات المواقع المحلية Offline:
+         * إذا كان locationId معرف Mongo نبحث بـ _id،
+         * وإذا كان local-* نبحث بـ clientOfflineId.
+         */
         const location = (company.approvedLocations || []).find(
             item =>
-                String(item._id) === String(locationId)
+                String(item._id) === String(locationId) ||
+                (
+                    item.clientOfflineId &&
+                    String(item.clientOfflineId) === String(locationId)
+                )
         );
 
         if (!location) {
@@ -5697,30 +6450,57 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
         /*
          * التحقق من أن الموظفين تابعون لنفس الشركة.
          */
-        const requestedEmployeeIds =
+        const rawEmployeeIds =
             Array.isArray(employeeIds)
                 ? [...new Set(employeeIds.map(String))]
                 : [];
 
-        if (requestedEmployeeIds.length) {
+        /*
+         * تحويل معرفات الموظفين المحلية Offline
+         * إلى MongoDB _id الحقيقي.
+         */
+        const requestedEmployeeIds = [];
 
-            const employees = await Employee.find({
-                _id: { $in: requestedEmployeeIds },
-                companyId
-            }).select('_id').lean();
+        for (const rawId of rawEmployeeIds) {
 
-            if (employees.length !== requestedEmployeeIds.length) {
+            let employee = null;
+
+            if (
+                mongoose.Types.ObjectId.isValid(rawId)
+            ) {
+
+                employee = await Employee.findOne({
+                    _id: rawId,
+                    companyId
+                }).select('_id').lean();
+
+            } else {
+
+                employee = await Employee.findOne({
+                    companyId,
+                    clientOfflineId: rawId
+                }).select('_id').lean();
+            }
+
+            if (!employee) {
                 return res.status(400).json({
                     success: false,
-                    message: 'أحد الموظفين المحددين لا يتبع هذه الشركة'
+                    message:
+                        'أحد الموظفين المحددين لا يتبع هذه الشركة أو لم تتم مزامنته بعد'
                 });
             }
+
+            requestedEmployeeIds.push(
+                String(employee._id)
+            );
         }
 
         const locationName =
             String(location.name || '').trim();
 
         const shift = await new Shift({
+            clientOfflineId,
+
             companyId,
 
             name,
@@ -5830,7 +6610,12 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
                 (company.approvedLocations || []).find(
                     item =>
                         String(item._id) ===
-                        String(locationId)
+                        String(locationId) ||
+                        (
+                            item.clientOfflineId &&
+                            String(item.clientOfflineId) ===
+                            String(locationId)
+                        )
                 );
 
             if (!location) {
@@ -5873,34 +6658,51 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
                 });
             }
 
-            const requestedEmployeeIds =
+            const rawEmployeeIds =
                 [...new Set(
                     employeeIds.map(String)
                 )];
 
-            if (requestedEmployeeIds.length) {
+            const requestedEmployeeIds = [];
 
-                const employees =
-                    await Employee.find({
-                        _id: {
-                            $in:
-                                requestedEmployeeIds
-                        },
-                        companyId
-                    })
-                    .select('_id')
-                    .lean();
+            for (const rawId of rawEmployeeIds) {
+
+                let employee = null;
 
                 if (
-                    employees.length !==
-                    requestedEmployeeIds.length
+                    mongoose.Types.ObjectId.isValid(rawId)
                 ) {
+
+                    employee =
+                        await Employee.findOne({
+                            _id: rawId,
+                            companyId
+                        })
+                        .select('_id')
+                        .lean();
+
+                } else {
+
+                    employee =
+                        await Employee.findOne({
+                            companyId,
+                            clientOfflineId: rawId
+                        })
+                        .select('_id')
+                        .lean();
+                }
+
+                if (!employee) {
                     return res.status(400).json({
                         success: false,
                         message:
-                            'أحد الموظفين المحددين لا يتبع هذه الشركة'
+                            'أحد الموظفين المحددين لا يتبع هذه الشركة أو لم تتم مزامنته بعد'
                     });
                 }
+
+                requestedEmployeeIds.push(
+                    String(employee._id)
+                );
             }
 
             shift.employeeIds =
@@ -5982,11 +6784,32 @@ app.put(
             const companyId =
                 req.session.companyId;
 
-            const employee =
-                await Employee.findOne({
-                    _id: req.params.employeeId,
-                    companyId
-                });
+            const rawEmployeeId =
+                String(req.params.employeeId || '').trim();
+
+            let employee = null;
+
+            if (
+                mongoose.Types.ObjectId.isValid(
+                    rawEmployeeId
+                )
+            ) {
+
+                employee =
+                    await Employee.findOne({
+                        _id: rawEmployeeId,
+                        companyId
+                    });
+
+            } else {
+
+                employee =
+                    await Employee.findOne({
+                        companyId,
+                        clientOfflineId:
+                            rawEmployeeId
+                    });
+            }
 
             if (!employee) {
                 return res.status(404).json({
@@ -6162,6 +6985,363 @@ app.put(
         }
     }
 );
+
+
+/*
+=========================================================
+  ADMIN REPORTS
+=========================================================
+*/
+
+app.get('/api/admin/reports', requireAdmin, async (req, res) => {
+    try {
+
+        const companyId = req.session.companyId;
+
+        const type =
+            String(req.query.type || '').trim();
+
+        const scope =
+            String(req.query.scope || 'company').trim();
+
+        const branch =
+            String(req.query.branch || '').trim();
+
+        const employeeId =
+            String(req.query.employeeId || '').trim();
+
+        let from = null;
+        let to = null;
+
+        if (req.query.from) {
+            from = new Date(req.query.from);
+
+            if (Number.isNaN(from.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'تاريخ البداية غير صحيح'
+                });
+            }
+
+            from.setHours(0, 0, 0, 0);
+        }
+
+        if (req.query.to) {
+            to = new Date(req.query.to);
+
+            if (Number.isNaN(to.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'تاريخ النهاية غير صحيح'
+                });
+            }
+
+            to.setHours(23, 59, 59, 999);
+        }
+
+        if (from && to && to < from) {
+            return res.status(400).json({
+                success: false,
+                message: 'تاريخ النهاية يجب أن يكون بعد البداية'
+            });
+        }
+
+        /*
+         * الموظفون المشمولون بالتقرير
+         */
+        const employeeQuery = { companyId };
+
+        if (scope === 'branch' && branch) {
+            employeeQuery.branch = branch;
+        }
+
+        if (scope === 'employee' && employeeId) {
+            employeeQuery._id = employeeId;
+        }
+
+        const employees =
+            await Employee.find(employeeQuery).lean();
+
+        const employeeIds =
+            employees.map(e => String(e._id));
+
+        /*
+         * تقرير الرواتب
+         */
+        if (type === 'salary') {
+
+            const query = { companyId };
+
+            if (employeeIds.length) {
+                query.employeeId = {
+                    $in: employeeIds
+                };
+            }
+
+            if (from || to) {
+                query.createdAt = {
+                    ...(from ? { $gte: from } : {}),
+                    ...(to ? { $lte: to } : {})
+                };
+            }
+
+            const records =
+                await SalaryRecord
+                    .find(query)
+                    .sort({ employeeName: 1 })
+                    .lean();
+
+            return res.json({
+                success: true,
+                type,
+                scope,
+                total: records.length,
+                records
+            });
+        }
+
+        /*
+         * تقرير الحضور والغياب
+         */
+        if (type === 'attendance') {
+
+            const query = { companyId };
+
+            if (employeeIds.length) {
+                query.employeeId = {
+                    $in: employeeIds
+                };
+            }
+
+            if (from || to) {
+                query.timestamp = {
+                    ...(from ? { $gte: from } : {}),
+                    ...(to ? { $lte: to } : {})
+                };
+            }
+
+            const attendance =
+                await Attendance
+                    .find(query)
+                    .sort({ timestamp: 1 })
+                    .lean();
+
+            const leaves =
+                await ServiceRequest
+                    .find({
+                        companyId,
+                        employeeId: {
+                            $in: employeeIds
+                        },
+                        type: 'leave',
+                        status: 'approved'
+                    })
+                    .lean();
+
+            return res.json({
+                success: true,
+                type,
+                scope,
+                employees,
+                attendance,
+                leaves
+            });
+        }
+
+        /*
+         * تقرير الإيفادات
+         */
+        if (type === 'delegation') {
+
+            const records =
+                employees
+                    .filter(e =>
+                        e.delegation &&
+                        (
+                            e.delegation.active ||
+                            e.delegation.from ||
+                            e.delegation.to
+                        )
+                    )
+                    .map(e => ({
+                        employeeId:
+                            String(e._id),
+
+                        employeeName:
+                            e.name || '',
+
+                        branch:
+                            e.branch || '',
+
+                        ...e.delegation
+                    }))
+                    .filter(d => {
+
+                        if (!from && !to)
+                            return true;
+
+                        const df =
+                            d.from
+                                ? new Date(d.from)
+                                : null;
+
+                        const dt =
+                            d.to
+                                ? new Date(d.to)
+                                : null;
+
+                        if (from && dt && dt < from)
+                            return false;
+
+                        if (to && df && df > to)
+                            return false;
+
+                        return true;
+                    });
+
+            return res.json({
+                success: true,
+                type,
+                scope,
+                total: records.length,
+                records
+            });
+        }
+
+        /*
+         * تقرير المواقع
+         */
+        if (type === 'locations') {
+
+            const company =
+                await Company
+                    .findOne({ companyId })
+                    .lean();
+
+            if (!company) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'الشركة غير موجودة'
+                });
+            }
+
+            const records = [];
+
+            if (
+                Number.isFinite(company.latitude) &&
+                Number.isFinite(company.longitude)
+            ) {
+                records.push({
+                    name:
+                        company.name ||
+                        'المقر الرئيسي',
+
+                    type:
+                        'headquarters',
+
+                    latitude:
+                        company.latitude,
+
+                    longitude:
+                        company.longitude,
+
+                    radiusMeters:
+                        company.geofenceRadiusMeters || 200,
+
+                    active:
+                        true
+                });
+            }
+
+            for (
+                const loc
+                of company.approvedLocations || []
+            ) {
+                records.push({
+                    id:
+                        String(loc._id),
+
+                    name:
+                        loc.name || '',
+
+                    type:
+                        loc.type || 'worksite',
+
+                    province:
+                        loc.province || '',
+
+                    fullAddress:
+                        loc.fullAddress || '',
+
+                    latitude:
+                        loc.latitude,
+
+                    longitude:
+                        loc.longitude,
+
+                    radiusMeters:
+                        loc.radiusMeters || 200,
+
+                    active:
+                        loc.active !== false
+                });
+            }
+
+            return res.json({
+                success: true,
+                type,
+                total: records.length,
+                records
+            });
+        }
+
+        /*
+         * تقييم الموظفين
+         */
+        if (type === 'evaluation') {
+
+            const query = { companyId };
+
+            if (employeeIds.length) {
+                query.employeeId = {
+                    $in: employeeIds
+                };
+            }
+
+            if (from || to) {
+                query.fromDate = {
+                    ...(from ? { $gte: from } : {}),
+                    ...(to ? { $lte: to } : {})
+                };
+            }
+
+            const records =
+                await EmployeeEvaluation
+                    .find(query)
+                    .sort({ fromDate: -1 })
+                    .lean();
+
+            return res.json({
+                success: true,
+                type,
+                total: records.length,
+                records
+            });
+        }
+
+        return res.status(400).json({
+            success: false,
+            message: 'نوع التقرير غير معروف'
+        });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
 
 app.get('/api/admin/attendance', requireAdmin, async (req, res) => {
     try {
@@ -6430,9 +7610,32 @@ app.get('/api/admin/loans', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/loans', requireAdmin, async (req, res) => {
     try {
+
+        const clientOfflineId =
+            String(req.body.clientOfflineId || '').trim();
+
+        if (clientOfflineId) {
+
+            const existingOfflineLoan =
+                await LoanRecord.findOne({
+                    companyId: req.session.companyId,
+                    clientOfflineId
+                });
+
+            if (existingOfflineLoan) {
+                return res.status(200).json({
+                    success: true,
+                    alreadySynced: true,
+                    loan: existingOfflineLoan
+                });
+            }
+        }
+
         const { employeeId, employeeName, specialty, workplace, totalLoanAmount, loanDate } = req.body;
         if (!employeeId || !totalLoanAmount || totalLoanAmount <= 0) return res.status(400).json({ success: false, message: 'بيانات السلفة ناقصة' });
         const loan = await new LoanRecord({
+            clientOfflineId,
+
             companyId: req.session.companyId,
             employeeId,
             employeeName: employeeName || '',
@@ -6450,10 +7653,51 @@ app.post('/api/admin/loans', requireAdmin, async (req, res) => {
 app.post('/api/admin/loans/:employeeId/repayments', requireAdmin, async (req, res) => {
     try {
         const { date, amount } = req.body;
-        if (!date || !amount || amount <= 0) return res.status(400).json({ success: false, message: 'بيانات التسديد ناقصة' });
-        const loan = await LoanRecord.findOne({ companyId: req.session.companyId, employeeId: req.params.employeeId });
-        if (!loan) return res.status(404).json({ success: false, message: 'السلفة غير موجودة' });
-        loan.repayments.push({ date: new Date(date), amount });
+
+        const clientOfflineId =
+            String(req.body.clientOfflineId || '').trim();
+
+        if (!date || !amount || amount <= 0)
+            return res.status(400).json({
+                success: false,
+                message: 'بيانات التسديد ناقصة'
+            });
+
+        const loan = await LoanRecord.findOne({
+            companyId: req.session.companyId,
+            employeeId: req.params.employeeId
+        });
+
+        if (!loan)
+            return res.status(404).json({
+                success: false,
+                message: 'السلفة غير موجودة'
+            });
+
+        if (clientOfflineId) {
+
+            const existingRepayment =
+                (loan.repayments || []).find(
+                    repayment =>
+                        String(
+                            repayment.clientOfflineId || ''
+                        ) === clientOfflineId
+                );
+
+            if (existingRepayment) {
+                return res.status(200).json({
+                    success: true,
+                    alreadySynced: true,
+                    loan
+                });
+            }
+        }
+
+        loan.repayments.push({
+            date: new Date(date),
+            amount,
+            clientOfflineId
+        });
         const totalRepayments = loan.repayments.reduce((sum, r) => sum + r.amount, 0);
         loan.remainingAmount = loan.totalLoanAmount - totalRepayments;
         await loan.save();

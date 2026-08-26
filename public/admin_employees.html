@@ -98,24 +98,102 @@
         return String(s.companyId || new URLSearchParams(location.search).get('company') || localStorage.getItem('companyId') || '').trim();
     }
 
-    async function auth() {
-        token = sessionStorage.getItem('almoraqeb_admin_token') || '';
-        companyId = getCompanyId();
-        if (!token || !companyId) { location.href = 'admin_login.html'; return false; }
-        try {
-            const r = await fetch(API + '/api/admin/session', {
-                headers: { 'Authorization': 'Bearer ' + token },
-                cache: 'no-store'
-            });
-            const d = await r.json();
-            if (!r.ok || !d.success) throw 0;
-            document.getElementById('companyBadge').textContent = companyId;
-            return true;
-        } catch {
-            location.href = 'admin_login.html';
-            return false;
-        }
+    async function auth(){
+
+    token =
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
+
+    const s =
+        typeof session === 'function'
+            ? session()
+            : (
+                typeof getSession === 'function'
+                    ? getSession()
+                    : {}
+            );
+
+    companyId = String(
+        s.companyId ||
+        new URLSearchParams(
+            location.search
+        ).get('company') ||
+        localStorage.getItem(
+            'companyId'
+        ) ||
+        ''
+    ).trim();
+
+    if(
+        !companyId ||
+        !window.AlMoraqebOfflineAuth
+    ){
+        location.href =
+            'admin_login.html';
+        return false;
     }
+
+    const result =
+        await AlMoraqebOfflineAuth
+            .authorizePage({
+                companyId
+            });
+
+    if(!result.ok){
+        location.href =
+            'admin_login.html';
+        return false;
+    }
+
+    companyId =
+        result.companyId ||
+        companyId;
+
+    /*
+     * أثناء Offline لا نستخدم Token وهمي
+     * في طلبات الشبكة إلا أن بعض الدوال
+     * تحتاج القيمة لمعرفة وجود الجلسة.
+     */
+    token =
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
+
+    const badge =
+        document.getElementById(
+            'companyBadge'
+        );
+
+    if(badge)
+        badge.textContent =
+            companyId;
+
+    const companyLabel =
+        document.getElementById(
+            'company'
+        );
+
+    if(companyLabel)
+        companyLabel.textContent =
+            companyId;
+
+    const companyStat =
+        document.getElementById(
+            'companyStat'
+        );
+
+    if(companyStat)
+        companyStat.textContent =
+            companyId;
+
+    document.documentElement.dataset.offline =
+        result.offline
+            ? 'true'
+            : 'false';
+
+    return true;
+}
 
     function goHome() {
         location.href = 'index.html?company=' + encodeURIComponent(companyId);
@@ -236,40 +314,158 @@
     // ============================================================
     // تحميل الموظفين من MongoDB
     // ============================================================
+    async function renderEmployeesFromData(employees, offline = false) {
+
+        const tbody =
+            document.getElementById('employeesTable');
+
+        tbody.innerHTML =
+            employees.length === 0
+                ? `<tr><td colspan="9" style="color:#64748b;">لا يوجد موظفون</td></tr>`
+                : employees.map((e, i) => `
+                    <tr data-status="${e.status || 'active'}">
+                        <td>${i+1}</td>
+                        <td>${e.companyId || companyId || '—'}</td>
+                        <td><b>${e.name || '—'}</b></td>
+                        <td>${e.phoneNumber || '—'}</td>
+                        <td>${e.email || '—'}</td>
+                        <td>${e.salary ? Number(e.salary).toLocaleString() + ' د.ع' : '—'}</td>
+                        <td>${e.specialty || '—'}</td>
+                        <td>
+                            <span class="status-badge ${e.status === 'active' ? 'status-active' : 'status-inactive'}">
+                                ${e.status === 'active' ? '✅ نشط' : '⛔ غير نشط'}
+                            </span>
+                        </td>
+                        <td>
+                            <button
+                                class="btn btn-blue"
+                                style="padding:4px 10px;font-size:11px;"
+                                onclick="editEmployee('${e._id || e.id || e._offlineKey}')"
+                            >✏</button>
+
+                            <button
+                                class="btn btn-red"
+                                style="padding:4px 10px;font-size:11px;"
+                                onclick="deleteEmployee('${e._id || e.id || e._offlineKey}')"
+                            >🗑</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+        showStatus(
+            offline
+                ? '⚠ عرض ' + employees.length + ' موظف من النسخة المحلية - بدون إنترنت'
+                : '✅ تم تحميل ' + employees.length + ' موظف',
+            offline ? 'warning' : ''
+        );
+    }
+
+
     async function loadEmployees() {
-        const tbody = document.getElementById('employeesTable');
-        tbody.innerHTML = `<tr><td colspan="8"><div class="loading-spinner"></div></td></tr>`;
+
+        const tbody =
+            document.getElementById('employeesTable');
+
+        tbody.innerHTML =
+            `<tr><td colspan="9"><div class="loading-spinner"></div> جاري التحميل...</td></tr>`;
+
+        /*
+         * أولاً نحاول السيرفر.
+         */
         try {
-            const r = await fetch(API + '/api/employees?companyId=' + encodeURIComponent(companyId), {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
-            if (r.ok && d.success) {
-                const employees = d.employees || [];
-                tbody.innerHTML = employees.length === 0 ?
-                    `<tr><td colspan="9" style="color:#64748b;">لا يوجد موظفون</td></tr>` :
-                    employees.map((e, i) => `
-                        <tr data-status="${e.status || 'active'}">
-                            <td>${i+1}</td>
-                            <td>${e.companyId || '—'}</td>
-                            <td><b>${e.name}</b></td>
-                            <td>${e.phoneNumber || '—'}</td>
-                            <td>${e.email || '—'}</td>
-                            <td>${e.salary ? Number(e.salary).toLocaleString() + ' د.ع' : '—'}</td>
-                            <td>${e.specialty || '—'}</td>
-                            <td><span class="status-badge ${e.status === 'active' ? 'status-active' : 'status-inactive'}">${e.status === 'active' ? '✅ نشط' : '⛔ غير نشط'}</span></td>
-                            <td>
-                                <button class="btn btn-blue" style="padding:4px 10px;font-size:11px;" onclick="editEmployee('${e._id}')">✏️</button>
-                                <button class="btn btn-red" style="padding:4px 10px;font-size:11px;" onclick="deleteEmployee('${e._id}')">🗑️</button>
-                            </td>
-                        </tr>
-                    `).join('');
-                showStatus('✅ تم تحميل ' + employees.length + ' موظف', '');
-            } else {
-                tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;">❌ فشل التحميل</td></tr>`;
+
+            const r =
+                await fetch(
+                    API +
+                    '/api/employees?companyId=' +
+                    encodeURIComponent(companyId),
+                    {
+                        headers: {
+                            'Authorization':
+                                'Bearer ' + token
+                        },
+                        cache:
+                            'no-store'
+                    }
+                );
+
+            const d =
+                await r.json();
+
+            if (!r.ok || !d.success) {
+                throw new Error(
+                    d.message ||
+                    'تعذر تحميل الموظفين'
+                );
             }
-        } catch {
-            tbody.innerHTML = `<tr><td colspan="8" style="color:#ef4444;">❌ فشل الاتصال بالسيرفر</td></tr>`;
+
+            const employees =
+                d.employees || [];
+
+            /*
+             * حفظ نسخة كاملة محلياً على الجهاز.
+             */
+            if (
+                window.AlMoraqebOfflineDB
+            ) {
+
+                await AlMoraqebOfflineDB
+                    .replaceCompanyData(
+                        AlMoraqebOfflineDB
+                            .STORES
+                            .employees,
+
+                        companyId,
+
+                        employees
+                    );
+            }
+
+            await renderEmployeesFromData(
+                employees,
+                false
+            );
+
+            return;
+
+        } catch (error) {
+
+            /*
+             * إذا تعذر السيرفر نقرأ النسخة المحلية.
+             */
+            try {
+
+                if (
+                    !window.AlMoraqebOfflineDB
+                ) {
+                    throw error;
+                }
+
+                const localEmployees =
+                    await AlMoraqebOfflineDB
+                        .getCompanyData(
+                            AlMoraqebOfflineDB
+                                .STORES
+                                .employees,
+
+                            companyId
+                        );
+
+                await renderEmployeesFromData(
+                    localEmployees,
+                    true
+                );
+
+            } catch (_) {
+
+                tbody.innerHTML =
+                    `<tr><td colspan="9" style="color:#ef4444;">❌ لا توجد نسخة محلية للموظفين بعد</td></tr>`;
+
+                showStatus(
+                    '❌ تعذر الاتصال بالسيرفر ولا توجد بيانات محلية محفوظة',
+                    'error'
+                );
+            }
         }
     }
 
@@ -298,93 +494,570 @@
         document.getElementById('employeeModal').classList.add('show');
     }
 
+    async function getLocalEmployees() {
+        if (!window.AlMoraqebOfflineDB)
+            return [];
+
+        return AlMoraqebOfflineDB.getCompanyData(
+            AlMoraqebOfflineDB.STORES.employees,
+            companyId
+        );
+    }
+
+
+    async function saveLocalEmployee(employee) {
+
+        await AlMoraqebOfflineDB.putRecord(
+            AlMoraqebOfflineDB.STORES.employees,
+            companyId,
+            employee
+        );
+    }
+
+
+    async function removeLocalEmployee(id) {
+
+        const rows =
+            await getLocalEmployees();
+
+        const filtered =
+            rows.filter(e =>
+                String(e._id || e.id || '') !== String(id)
+            );
+
+        await AlMoraqebOfflineDB.replaceCompanyData(
+            AlMoraqebOfflineDB.STORES.employees,
+            companyId,
+            filtered
+        );
+    }
+
+
+    function fillEmployeeModal(e, id) {
+
+        document.getElementById('modalTitle').textContent =
+            '✏ تعديل موظف';
+
+        document.getElementById('editId').value =
+            id;
+
+        document.getElementById('empCompanyId').value =
+            e.companyId || companyId;
+
+        document.getElementById('empName').value =
+            e.name || '';
+
+        document.getElementById('empPhone').value =
+            e.phoneNumber || '';
+
+        document.getElementById('empEmail').value =
+            e.email || '';
+
+        document.getElementById('empSalary').value =
+            e.salary || '';
+
+        document.getElementById('empSpecialty').value =
+            e.specialty || '';
+
+        document.getElementById('empLocation').value =
+            e.location || e.workplace || '';
+
+        document.getElementById('empUsername').value =
+            e.username || '';
+
+        document.getElementById('empPassword').value = '';
+
+        document.getElementById('empPassword').placeholder =
+            'اتركه فارغاً للتعديل';
+
+        document.getElementById('empStatus').value =
+            e.status || e.employmentStatus || 'active';
+
+        document.getElementById('employeeModal')
+            .classList.add('show');
+    }
+
+
     async function editEmployee(id) {
-        try {
-            const r = await fetch(API + '/api/employees/' + id, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await r.json();
-            if (d.success && d.employee) {
-                const e = d.employee;
-                document.getElementById('modalTitle').textContent = '✏️ تعديل موظف';
-                document.getElementById('editId').value = id;
-                document.getElementById('empCompanyId').value = e.companyId || '';
-                document.getElementById('empName').value = e.name || '';
-                document.getElementById('empPhone').value = e.phoneNumber || '';
-                document.getElementById('empEmail').value = e.email || '';
-                document.getElementById('empSalary').value = e.salary || '';
-                document.getElementById('empSpecialty').value = e.specialty || '';
-                document.getElementById('empLocation').value = e.location || '';
-                document.getElementById('empUsername').value = e.username || '';
-                document.getElementById('empPassword').value = '';
-                document.getElementById('empPassword').placeholder = 'اتركه فارغاً للتعديل';
-                document.getElementById('empStatus').value = e.status || 'active';
-                document.getElementById('employeeModal').classList.add('show');
+
+        /*
+         * إذا كان الموظف منشأ Offline أو انقطع السيرفر،
+         * نقرأ بياناته من IndexedDB.
+         */
+        if (
+            String(id).startsWith('local-') ||
+            !navigator.onLine
+        ) {
+
+            const rows =
+                await getLocalEmployees();
+
+            const e =
+                rows.find(row =>
+                    String(row._id || row.id || '') ===
+                    String(id)
+                );
+
+            if (!e) {
+                alert('❌ بيانات الموظف غير موجودة محلياً');
+                return;
             }
+
+            fillEmployeeModal(e, id);
+            return;
+        }
+
+        try {
+
+            const r = await fetch(
+                API + '/api/employees/' + id,
+                {
+                    headers: {
+                        'Authorization':
+                            'Bearer ' + token
+                    },
+                    cache: 'no-store'
+                }
+            );
+
+            const d = await r.json();
+
+            if (!r.ok || !d.success || !d.employee)
+                throw new Error(
+                    d.message ||
+                    'تعذر تحميل الموظف'
+                );
+
+            await saveLocalEmployee(d.employee);
+
+            fillEmployeeModal(
+                d.employee,
+                id
+            );
+
         } catch {
+
+            const rows =
+                await getLocalEmployees();
+
+            const e =
+                rows.find(row =>
+                    String(row._id || row.id || '') ===
+                    String(id)
+                );
+
+            if (e) {
+                fillEmployeeModal(e, id);
+                return;
+            }
+
             alert('❌ فشل تحميل بيانات الموظف');
         }
     }
 
+
     async function saveEmployee(e) {
+
         e.preventDefault();
-        const id = document.getElementById('editId').value;
+
+        const id =
+            document.getElementById('editId').value;
+
         const data = {
-            companyId: document.getElementById('empCompanyId').value,
-            name: document.getElementById('empName').value,
-            phoneNumber: document.getElementById('empPhone').value.trim(),
-            email: document.getElementById('empEmail').value,
-            salary: parseInt(document.getElementById('empSalary').value),
-            specialty: document.getElementById('empSpecialty').value,
-            location: document.getElementById('empLocation').value,
-            username: document.getElementById('empUsername').value,
-            status: document.getElementById('empStatus').value
+            companyId,
+            name:
+                document.getElementById('empName').value.trim(),
+
+            phoneNumber:
+                document.getElementById('empPhone').value.trim(),
+
+            email:
+                document.getElementById('empEmail').value.trim(),
+
+            salary:
+                Number(
+                    document.getElementById('empSalary').value
+                ) || 0,
+
+            specialty:
+                document.getElementById('empSpecialty').value.trim(),
+
+            location:
+                document.getElementById('empLocation').value.trim(),
+
+            workplace:
+                document.getElementById('empLocation').value.trim(),
+
+            username:
+                document.getElementById('empUsername').value.trim(),
+
+            status:
+                document.getElementById('empStatus').value
         };
-        const password = document.getElementById('empPassword').value;
-        if (password) data.password = password;
 
-        const url = id ? API + '/api/employees/' + id : API + '/api/employees';
-        const method = id ? 'PUT' : 'POST';
+        const password =
+            document.getElementById('empPassword').value;
 
-        try {
-            const r = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify(data)
-            });
-            const result = await r.json();
-            if (r.ok && result.success) {
-                alert(id ? '✅ تم التعديل' : '✅ تم الإضافة');
+        if (password)
+            data.password = password;
+
+        /*
+         * نجرّب السيرفر أولاً للموظف العادي.
+         * الموظف local-* يبقى محلياً إلى أن تتم مزامنته.
+         */
+        if (
+            navigator.onLine &&
+            !String(id).startsWith('local-')
+        ) {
+
+            try {
+
+                const url =
+                    id
+                        ? API + '/api/employees/' + id
+                        : API + '/api/employees';
+
+                const method =
+                    id ? 'PUT' : 'POST';
+
+                const r =
+                    await fetch(url, {
+                        method,
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+
+                            'Authorization':
+                                'Bearer ' + token
+                        },
+                        body:
+                            JSON.stringify(data)
+                    });
+
+                const result =
+                    await r.json();
+
+                if (!r.ok || !result.success) {
+                    throw new Error(
+                        result.message ||
+                        'فشل الحفظ'
+                    );
+                }
+
+                if (result.employee) {
+                    await saveLocalEmployee(
+                        result.employee
+                    );
+                }
+
+                alert(
+                    id
+                        ? '✅ تم التعديل'
+                        : '✅ تم الإضافة'
+                );
+
                 closeModal();
-                loadEmployees();
-            } else {
-                alert('❌ ' + (result.message || 'فشل الحفظ'));
+                await loadEmployees();
+                return;
+
+            } catch (error) {
+
+                /*
+                 * أخطاء التحقق من السيرفر لا نحولها تلقائياً
+                 * إلى Offline إذا ما زال الاتصال موجوداً.
+                 */
+                if (navigator.onLine) {
+                    alert(
+                        '❌ ' +
+                        (
+                            error.message ||
+                            'فشل الحفظ'
+                        )
+                    );
+                    return;
+                }
             }
-        } catch {
-            alert('❌ فشل الاتصال بالسيرفر');
         }
+
+        /*
+         * ===========================
+         * OFFLINE
+         * ===========================
+         */
+
+        if (!window.AlMoraqebOfflineSync) {
+            alert('❌ نظام Offline غير جاهز');
+            return;
+        }
+
+        if (!id) {
+
+            const localId =
+                'local-' + crypto.randomUUID();
+
+            data.clientOfflineId =
+                localId;
+
+            const localEmployee = {
+                ...data,
+                _id: localId,
+                clientOfflineId: localId,
+                _offlinePending: true,
+                createdAt:
+                    new Date().toISOString()
+            };
+
+            await saveLocalEmployee(
+                localEmployee
+            );
+
+            await AlMoraqebOfflineSync
+                .queueOperation(
+                    '/api/employees',
+                    'POST',
+                    data
+                );
+
+            alert(
+                '✅ تم حفظ الموظف على الجهاز وسيتم مزامنته عند عودة الإنترنت'
+            );
+
+        } else if (
+            String(id).startsWith('local-')
+        ) {
+
+            /*
+             * الموظف لم يصل إلى MongoDB بعد.
+             * نحدّث سجل POST المعلق نفسه بدلاً من إنشاء PUT
+             * على معرف غير موجود في MongoDB.
+             */
+            data.clientOfflineId =
+                id;
+
+            const pending =
+                await AlMoraqebOfflineDB
+                    .getPendingOperations(
+                        companyId
+                    );
+
+            const createOperation =
+                pending.find(op =>
+                    op.method === 'POST' &&
+                    op.path === '/api/employees' &&
+                    op.body &&
+                    op.body.clientOfflineId === id
+                );
+
+            if (!createOperation) {
+                alert(
+                    '❌ تعذر العثور على عملية إنشاء الموظف المحلية'
+                );
+                return;
+            }
+
+            createOperation.body = {
+                ...createOperation.body,
+                ...data,
+                clientOfflineId: id
+            };
+
+            await AlMoraqebOfflineDB
+                .updateQueuedOperation(
+                    createOperation
+                );
+
+            const rows =
+                await getLocalEmployees();
+
+            const old =
+                rows.find(row =>
+                    String(row._id) === id
+                ) || {};
+
+            await saveLocalEmployee({
+                ...old,
+                ...data,
+                _id: id,
+                clientOfflineId: id,
+                _offlinePending: true
+            });
+
+            alert(
+                '✅ تم تعديل الموظف محلياً وسيتم مزامنته لاحقاً'
+            );
+
+        } else {
+
+            /*
+             * موظف موجود مسبقاً في MongoDB.
+             */
+            const rows =
+                await getLocalEmployees();
+
+            const old =
+                rows.find(row =>
+                    String(row._id || row.id) ===
+                    String(id)
+                ) || {};
+
+            await saveLocalEmployee({
+                ...old,
+                ...data,
+                _id: id,
+                _offlinePending: true
+            });
+
+            await AlMoraqebOfflineSync
+                .queueOperation(
+                    '/api/employees/' +
+                    encodeURIComponent(id),
+                    'PUT',
+                    data
+                );
+
+            alert(
+                '✅ تم حفظ التعديل محلياً وسيتم مزامنته عند عودة الإنترنت'
+            );
+        }
+
+        closeModal();
+
+        const localEmployees =
+            await getLocalEmployees();
+
+        await renderEmployeesFromData(
+            localEmployees,
+            true
+        );
     }
 
-    // ============================================================
-    // حذف موظف
-    // ============================================================
+
     async function deleteEmployee(id) {
-        if (!confirm('هل أنت متأكد من حذف هذا الموظف؟')) return;
-        try {
-            const r = await fetch(API + '/api/employees/' + id, {
-                method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const result = await r.json();
-            if (r.ok && result.success) {
+
+        if (
+            !confirm(
+                'هل أنت متأكد من حذف هذا الموظف؟'
+            )
+        ) return;
+
+        /*
+         * حذف مباشر عند توفر السيرفر.
+         */
+        if (
+            navigator.onLine &&
+            !String(id).startsWith('local-')
+        ) {
+
+            try {
+
+                const r =
+                    await fetch(
+                        API +
+                        '/api/employees/' +
+                        encodeURIComponent(id),
+                        {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization':
+                                    'Bearer ' + token
+                            }
+                        }
+                    );
+
+                const result =
+                    await r.json();
+
+                if (!r.ok || !result.success) {
+                    throw new Error(
+                        result.message ||
+                        'فشل الحذف'
+                    );
+                }
+
+                await removeLocalEmployee(id);
+
                 alert('✅ تم الحذف');
-                loadEmployees();
-            } else {
-                alert('❌ ' + (result.message || 'فشل الحذف'));
+
+                await loadEmployees();
+                return;
+
+            } catch (error) {
+
+                if (navigator.onLine) {
+                    alert(
+                        '❌ ' +
+                        (
+                            error.message ||
+                            'فشل الحذف'
+                        )
+                    );
+                    return;
+                }
             }
-        } catch {
-            alert('❌ فشل الاتصال بالسيرفر');
         }
+
+        /*
+         * حذف موظف أنشئ Offline ولم تتم مزامنته:
+         * نحذف عملية POST نفسها، فلا يصل إلى السيرفر إطلاقاً.
+         */
+        if (
+            String(id).startsWith('local-')
+        ) {
+
+            const pending =
+                await AlMoraqebOfflineDB
+                    .getPendingOperations(
+                        companyId
+                    );
+
+            for (const op of pending) {
+
+                if (
+                    op.method === 'POST' &&
+                    op.path === '/api/employees' &&
+                    op.body &&
+                    op.body.clientOfflineId === id
+                ) {
+                    await AlMoraqebOfflineDB
+                        .deleteQueuedOperation(
+                            op.id
+                        );
+                }
+            }
+
+            await removeLocalEmployee(id);
+
+            alert(
+                '✅ تم حذف الموظف المحلي'
+            );
+
+        } else {
+
+            /*
+             * الموظف موجود على MongoDB لكن الجهاز Offline.
+             */
+            await removeLocalEmployee(id);
+
+            await AlMoraqebOfflineSync
+                .queueOperation(
+                    '/api/employees/' +
+                    encodeURIComponent(id),
+                    'DELETE',
+                    {}
+                );
+
+            alert(
+                '✅ تم الحذف محلياً وسيتم مزامنته عند عودة الإنترنت'
+            );
+        }
+
+        const localEmployees =
+            await getLocalEmployees();
+
+        await renderEmployeesFromData(
+            localEmployees,
+            true
+        );
     }
 
     // ============================================================
@@ -397,5 +1070,11 @@
         }
     })();
 </script>
+
+<script src="/offline_db.js"></script>
+<script src="/offline_sync.js"></script>
+<script src="/offline_auth.js"></script>
+<script src="/offline_boot.js"></script>
+
 </body>
 </html>

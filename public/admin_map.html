@@ -187,23 +187,51 @@ function getCompanyId() {
     return new URLSearchParams(location.search).get('company') || localStorage.getItem('companyId') || '';
 }
 
-async function auth() {
-    const token = getToken();
-    const companyId = getCompanyId();
-    if (!token || !companyId) {
-        alert('يرجى تسجيل الدخول كمدير');
-        location.href = 'admin_login.html';
+async function auth(){
+
+    const companyId =
+        getCompanyId();
+
+    if(
+        !companyId ||
+        !window.AlMoraqebOfflineAuth
+    ){
+        alert(
+            'يرجى تسجيل الدخول كمدير'
+        );
+
+        location.href =
+            'admin_login.html';
+
         return false;
     }
-    try {
-        const res = await fetch(API + '/api/admin/session', { headers: { Authorization: 'Bearer ' + token } });
-        if (!res.ok) throw 0;
-        return true;
-    } catch {
-        alert('انتهت الجلسة');
-        location.href = 'admin_login.html';
+
+    const result =
+        await AlMoraqebOfflineAuth
+            .authorizePage({
+                companyId
+            });
+
+    if(!result.ok){
+
+        alert(
+            result.offline
+                ? 'لا توجد جلسة Offline صالحة'
+                : 'انتهت جلسة المدير'
+        );
+
+        location.href =
+            'admin_login.html';
+
         return false;
     }
+
+    document.documentElement.dataset.offline =
+        result.offline
+            ? 'true'
+            : 'false';
+
+    return true;
 }
 
 async function loadEmployees() {
@@ -351,5 +379,11 @@ function renderAreas(areas) {
     }
 })();
 </script>
+
+<script src="/offline_db.js"></script>
+<script src="/offline_sync.js"></script>
+<script src="/offline_auth.js"></script>
+<script src="/offline_boot.js"></script>
+
 </body>
 </html>

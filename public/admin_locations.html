@@ -332,40 +332,100 @@ function session(){
 }
 
 async function auth(){
-    token = sessionStorage.getItem('almoraqeb_admin_token') || '';
 
-    const s = session();
+    token =
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
+
+    const s =
+        typeof session === 'function'
+            ? session()
+            : (
+                typeof getSession === 'function'
+                    ? getSession()
+                    : {}
+            );
 
     companyId = String(
         s.companyId ||
-        new URLSearchParams(location.search).get('company') ||
-        localStorage.getItem('companyId') ||
+        new URLSearchParams(
+            location.search
+        ).get('company') ||
+        localStorage.getItem(
+            'companyId'
+        ) ||
         ''
     ).trim();
 
-    if(!token || !companyId){
-        location.href='admin_login.html';
+    if(
+        !companyId ||
+        !window.AlMoraqebOfflineAuth
+    ){
+        location.href =
+            'admin_login.html';
         return false;
     }
 
-    try{
-        const r = await fetch(API+'/api/admin/session',{
-            headers:{Authorization:'Bearer '+token},
-            cache:'no-store'
-        });
+    const result =
+        await AlMoraqebOfflineAuth
+            .authorizePage({
+                companyId
+            });
 
-        const d = await r.json();
-
-        if(!r.ok || !d.success) throw 0;
-
-        document.getElementById('companyBadge').textContent=companyId;
-
-        return true;
-
-    }catch{
-        location.href='admin_login.html';
+    if(!result.ok){
+        location.href =
+            'admin_login.html';
         return false;
     }
+
+    companyId =
+        result.companyId ||
+        companyId;
+
+    /*
+     * أثناء Offline لا نستخدم Token وهمي
+     * في طلبات الشبكة إلا أن بعض الدوال
+     * تحتاج القيمة لمعرفة وجود الجلسة.
+     */
+    token =
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
+
+    const badge =
+        document.getElementById(
+            'companyBadge'
+        );
+
+    if(badge)
+        badge.textContent =
+            companyId;
+
+    const companyLabel =
+        document.getElementById(
+            'company'
+        );
+
+    if(companyLabel)
+        companyLabel.textContent =
+            companyId;
+
+    const companyStat =
+        document.getElementById(
+            'companyStat'
+        );
+
+    if(companyStat)
+        companyStat.textContent =
+            companyId;
+
+    document.documentElement.dataset.offline =
+        result.offline
+            ? 'true'
+            : 'false';
+
+    return true;
 }
 
 function goHome(){
@@ -545,110 +605,534 @@ function escapeHtml(value){
 
 async function loadLocations(){
 
-    const notice=document.getElementById('notice');
+    const notice =
+        document.getElementById('notice');
 
     try{
 
-        const r=await fetch(API+'/api/admin/locations',{
-            headers:{Authorization:'Bearer '+token},
-            cache:'no-store'
-        });
+        const r =
+            await fetch(
+                API + '/api/admin/locations',
+                {
+                    headers:{
+                        Authorization:
+                            'Bearer ' + token
+                    },
+                    cache:'no-store'
+                }
+            );
 
-        const d=await r.json();
+        const d =
+            await r.json();
 
-        if(!r.ok || !d.success)
-            throw new Error(d.message || 'تعذر تحميل المواقع');
+        if(!r.ok || !d.success){
+            throw new Error(
+                d.message ||
+                'تعذر تحميل المواقع'
+            );
+        }
 
-        locations=d.locations || [];
+        locations =
+            d.locations || [];
+
+        /*
+         * حفظ نسخة كاملة من مواقع الشركة
+         * داخل IndexedDB للعمل Offline.
+         */
+        if(window.AlMoraqebOfflineDB){
+
+            await AlMoraqebOfflineDB
+                .replaceCompanyData(
+                    AlMoraqebOfflineDB
+                        .STORES
+                        .locations,
+
+                    companyId,
+
+                    locations.map(x => ({
+                        ...x,
+                        companyId,
+                        _id:
+                            x._id ||
+                            x.id ||
+                            ''
+                    }))
+                );
+        }
 
         updateStats();
         render();
 
-        notice.textContent='✅ تم تحميل مواقع الشركة';
-        notice.style.background='#dcfce7';
-        notice.style.color='#166534';
+        notice.textContent =
+            '✅ تم تحميل مواقع الشركة';
+
+        notice.style.background =
+            '#dcfce7';
+
+        notice.style.color =
+            '#166534';
 
     }catch(e){
 
-        notice.textContent='❌ '+e.message;
-        notice.style.background='#fee2e2';
-        notice.style.color='#991b1b';
+        /*
+         * عند تعذر السيرفر نستخدم
+         * النسخة المحلية الموجودة على الجهاز.
+         */
+        try{
+
+            if(!window.AlMoraqebOfflineDB){
+                throw e;
+            }
+
+            const localLocations =
+                await AlMoraqebOfflineDB
+                    .getCompanyData(
+                        AlMoraqebOfflineDB
+                            .STORES
+                            .locations,
+
+                        companyId
+                    );
+
+            locations =
+                (localLocations || [])
+                    .map(x => ({
+                        ...x,
+                        id:
+                            x.id ||
+                            x._id ||
+                            x._offlineKey
+                    }));
+
+            updateStats();
+            render();
+
+            notice.textContent =
+                '⚠ عرض المواقع من النسخة المحلية - بدون إنترنت';
+
+            notice.style.background =
+                '#fef3c7';
+
+            notice.style.color =
+                '#92400e';
+
+        }catch(_){
+
+            locations = [];
+
+            updateStats();
+            render();
+
+            notice.textContent =
+                '❌ تعذر الاتصال بالسيرفر ولا توجد نسخة محلية للمواقع';
+
+            notice.style.background =
+                '#fee2e2';
+
+            notice.style.color =
+                '#991b1b';
+        }
     }
 }
+
+async function getLocalLocations(){
+
+    if(!window.AlMoraqebOfflineDB)
+        return [];
+
+    return AlMoraqebOfflineDB
+        .getCompanyData(
+            AlMoraqebOfflineDB
+                .STORES
+                .locations,
+            companyId
+        );
+}
+
+
+async function saveLocalLocations(){
+
+    if(!window.AlMoraqebOfflineDB)
+        return;
+
+    await AlMoraqebOfflineDB
+        .replaceCompanyData(
+            AlMoraqebOfflineDB
+                .STORES
+                .locations,
+            companyId,
+            locations.map(x=>({
+                ...x,
+                companyId,
+                _id:
+                    x._id ||
+                    x.id ||
+                    x._offlineKey
+            }))
+        );
+}
+
 
 document.getElementById('locationForm').addEventListener('submit',async e=>{
 
     e.preventDefault();
 
-    const id=document.getElementById('editId').value;
+    const id =
+        document.getElementById('editId').value;
 
-    const body={
-        name:document.getElementById('locName').value.trim(),
-        type:document.getElementById('locType').value,
-        province:document.getElementById('locProvince').value.trim(),
-        fullAddress:document.getElementById('locAddress').value.trim(),
-        parentLocationId:document.getElementById('locParent').value,
-        latitude:Number(document.getElementById('locLatitude').value),
-        longitude:Number(document.getElementById('locLongitude').value),
-        radiusMeters:Number(document.getElementById('locRadius').value)
+    const body = {
+        name:
+            document.getElementById('locName').value.trim(),
+
+        type:
+            document.getElementById('locType').value,
+
+        province:
+            document.getElementById('locProvince').value.trim(),
+
+        fullAddress:
+            document.getElementById('locAddress').value.trim(),
+
+        parentLocationId:
+            document.getElementById('locParent').value,
+
+        latitude:
+            Number(
+                document.getElementById('locLatitude').value
+            ),
+
+        longitude:
+            Number(
+                document.getElementById('locLongitude').value
+            ),
+
+        radiusMeters:
+            Number(
+                document.getElementById('locRadius').value
+            )
     };
 
-    try{
+    /*
+     * ONLINE
+     */
+    if(
+        navigator.onLine &&
+        !String(id).startsWith('local-')
+    ){
+        try{
 
-        const r=await fetch(
-            API+'/api/admin/locations'+(id?'/'+id:''),
-            {
-                method:id?'PUT':'POST',
-                headers:{
-                    'Content-Type':'application/json',
-                    Authorization:'Bearer '+token
-                },
-                body:JSON.stringify(body)
+            const r = await fetch(
+                API +
+                '/api/admin/locations' +
+                (id ? '/' + id : ''),
+                {
+                    method:
+                        id ? 'PUT' : 'POST',
+
+                    headers:{
+                        'Content-Type':'application/json',
+                        Authorization:'Bearer '+token
+                    },
+
+                    body:
+                        JSON.stringify(body)
+                }
+            );
+
+            const d = await r.json();
+
+            if(!r.ok || !d.success)
+                throw new Error(
+                    d.message ||
+                    'تعذر حفظ الموقع'
+                );
+
+            closeModal();
+
+            await loadLocations();
+
+            return;
+
+        }catch(error){
+
+            if(navigator.onLine){
+                alert('❌ ' + error.message);
+                return;
             }
+        }
+    }
+
+    /*
+     * OFFLINE
+     */
+    if(!window.AlMoraqebOfflineSync){
+        alert('❌ نظام Offline غير جاهز');
+        return;
+    }
+
+    if(!id){
+
+        const localId =
+            'local-' + crypto.randomUUID();
+
+        body.clientOfflineId =
+            localId;
+
+        const localLocation = {
+            ...body,
+            id: localId,
+            _id: localId,
+            companyId,
+            active: true,
+            isPrimary: false,
+            clientOfflineId: localId,
+            _offlinePending: true,
+            createdAt:
+                new Date().toISOString()
+        };
+
+        locations.unshift(
+            localLocation
         );
 
-        const d=await r.json();
+        await saveLocalLocations();
 
-        if(!r.ok || !d.success)
-            throw new Error(d.message || 'تعذر حفظ الموقع');
+        await AlMoraqebOfflineSync
+            .queueOperation(
+                '/api/admin/locations',
+                'POST',
+                body
+            );
 
-        closeModal();
-        await loadLocations();
+        alert(
+            '✅ تم حفظ الموقع على الجهاز وسيتم مزامنته عند عودة الإنترنت'
+        );
 
-    }catch(e){
-        alert('❌ '+e.message);
+    }else if(
+        String(id).startsWith('local-')
+    ){
+
+        body.clientOfflineId =
+            id;
+
+        const index =
+            locations.findIndex(x =>
+                String(x.id || x._id) ===
+                String(id)
+            );
+
+        if(index !== -1){
+            locations[index] = {
+                ...locations[index],
+                ...body,
+                id,
+                _id:id,
+                _offlinePending:true
+            };
+        }
+
+        const pending =
+            await AlMoraqebOfflineDB
+                .getPendingOperations(
+                    companyId
+                );
+
+        const createOperation =
+            pending.find(op =>
+                op.method === 'POST' &&
+                op.path === '/api/admin/locations' &&
+                op.body &&
+                op.body.clientOfflineId === id
+            );
+
+        if(!createOperation){
+            alert(
+                '❌ تعذر العثور على عملية إنشاء الموقع المحلية'
+            );
+            return;
+        }
+
+        createOperation.body = {
+            ...createOperation.body,
+            ...body,
+            clientOfflineId:id
+        };
+
+        await AlMoraqebOfflineDB
+            .updateQueuedOperation(
+                createOperation
+            );
+
+        await saveLocalLocations();
+
+        alert(
+            '✅ تم تعديل الموقع محلياً وسيتم مزامنته لاحقاً'
+        );
+
+    }else{
+
+        const index =
+            locations.findIndex(x =>
+                String(x.id || x._id) ===
+                String(id)
+            );
+
+        if(index !== -1){
+            locations[index] = {
+                ...locations[index],
+                ...body,
+                _offlinePending:true
+            };
+        }
+
+        await saveLocalLocations();
+
+        await AlMoraqebOfflineSync
+            .queueOperation(
+                '/api/admin/locations/' +
+                encodeURIComponent(id),
+                'PUT',
+                body
+            );
+
+        alert(
+            '✅ تم تعديل الموقع محلياً وسيتم مزامنته عند عودة الإنترنت'
+        );
     }
+
+    closeModal();
+
+    updateStats();
+    render();
 });
+
 
 async function toggleLocation(id,active){
 
-    if(!confirm(active?'تفعيل هذا الموقع؟':'إيقاف هذا الموقع؟'))
-        return;
+    if(
+        !confirm(
+            active
+                ? 'تفعيل هذا الموقع؟'
+                : 'إيقاف هذا الموقع؟'
+        )
+    ) return;
 
-    try{
+    /*
+     * ONLINE
+     */
+    if(
+        navigator.onLine &&
+        !String(id).startsWith('local-')
+    ){
+        try{
 
-        const r=await fetch(
-            API+'/api/admin/locations/'+id+'/status',
-            {
-                method:'PATCH',
-                headers:{
-                    'Content-Type':'application/json',
-                    Authorization:'Bearer '+token
-                },
-                body:JSON.stringify({active})
+            const r = await fetch(
+                API +
+                '/api/admin/locations/' +
+                id +
+                '/status',
+                {
+                    method:'PATCH',
+
+                    headers:{
+                        'Content-Type':'application/json',
+                        Authorization:'Bearer '+token
+                    },
+
+                    body:
+                        JSON.stringify({active})
+                }
+            );
+
+            const d = await r.json();
+
+            if(!r.ok || !d.success)
+                throw new Error(
+                    d.message ||
+                    'تعذر تغيير حالة الموقع'
+                );
+
+            await loadLocations();
+            return;
+
+        }catch(error){
+
+            if(navigator.onLine){
+                alert('❌ ' + error.message);
+                return;
             }
+        }
+    }
+
+    /*
+     * OFFLINE
+     */
+    const index =
+        locations.findIndex(x =>
+            String(x.id || x._id) ===
+            String(id)
         );
 
-        const d=await r.json();
+    if(index === -1)
+        return;
 
-        if(!r.ok || !d.success)
-            throw new Error(d.message || 'تعذر تغيير حالة الموقع');
+    locations[index] = {
+        ...locations[index],
+        active,
+        _offlinePending:true
+    };
 
-        await loadLocations();
+    await saveLocalLocations();
 
-    }catch(e){
-        alert('❌ '+e.message);
+    if(
+        String(id).startsWith('local-')
+    ){
+
+        const pending =
+            await AlMoraqebOfflineDB
+                .getPendingOperations(
+                    companyId
+                );
+
+        const createOperation =
+            pending.find(op =>
+                op.method === 'POST' &&
+                op.path === '/api/admin/locations' &&
+                op.body &&
+                op.body.clientOfflineId === id
+            );
+
+        if(createOperation){
+
+            createOperation.body = {
+                ...createOperation.body,
+                active
+            };
+
+            await AlMoraqebOfflineDB
+                .updateQueuedOperation(
+                    createOperation
+                );
+        }
+
+    }else{
+
+        await AlMoraqebOfflineSync
+            .queueOperation(
+                '/api/admin/locations/' +
+                encodeURIComponent(id) +
+                '/status',
+                'PATCH',
+                {active}
+            );
     }
+
+    updateStats();
+    render();
+
+    alert(
+        '✅ تم حفظ حالة الموقع محلياً وسيتم مزامنتها عند عودة الإنترنت'
+    );
 }
 
 (async()=>{
@@ -657,5 +1141,11 @@ async function toggleLocation(id,active){
     }
 })();
 </script>
+
+<script src="/offline_db.js"></script>
+<script src="/offline_sync.js"></script>
+<script src="/offline_auth.js"></script>
+<script src="/offline_boot.js"></script>
+
 </body>
 </html>

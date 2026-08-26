@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إعدادات النظام - المراقب برو</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#1e1b4b;color:#0f172a;font-family:"Segoe UI",Tahoma,sans-serif;padding:18px}
+body.light{background:#1e1b4b}
+body.dark{background:#020617;color:#e2e8f0}
+.wrap{max-width:1300px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}
+body.dark .wrap{background:#0f172a;color:#e2e8f0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}
+.brand{font-size:24px;font-weight:900}
+.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}
+.blue{background:#0284c7;color:#fff}.green{background:#10b981;color:#fff}.purple{background:#8b5cf6;color:#fff}.orange{background:#f59e0b;color:#fff}.red{background:#ef4444;color:#fff}
+.section{border:1px solid #e2e8f0;border-radius:14px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.field label{display:block;font-weight:800;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #94a3b8;border-radius:8px;background:#fff}
+body.dark .field input,body.dark .field select,body.dark .field textarea{background:#1e293b;color:#e2e8f0;border-color:#475569}
+.readonly{background:#f1f5f9!important}
+body.dark .readonly{background:#334155!important}
+.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.status-card{border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#f8fafc}
+body.dark .status-card{background:#1e293b}
+.status-card span{display:block;color:#64748b;font-size:12px;font-weight:800}
+.status-card b{font-size:20px}
+.support-item{border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px}
+.notice{margin-top:15px;padding:12px;border-radius:10px;text-align:center;background:#e0f2fe;color:#075985;font-weight:800}
+.full{grid-column:1/-1}
+@media(max-width:850px){.grid,.status-grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+<div class="brand">⚙ إعدادات النظام <span id="companyBadge" class="badge">...</span></div>
+<div class="actions">
+<button class="btn green" onclick="saveSettings()">💾 حفظ</button>
+<button class="btn blue" onclick="loadAll()">🔄 تحديث</button>
+<button class="btn purple" onclick="goHome()">🏠 العودة للرئيسية</button>
+</div>
+</div>
+
+<div class="section">
+<h3>🎨 اللغة والمظهر</h3>
+<div class="grid">
+<div class="field">
+<label>اللغة</label>
+<select id="uiLanguage">
+<option value="ar">العربية</option>
+<option value="en">English</option>
+</select>
+</div>
+
+<div class="field">
+<label>الوضع</label>
+<select id="uiTheme" onchange="previewTheme()">
+<option value="light">نهاري</option>
+<option value="dark">ليلي</option>
+</select>
+</div>
+</div>
+</div>
+
+<div class="section">
+<h3>🏢 بيانات الشركة والمدير</h3>
+<div class="grid">
+<div class="field"><label>اسم الشركة</label><input id="name"></div>
+<div class="field"><label>البريد</label><input id="email"></div>
+<div class="field"><label>هاتف الشركة</label><input id="phone"></div>
+<div class="field"><label>اسم المدير</label><input id="managerName"></div>
+<div class="field"><label>هاتف المدير</label><input id="managerPhone"></div>
+<div class="field"><label>اسم مستخدم المدير</label><input id="adminUsername"></div>
+<div class="field full"><label>كلمة مرور جديدة</label><input id="adminPassword" type="password" placeholder="اتركها فارغة إذا لم ترد تغييرها"></div>
+</div>
+</div>
+
+<div class="section">
+<h3>🖥 حالة النظام والنسخة</h3>
+<div class="status-grid">
+<div class="status-card"><span>حالة السيرفر</span><b id="serverStatus">—</b></div>
+<div class="status-card"><span>قاعدة البيانات</span><b id="databaseStatus">—</b></div>
+<div class="status-card"><span>النسخة الحالية</span><b id="version">—</b></div>
+</div>
+
+<div class="actions" style="margin-top:14px">
+<button class="btn orange" onclick="requestUpdate()">⬆ طلب تحديث النسخة</button>
+</div>
+</div>
+
+<div class="section">
+<h3>🛠 طلب دعم المطور</h3>
+<div class="grid">
+<div class="field">
+<label>عنوان الطلب</label>
+<input id="supportSubject">
+</div>
+
+<div class="field">
+<label>الأولوية</label>
+<select id="supportPriority">
+<option value="normal">عادي</option>
+<option value="high">مهم</option>
+<option value="urgent">عاجل</option>
+</select>
+</div>
+
+<div class="field full">
+<label>تفاصيل المشكلة أو الطلب</label>
+<textarea id="supportMessage" rows="4"></textarea>
+</div>
+</div>
+
+<div class="actions" style="margin-top:14px">
+<button class="btn blue" onclick="sendSupport()">📨 إرسال طلب الدعم</button>
+</div>
+</div>
+
+<div class="section">
+<h3>📋 طلبات الدعم السابقة</h3>
+<div id="supportList">لا توجد بيانات بعد</div>
+</div>
+
+<div class="section">
+<h3>📅 معلومات الاشتراك</h3>
+<div class="grid">
+<div class="field"><label>نوع الاشتراك</label><input id="subscription" class="readonly" readonly></div>
+<div class="field"><label>حالة النظام</label><input id="systemState" class="readonly" readonly></div>
+<div class="field"><label>بداية الاشتراك</label><input id="subscriptionStartDate" class="readonly" readonly></div>
+<div class="field"><label>نهاية الاشتراك</label><input id="subscriptionEndDate" class="readonly" readonly></div>
+</div>
+</div>
+
+<div id="notice" class="notice">جاري تحميل الإعدادات...</div>
+</div>
+
+<script>
+const API=location.origin;
+let token='',companyId='';
+
+function session(){
+    try{return JSON.parse(localStorage.getItem('almoraqeb_admin_session')||'{}')}
+    catch{return{}}
+}
+
+function goHome(){
+    location.href='admin.html?company='+encodeURIComponent(companyId);
+}
+
+async function auth(){
+
+    token =
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
+
+    const s =
+        typeof session === 'function'
+            ? session()
+            : (
+                typeof getSession === 'function'
+                    ? getSession()
+                    : {}
+            );
+
+    companyId = String(
+        s.companyId ||
+        new URLSearchParams(
+            location.search
+        ).get('company') ||
+        localStorage.getItem(
+            'companyId'
+        ) ||
+        ''
+    ).trim();
+
+    if(
+        !companyId ||
+        !window.AlMoraqebOfflineAuth
+    ){
+        location.href =
+            'admin_login.html';
+        return false;
+    }
+
+    const result =
+        await AlMoraqebOfflineAuth
+            .authorizePage({
+                companyId
+            });
+
+    if(!result.ok){
+        location.href =
+            'admin_login.html';
+        return false;
+    }
+
+    companyId =
+        result.companyId ||
+        companyId;
+
+    /*
+     * أثناء Offline لا نستخدم Token وهمي
+     * في طلبات الشبكة إلا أن بعض الدوال
+     * تحتاج القيمة لمعرفة وجود الجلسة.
+     */
+    token =
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
+
+    const badge =
+        document.getElementById(
+            'companyBadge'
+        );
+
+    if(badge)
+        badge.textContent =
+            companyId;
+
+    const companyLabel =
+        document.getElementById(
+            'company'
+        );
+
+    if(companyLabel)
+        companyLabel.textContent =
+            companyId;
+
+    const companyStat =
+        document.getElementById(
+            'companyStat'
+        );
+
+    if(companyStat)
+        companyStat.textContent =
+            companyId;
+
+    document.documentElement.dataset.offline =
+        result.offline
+            ? 'true'
+            : 'false';
+
+    return true;
+}
+
+async function api(path,options={}){
+    const r=await fetch(API+path,{
+        ...options,
+        headers:{
+            'Content-Type':'application/json',
+            Authorization:'Bearer '+token,
+            ...(options.headers||{})
+        },
+        cache:'no-store'
+    });
+
+    const d=await r.json().catch(()=>({}));
+
+    if(!r.ok||d.success===false){
+        throw new Error(d.message||d.error||'تعذر تنفيذ العملية');
+    }
+
+    return d;
+}
+
+function dateValue(v){
+    if(!v)return '—';
+    const d=new Date(v);
+    return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('ar-IQ');
+}
+
+function previewTheme(){
+    document.body.classList.remove('light','dark');
+    document.body.classList.add(uiTheme.value);
+}
+
+async function loadSettings(){
+    const d=await api('/api/admin/settings');
+    const s=d.settings||{};
+
+    name.value=s.name||'';
+    email.value=s.email||'';
+    phone.value=s.phone||'';
+    managerName.value=s.managerName||'';
+    managerPhone.value=s.managerPhone||'';
+    adminUsername.value=s.adminUsername||'admin';
+    adminPassword.value='';
+
+    uiLanguage.value=s.uiLanguage||'ar';
+    uiTheme.value=s.uiTheme||'light';
+    previewTheme();
+
+    subscription.value=s.subscription||'—';
+    systemState.value=s.systemState||'—';
+    subscriptionStartDate.value=dateValue(s.subscriptionStartDate);
+    subscriptionEndDate.value=dateValue(s.subscriptionEndDate);
+}
+
+async function loadSystemInfo(){
+    const d=await api('/api/admin/system-info');
+
+    serverStatus.textContent=
+        d.serverStatus==='online'?'متصل':'غير متصل';
+
+    databaseStatus.textContent=
+        d.databaseStatus==='connected'?'متصلة':'غير متصلة';
+
+    version.textContent=d.version||'—';
+}
+
+async function loadSupport(){
+    const d=await api('/api/admin/support-requests');
+    const rows=d.requests||[];
+
+    supportList.innerHTML=
+        rows.length
+        ? rows.map(x=>`
+            <div class="support-item">
+                <b>${x.subject||''}</b><br>
+                <small>${new Date(x.createdAt).toLocaleString('ar-IQ')}</small><br>
+                <span>${x.message||''}</span><br>
+                <strong>الحالة: ${x.status||''}</strong>
+            </div>
+        `).join('')
+        : 'لا توجد طلبات دعم';
+}
+
+async function saveSettings(){
+    const payload={
+        name:name.value.trim(),
+        email:email.value.trim(),
+        phone:phone.value.trim(),
+        managerName:managerName.value.trim(),
+        managerPhone:managerPhone.value.trim(),
+        adminUsername:adminUsername.value.trim(),
+        uiLanguage:uiLanguage.value,
+        uiTheme:uiTheme.value
+    };
+
+    if(adminPassword.value){
+        payload.adminPassword=adminPassword.value;
+    }
+
+    try{
+        await api('/api/admin/settings',{
+            method:'PUT',
+            body:JSON.stringify(payload)
+        });
+
+        notice.textContent='✅ تم حفظ الإعدادات';
+        notice.style.background='#dcfce7';
+        notice.style.color='#166534';
+
+        adminPassword.value='';
+    }catch(e){
+        notice.textContent='❌ '+e.message;
+    }
+}
+
+async function sendSupport(){
+    try{
+        await api('/api/admin/support-requests',{
+            method:'POST',
+            body:JSON.stringify({
+                subject:supportSubject.value.trim(),
+                message:supportMessage.value.trim(),
+                priority:supportPriority.value
+            })
+        });
+
+        supportSubject.value='';
+        supportMessage.value='';
+
+        await loadSupport();
+
+        notice.textContent='✅ تم إرسال طلب الدعم';
+    }catch(e){
+        notice.textContent='❌ '+e.message;
+    }
+}
+
+async function requestUpdate(){
+    if(!confirm('إرسال طلب تحديث النسخة إلى المطور؟'))return;
+
+    try{
+        await api('/api/admin/request-update',{
+            method:'POST',
+            body:'{}'
+        });
+
+        await loadSupport();
+
+        notice.textContent='✅ تم إرسال طلب تحديث النسخة إلى المطور';
+    }catch(e){
+        notice.textContent='❌ '+e.message;
+    }
+}
+
+async function loadAll(){
+    try{
+        await Promise.all([
+            loadSettings(),
+            loadSystemInfo(),
+            loadSupport()
+        ]);
+
+        notice.textContent='✅ الإعدادات محدثة';
+    }catch(e){
+        notice.textContent='❌ '+e.message;
+    }
+}
+
+(async()=>{
+    if(await auth()){
+        await loadAll();
+    }
+})();
+</script>
+
+<script src="/offline_db.js"></script>
+<script src="/offline_sync.js"></script>
+<script src="/offline_auth.js"></script>
+<script src="/offline_boot.js"></script>
+
+</body>
+</html>

@@ -121,39 +121,98 @@ function session(){
 async function auth(){
 
     token =
-        sessionStorage.getItem('almoraqeb_admin_token') || '';
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
 
-    const s = session();
+    const s =
+        typeof session === 'function'
+            ? session()
+            : (
+                typeof getSession === 'function'
+                    ? getSession()
+                    : {}
+            );
 
     companyId = String(
         s.companyId ||
-        new URLSearchParams(location.search).get('company') ||
-        localStorage.getItem('companyId') ||
+        new URLSearchParams(
+            location.search
+        ).get('company') ||
+        localStorage.getItem(
+            'companyId'
+        ) ||
         ''
     ).trim();
 
-    if(!token || !companyId){
-        location.href='admin_login.html';
+    if(
+        !companyId ||
+        !window.AlMoraqebOfflineAuth
+    ){
+        location.href =
+            'admin_login.html';
         return false;
     }
 
-    try{
-        const r=await fetch(API+'/api/admin/session',{
-            headers:{Authorization:'Bearer '+token},
-            cache:'no-store'
-        });
+    const result =
+        await AlMoraqebOfflineAuth
+            .authorizePage({
+                companyId
+            });
 
-        const d=await r.json();
-
-        if(!r.ok || !d.success) throw new Error();
-
-        document.getElementById('companyBadge').textContent=companyId;
-        return true;
-
-    }catch{
-        location.href='admin_login.html';
+    if(!result.ok){
+        location.href =
+            'admin_login.html';
         return false;
     }
+
+    companyId =
+        result.companyId ||
+        companyId;
+
+    /*
+     * أثناء Offline لا نستخدم Token وهمي
+     * في طلبات الشبكة إلا أن بعض الدوال
+     * تحتاج القيمة لمعرفة وجود الجلسة.
+     */
+    token =
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
+
+    const badge =
+        document.getElementById(
+            'companyBadge'
+        );
+
+    if(badge)
+        badge.textContent =
+            companyId;
+
+    const companyLabel =
+        document.getElementById(
+            'company'
+        );
+
+    if(companyLabel)
+        companyLabel.textContent =
+            companyId;
+
+    const companyStat =
+        document.getElementById(
+            'companyStat'
+        );
+
+    if(companyStat)
+        companyStat.textContent =
+            companyId;
+
+    document.documentElement.dataset.offline =
+        result.offline
+            ? 'true'
+            : 'false';
+
+    return true;
 }
 
 async function api(path,options={}){
@@ -222,85 +281,320 @@ function fmtTime(v){
         });
 }
 
-async function loadEmployees(){
+async function getLocalAttendanceStore(storeName){
 
-    const d=await api(
-        '/api/employees?companyId='+
-        encodeURIComponent(companyId)
-    );
+    if(!window.AlMoraqebOfflineDB)
+        return [];
 
-    employees=d.employees||[];
+    return AlMoraqebOfflineDB
+        .getCompanyData(
+            storeName,
+            companyId
+        );
+}
 
-    const filter=document.getElementById('employeeFilter');
-    const del=document.getElementById('delEmployee');
 
-    filter.innerHTML='<option value="">كل الموظفين</option>';
-    del.innerHTML='<option value="">اختر الموظف</option>';
+async function saveLocalEmployees(){
+
+    if(!window.AlMoraqebOfflineDB)
+        return;
+
+    await AlMoraqebOfflineDB
+        .replaceCompanyData(
+            AlMoraqebOfflineDB
+                .STORES
+                .employees,
+            companyId,
+            employees
+        );
+}
+
+
+async function saveLocalAttendance(){
+
+    if(!window.AlMoraqebOfflineDB)
+        return;
+
+    await AlMoraqebOfflineDB
+        .replaceCompanyData(
+            AlMoraqebOfflineDB
+                .STORES
+                .attendance,
+            companyId,
+            attendance
+        );
+}
+
+
+async function saveLocalRequests(){
+
+    if(!window.AlMoraqebOfflineDB)
+        return;
+
+    await AlMoraqebOfflineDB
+        .replaceCompanyData(
+            AlMoraqebOfflineDB
+                .STORES
+                .serviceRequests,
+            companyId,
+            requests
+        );
+}
+
+
+function fillEmployeeSelectors(){
+
+    const filter =
+        document.getElementById(
+            'employeeFilter'
+        );
+
+    const del =
+        document.getElementById(
+            'delEmployee'
+        );
+
+    filter.innerHTML =
+        '<option value="">كل الموظفين</option>';
+
+    del.innerHTML =
+        '<option value="">اختر الموظف</option>';
 
     employees.forEach(emp=>{
-        const id=emp._id||emp.id;
 
-        const a=document.createElement('option');
-        a.value=id;
-        a.textContent=emp.name||id;
+        const id =
+            emp._id ||
+            emp.id ||
+            emp._offlineKey;
+
+        const a =
+            document.createElement(
+                'option'
+            );
+
+        a.value = id;
+        a.textContent =
+            emp.name || id;
+
         filter.appendChild(a);
 
-        const b=document.createElement('option');
-        b.value=id;
-        b.textContent=emp.name||id;
+        const b =
+            document.createElement(
+                'option'
+            );
+
+        b.value = id;
+        b.textContent =
+            emp.name || id;
+
         del.appendChild(b);
     });
 }
 
+
+async function loadEmployees(){
+
+    try{
+
+        const d =
+            await api(
+                '/api/employees?companyId='+
+                encodeURIComponent(
+                    companyId
+                )
+            );
+
+        employees =
+            d.employees || [];
+
+        await saveLocalEmployees();
+
+    }catch{
+
+        employees =
+            await getLocalAttendanceStore(
+                AlMoraqebOfflineDB
+                    .STORES
+                    .employees
+            );
+    }
+
+    fillEmployeeSelectors();
+}
+
+
 async function loadAttendance(){
 
-    const qs=new URLSearchParams();
+    const qs =
+        new URLSearchParams();
 
-    const employeeId=
-        document.getElementById('employeeFilter').value;
+    const employeeId =
+        document.getElementById(
+            'employeeFilter'
+        ).value;
 
-    const type=
-        document.getElementById('typeFilter').value;
+    const type =
+        document.getElementById(
+            'typeFilter'
+        ).value;
 
-    const from=
-        document.getElementById('fromDate').value;
+    const from =
+        document.getElementById(
+            'fromDate'
+        ).value;
 
-    const to=
-        document.getElementById('toDate').value;
+    const to =
+        document.getElementById(
+            'toDate'
+        ).value;
 
-    if(employeeId) qs.set('employeeId',employeeId);
-    if(type) qs.set('type',type);
-    if(from) qs.set('from',from);
-    if(to) qs.set('to',to);
+    if(employeeId)
+        qs.set(
+            'employeeId',
+            employeeId
+        );
 
-    const d=await api(
-        '/api/admin/attendance'+
-        (qs.toString()?'?'+qs.toString():'')
-    );
+    if(type)
+        qs.set(
+            'type',
+            type
+        );
 
-    attendance=d.attendance||[];
+    if(from)
+        qs.set(
+            'from',
+            from
+        );
+
+    if(to)
+        qs.set(
+            'to',
+            to
+        );
+
+    try{
+
+        const d =
+            await api(
+                '/api/admin/attendance'+
+                (
+                    qs.toString()
+                        ? '?' + qs.toString()
+                        : ''
+                )
+            );
+
+        attendance =
+            d.attendance || [];
+
+        await saveLocalAttendance();
+
+    }catch{
+
+        attendance =
+            await getLocalAttendanceStore(
+                AlMoraqebOfflineDB
+                    .STORES
+                    .attendance
+            );
+
+        /*
+         * تطبيق الفلاتر محلياً.
+         */
+        attendance =
+            attendance.filter(x=>{
+
+                if(
+                    employeeId &&
+                    String(x.employeeId) !==
+                    String(employeeId)
+                ) return false;
+
+                if(
+                    type &&
+                    String(x.type) !==
+                    String(type)
+                ) return false;
+
+                const ts =
+                    x.timestamp
+                        ? new Date(x.timestamp)
+                        : null;
+
+                if(
+                    from &&
+                    ts &&
+                    ts <
+                    new Date(
+                        from + 'T00:00:00'
+                    )
+                ) return false;
+
+                if(
+                    to &&
+                    ts &&
+                    ts >
+                    new Date(
+                        to + 'T23:59:59'
+                    )
+                ) return false;
+
+                return true;
+            });
+    }
+
     renderAll();
 }
+
 
 async function loadRequests(){
 
-    const d=await api('/api/admin/service-requests');
-    requests=d.requests||[];
+    try{
+
+        const d =
+            await api(
+                '/api/admin/service-requests'
+            );
+
+        requests =
+            d.requests || [];
+
+        await saveLocalRequests();
+
+    }catch{
+
+        requests =
+            await getLocalAttendanceStore(
+                AlMoraqebOfflineDB
+                    .STORES
+                    .serviceRequests
+            );
+    }
+
     renderAll();
 }
 
+
 function renderAttendance(){
 
-    const q=
-        document.getElementById('search')
-            .value.trim().toLowerCase();
+    const q =
+        document.getElementById(
+            'search'
+        ).value.trim().toLowerCase();
 
-    const rows=attendance.filter(x=>
-        !q ||
-        String(x.employeeName||'').toLowerCase().includes(q)
-    );
+    const rows =
+        attendance.filter(x =>
+            !q ||
+            String(
+                x.employeeName || ''
+            )
+            .toLowerCase()
+            .includes(q)
+        );
 
-    document.getElementById('attendanceBody').innerHTML=
+    document.getElementById(
+        'attendanceBody'
+    ).innerHTML =
         rows.length
         ? rows.map((x,i)=>`
         <tr>
@@ -324,18 +618,30 @@ function renderAttendance(){
         : '<tr><td colspan="9">لا توجد سجلات</td></tr>';
 }
 
+
 function renderLeaves(){
 
-    const q=
-        document.getElementById('search')
-            .value.trim().toLowerCase();
+    const q =
+        document.getElementById(
+            'search'
+        ).value.trim().toLowerCase();
 
-    const leaves=requests.filter(x=>
-        x.type==='leave' &&
-        (!q || String(x.employeeName||'').toLowerCase().includes(q))
-    );
+    const leaves =
+        requests.filter(x =>
+            x.type==='leave' &&
+            (
+                !q ||
+                String(
+                    x.employeeName || ''
+                )
+                .toLowerCase()
+                .includes(q)
+            )
+        );
 
-    document.getElementById('leaveBody').innerHTML=
+    document.getElementById(
+        'leaveBody'
+    ).innerHTML =
         leaves.length
         ? leaves.map((x,i)=>`
         <tr>
@@ -351,37 +657,68 @@ function renderLeaves(){
         : '<tr><td colspan="7">لا توجد إجازات</td></tr>';
 }
 
+
 function activeDelegation(emp){
 
-    const d=emp.delegation||{};
+    const d =
+        emp.delegation || {};
 
-    if(d.active!==true || !d.from || !d.to)
-        return false;
+    if(
+        d.active !== true ||
+        !d.from ||
+        !d.to
+    ) return false;
 
-    const now=new Date();
-    const from=new Date(d.from);
-    const to=new Date(d.to);
+    const now =
+        new Date();
 
-    return now>=from && now<=to;
+    const from =
+        new Date(d.from);
+
+    const to =
+        new Date(d.to);
+
+    return (
+        now >= from &&
+        now <= to
+    );
 }
+
 
 function renderDelegations(){
 
-    const q=
-        document.getElementById('search')
-            .value.trim().toLowerCase();
+    const q =
+        document.getElementById(
+            'search'
+        ).value.trim().toLowerCase();
 
-    const rows=employees.filter(emp=>
-        emp.delegation &&
-        emp.delegation.active===true &&
-        (!q || String(emp.name||'').toLowerCase().includes(q))
-    );
+    const rows =
+        employees.filter(emp =>
+            emp.delegation &&
+            emp.delegation.active === true &&
+            (
+                !q ||
+                String(
+                    emp.name || ''
+                )
+                .toLowerCase()
+                .includes(q)
+            )
+        );
 
-    document.getElementById('delegationBody').innerHTML=
+    document.getElementById(
+        'delegationBody'
+    ).innerHTML =
         rows.length
         ? rows.map((emp,i)=>{
-            const d=emp.delegation||{};
-            const id=emp._id||emp.id;
+
+            const d =
+                emp.delegation || {};
+
+            const id =
+                emp._id ||
+                emp.id ||
+                emp._offlineKey;
 
             return `
             <tr>
@@ -394,7 +731,9 @@ function renderDelegations(){
                 <td>${esc(d.reason||'—')}</td>
                 <td>${activeDelegation(emp)?'فعال':'منتهي'}</td>
                 <td>
-                    <button class="btn red" onclick="endDelegation('${id}')">
+                    <button
+                        class="btn red"
+                        onclick="endDelegation('${id}')">
                         إنهاء الإيفاد
                     </button>
                 </td>
@@ -404,43 +743,95 @@ function renderDelegations(){
         : '<tr><td colspan="9">لا توجد إيفادات</td></tr>';
 }
 
+
 function renderAbsence(){
 
-    const today=new Date().toISOString().slice(0,10);
+    const today =
+        new Date()
+            .toISOString()
+            .slice(0,10);
 
-    const presentIds=new Set(
-        attendance
-            .filter(x=>
-                x.type==='attendance' &&
-                new Date(x.timestamp).toISOString().slice(0,10)===today
-            )
-            .map(x=>String(x.employeeId))
-    );
+    const presentIds =
+        new Set(
+            attendance
+                .filter(x =>
+                    x.type==='attendance' &&
+                    new Date(
+                        x.timestamp
+                    )
+                    .toISOString()
+                    .slice(0,10) ===
+                    today
+                )
+                .map(x =>
+                    String(
+                        x.employeeId
+                    )
+                )
+        );
 
-    const leaveIds=new Set(
-        requests
-            .filter(x=>{
-                if(x.type!=='leave' || x.status!=='approved') return false;
+    const leaveIds =
+        new Set(
+            requests
+                .filter(x=>{
 
-                const from=new Date(x.fromDate||x.requestedDate);
-                const to=new Date(x.toDate||x.fromDate||x.requestedDate);
-                const now=new Date();
+                    if(
+                        x.type!=='leave' ||
+                        x.status!=='approved'
+                    ) return false;
 
-                now.setHours(12,0,0,0);
+                    const from =
+                        new Date(
+                            x.fromDate ||
+                            x.requestedDate
+                        );
 
-                return now>=from && now<=to;
-            })
-            .map(x=>String(x.employeeId))
-    );
+                    const to =
+                        new Date(
+                            x.toDate ||
+                            x.fromDate ||
+                            x.requestedDate
+                        );
 
-    const rows=employees.filter(emp=>{
-        const id=String(emp._id||emp.id);
-        return !presentIds.has(id) &&
-               !leaveIds.has(id) &&
-               !activeDelegation(emp);
-    });
+                    const now =
+                        new Date();
 
-    document.getElementById('absenceBody').innerHTML=
+                    now.setHours(
+                        12,0,0,0
+                    );
+
+                    return (
+                        now >= from &&
+                        now <= to
+                    );
+                })
+                .map(x =>
+                    String(
+                        x.employeeId
+                    )
+                )
+        );
+
+    const rows =
+        employees.filter(emp=>{
+
+            const id =
+                String(
+                    emp._id ||
+                    emp.id ||
+                    emp._offlineKey
+                );
+
+            return (
+                !presentIds.has(id) &&
+                !leaveIds.has(id) &&
+                !activeDelegation(emp)
+            );
+        });
+
+    document.getElementById(
+        'absenceBody'
+    ).innerHTML =
         rows.length
         ? rows.map((emp,i)=>`
         <tr>
@@ -454,53 +845,116 @@ function renderAbsence(){
         : '<tr><td colspan="5">لا توجد حالات غياب</td></tr>';
 }
 
+
 function updateStats(){
 
-    const today=new Date().toISOString().slice(0,10);
+    const today =
+        new Date()
+            .toISOString()
+            .slice(0,10);
 
-    document.getElementById('stAttendance').textContent=
-        attendance.filter(x=>
+    document.getElementById(
+        'stAttendance'
+    ).textContent =
+        attendance.filter(x =>
             x.type==='attendance' &&
-            new Date(x.timestamp).toISOString().slice(0,10)===today
+            new Date(
+                x.timestamp
+            )
+            .toISOString()
+            .slice(0,10) ===
+            today
         ).length;
 
-    document.getElementById('stExit').textContent=
-        attendance.filter(x=>
+    document.getElementById(
+        'stExit'
+    ).textContent =
+        attendance.filter(x =>
             x.type!=='attendance' &&
-            new Date(x.timestamp).toISOString().slice(0,10)===today
+            new Date(
+                x.timestamp
+            )
+            .toISOString()
+            .slice(0,10) ===
+            today
         ).length;
 
-    document.getElementById('stDelegation').textContent=
-        employees.filter(activeDelegation).length;
+    document.getElementById(
+        'stDelegation'
+    ).textContent =
+        employees.filter(
+            activeDelegation
+        ).length;
 
-    document.getElementById('stLeave').textContent=
+    document.getElementById(
+        'stLeave'
+    ).textContent =
         requests.filter(x=>{
-            if(x.type!=='leave' || x.status!=='approved') return false;
 
-            const now=new Date();
-            const from=new Date(x.fromDate||x.requestedDate);
-            const to=new Date(x.toDate||x.fromDate||x.requestedDate);
+            if(
+                x.type!=='leave' ||
+                x.status!=='approved'
+            ) return false;
 
-            return now>=from && now<=to;
+            const now =
+                new Date();
+
+            const from =
+                new Date(
+                    x.fromDate ||
+                    x.requestedDate
+                );
+
+            const to =
+                new Date(
+                    x.toDate ||
+                    x.fromDate ||
+                    x.requestedDate
+                );
+
+            return (
+                now >= from &&
+                now <= to
+            );
         }).length;
 
-    const present=new Set(
-        attendance
-            .filter(x=>
-                x.type==='attendance' &&
-                new Date(x.timestamp).toISOString().slice(0,10)===today
-            )
-            .map(x=>String(x.employeeId))
-    );
+    const present =
+        new Set(
+            attendance
+                .filter(x =>
+                    x.type==='attendance' &&
+                    new Date(
+                        x.timestamp
+                    )
+                    .toISOString()
+                    .slice(0,10) ===
+                    today
+                )
+                .map(x =>
+                    String(
+                        x.employeeId
+                    )
+                )
+        );
 
-    document.getElementById('stAbsent').textContent=
-        employees.filter(emp=>
-            !present.has(String(emp._id||emp.id)) &&
+    document.getElementById(
+        'stAbsent'
+    ).textContent =
+        employees.filter(emp =>
+            !present.has(
+                String(
+                    emp._id ||
+                    emp.id ||
+                    emp._offlineKey
+                )
+            ) &&
             !activeDelegation(emp)
         ).length;
 }
 
+
 function renderAll(){
+
     renderAttendance();
     renderLeaves();
     renderDelegations();
@@ -508,76 +962,271 @@ function renderAll(){
     updateStats();
 }
 
+
 function openDelegation(){
-    document.getElementById('delegationModal')
-        .classList.add('show');
+
+    document
+        .getElementById(
+            'delegationModal'
+        )
+        .classList
+        .add('show');
 }
 
+
 function closeDelegation(){
-    document.getElementById('delegationModal')
-        .classList.remove('show');
+
+    document
+        .getElementById(
+            'delegationModal'
+        )
+        .classList
+        .remove('show');
 }
+
 
 async function saveDelegation(){
 
-    const employeeId=
-        document.getElementById('delEmployee').value;
+    const employeeId =
+        document.getElementById(
+            'delEmployee'
+        ).value;
 
     if(!employeeId){
+
         alert('اختر الموظف');
         return;
     }
 
-    const payload={
+    const payload = {
         active:true,
-        from:document.getElementById('delFrom').value,
-        to:document.getElementById('delTo').value,
-        province:document.getElementById('delProvince').value.trim(),
-        locationName:document.getElementById('delLocation').value.trim(),
-        latitude:document.getElementById('delLat').value,
-        longitude:document.getElementById('delLng').value,
-        radiusMeters:Number(document.getElementById('delRadius').value||200),
-        reason:document.getElementById('delReason').value.trim()
+
+        from:
+            document.getElementById(
+                'delFrom'
+            ).value,
+
+        to:
+            document.getElementById(
+                'delTo'
+            ).value,
+
+        province:
+            document.getElementById(
+                'delProvince'
+            ).value.trim(),
+
+        locationName:
+            document.getElementById(
+                'delLocation'
+            ).value.trim(),
+
+        latitude:
+            document.getElementById(
+                'delLat'
+            ).value,
+
+        longitude:
+            document.getElementById(
+                'delLng'
+            ).value,
+
+        radiusMeters:
+            Number(
+                document.getElementById(
+                    'delRadius'
+                ).value || 200
+            ),
+
+        reason:
+            document.getElementById(
+                'delReason'
+            ).value.trim()
     };
 
-    try{
-        await api(
-            '/api/admin/employees/'+employeeId+'/delegation',
-            {
-                method:'PUT',
-                body:JSON.stringify(payload)
-            }
+    const emp =
+        employees.find(x =>
+            String(
+                x._id ||
+                x.id ||
+                x._offlineKey
+            ) ===
+            String(employeeId)
         );
 
-        closeDelegation();
-        await loadEmployees();
-        renderAll();
-
-    }catch(e){
-        alert('❌ '+e.message);
+    if(!emp){
+        alert('❌ الموظف غير موجود');
+        return;
     }
+
+    /*
+     * ONLINE
+     */
+    if(navigator.onLine){
+
+        try{
+
+            await api(
+                '/api/admin/employees/' +
+                encodeURIComponent(
+                    employeeId
+                ) +
+                '/delegation',
+                {
+                    method:'PUT',
+                    body:
+                        JSON.stringify(
+                            payload
+                        )
+                }
+            );
+
+            closeDelegation();
+
+            await loadEmployees();
+            renderAll();
+
+            return;
+
+        }catch(e){
+
+            if(!(e instanceof TypeError)){
+                alert(
+                    '❌ ' + e.message
+                );
+                return;
+            }
+        }
+    }
+
+    /*
+     * OFFLINE
+     */
+    emp.delegation = {
+        ...payload,
+        _offlinePending:true
+    };
+
+    await saveLocalEmployees();
+
+    await AlMoraqebOfflineSync
+        .queueOperation(
+            '/api/admin/employees/' +
+            encodeURIComponent(
+                employeeId
+            ) +
+            '/delegation',
+            'PUT',
+            payload
+        );
+
+    closeDelegation();
+    renderAll();
+
+    alert(
+        '✅ تم حفظ الإيفاد على الجهاز وسيتم مزامنته عند عودة الإنترنت'
+    );
 }
+
 
 async function endDelegation(employeeId){
 
-    if(!confirm('إنهاء إيفاد هذا الموظف؟'))
-        return;
+    if(
+        !confirm(
+            'إنهاء إيفاد هذا الموظف؟'
+        )
+    ) return;
 
-    try{
-        await api(
-            '/api/admin/employees/'+employeeId+'/delegation',
-            {
-                method:'PUT',
-                body:JSON.stringify({active:false})
-            }
+    const emp =
+        employees.find(x =>
+            String(
+                x._id ||
+                x.id ||
+                x._offlineKey
+            ) ===
+            String(employeeId)
         );
 
-        await loadEmployees();
-        renderAll();
+    if(!emp)
+        return;
 
-    }catch(e){
-        alert('❌ '+e.message);
+    const payload = {
+        active:false
+    };
+
+    /*
+     * ONLINE
+     */
+    if(navigator.onLine){
+
+        try{
+
+            await api(
+                '/api/admin/employees/' +
+                encodeURIComponent(
+                    employeeId
+                ) +
+                '/delegation',
+                {
+                    method:'PUT',
+                    body:
+                        JSON.stringify(
+                            payload
+                        )
+                }
+            );
+
+            await loadEmployees();
+            renderAll();
+
+            return;
+
+        }catch(e){
+
+            if(!(e instanceof TypeError)){
+                alert(
+                    '❌ ' + e.message
+                );
+                return;
+            }
+        }
     }
+
+    /*
+     * OFFLINE
+     */
+    emp.delegation = {
+        active:false,
+        from:null,
+        to:null,
+        province:'',
+        locationName:'',
+        latitude:null,
+        longitude:null,
+        radiusMeters:200,
+        allowProvinceWide:false,
+        reason:'',
+        _offlinePending:true
+    };
+
+    await saveLocalEmployees();
+
+    await AlMoraqebOfflineSync
+        .queueOperation(
+            '/api/admin/employees/' +
+            encodeURIComponent(
+                employeeId
+            ) +
+            '/delegation',
+            'PUT',
+            payload
+        );
+
+    renderAll();
+
+    alert(
+        '✅ تم إنهاء الإيفاد محلياً وسيتم تحديث السيرفر عند عودة الإنترنت'
+    );
 }
 
 async function loadAll(){
@@ -610,5 +1259,11 @@ async function loadAll(){
     }
 })();
 </script>
+
+<script src="/offline_db.js"></script>
+<script src="/offline_sync.js"></script>
+<script src="/offline_auth.js"></script>
+<script src="/offline_boot.js"></script>
+
 </body>
 </html>

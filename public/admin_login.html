@@ -49,46 +49,207 @@
         const API = location.origin;
 
         async function login(e) {
+
             e.preventDefault();
-            const companyId = document.getElementById('companyId').value.trim();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const errorEl = document.getElementById('loginError');
+
+            const companyId =
+                document
+                    .getElementById('companyId')
+                    .value
+                    .trim();
+
+            const username =
+                document
+                    .getElementById('username')
+                    .value
+                    .trim();
+
+            const password =
+                document
+                    .getElementById('password')
+                    .value;
+
+            const errorEl =
+                document.getElementById(
+                    'loginError'
+                );
 
             errorEl.classList.remove('show');
 
-            if (!companyId || !username || !password) {
-                errorEl.textContent = '⚠️ يرجى ملء جميع الحقول';
+            if (
+                !companyId ||
+                !username ||
+                !password
+            ) {
+                errorEl.textContent =
+                    '⚠ يرجى ملء جميع الحقول';
+
                 errorEl.classList.add('show');
                 return;
             }
 
-            try {
-                const res = await fetch(API + '/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ companyId, username, password })
-                });
-                const data = await res.json();
+            /*
+             * نحاول السيرفر أولاً.
+             */
+            if (navigator.onLine) {
 
-                if (res.ok && data.success) {
-                    sessionStorage.setItem('almoraqeb_admin_token', data.token);
-                    localStorage.setItem('almoraqeb_admin_session', JSON.stringify({
-                        companyId: companyId,
-                        username: username,
-                        role: data.role || 'admin'
-                    }));
-                    localStorage.setItem('companyId', companyId);
-                    location.href = 'admin.html?company=' + encodeURIComponent(companyId);
-                } else {
-                    errorEl.textContent = '❌ ' + (data.message || 'بيانات الدخول غير صحيحة');
-                    errorEl.classList.add('show');
+                try {
+
+                    const res =
+                        await fetch(
+                            API + '/api/admin/login',
+                            {
+                                method:'POST',
+                                headers:{
+                                    'Content-Type':
+                                        'application/json'
+                                },
+                                body:
+                                    JSON.stringify({
+                                        companyId,
+                                        username,
+                                        password
+                                    })
+                            }
+                        );
+
+                    const data =
+                        await res
+                            .json()
+                            .catch(()=>({}));
+
+                    /*
+                     * السيرفر رد فعلياً:
+                     * إذا كانت البيانات خطأ لا نسمح
+                     * بالدخول Offline كالتفاف.
+                     */
+                    if (!res.ok || !data.success) {
+
+                        errorEl.textContent =
+                            '❌ ' +
+                            (
+                                data.message ||
+                                'بيانات الدخول غير صحيحة'
+                            );
+
+                        errorEl.classList.add('show');
+                        return;
+                    }
+
+                    sessionStorage.setItem(
+                        'almoraqeb_admin_token',
+                        data.token
+                    );
+
+                    sessionStorage.removeItem(
+                        'almoraqeb_admin_offline'
+                    );
+
+                    localStorage.setItem(
+                        'almoraqeb_admin_session',
+                        JSON.stringify({
+                            companyId,
+                            username,
+                            role:
+                                data.role ||
+                                'admin',
+                            offlineMode:false
+                        })
+                    );
+
+                    localStorage.setItem(
+                        'companyId',
+                        companyId
+                    );
+
+                    /*
+                     * لا نحفظ كلمة المرور.
+                     * نحفظ verifier محلي فقط
+                     * بعد نجاح تسجيل الدخول Online.
+                     */
+                    await AlMoraqebOfflineAuth
+                        .saveCredential({
+                            companyId,
+                            username,
+                            password,
+                            role:
+                                data.role ||
+                                'admin'
+                        });
+
+                    location.href =
+                        'admin.html?company=' +
+                        encodeURIComponent(
+                            companyId
+                        );
+
+                    return;
+
+                } catch (networkError) {
+
+                    /*
+                     * فشل الوصول إلى Render نفسه.
+                     * ننتقل للمصادقة المحلية.
+                     */
                 }
+            }
+
+            /*
+             * OFFLINE LOGIN
+             */
+            try {
+
+                const valid =
+                    await AlMoraqebOfflineAuth
+                        .verifyCredential(
+                            companyId,
+                            username,
+                            password
+                        );
+
+                if (!valid) {
+
+                    errorEl.textContent =
+                        '❌ لا توجد بيانات دخول Offline صالحة لهذا الحساب';
+
+                    errorEl.classList.add('show');
+                    return;
+                }
+
+                const record =
+                    await AlMoraqebOfflineAuth
+                        .getCredential(
+                            companyId
+                        );
+
+                AlMoraqebOfflineAuth
+                    .startOfflineSession(
+                        companyId,
+                        username,
+                        record?.role ||
+                        'admin'
+                    );
+
+                location.href =
+                    'admin.html?company=' +
+                    encodeURIComponent(
+                        companyId
+                    );
+
             } catch (err) {
-                errorEl.textContent = '❌ فشل الاتصال بالسيرفر';
+
+                errorEl.textContent =
+                    '❌ تعذر التحقق من بيانات الدخول المحلية';
+
                 errorEl.classList.add('show');
             }
         }
     </script>
+
+<script src="/offline_db.js"></script>
+<script src="/offline_sync.js"></script>
+<script src="/offline_auth.js"></script>
+<script src="/offline_boot.js"></script>
+
 </body>
 </html>

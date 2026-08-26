@@ -33,7 +33,7 @@
     <!-- ✅ دمج بطاقتي السلف والرواتب في بطاقة واحدة -->
     <div class="card" onclick="go('admin_operations.html','salaries')"><span class="bigicon">💰</span><h3>إدارة الرواتب والسلف</h3><p>حساب الرواتب والخصومات والسلف والأقساط</p></div>
     <div class="card" onclick="go('admin_attendance.html')"><span class="bigicon">📍</span><h3>بصمة الإصبع والـ GPS</h3><p>الحضور والانصراف والغياب والإجازات والإيفاد ومواقع البصمة</p></div>
-    <div class="card" onclick="go('admin_reports.html','settings')"><span class="bigicon">⚙️</span><h3>إعدادات النظام</h3><p>التحكم بالإعدادات العامة ومظهر النظام</p></div>
+    <div class="card" onclick="go('admin_settings.html')"><span class="bigicon">⚙</span><h3>إعدادات النظام</h3><p>بيانات الشركة والمدير وإعدادات الدخول والحساب</p></div>
     <!-- ✅ تعديل بطاقة الخريطة لفتح الصفحة الجديدة -->
     <div class="card" onclick="location.href='admin_map.html'"><span class="bigicon">🗺️</span><h3>متابعة موظف على الخريطة</h3><p>متابعة موقع حتى 5 موظفين أثناء الشفت</p></div>
     <div class="card" onclick="go('admin_reports.html','archive')"><span class="bigicon">📁</span><h3>أرشيف النظام</h3><p>الرجوع إلى السجلات والبيانات المؤرشفة</p></div>
@@ -49,6 +49,36 @@
 </div>
 
 <div id="status" class="status">✓ جاري التحقق من اتصال السيرفر...</div>
+
+<div id="syncBar" style="
+    margin-top:10px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    border:1px solid #e2e8f0;
+    border-radius:10px;
+    padding:10px;
+    background:#f8fafc;
+">
+    <strong id="syncState">🔄 فحص حالة المزامنة...</strong>
+
+    <span id="syncPending" style="
+        background:#f59e0b;
+        color:#fff;
+        padding:5px 10px;
+        border-radius:8px;
+        font-weight:800;
+    ">0 معلقة</span>
+
+    <button
+        class="btn btn-blue"
+        onclick="manualSync(this)"
+    >
+        🔄 مزامنة الآن
+    </button>
+</div>
 </div>
 
 <script>
@@ -63,22 +93,189 @@ function ripple(e){const el=e.currentTarget;if(!el)return;const r=document.creat
 function markWorking(el,on=true){if(!el)return;if(on){el.disabled=true;el.dataset.oldText=el.textContent;el.textContent='⏳ جاري التنفيذ...'}else{el.disabled=false;if(el.dataset.oldText)el.textContent=el.dataset.oldText}}
 
 async function auth(){
-    token=sessionStorage.getItem('almoraqeb_admin_token')||'';
-    const s=session();
-    companyId=String(s.companyId||q().get('company')||localStorage.getItem('companyId')||'').trim();
-    if(!token||!companyId){location.href='admin_login.html';return false}
-    try{
-        const r=await fetch(API+'/api/admin/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});
-        const d=await r.json();
-        if(!r.ok||!d.success)throw 0;
-        document.getElementById('company').textContent=companyId;
-        document.getElementById('companyStat').textContent=companyId;
-        return true
-    }catch{location.href='admin_login.html';return false}
+
+    token =
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
+
+    const s =
+        typeof session === 'function'
+            ? session()
+            : (
+                typeof getSession === 'function'
+                    ? getSession()
+                    : {}
+            );
+
+    companyId = String(
+        s.companyId ||
+        new URLSearchParams(
+            location.search
+        ).get('company') ||
+        localStorage.getItem(
+            'companyId'
+        ) ||
+        ''
+    ).trim();
+
+    if(
+        !companyId ||
+        !window.AlMoraqebOfflineAuth
+    ){
+        location.href =
+            'admin_login.html';
+        return false;
+    }
+
+    const result =
+        await AlMoraqebOfflineAuth
+            .authorizePage({
+                companyId
+            });
+
+    if(!result.ok){
+        location.href =
+            'admin_login.html';
+        return false;
+    }
+
+    companyId =
+        result.companyId ||
+        companyId;
+
+    /*
+     * أثناء Offline لا نستخدم Token وهمي
+     * في طلبات الشبكة إلا أن بعض الدوال
+     * تحتاج القيمة لمعرفة وجود الجلسة.
+     */
+    token =
+        sessionStorage.getItem(
+            'almoraqeb_admin_token'
+        ) || '';
+
+    const badge =
+        document.getElementById(
+            'companyBadge'
+        );
+
+    if(badge)
+        badge.textContent =
+            companyId;
+
+    const companyLabel =
+        document.getElementById(
+            'company'
+        );
+
+    if(companyLabel)
+        companyLabel.textContent =
+            companyId;
+
+    const companyStat =
+        document.getElementById(
+            'companyStat'
+        );
+
+    if(companyStat)
+        companyStat.textContent =
+            companyId;
+
+    document.documentElement.dataset.offline =
+        result.offline
+            ? 'true'
+            : 'false';
+
+    return true;
 }
 
 async function loadStats(){try{const r=await fetch(API+'/api/employees?companyId='+encodeURIComponent(companyId),{headers:{Authorization:'Bearer '+token},cache:'no-store'});const d=await r.json();if(r.ok&&d.success)document.getElementById('employees').textContent=(d.employees||[]).length}catch{}}
 async function loadPending(){try{const headers={Authorization:'Bearer '+token};const responses=await Promise.all([fetch(API+'/api/employee/requests/'+encodeURIComponent(companyId)+'/pending',{headers,cache:'no-store'}),fetch(API+'/api/admin/service-requests',{headers,cache:'no-store'})]);const registration=await responses[0].json();const services=await responses[1].json();const registrationCount=responses[0].ok&&registration.success?(registration.requests||[]).length:0;const serviceCount=responses[1].ok&&services.success?(services.requests||[]).filter(request=>request.status==='pending').length:0;document.getElementById('pending').textContent=registrationCount+serviceCount;document.getElementById('reqBadge').textContent=registrationCount+serviceCount}catch{}}
+
+
+async function refreshSyncStatus(){
+
+    if(!window.AlMoraqebOfflineSync){
+        return;
+    }
+
+    try{
+        const status =
+            await AlMoraqebOfflineSync.status
+                ? await AlMoraqebOfflineSync.status()
+                : {
+                    online:navigator.onLine,
+                    pending:
+                        await AlMoraqebOfflineSync.pendingCount()
+                };
+
+        const state =
+            document.getElementById('syncState');
+
+        const pending =
+            document.getElementById('syncPending');
+
+        if(!state || !pending)
+            return;
+
+        state.textContent =
+            navigator.onLine
+                ? '🟢 متصل بالسيرفر'
+                : '🔴 بدون إنترنت - العمل محفوظ محلياً';
+
+        pending.textContent =
+            Number(status.pending || 0) +
+            ' معلقة';
+
+        pending.style.background =
+            Number(status.pending || 0) > 0
+                ? '#f59e0b'
+                : '#10b981';
+
+    }catch{}
+}
+
+
+async function manualSync(button){
+
+    if(!window.AlMoraqebOfflineSync)
+        return;
+
+    if(!navigator.onLine){
+        alert(
+            'لا يوجد اتصال بالإنترنت حالياً. البيانات محفوظة على الجهاز.'
+        );
+        return;
+    }
+
+    markWorking(button,true);
+
+    try{
+        await AlMoraqebOfflineSync
+            .syncPending();
+
+        await refreshSyncStatus();
+
+    }finally{
+        markWorking(button,false);
+    }
+}
+
+
+document.addEventListener(
+    'almoraqeb-sync-status',
+    refreshSyncStatus
+);
+
+window.addEventListener(
+    'online',
+    refreshSyncStatus
+);
+
+window.addEventListener(
+    'offline',
+    refreshSyncStatus
+);
 
 async function checkServer(button){const el=document.getElementById('status');markWorking(button,true);try{const r=await fetch(API+'/api/admin/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});el.textContent=r.ok?'✓ السيرفر متصل ويعمل بشكل طبيعي':'⚠️ تعذر التحقق من السيرفر';el.style.background=r.ok?'#10b981':'#f59e0b'}catch{el.textContent='❌ السيرفر غير متاح';el.style.background='#ef4444'}finally{markWorking(button,false)}}
 
@@ -92,9 +289,16 @@ document.querySelectorAll('.card').forEach(el=>el.addEventListener('keydown',e=>
     if(await auth()){
         await Promise.all([loadStats(),loadPending()]);
         await checkServer();
+        await refreshSyncStatus();
         setInterval(()=>{loadStats();loadPending()},30000);
     }
 })();
 </script>
+
+<script src="/offline_db.js"></script>
+<script src="/offline_sync.js"></script>
+<script src="/offline_auth.js"></script>
+<script src="/offline_boot.js"></script>
+
 </body>
 </html>
