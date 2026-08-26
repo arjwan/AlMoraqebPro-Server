@@ -328,6 +328,7 @@
     <div id="tab-loans" class="tab-content">
         <div class="card-panel">
             <h3>سلف الموظفين</h3>
+            <div style="margin-bottom:12px"><button class="btn" onclick="openAddLoanModal()">➕ إضافة سلفة يدويًا</button></div>
             <div class="table-wrapper">
                 <table>
                     <thead>
@@ -346,6 +347,17 @@
                 </table>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- مودال إضافة سلفة -->
+<div class="modal-overlay" id="addLoanModal">
+    <div class="modal-box">
+        <h3>إضافة سلفة لموظف</h3>
+        <div class="field"><label>الموظف</label><select id="loanEmployee"><option value="">اختر الموظف</option></select></div>
+        <div class="field"><label>مبلغ السلفة</label><input type="number" id="newLoanAmount" min="1"></div>
+        <div class="field"><label>تاريخ السلفة</label><input type="date" id="newLoanDate"></div>
+        <div class="modal-actions"><button class="btn btn-outline" onclick="closeAddLoanModal()">إغلاق</button><button class="btn" id="addLoanBtn" onclick="addLoanEmployee()">إضافة السلفة</button></div>
     </div>
 </div>
 
@@ -1219,6 +1231,12 @@ async function loadLoans() {
         allLoans =
             data.loans || [];
 
+        const employeeData = await api(
+            '/api/employees?companyId=' + encodeURIComponent(companyId)
+        );
+
+        allEmployees = employeeData.employees || [];
+
         await saveLocalLoans();
 
         renderLoans();
@@ -1257,6 +1275,12 @@ async function loadLoans() {
                     ) - paid;
             });
 
+            if (window.AlMoraqebOfflineDB) {
+                allEmployees = await getLocalOperationsStore(
+                    AlMoraqebOfflineDB.STORES.employees
+                );
+            }
+
             renderLoans();
 
             toast(
@@ -1287,25 +1311,59 @@ function renderLoans() {
 
     tbody.innerHTML = '';
 
-    allLoans.forEach(loan => {
+    const employeeMap = new Map(
+        allEmployees.map(employee => [
+            String(employee._id || employee.id || employee._offlineKey),
+            employee
+        ])
+    );
+
+    const rows = allEmployees.map(employee => ({
+        employee,
+        loan: allLoans.find(item =>
+            String(item.employeeId) ===
+            String(employee._id || employee.id || employee._offlineKey)
+        ) || null
+    }));
+
+    allLoans
+        .filter(loan => !employeeMap.has(String(loan.employeeId)))
+        .forEach(loan => rows.push({
+            employee: {
+                _id: loan.employeeId,
+                name: loan.employeeName,
+                specialty: loan.specialty,
+                workplace: loan.workplace
+            },
+            loan
+        }));
+
+    rows.forEach(({ employee, loan }) => {
+
+        const employeeId =
+            employee._id ||
+            employee.id ||
+            employee._offlineKey;
 
         const id =
-            loan._id ||
-            loan.id ||
-            loan._offlineKey;
+            loan && (
+                loan._id ||
+                loan.id ||
+                loan._offlineKey
+            );
 
         const row =
             document.createElement('tr');
 
         row.innerHTML = `
-            <td>${loan.employeeName || ''}</td>
-            <td>${loan.specialty || ''}</td>
-            <td>${loan.workplace || ''}</td>
-            <td>${loan.totalLoanAmount || 0}</td>
+            <td>${escapeHtml(employee.name || loan?.employeeName || '')}</td>
+            <td>${escapeHtml(employee.specialty || loan?.specialty || '')}</td>
+            <td>${escapeHtml(employee.workplace || employee.branch || loan?.workplace || '')}</td>
+            <td>${loan ? formatMoney(loan.totalLoanAmount) : '—'}</td>
 
             <td>
                 ${
-                    loan.loanDate
+                    loan && loan.loanDate
                         ? new Date(
                             loan.loanDate
                         ).toLocaleDateString(
@@ -1315,27 +1373,122 @@ function renderLoans() {
                 }
             </td>
 
-            <td>${loan.remainingAmount || 0}</td>
+            <td>${loan ? formatMoney(loan.remainingAmount) : '—'}</td>
 
             <td>
-                <button
+                ${loan ? `<button
                     class="btn-sm btn-blue"
                     onclick="openRepayModal('${loan.employeeId}')">
                     تسديدات
-                </button>
+                </button>` : '<span style="color:#64748b">لا توجد سلفة</span>'}
             </td>
 
             <td>
-                <button
+                ${loan ? `<button
                     class="btn-sm btn-red"
                     onclick="deleteLoan('${id}')">
                     حذف
-                </button>
+                </button>` : `<button class="btn-sm btn-sm-green" onclick="openAddLoanModal('${employeeId}')">إضافة سلفة</button>`}
             </td>
         `;
 
         tbody.appendChild(row);
     });
+}
+
+function openAddLoanModal(preselectedEmployeeId = '') {
+    const loanEmployeeIds = new Set(
+        allLoans.map(loan => String(loan.employeeId || ''))
+    );
+    const available = allEmployees.filter(employee =>
+        !loanEmployeeIds.has(String(employee._id || employee.id || employee._offlineKey))
+    );
+
+    document.getElementById('loanEmployee').innerHTML = available.length
+        ? '<option value="">اختر الموظف</option>' + available.map(employee => {
+            const id = employee._id || employee.id || employee._offlineKey;
+            return `<option value="${escapeHtml(id)}">${escapeHtml(employee.name)} — ${escapeHtml(employee.workplace || employee.branch || '')}</option>`;
+        }).join('')
+        : '<option value="">لا يوجد موظفون بدون سلفة</option>';
+
+    if (preselectedEmployeeId) {
+        document.getElementById('loanEmployee').value = String(preselectedEmployeeId);
+    }
+    document.getElementById('newLoanAmount').value = '';
+    const today = new Date();
+    today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+    document.getElementById('newLoanDate').value = today.toISOString().slice(0, 10);
+    document.getElementById('addLoanModal').classList.add('open');
+}
+
+function closeAddLoanModal() {
+    document.getElementById('addLoanModal').classList.remove('open');
+}
+
+async function addLoanEmployee() {
+    const employeeId = document.getElementById('loanEmployee').value;
+    const amount = Number(document.getElementById('newLoanAmount').value || 0);
+    const loanDate = document.getElementById('newLoanDate').value;
+    const employee = allEmployees.find(item =>
+        String(item._id || item.id || item._offlineKey) === String(employeeId)
+    );
+
+    if (!employee || amount <= 0 || !loanDate) {
+        toast('❌ اختر الموظف وأدخل مبلغًا وتاريخًا صحيحين', 'error');
+        return;
+    }
+
+    const clientOfflineId = 'loan-' + crypto.randomUUID();
+    const payload = {
+        clientOfflineId,
+        employeeId: String(employeeId),
+        employeeName: employee.name || '',
+        specialty: employee.specialty || '',
+        workplace: employee.workplace || employee.branch || '',
+        totalLoanAmount: amount,
+        loanDate
+    };
+    const button = document.getElementById('addLoanBtn');
+    button.disabled = true;
+    button.textContent = 'جارٍ الإضافة...';
+
+    if (navigator.onLine) {
+        try {
+            await api('/api/admin/loans', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            closeAddLoanModal();
+            toast('✅ تمت إضافة السلفة', 'success');
+            await loadLoans();
+            button.disabled = false;
+            button.textContent = 'إضافة السلفة';
+            return;
+        } catch (e) {
+            if (!(e instanceof TypeError)) {
+                toast('❌ ' + e.message, 'error');
+                button.disabled = false;
+                button.textContent = 'إضافة السلفة';
+                return;
+            }
+        }
+    }
+
+    allLoans.push({
+        ...payload,
+        _id: clientOfflineId,
+        _offlineKey: clientOfflineId,
+        remainingAmount: amount,
+        repayments: [],
+        _offlinePending: true
+    });
+    await saveLocalLoans();
+    await AlMoraqebOfflineSync.queueOperation('/api/admin/loans', 'POST', payload);
+    closeAddLoanModal();
+    renderLoans();
+    toast('✅ تم حفظ السلفة على الجهاز وستتم مزامنتها عند عودة الإنترنت', 'success');
+    button.disabled = false;
+    button.textContent = 'إضافة السلفة';
 }
 
 
