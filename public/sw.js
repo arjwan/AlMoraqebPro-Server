@@ -1,9 +1,11 @@
 'use strict';
 
-const CACHE_NAME = 'almoraqebpro-v2';
+const CACHE_NAME = 'almoraqebpro-v3';
 
 const CORE_FILES = [
     '/',
+    '/index.html',
+    '/employee_portal.html',
     '/admin_login.html',
     '/admin.html',
     '/admin_employees.html',
@@ -14,6 +16,8 @@ const CORE_FILES = [
     '/admin_reports.html',
     '/admin_settings.html',
     '/admin_map.html',
+    '/admin_archive.html',
+    '/admin_notifications.html',
     '/backup_system.html',
     '/offline_db.js',
     '/offline_sync.js',

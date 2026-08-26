@@ -233,8 +233,24 @@
         }
         .toast.show { display: block; }
         @media (max-width: 768px) {
+            body { background: #f1f5f9; color: #0f172a; padding: 8px; }
+            .container { background: #fff; color: #0f172a; padding: 12px; border-radius: 14px; border-color: #cbd5e1; box-shadow: 0 5px 18px rgba(15,23,42,.12); }
+            .header { border-color: #cbd5e1; }
             .header h1 { font-size: 1.3rem; }
             .tabs { flex-wrap: nowrap; overflow-x: auto; }
+            .tab-btn { color: #334155; background: #e2e8f0; border-color: #cbd5e1; white-space: nowrap; }
+            .card-panel { background: #fff; border-color: #cbd5e1; padding: 10px; }
+            .card-panel h3 { color: #075985; }
+            .payroll-tools { display: grid; grid-template-columns: 1fr; }
+            .payroll-tools .field,.payroll-tools .btn { width: 100%; min-width: 0; }
+            .field label { color: #334155; }
+            .field input,.field select,.field textarea,td input,td select { background: #fff; color: #0f172a; border-color: #94a3b8; }
+            th { background: #075985; color: #fff; }
+            td { color: #0f172a; background: #fff; border-color: #e2e8f0; }
+            .modal-box { background: #fff; color: #0f172a; }
+            .summary-item { background: #f8fafc; }
+            .summary-item strong { color: #0f172a; }
+            .btn-outline { color: #0369a1; border-color: #0369a1; }
         }
     </style>
 </head>
@@ -271,6 +287,7 @@
                 <button class="btn" onclick="openPayrollPreview('bank')">كشف التحويل المصرفي</button>
                 <button class="btn btn-outline" onclick="openPayrollPreview('cash')">كشف الصرف النقدي</button>
                 <button class="btn btn-outline" onclick="printCashPayroll()">طباعة النقدي حسب الفرع</button>
+                <button class="btn" onclick="openAddSalaryModal()">➕ إضافة موظف للرواتب</button>
             </div>
             <div class="table-wrapper">
                 <table id="salariesTable">
@@ -329,6 +346,17 @@
                 </table>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- مودال إضافة موظف إلى جدول الرواتب -->
+<div class="modal-overlay" id="addSalaryModal">
+    <div class="modal-box">
+        <h3>إضافة موظف إلى جدول الرواتب</h3>
+        <div class="field"><label>الموظف</label><select id="salaryEmployee" onchange="fillSalaryEmployee()"><option value="">اختر الموظف</option></select></div>
+        <div class="field"><label>الراتب الأساسي</label><input type="number" id="newBasicSalary" min="0"></div>
+        <div class="field"><label>المخصصات</label><input type="number" id="newAllowances" min="0" value="0"></div>
+        <div class="modal-actions"><button class="btn btn-outline" onclick="closeAddSalaryModal()">إغلاق</button><button class="btn" id="addSalaryBtn" onclick="addSalaryEmployee()">إضافة</button></div>
     </div>
 </div>
 
@@ -509,6 +537,10 @@ async function loadSalaries() {
         updatePayrollBranches();
         renderSalaries();
 
+        if (data.addedAutomatically > 0) {
+            toast(`✅ تمت إضافة ${data.addedAutomatically} موظف إلى جدول الرواتب تلقائيًا`, 'success');
+        }
+
     } catch (e) {
 
         try {
@@ -538,6 +570,70 @@ async function loadSalaries() {
                 'error'
             );
         }
+    }
+}
+
+async function openAddSalaryModal() {
+    if (!navigator.onLine) {
+        toast('⚠ إضافة موظف جديد إلى الرواتب تحتاج اتصالًا بالسيرفر', 'error');
+        return;
+    }
+    try {
+        const data = await api('/api/employees?companyId=' + encodeURIComponent(companyId));
+        allEmployees = data.employees || [];
+        const salaryEmployeeIds = new Set(allSalaries.map(s => String(s.employeeId || '')));
+        const available = allEmployees.filter(e => !salaryEmployeeIds.has(String(e._id || e.id)));
+        document.getElementById('salaryEmployee').innerHTML = available.length
+            ? '<option value="">اختر الموظف</option>' + available.map(e => `<option value="${escapeHtml(e._id || e.id)}">${escapeHtml(e.name)} — ${escapeHtml(e.workplace || e.branch || '')}</option>`).join('')
+            : '<option value="">جميع الموظفين موجودون في جدول الرواتب</option>';
+        document.getElementById('newBasicSalary').value = '';
+        document.getElementById('newAllowances').value = '0';
+        document.getElementById('addSalaryModal').classList.add('open');
+    } catch (e) {
+        toast('❌ ' + e.message, 'error');
+    }
+}
+
+function closeAddSalaryModal() {
+    document.getElementById('addSalaryModal').classList.remove('open');
+}
+
+function fillSalaryEmployee() {
+    const id = document.getElementById('salaryEmployee').value;
+    const employee = allEmployees.find(e => String(e._id || e.id) === String(id));
+    document.getElementById('newBasicSalary').value = employee ? Number(employee.salary || 0) : '';
+}
+
+async function addSalaryEmployee() {
+    const id = document.getElementById('salaryEmployee').value;
+    const employee = allEmployees.find(e => String(e._id || e.id) === String(id));
+    if (!employee) {
+        toast('❌ اختر الموظف', 'error');
+        return;
+    }
+    const button = document.getElementById('addSalaryBtn');
+    button.disabled = true;
+    button.textContent = 'جارٍ الإضافة...';
+    try {
+        await api('/api/admin/salaries', {
+            method: 'POST',
+            body: JSON.stringify({
+                employeeId: String(employee._id || employee.id),
+                employeeName: employee.name || '',
+                specialty: employee.specialty || '',
+                workplace: employee.workplace || employee.branch || '',
+                basicSalary: Number(document.getElementById('newBasicSalary').value || 0),
+                allowances: Number(document.getElementById('newAllowances').value || 0)
+            })
+        });
+        closeAddSalaryModal();
+        toast('✅ تمت إضافة الموظف إلى جدول الرواتب', 'success');
+        await loadSalaries();
+    } catch (e) {
+        toast('❌ ' + e.message, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = 'إضافة';
     }
 }
 

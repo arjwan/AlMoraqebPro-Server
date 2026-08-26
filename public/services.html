@@ -49,6 +49,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(160deg,
 .fa-detail video, .fa-detail iframe{width:100%;border-radius:12px;margin-top:10px}
 .zoom-controls{display:flex;gap:6px;margin-top:8px}
 .zoom-controls button{flex:1;background:#e2e8f0;border:0;border-radius:8px;padding:6px;font-weight:800;cursor:pointer}
+@media(max-width:600px){body{background:#f1f5f9;padding:8px;color:#0f172a}.top{color:#0f172a}.connection{background:#fff;border-color:#cbd5e1}.ticker-wrapper{background:#fff;border-color:#cbd5e1;box-shadow:0 3px 12px #0f172a12}.ticker-text{color:#334155}.card{background:#fff;padding:13px;border-radius:18px;box-shadow:0 5px 18px #0f172a1f}.service-card{background:#fff;border-color:#cbd5e1}.modal{background:#fff;color:#0f172a}}
 </style>
 </head>
 <body>
@@ -247,10 +248,19 @@ async function fetchNotifications(open=true){
     const data=await api(`/api/employee/notifications?employeeId=${encodeURIComponent(employeeId)}&deviceId=${encodeURIComponent(deviceId)}`);
     const items=data.notifications||[];
     if(!items.length){if(open)showData('🔔 إشعارات المدير','<div class="empty">لا توجد إشعارات جديدة من الإدارة.</div>');return}
-    const html=items.map(n=>`<div class="record"><div class="record-top"><strong>${n.type==='voice'?'🎙️ رسالة صوتية':'📩 رسالة من الإدارة'}</strong><span class="badge blue">${formatDate(n.createdAt)}</span></div><div>${esc(n.message||'')}</div>${n.audioUrl?`<audio controls style="width:100%;margin-top:8px" src="${esc(n.audioUrl)}"></audio>`:''}</div>`).join('');
+    const html=items.map(n=>`<div class="record" style="${n.priority==='urgent'?'border-right:5px solid #ef4444;background:#fff7f7':''}"><div class="record-top"><strong>${n.priority==='urgent'?'🚨 إشعار عاجل — ':''}${n.type==='voice'?'🎙️ رسالة صوتية':'📩 رسالة من الإدارة'}</strong><span class="badge blue">${formatDate(n.createdAt)}</span></div><div>${esc(n.message||'')}</div>${n.audioUrl?`<audio controls style="width:100%;margin-top:8px" src="${esc(n.audioUrl)}" onplay="markNotification('${esc(n._id)}','listened')"></audio>`:''}</div>`).join('');
     $('tickerText').innerHTML='<span>📢</span> '+items.slice(0,3).map(n=>esc(n.message||'تنبيه من الإدارة')).join(' <span>•</span> ');
-    if(open)showData('🔔 إشعارات المدير',html);
+    if(open){showData('🔔 إشعارات المدير',html);items.filter(n=>!n.readAt).forEach(n=>markNotification(n._id,'read'))}
   }catch(e){if(open)showData('🔔 إشعارات المدير',`<div class="empty">❌ ${esc(e.message)}</div>`);toast('تعذر جلب الإشعارات','error')}
+}
+
+async function markNotification(id,status){
+  try{
+    await api(`/api/employee/notifications/${encodeURIComponent(id)}/status`,{
+      method:'PUT',
+      body:JSON.stringify({employeeId,deviceId,read:status==='read',listened:status==='listened'})
+    });
+  }catch(e){console.warn('تعذر تحديث حالة الإشعار',e.message)}
 }
 
 async function fetchMyRequests(open=true){

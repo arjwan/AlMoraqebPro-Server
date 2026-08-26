@@ -528,6 +528,30 @@ const employeeSchema = new mongoose.Schema({
         default: ''
     },
 
+    nationality: { type: String, default: '' },
+    city: { type: String, default: '' },
+    neighborhood: { type: String, default: '' },
+    street: { type: String, default: '' },
+    alley: { type: String, default: '' },
+    buildingNumber: { type: String, default: '' },
+    nearestLandmark: { type: String, default: '' },
+    certificate: { type: String, default: '' },
+
+    unifiedCardNumber: { type: String, default: '' },
+    unifiedCardIssuer: { type: String, default: '' },
+    unifiedCardIssueDate: Date,
+    unifiedCardExpiryDate: Date,
+
+    residenceCardNumber: { type: String, default: '' },
+    residenceCardIssuer: { type: String, default: '' },
+    residenceCardIssueDate: Date,
+    residenceCardExpiryDate: Date,
+
+    passportNumber: { type: String, default: '' },
+    passportIssuer: { type: String, default: '' },
+    passportIssueDate: Date,
+    passportExpiryDate: Date,
+
     branch: {
         type: String,
         default: ''
@@ -859,6 +883,25 @@ const notificationSchema = new mongoose.Schema({
         default: ''
     },
 
+    priority: {
+        type: String,
+        enum: ['normal', 'urgent'],
+        default: 'normal',
+        index: true
+    },
+
+    targetType: {
+        type: String,
+        enum: ['employee', 'branch', 'all'],
+        default: 'employee'
+    },
+
+    targetLabel: { type: String, default: '' },
+    campaignId: { type: String, default: '', index: true },
+    scheduledAt: { type: Date, default: null, index: true },
+    readAt: { type: Date, default: null },
+    listenedAt: { type: Date, default: null },
+
     createdAt: {
         type: Date,
         default: Date.now
@@ -871,6 +914,58 @@ const Notification =
         'Notification',
         notificationSchema
     );
+
+/*
+=========================================================
+  IMMUTABLE SYSTEM ARCHIVE
+=========================================================
+*/
+
+const archiveRecordSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true, immutable: true },
+    category: {
+        type: String,
+        enum: ['employee_document', 'information', 'operation'],
+        required: true,
+        index: true,
+        immutable: true
+    },
+    sourceType: { type: String, default: '', index: true, immutable: true },
+    sourceId: { type: String, default: '', index: true, immutable: true },
+    snapshotId: { type: String, default: '', index: true, immutable: true },
+    employeeId: { type: String, default: '', index: true, immutable: true },
+    employeeName: { type: String, default: '', immutable: true },
+    title: { type: String, default: '' },
+    documentType: { type: String, default: '' },
+    fileUrl: { type: String, default: '', immutable: true },
+    note: { type: String, default: '' },
+    payload: { type: mongoose.Schema.Types.Mixed, default: null, immutable: true },
+    archivedBy: { type: String, default: 'admin', immutable: true },
+    createdAt: { type: Date, default: Date.now, index: true, immutable: true }
+}, {
+    versionKey: false
+});
+
+archiveRecordSchema.pre(
+    [
+        'updateOne',
+        'updateMany',
+        'findOneAndUpdate',
+        'replaceOne',
+        'deleteOne',
+        'deleteMany',
+        'findOneAndDelete'
+    ],
+    function preventArchiveMutation(next) {
+        const query = this.getQuery ? this.getQuery() : {};
+        if (query.category === 'employee_document') {
+            return next();
+        }
+        next(new Error('سجلات الأرشيف دائمة ولا تقبل التعديل أو الحذف'));
+    }
+);
+
+const ArchiveRecord = mongoose.model('ArchiveRecord', archiveRecordSchema);
 
 /*
 =========================================================
@@ -7786,8 +7881,33 @@ app.get('/api/employee/payroll', async (req, res) => {
 
 app.get('/api/admin/salaries', requireAdmin, async (req, res) => {
     try {
-        const salaries = await SalaryRecord.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
-        res.json({ success: true, salaries });
+        const companyId = req.session.companyId;
+        const employees = await Employee.find({ companyId }).lean();
+        const existing = await SalaryRecord.find({ companyId })
+            .select('employeeId')
+            .lean();
+        const existingIds = new Set(existing.map(item => String(item.employeeId)));
+        const missing = employees.filter(employee => !existingIds.has(String(employee._id)));
+
+        if (missing.length) {
+            await SalaryRecord.insertMany(
+                missing.map(employee => ({
+                    companyId,
+                    employeeId: String(employee._id),
+                    employeeName: employee.name || '',
+                    employeeSerial: employee.employeeSerial || '',
+                    specialty: employee.specialty || '',
+                    workplace: employee.workplace || employee.branch || '',
+                    wageType: employee.wageType || 'monthly',
+                    basicSalary: Number(employee.salary || 0),
+                    grossSalary: Number(employee.salary || 0),
+                    netSalary: Number(employee.salary || 0)
+                })),
+                { ordered: false }
+            );
+        }
+        const salaries = await SalaryRecord.find({ companyId }).sort({ employeeName: 1 }).lean();
+        res.json({ success: true, salaries, addedAutomatically: missing.length });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
@@ -8719,6 +8839,244 @@ app.get('/api/admin/daily-workers', requireAdmin, async (req, res) => {
 
 /*
 =========================================================
+  IMMUTABLE ARCHIVE
+=========================================================
+*/
+
+app.get('/api/admin/archive', requireAdmin, async (req, res) => {
+    try {
+        const query = { companyId: req.session.companyId };
+        const category = String(req.query.category || '').trim();
+        const employeeId = String(req.query.employeeId || '').trim();
+        if (category) query.category = category;
+        if (employeeId) query.employeeId = employeeId;
+
+        const records = await ArchiveRecord.find(query)
+            .sort({ createdAt: -1 })
+            .limit(2000)
+            .lean();
+
+        return res.json({ success: true, records });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post(
+    '/api/admin/archive/employee-documents',
+    requireAdmin,
+    upload.single('document'),
+    async (req, res) => {
+        try {
+            const employeeId = String(req.body.employeeId || '').trim();
+            const employee = await Employee.findOne({
+                _id: employeeId,
+                companyId: req.session.companyId
+            }).lean();
+
+            if (!employee) {
+                return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+            }
+            if (!req.file) {
+                return res.status(400).json({ success: false, message: 'اختر ملف الوثيقة' });
+            }
+
+            const record = await new ArchiveRecord({
+                companyId: req.session.companyId,
+                category: 'employee_document',
+                sourceType: 'EmployeeDocument',
+                sourceId: String(req.file.filename),
+                employeeId: String(employee._id),
+                employeeName: employee.name || '',
+                title: String(req.body.title || req.file.originalname || '').trim(),
+                documentType: String(req.body.documentType || 'other').trim(),
+                fileUrl: `/uploads/${req.file.filename}`,
+                note: String(req.body.note || '').trim(),
+                archivedBy: req.session.username || 'admin'
+            }).save();
+
+            return res.status(201).json({ success: true, record });
+        } catch (err) {
+            return res.status(500).json({ success: false, error: err.message });
+        }
+    }
+);
+
+app.put(
+    '/api/admin/archive/employee-profiles/:id',
+    requireAdmin,
+    upload.single('photo'),
+    async (req, res) => {
+        try {
+            const employee = await Employee.findOne({
+                _id: req.params.id,
+                companyId: req.session.companyId
+            });
+            if (!employee) {
+                return res.status(404).json({ success: false, message: 'الموظف غير موجود' });
+            }
+
+            const textFields = [
+                'name', 'specialty', 'workplace', 'certificate',
+                'nationality', 'province', 'city', 'district',
+                'neighborhood', 'street', 'alley', 'buildingNumber',
+                'fullAddress', 'nearestLandmark', 'phoneNumber',
+                'unifiedCardNumber', 'unifiedCardIssuer',
+                'residenceCardNumber', 'residenceCardIssuer',
+                'passportNumber', 'passportIssuer'
+            ];
+            for (const field of textFields) {
+                if (req.body[field] !== undefined) {
+                    employee[field] = String(req.body[field] || '').trim();
+                }
+            }
+            if (req.body.salary !== undefined) {
+                employee.salary = Number(req.body.salary || 0);
+            }
+            if (req.body.hireDate !== undefined) {
+                employee.hireDate = req.body.hireDate ? new Date(req.body.hireDate) : null;
+            }
+            const dateFields = [
+                'unifiedCardIssueDate', 'unifiedCardExpiryDate',
+                'residenceCardIssueDate', 'residenceCardExpiryDate',
+                'passportIssueDate', 'passportExpiryDate'
+            ];
+            for (const field of dateFields) {
+                if (req.body[field] !== undefined) {
+                    employee[field] = req.body[field]
+                        ? new Date(req.body[field])
+                        : null;
+                }
+            }
+            if (req.file) {
+                employee.photoUrl = `/uploads/${req.file.filename}`;
+            }
+
+            await employee.save();
+            return res.json({ success: true, employee });
+        } catch (err) {
+            return res.status(500).json({ success: false, error: err.message });
+        }
+    }
+);
+
+app.put('/api/admin/archive/employee-documents/:id', requireAdmin, async (req, res) => {
+    try {
+        const record = await ArchiveRecord.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                companyId: req.session.companyId,
+                category: 'employee_document'
+            },
+            {
+                $set: {
+                    title: String(req.body.title || '').trim(),
+                    documentType: String(req.body.documentType || 'other').trim(),
+                    note: String(req.body.note || '').trim()
+                }
+            },
+            { new: true, runValidators: true }
+        );
+        if (!record) {
+            return res.status(404).json({ success: false, message: 'الوثيقة غير موجودة' });
+        }
+        return res.json({ success: true, record });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.delete('/api/admin/archive/employee-documents/:id', requireAdmin, async (req, res) => {
+    try {
+        const record = await ArchiveRecord.findOne({
+            _id: req.params.id,
+            companyId: req.session.companyId,
+            category: 'employee_document'
+        }).lean();
+        if (!record) {
+            return res.status(404).json({ success: false, message: 'الوثيقة غير موجودة' });
+        }
+        await ArchiveRecord.deleteOne({
+            _id: record._id,
+            companyId: req.session.companyId,
+            category: 'employee_document'
+        });
+
+        if (record.fileUrl) {
+            const filename = path.basename(record.fileUrl);
+            const filePath = path.join(__dirname, 'uploads', filename);
+            await fs.promises.unlink(filePath).catch(err => {
+                if (err.code !== 'ENOENT') {
+                    console.warn('تعذر حذف ملف الوثيقة:', err.message);
+                }
+            });
+        }
+        return res.json({ success: true, message: 'تم حذف الوثيقة' });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/admin/archive/snapshots', requireAdmin, async (req, res) => {
+    try {
+        const companyId = req.session.companyId;
+        const snapshotId = crypto.randomUUID();
+        const sources = [
+            ['Employee', Employee],
+            ['Attendance', Attendance],
+            ['SalaryRecord', SalaryRecord],
+            ['PayrollBatch', PayrollBatch],
+            ['LoanRecord', LoanRecord],
+            ['ServiceRequest', ServiceRequest],
+            ['EmployeeEvaluation', EmployeeEvaluation],
+            ['DailyWorkerRecord', DailyWorkerRecord],
+            ['Notification', Notification]
+        ];
+        let archivedCount = 0;
+
+        for (const [sourceType, Model] of sources) {
+            const items = await Model.find({ companyId }).lean();
+            if (!items.length) continue;
+            await ArchiveRecord.insertMany(items.map(item => ({
+                companyId,
+                category: 'information',
+                sourceType,
+                sourceId: String(item._id || ''),
+                snapshotId,
+                employeeId: String(item.employeeId || (sourceType === 'Employee' ? item._id : '') || ''),
+                employeeName: item.employeeName || item.name || '',
+                title: `${sourceType} - ${item.employeeName || item.name || item._id}`,
+                payload: item,
+                archivedBy: req.session.username || 'admin'
+            })));
+            archivedCount += items.length;
+        }
+
+        const operation = await new ArchiveRecord({
+            companyId,
+            category: 'operation',
+            sourceType: 'SystemSnapshot',
+            sourceId: snapshotId,
+            snapshotId,
+            title: 'حفظ نسخة أرشيفية شاملة للنظام',
+            note: String(req.body.note || '').trim(),
+            payload: { archivedCount, sources: sources.map(([name]) => name) },
+            archivedBy: req.session.username || 'admin'
+        }).save();
+
+        return res.status(201).json({
+            success: true,
+            snapshotId,
+            archivedCount,
+            operation
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/*
+=========================================================
   NOTIFICATIONS
 =========================================================
 */
@@ -8730,33 +9088,26 @@ app.post(
     async (req, res) => {
 
         try {
+            const targetType = String(req.body.targetType || 'employee').trim();
+            const employeeId = String(req.body.employeeId || '').trim();
+            const branch = String(req.body.branch || '').trim();
 
-            const employeeId =
-                String(
-                    req.body.employeeId ||
-                    ''
-                ).trim();
+            if (!['employee', 'branch', 'all'].includes(targetType)) {
+                return res.status(400).json({ success: false, message: 'نوع المستلمين غير صحيح' });
+            }
 
-            const employee =
-                await Employee.findById(
-                    employeeId
-                ).lean();
+            const employeeQuery = { companyId: req.session.companyId };
+            if (targetType === 'employee') employeeQuery._id = employeeId;
+            if (targetType === 'branch') {
+                if (!branch) {
+                    return res.status(400).json({ success: false, message: 'اختر الفرع' });
+                }
+                employeeQuery.$or = [{ workplace: branch }, { branch }];
+            }
 
-            if (
-                !employee ||
-                employee.companyId !==
-                    req.session.companyId
-            ) {
-
-                return res.status(404).json({
-
-                    success: false,
-
-                    message:
-                        'الموظف غير موجود'
-
-                });
-
+            const employees = await Employee.find(employeeQuery).lean();
+            if (!employees.length) {
+                return res.status(404).json({ success: false, message: 'لا يوجد موظفون مطابقون' });
             }
 
             const message =
@@ -8783,37 +9134,40 @@ app.post(
                         'أدخل نص الإشعار أو أرفق رسالة صوتية'
 
                 });
-
             }
 
-            const notification =
-                await new Notification({
+            const priority = req.body.priority === 'urgent' ? 'urgent' : 'normal';
+            const scheduledAt = req.body.scheduledAt ? new Date(req.body.scheduledAt) : null;
+            if (scheduledAt && Number.isNaN(scheduledAt.getTime())) {
+                return res.status(400).json({ success: false, message: 'موعد الإرسال غير صحيح' });
+            }
 
-                    companyId:
-                        employee.companyId,
+            const campaignId = crypto.randomUUID();
+            const targetLabel = targetType === 'all'
+                ? 'جميع الموظفين'
+                : targetType === 'branch'
+                    ? branch
+                    : employees[0].name || '';
 
-                    employeeId:
-                        String(
-                            employee._id
-                        ),
-
-                    type:
-                        audioUrl
-                            ? 'voice'
-                            : 'text',
-
+            const notifications = await Notification.insertMany(
+                employees.map(employee => ({
+                    companyId: employee.companyId,
+                    employeeId: String(employee._id),
+                    type: audioUrl ? 'voice' : 'text',
                     message,
-
-                    audioUrl
-
-                }).save();
+                    audioUrl,
+                    priority,
+                    targetType,
+                    targetLabel,
+                    campaignId,
+                    scheduledAt
+                }))
+            );
 
             res.status(201).json({
-
                 success: true,
-
-                notification
-
+                count: notifications.length,
+                notifications
             });
 
         } catch (err) {
@@ -8831,6 +9185,143 @@ app.post(
 
     }
 );
+
+app.get(
+    '/api/admin/notifications',
+    requireAdmin,
+    async (req, res) => {
+        try {
+            const query = {
+                companyId: req.session.companyId
+            };
+
+            const employeeId =
+                String(req.query.employeeId || '').trim();
+
+            if (employeeId) {
+                query.employeeId = employeeId;
+            }
+
+            const notifications =
+                await Notification.find(query)
+                    .sort({ createdAt: -1 })
+                    .limit(500)
+                    .lean();
+
+            const employeeIds = [
+                ...new Set(
+                    notifications.map(item => item.employeeId)
+                )
+            ];
+
+            const employees =
+                await Employee.find({
+                    companyId: req.session.companyId,
+                    _id: { $in: employeeIds }
+                })
+                    .select('name branch workplace')
+                    .lean();
+
+            const employeeMap = new Map(
+                employees.map(employee => [
+                    String(employee._id),
+                    employee
+                ])
+            );
+
+            return res.json({
+                success: true,
+                notifications:
+                    notifications.map(item => ({
+                        ...item,
+                        employeeName:
+                            employeeMap.get(item.employeeId)?.name || '',
+                        workplace:
+                            employeeMap.get(item.employeeId)?.workplace ||
+                            employeeMap.get(item.employeeId)?.branch || ''
+                    }))
+            });
+        } catch (err) {
+            return res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+    }
+);
+
+app.put('/api/admin/notifications/:id', requireAdmin, async (req, res) => {
+    try {
+        const notification = await Notification.findOne({
+            _id: req.params.id,
+            companyId: req.session.companyId
+        });
+        if (!notification) {
+            return res.status(404).json({ success: false, message: 'الإشعار غير موجود' });
+        }
+        if (req.body.message !== undefined) {
+            notification.message = String(req.body.message || '').trim();
+        }
+        if (req.body.priority !== undefined) {
+            notification.priority = req.body.priority === 'urgent' ? 'urgent' : 'normal';
+        }
+        if (req.body.scheduledAt !== undefined) {
+            notification.scheduledAt = req.body.scheduledAt
+                ? new Date(req.body.scheduledAt)
+                : null;
+        }
+        if (!notification.message && !notification.audioUrl) {
+            return res.status(400).json({ success: false, message: 'لا يمكن حفظ إشعار فارغ' });
+        }
+        await notification.save();
+        return res.json({ success: true, notification });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.delete('/api/admin/notifications/:id', requireAdmin, async (req, res) => {
+    try {
+        const notification = await Notification.findOneAndDelete({
+            _id: req.params.id,
+            companyId: req.session.companyId
+        });
+        if (!notification) {
+            return res.status(404).json({ success: false, message: 'الإشعار غير موجود' });
+        }
+        return res.json({ success: true, message: 'تم حذف الإشعار' });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.put('/api/employee/notifications/:id/status', async (req, res) => {
+    try {
+        const employeeId = String(req.body.employeeId || '').trim();
+        const deviceId = String(req.body.deviceId || '').trim();
+        const employee = await Employee.findById(employeeId).lean();
+        if (!employee || !deviceId || employee.deviceId !== deviceId) {
+            return res.status(403).json({ success: false, message: 'لا يمكن تحديث الإشعار من هذا الجهاز' });
+        }
+        const update = {};
+        if (req.body.read === true) update.readAt = new Date();
+        if (req.body.listened === true) {
+            update.readAt = new Date();
+            update.listenedAt = new Date();
+        }
+        const notification = await Notification.findOneAndUpdate(
+            { _id: req.params.id, employeeId },
+            { $set: update },
+            { new: true }
+        );
+        if (!notification) {
+            return res.status(404).json({ success: false, message: 'الإشعار غير موجود' });
+        }
+        return res.json({ success: true, notification });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
 
 
 app.get(
@@ -8893,7 +9384,12 @@ app.get(
             const notifications =
                 await Notification
                     .find({
-                        employeeId
+                        employeeId,
+                        $or: [
+                            { scheduledAt: null },
+                            { scheduledAt: { $exists: false } },
+                            { scheduledAt: { $lte: new Date() } }
+                        ]
                     })
                     .sort({
                         createdAt: -1

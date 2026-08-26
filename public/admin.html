@@ -6,6 +6,7 @@
 <title>لوحة التحكم الرئيسية - نظام المراقب برو</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#1e1b4b;color:#0f172a;font-family:'Segoe UI',Tahoma,sans-serif;padding:18px}.wrap{max-width:1500px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}.brand{font-size:24px;font-weight:900}.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px;margin-right:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;gap:7px;align-items:center;position:relative;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease}.btn:hover{transform:translateY(-2px);filter:brightness(1.07);box-shadow:0 8px 18px #0f172a26}.btn:active{transform:translateY(0) scale(.98);box-shadow:0 3px 8px #0f172a20}.btn:focus-visible{outline:3px solid #38bdf8;outline-offset:3px}.btn-blue{background:#0284c7;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-orange{background:#f59e0b;color:#fff}.btn-purple{background:#8b5cf6;color:#fff}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}.stat{border:1px solid #e2e8f0;border-radius:12px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}.stat span{display:block;color:#64748b;font-size:13px;font-weight:800}.stat b{font-size:20px}.icon{font-size:25px;background:#f1f5f9;padding:10px;border-radius:10px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 15px;text-align:center;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease;box-shadow:0 2px 6px #00000008}.card:hover{transform:translateY(-4px);border-color:#0284c7;box-shadow:0 8px 20px #0284c71f;background:#f8fcff}.card:focus-visible{outline:3px solid #38bdf8;outline-offset:3px}.card .bigicon{font-size:38px;display:block;margin-bottom:11px;transition:transform .2s ease}.card:hover .bigicon{transform:scale(1.08)}.card h3{font-size:16px;margin:0 0 6px;font-weight:900}.card p{font-size:12px;color:#64748b;line-height:1.45;margin:0}.status{margin-top:16px;background:#10b981;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:900;transition:background .2s ease}.ripple{position:absolute;border-radius:50%;transform:scale(0);animation:ripple .55s linear;background:#ffffff80;pointer-events:none}@keyframes ripple{to{transform:scale(4);opacity:0}}@media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){body{padding:8px}.stats,.grid{grid-template-columns:1fr}.wrap{padding:12px}.top{padding:12px}.brand{font-size:20px}}
+@media(max-width:700px){body{background:#f1f5f9;color:#0f172a;padding:7px}.wrap{border-radius:12px;box-shadow:0 4px 16px #0f172a20}.card{background:#fff;border-color:#cbd5e1}.top{background:#fff}}
 </style>
 <style>
 /* ALMORAQEB_EMPLOYEE_PRO_V1 */
@@ -56,7 +57,7 @@ body.dark-mode .employee-pro-toolbar,body.dark-mode .employee-pro-stat,body.dark
     <div class="card" onclick="go('admin_settings.html')"><span class="bigicon">⚙</span><h3>إعدادات النظام</h3><p>بيانات الشركة والمدير وإعدادات الدخول والحساب</p></div>
     <!-- ✅ تعديل بطاقة الخريطة لفتح الصفحة الجديدة -->
     <div class="card" onclick="location.href='admin_map.html'"><span class="bigicon">🗺️</span><h3>متابعة موظف على الخريطة</h3><p>متابعة موقع حتى 5 موظفين أثناء الشفت</p></div>
-    <div class="card" onclick="go('admin_reports.html','archive')"><span class="bigicon">📁</span><h3>أرشيف النظام</h3><p>الرجوع إلى السجلات والبيانات المؤرشفة</p></div>
+    <div class="card" onclick="go('admin_archive.html')"><span class="bigicon">📁</span><h3>أرشيف النظام</h3><p>الرجوع إلى السجلات والبيانات المؤرشفة</p></div>
     <div class="card" onclick="go('admin_employees.html')"><span class="bigicon">📥</span><h3>طلبات التسجيل <span id="reqBadge" style="background:#ef4444;color:#fff;padding:1px 6px;border-radius:8px;font-size:11px">0</span></h3><p>مراجعة طلبات الانضمام وتأكيد الاعتماد</p></div>
     <!-- ✅ البطاقة الجديدة: مشغل M3U/M3U8 -->
     <div class="card" onclick="location.href='m3u_player.html'">
@@ -64,8 +65,7 @@ body.dark-mode .employee-pro-toolbar,body.dark-mode .employee-pro-stat,body.dark
         <h3>مشغل القنوات M3U/M3U8</h3>
         <p>تشغيل البث المباشر وإدارة القنوات المفضلة</p>
     </div>
-    <!-- ✅ بطاقة مؤقتة قادمة (مكان بطاقة السلف القديمة) -->
-    <div class="card" onclick="alert('قريباً - إرسال إشعارات نصية وصوتية للموظفين')"><span class="bigicon">🔔</span><h3>إشعارات الموظفين</h3><p>إرسال رسائل نصية وصوتية للموظفين (قريباً)</p></div>
+    <div class="card" onclick="go('admin_notifications.html')"><span class="bigicon">🔔</span><h3>إشعارات الموظفين</h3><p>إرسال رسائل نصية وصوتية للموظفين ومراجعة السجل</p></div>
 </div>
 
 <div id="status" class="status">✓ جاري التحقق من اتصال السيرفر...</div>
