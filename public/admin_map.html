@@ -192,16 +192,33 @@ async function auth(){
     const companyId =
         getCompanyId();
 
-    if(
-        !companyId ||
-        !window.AlMoraqebOfflineAuth
-    ){
+    if(!companyId){
         alert(
             'يرجى تسجيل الدخول كمدير'
         );
 
         location.href =
             'admin_login.html';
+
+        return false;
+    }
+
+    for(
+        let i = 0;
+        i < 60 &&
+        !window.AlMoraqebOfflineAuth;
+        i++
+    ){
+        await new Promise(
+            resolve =>
+                setTimeout(resolve, 50)
+        );
+    }
+
+    if(!window.AlMoraqebOfflineAuth){
+        alert(
+            'تعذر تحميل نظام الدخول المحلي'
+        );
 
         return false;
     }

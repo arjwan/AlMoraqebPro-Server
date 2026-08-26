@@ -203,12 +203,36 @@ async function auth(){
         ''
     ).trim();
 
-    if(
-        !companyId ||
-        !window.AlMoraqebOfflineAuth
-    ){
+    if(!companyId){
         location.href =
             'admin_login.html';
+        return false;
+    }
+
+    /*
+     * ملفات Offline موجودة بعد السكربت الرئيسي في بعض الصفحات.
+     * ننتظر تحميلها بدلاً من إخراج المدير مباشرة.
+     */
+    for(
+        let i = 0;
+        i < 60 &&
+        !window.AlMoraqebOfflineAuth;
+        i++
+    ){
+        await new Promise(
+            resolve =>
+                setTimeout(resolve, 50)
+        );
+    }
+
+    if(!window.AlMoraqebOfflineAuth){
+        console.error(
+            'Offline authentication module unavailable'
+        );
+
+        location.href =
+            'admin_login.html';
+
         return false;
     }
 
