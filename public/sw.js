@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'almoraqebpro-v4';
+const CACHE_NAME = 'almoraqebpro-v5';
 
 const CORE_FILES = [
     '/',
