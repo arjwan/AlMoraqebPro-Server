@@ -985,9 +985,266 @@ const salaryRecordSchema = new mongoose.Schema({
 
     lastAttendanceAt: Date,
 
+    /*
+     * طريقة صرف الراتب.
+     * cash = صرف يدوي
+     * card = بطاقة / محفظة رواتب
+     * bank = حساب مصرفي
+     */
+    payoutMethod: {
+        type: String,
+        enum: ['cash', 'card', 'bank'],
+        default: 'cash',
+        index: true
+    },
+
+    payoutSelected: {
+        type: Boolean,
+        default: false
+    },
+
+    payoutBankName: {
+        type: String,
+        default: ''
+    },
+
+    payoutAccountName: {
+        type: String,
+        default: ''
+    },
+
+    /*
+     * مرجع التحويل.
+     * لا نخزن PIN أو CVV.
+     */
+    payoutReference: {
+        type: String,
+        default: ''
+    },
+
+    payoutLast4: {
+        type: String,
+        default: ''
+    },
+
+    payoutStatus: {
+        type: String,
+        enum: [
+            'unpaid',
+            'ready',
+            'processing',
+            'transferred',
+            'cash-paid',
+            'failed'
+        ],
+        default: 'unpaid',
+        index: true
+    },
+
+    lastPayoutAt: Date,
+
     createdAt: { type: Date, default: Date.now }
 });
 const SalaryRecord = mongoose.model('SalaryRecord', salaryRecordSchema);
+
+/*
+=========================================================
+  PAYROLL PAYOUT BATCH
+=========================================================
+*/
+
+const payrollBatchSchema = new mongoose.Schema({
+
+    companyId: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    batchNumber: {
+        type: String,
+        required: true,
+        index: true
+    },
+
+    payoutType: {
+        type: String,
+        enum: ['card', 'bank', 'cash'],
+        required: true,
+        index: true
+    },
+
+    branch: {
+        type: String,
+        default: '',
+        index: true
+    },
+
+    payrollFrom: Date,
+    payrollTo: Date,
+
+    status: {
+        type: String,
+        enum: [
+            'prepared',
+            'approved',
+            'processing',
+            'completed',
+            'partially-completed',
+            'failed',
+            'cancelled'
+        ],
+        default: 'prepared',
+        index: true
+    },
+
+    items: [{
+        salaryRecordId: {
+            type: String,
+            default: ''
+        },
+
+        employeeId: {
+            type: String,
+            required: true
+        },
+
+        employeeName: {
+            type: String,
+            default: ''
+        },
+
+        employeeSerial: {
+            type: String,
+            default: ''
+        },
+
+        specialty: {
+            type: String,
+            default: ''
+        },
+
+        workplace: {
+            type: String,
+            default: ''
+        },
+
+        payoutMethod: {
+            type: String,
+            enum: ['cash', 'card', 'bank'],
+            default: 'cash'
+        },
+
+        bankName: {
+            type: String,
+            default: ''
+        },
+
+        accountName: {
+            type: String,
+            default: ''
+        },
+
+        payoutReference: {
+            type: String,
+            default: ''
+        },
+
+        payoutLast4: {
+            type: String,
+            default: ''
+        },
+
+        basicSalary: {
+            type: Number,
+            default: 0
+        },
+
+        allowances: {
+            type: Number,
+            default: 0
+        },
+
+        bonuses: {
+            type: Number,
+            default: 0
+        },
+
+        totalDeductions: {
+            type: Number,
+            default: 0
+        },
+
+        netSalary: {
+            type: Number,
+            default: 0
+        },
+
+        payoutStatus: {
+            type: String,
+            enum: [
+                'ready',
+                'processing',
+                'transferred',
+                'cash-paid',
+                'failed'
+            ],
+            default: 'ready'
+        },
+
+        paidAt: Date,
+
+        notes: {
+            type: String,
+            default: ''
+        }
+    }],
+
+    employeesCount: {
+        type: Number,
+        default: 0
+    },
+
+    totalAmount: {
+        type: Number,
+        default: 0
+    },
+
+    preparedBy: {
+        type: String,
+        default: ''
+    },
+
+    approvedBy: {
+        type: String,
+        default: ''
+    },
+
+    approvedAt: Date,
+
+    completedAt: Date,
+
+    createdAt: {
+        type: Date,
+        default: Date.now,
+        index: true
+    }
+
+});
+
+payrollBatchSchema.index({
+    companyId: 1,
+    batchNumber: 1
+}, {
+    unique: true
+});
+
+const PayrollBatch =
+    mongoose.model(
+        'PayrollBatch',
+        payrollBatchSchema
+    );
+
 
 /*
 =========================================================
@@ -7597,6 +7854,527 @@ app.delete('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
   LOAN RECORDS API (جديد)
 =========================================================
 */
+
+/*
+=========================================================
+  PAYROLL PAYOUT SETTINGS + BATCHES
+=========================================================
+*/
+
+app.put(
+    '/api/admin/salaries/:id/payout-settings',
+    requireAdmin,
+    async (req, res) => {
+
+        try {
+
+            const salary =
+                await SalaryRecord.findOne({
+                    _id: req.params.id,
+                    companyId: req.session.companyId
+                });
+
+            if (!salary) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'سجل الراتب غير موجود'
+                });
+            }
+
+            const payoutMethod =
+                String(
+                    req.body.payoutMethod || 'cash'
+                ).trim();
+
+            if (
+                !['cash', 'card', 'bank']
+                    .includes(payoutMethod)
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'طريقة الصرف غير صحيحة'
+                });
+            }
+
+            salary.payoutMethod =
+                payoutMethod;
+
+            salary.payoutSelected =
+                req.body.payoutSelected === true;
+
+            salary.payoutBankName =
+                String(
+                    req.body.payoutBankName || ''
+                ).trim();
+
+            salary.payoutAccountName =
+                String(
+                    req.body.payoutAccountName || ''
+                ).trim();
+
+            salary.payoutReference =
+                String(
+                    req.body.payoutReference || ''
+                ).trim();
+
+            salary.payoutLast4 =
+                String(
+                    req.body.payoutLast4 || ''
+                )
+                .replace(/\D/g, '')
+                .slice(-4);
+
+            if (
+                payoutMethod !== 'cash' &&
+                salary.payoutSelected &&
+                !salary.payoutReference
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        'مرجع البطاقة أو الحساب مطلوب'
+                });
+            }
+
+            salary.payoutStatus =
+                salary.payoutSelected
+                    ? 'ready'
+                    : 'unpaid';
+
+            await salary.save();
+
+            return res.json({
+                success: true,
+                message:
+                    'تم حفظ إعدادات صرف الراتب',
+                salary
+            });
+
+        } catch (err) {
+
+            return res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+    }
+);
+
+
+function payrollBatchItemFromSalary(salary) {
+
+    return {
+        salaryRecordId:
+            String(salary._id),
+
+        employeeId:
+            String(salary.employeeId || ''),
+
+        employeeName:
+            salary.employeeName || '',
+
+        employeeSerial:
+            salary.employeeSerial || '',
+
+        specialty:
+            salary.specialty || '',
+
+        workplace:
+            salary.workplace || '',
+
+        payoutMethod:
+            salary.payoutMethod || 'cash',
+
+        bankName:
+            salary.payoutBankName || '',
+
+        accountName:
+            salary.payoutAccountName || '',
+
+        payoutReference:
+            salary.payoutReference || '',
+
+        payoutLast4:
+            salary.payoutLast4 || '',
+
+        basicSalary:
+            Number(
+                salary.basicSalary || 0
+            ),
+
+        allowances:
+            Number(
+                salary.allowances || 0
+            ),
+
+        bonuses:
+            Number(
+                salary.bonuses || 0
+            ),
+
+        totalDeductions:
+            Number(
+                salary.totalDeductions || 0
+            ),
+
+        netSalary:
+            Number(
+                salary.netSalary || 0
+            ),
+
+        payoutStatus:
+            'ready'
+    };
+}
+
+
+app.post(
+    '/api/admin/payroll-batches/preview',
+    requireAdmin,
+    async (req, res) => {
+
+        try {
+
+            const payoutType =
+                String(
+                    req.body.payoutType || ''
+                ).trim();
+
+            if (
+                !['card', 'bank', 'cash']
+                    .includes(payoutType)
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        'نوع دفعة الرواتب غير صحيح'
+                });
+            }
+
+            const branch =
+                String(
+                    req.body.branch || ''
+                ).trim();
+
+            const filter = {
+                companyId:
+                    req.session.companyId,
+
+                payoutMethod:
+                    payoutType
+            };
+
+            if (payoutType !== 'cash') {
+                filter.payoutSelected =
+                    true;
+            }
+
+            if (branch) {
+                filter.workplace =
+                    branch;
+            }
+
+            const salaries =
+                await SalaryRecord
+                    .find(filter)
+                    .sort({
+                        employeeName: 1
+                    })
+                    .lean();
+
+            const items =
+                salaries.map(
+                    payrollBatchItemFromSalary
+                );
+
+            const invalid =
+                items.filter(
+                    item =>
+                        item.netSalary <= 0 ||
+                        (
+                            payoutType !== 'cash' &&
+                            !item.payoutReference
+                        )
+                );
+
+            const totalAmount =
+                items.reduce(
+                    (sum, item) =>
+                        sum +
+                        Number(
+                            item.netSalary || 0
+                        ),
+                    0
+                );
+
+            return res.json({
+                success: true,
+                payoutType,
+                branch,
+                employeesCount:
+                    items.length,
+                totalAmount,
+                invalidCount:
+                    invalid.length,
+                invalid,
+                items
+            });
+
+        } catch (err) {
+
+            return res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+    }
+);
+
+
+app.post(
+    '/api/admin/payroll-batches',
+    requireAdmin,
+    async (req, res) => {
+
+        try {
+
+            const payoutType =
+                String(
+                    req.body.payoutType || ''
+                ).trim();
+
+            if (
+                !['card', 'bank', 'cash']
+                    .includes(payoutType)
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        'نوع دفعة الرواتب غير صحيح'
+                });
+            }
+
+            const branch =
+                String(
+                    req.body.branch || ''
+                ).trim();
+
+            const filter = {
+                companyId:
+                    req.session.companyId,
+
+                payoutMethod:
+                    payoutType
+            };
+
+            if (payoutType !== 'cash') {
+                filter.payoutSelected =
+                    true;
+            }
+
+            if (branch) {
+                filter.workplace =
+                    branch;
+            }
+
+            const salaries =
+                await SalaryRecord
+                    .find(filter)
+                    .sort({
+                        employeeName: 1
+                    });
+
+            if (!salaries.length) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        'لا توجد رواتب مطابقة لهذه الدفعة'
+                });
+            }
+
+            const items =
+                salaries.map(
+                    payrollBatchItemFromSalary
+                );
+
+            const invalid =
+                items.filter(
+                    item =>
+                        item.netSalary <= 0 ||
+                        (
+                            payoutType !== 'cash' &&
+                            !item.payoutReference
+                        )
+                );
+
+            if (invalid.length) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        'توجد سجلات غير جاهزة للصرف',
+                    invalid
+                });
+            }
+
+            const now =
+                new Date();
+
+            const batchNumber =
+                [
+                    req.session.companyId,
+                    payoutType,
+                    now.getFullYear(),
+                    String(
+                        now.getMonth() + 1
+                    ).padStart(2, '0'),
+                    String(
+                        now.getDate()
+                    ).padStart(2, '0'),
+                    String(
+                        now.getHours()
+                    ).padStart(2, '0'),
+                    String(
+                        now.getMinutes()
+                    ).padStart(2, '0'),
+                    String(
+                        now.getSeconds()
+                    ).padStart(2, '0'),
+                    String(
+                        now.getMilliseconds()
+                    ).padStart(3, '0')
+                ].join('-');
+
+            const totalAmount =
+                items.reduce(
+                    (sum, item) =>
+                        sum +
+                        Number(
+                            item.netSalary || 0
+                        ),
+                    0
+                );
+
+            const batch =
+                await new PayrollBatch({
+
+                    companyId:
+                        req.session.companyId,
+
+                    batchNumber,
+
+                    payoutType,
+
+                    branch,
+
+                    payrollFrom:
+                        req.body.payrollFrom
+                            ? new Date(
+                                req.body.payrollFrom
+                            )
+                            : undefined,
+
+                    payrollTo:
+                        req.body.payrollTo
+                            ? new Date(
+                                req.body.payrollTo
+                            )
+                            : undefined,
+
+                    status:
+                        'approved',
+
+                    items,
+
+                    employeesCount:
+                        items.length,
+
+                    totalAmount,
+
+                    preparedBy:
+                        req.session.username ||
+                        'admin',
+
+                    approvedBy:
+                        req.session.username ||
+                        'admin',
+
+                    approvedAt:
+                        new Date()
+
+                }).save();
+
+            await SalaryRecord.updateMany(
+                {
+                    _id: {
+                        $in:
+                            salaries.map(
+                                salary =>
+                                    salary._id
+                            )
+                    }
+                },
+                {
+                    $set: {
+                        payoutStatus:
+                            payoutType === 'cash'
+                                ? 'ready'
+                                : 'processing'
+                    }
+                }
+            );
+
+            return res.status(201).json({
+                success: true,
+                message:
+                    'تم اعتماد دفعة الرواتب',
+                batch
+            });
+
+        } catch (err) {
+
+            return res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+    }
+);
+
+
+app.get(
+    '/api/admin/payroll-batches',
+    requireAdmin,
+    async (req, res) => {
+
+        try {
+
+            const batches =
+                await PayrollBatch
+                    .find({
+                        companyId:
+                            req.session.companyId
+                    })
+                    .sort({
+                        createdAt: -1
+                    })
+                    .limit(200)
+                    .lean();
+
+            return res.json({
+                success: true,
+                batches
+            });
+
+        } catch (err) {
+
+            return res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+    }
+);
+
 app.get('/api/admin/loans', requireAdmin, async (req, res) => {
     try {
         const loans = await LoanRecord.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
