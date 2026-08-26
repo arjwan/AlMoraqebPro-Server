@@ -6,5 +6,6 @@
     android:minHeight="56dp"
     android:gravity="center_vertical"
     android:padding="16dp"
-    android:textColor="#0F172A"
+    android:textColor="@color/text_primary"
+    android:background="@color/surface_color"
     android:textSize="15sp" />

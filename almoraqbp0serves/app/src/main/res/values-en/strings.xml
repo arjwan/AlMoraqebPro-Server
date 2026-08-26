@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Almoraqeb Pro Services</string>
+    <string name="settings_title">App Settings</string>
+    <string name="employee_info">👤 Employee Information</string>
+    <string name="server_status">🌐 Server Status</string>
+    <string name="test_connection">🔄 Test Server Connection</string>
+    <string name="location_status">📍 Location Status</string>
+    <string name="language">Language</string>
+    <string name="arabic">العربية</string>
+    <string name="english">English</string>
+    <string name="appearance">Appearance</string>
+    <string name="light">Light</string>
+    <string name="dark">Dark</string>
+    <string name="system_default">System Default</string>
+    <string name="developer_info">ℹ️ Developer Information</string>
+    <string name="logout">🚪 Log Out</string>
+    <string name="back">Back</string>
+</resources>

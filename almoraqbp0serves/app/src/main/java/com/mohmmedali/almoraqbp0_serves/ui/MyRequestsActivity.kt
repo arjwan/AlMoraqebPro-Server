@@ -15,9 +15,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MyRequestsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,7 +48,6 @@ class MyRequestsActivity : AppCompatActivity() {
                         return@withContext
                     }
                     empty.visibility = View.GONE
-                    val df = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
                     val rows = items.map { r ->
                         val badge = when (r.status) {
                             "approved" -> "✅ مقبول"
@@ -59,17 +55,23 @@ class MyRequestsActivity : AppCompatActivity() {
                             else -> "⏳ قيد الانتظار"
                         }
                         val type = when (r.type) { "loan" -> "💰 سلفة"; "leave" -> "📅 إجازة"; else -> r.type ?: "-" }
-                        "$type\n$badge\n${r.reason ?: ""}\n${r.createdAt?.let { df.format(Date(it)) } ?: ""}"
+                        "$type\n$badge\n${r.reason ?: ""}\n${formatServerDate(r.createdAt)}"
                     }
                     findViewById<ListView>(R.id.listData).adapter = ArrayAdapter(
-                        this@MyRequestsActivity, android.R.layout.simple_list_item_1, rows)
+                        this@MyRequestsActivity, R.layout.item_readable_list, rows)
                 }
-            } catch (e: Exception) {
+            } catch (e: java.io.IOException) {
                 withContext(Dispatchers.Main) {
                     progress.visibility = View.GONE
                     empty.text = "❌ تعذر الاتصال بالسيرفر، حاول مرة أخرى"
                     empty.visibility = View.VISIBLE
                     Toast.makeText(this@MyRequestsActivity, "تعذر الاتصال بالسيرفر", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    progress.visibility = View.GONE
+                    empty.text = "❌ تعذر قراءة بيانات الطلبات: ${e.message ?: "خطأ غير معروف"}"
+                    empty.visibility = View.VISIBLE
                 }
             }
         }

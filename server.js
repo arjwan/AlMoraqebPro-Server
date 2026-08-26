@@ -6207,12 +6207,25 @@ app.get(
             const employees =
                 await Employee
                     .find({
-                        companyId
+                        companyId,
+                        employmentStatus: {
+                            $ne: 'inactive'
+                        }
                     })
                     .select(
-                        '_id name specialty workplace'
+                        '_id name specialty workplace delegation'
                     )
                     .lean();
+
+            const shifts =
+                await Shift
+                    .find({ companyId })
+                    .select(
+                        'name attendanceStart departureEnd employeeIds'
+                    )
+                    .lean();
+
+            const now = new Date();
 
             const result = [];
 
@@ -6235,6 +6248,52 @@ app.get(
                         })
                         .lean();
 
+                const delegation = emp.delegation || {};
+                const delegationFrom = delegation.from
+                    ? new Date(delegation.from)
+                    : null;
+                const delegationTo = delegation.to
+                    ? new Date(delegation.to)
+                    : null;
+                const hasActiveDelegation =
+                    delegation.active === true &&
+                    delegationFrom &&
+                    delegationTo &&
+                    !Number.isNaN(delegationFrom.getTime()) &&
+                    !Number.isNaN(delegationTo.getTime()) &&
+                    now >= delegationFrom &&
+                    now <= delegationTo;
+
+                const shift = shifts.find(item =>
+                    (item.employeeIds || [])
+                        .map(String)
+                        .includes(String(emp._id))
+                );
+                const withinShift = Boolean(
+                    shift &&
+                    isWithinShiftWindow(
+                        now,
+                        shift.attendanceStart,
+                        shift.departureEnd
+                    )
+                );
+                const isClockedIn = Boolean(
+                    lastAttendance &&
+                    lastAttendance.type === 'attendance'
+                );
+                const trackingAllowed =
+                    isClockedIn &&
+                    (withinShift || hasActiveDelegation);
+
+                let unavailableReason = '';
+                if (!lastAttendance) {
+                    unavailableReason = 'لا توجد بصمة حضور مسجلة';
+                } else if (!isClockedIn) {
+                    unavailableReason = 'أنهى الموظف دوامه';
+                } else if (!withinShift && !hasActiveDelegation) {
+                    unavailableReason = 'خارج وقت الدوام';
+                }
+
                 result.push({
 
                     employeeId:
@@ -6251,8 +6310,27 @@ app.get(
                         emp.workplace ||
                         '',
 
+                    trackingAllowed,
+
+                    trackingMode:
+                        hasActiveDelegation
+                            ? 'delegation'
+                            : withinShift
+                                ? 'shift'
+                                : 'hidden',
+
+                    shiftName:
+                        shift
+                            ? shift.name || ''
+                            : '',
+
+                    unavailableReason,
+
                     lastLocation:
-                        lastAttendance
+                        trackingAllowed &&
+                        lastAttendance &&
+                        Number.isFinite(Number(lastAttendance.latitude)) &&
+                        Number.isFinite(Number(lastAttendance.longitude))
                             ? {
                                 latitude:
                                     lastAttendance.latitude,

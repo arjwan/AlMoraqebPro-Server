@@ -328,38 +328,53 @@ async function loadLocations() {
     const areas = [];
     const bounds = [];
 
-    // لكل موظف جلب آخر موقع (يمكن تحسينه بجلب واحد من السيرفر)
-    for (const empId of selectedEmployees) {
-        try {
-            const res = await fetch(API + '/api/employees/' + encodeURIComponent(empId) + '/attendance?limit=1');
-            const data = await res.json();
-            if (data.success && data.attendance && data.attendance.length > 0) {
-                const last = data.attendance[0];
-                if (last.latitude && last.longitude) {
-                    const lat = Number(last.latitude);
-                    const lon = Number(last.longitude);
-                    const emp = employees.find(e => (e._id || e.id) === empId);
-
-                    // إضافة علامة
-                    L.marker([lat, lon]).addTo(map)
-                        .bindPopup(`<b>${emp ? emp.name : 'موظف'}</b><br>${last.type === 'attendance' ? 'حضور' : 'انصراف'}<br>${new Date(last.timestamp).toLocaleString('ar-IQ')}`)
-                        .openPopup();
-                    bounds.push([lat, lon]);
-
-                    // عكس الإحداثيات للحصول على اسم المنطقة
-                    try {
-                        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1&accept-language=ar`);
-                        const geoData = await geoRes.json();
-                        const areaName = geoData.address ? (geoData.address.suburb || geoData.address.neighbourhood || geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.county || geoData.address.state || 'غير محدد') : 'غير محدد';
-                        areas.push({ name: emp ? emp.name : 'موظف', area: areaName });
-                    } catch {
-                        areas.push({ name: emp ? emp.name : 'موظف', area: 'غير محدد' });
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn('فشل جلب موقع الموظف', empId);
+    try {
+        const res = await fetch(API + '/api/admin/employee-locations', {
+            credentials: 'include',
+            headers: getToken()
+                ? { Authorization: 'Bearer ' + getToken() }
+                : {}
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || 'تعذر جلب المواقع');
         }
+
+        const selected = (data.employees || []).filter(emp =>
+            selectedEmployees.includes(String(emp.employeeId))
+        );
+
+        for (const tracked of selected) {
+            const last = tracked.lastLocation;
+            if (!tracked.trackingAllowed || !last) {
+                areas.push({
+                    name: tracked.name || 'موظف',
+                    area: tracked.unavailableReason || 'الموقع غير متاح'
+                });
+                continue;
+            }
+
+            const lat = Number(last.latitude);
+            const lon = Number(last.longitude);
+            const mode = tracked.trackingMode === 'delegation'
+                ? 'تكليف فعّال'
+                : 'ضمن وقت الدوام';
+            L.marker([lat, lon]).addTo(map)
+                .bindPopup(`<b>${escapeHtml(tracked.name || 'موظف')}</b><br>${mode}<br>${new Date(last.timestamp).toLocaleString('ar-IQ')}`);
+            bounds.push([lat, lon]);
+
+            try {
+                const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1&accept-language=ar`);
+                const geoData = await geoRes.json();
+                const address = geoData.address || {};
+                const areaName = address.suburb || address.neighbourhood || address.city || address.town || address.village || address.county || address.state || 'غير محدد';
+                areas.push({ name: tracked.name || 'موظف', area: areaName + ' — ' + mode });
+            } catch {
+                areas.push({ name: tracked.name || 'موظف', area: 'غير محدد — ' + mode });
+            }
+        }
+    } catch (error) {
+        alert(error.message || 'تعذر جلب مواقع الموظفين');
     }
 
     // توسيع حدود الخريطة لتناسب جميع النقاط
@@ -379,7 +394,16 @@ function renderAreas(areas) {
         container.innerHTML = '<div style="color:#94a3b8">لا توجد بيانات</div>';
         return;
     }
-    container.innerHTML = areas.map(a => `<div class="area-item"><i class="fas fa-location-dot"></i> ${a.name}: ${a.area}</div>`).join('');
+    container.innerHTML = areas.map(a => `<div class="area-item"><i class="fas fa-location-dot"></i> ${escapeHtml(a.name)}: ${escapeHtml(a.area)}</div>`).join('');
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
 }
 
 // تهيئة الصفحة

@@ -11,6 +11,10 @@ object RetrofitClient {
     // ✅ رابط السيرفر الفعلي
     private const val BASE_URL = "https://almoraqebpro-server-aymo.onrender.com/"
 
+    fun absoluteUrl(path: String): String =
+        if (path.startsWith("http://") || path.startsWith("https://")) path
+        else BASE_URL.trimEnd('/') + "/" + path.trimStart('/')
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)

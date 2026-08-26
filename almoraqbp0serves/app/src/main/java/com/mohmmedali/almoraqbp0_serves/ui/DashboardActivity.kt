@@ -34,6 +34,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -254,9 +255,18 @@ class DashboardActivity : AppCompatActivity() {
         try {
             // محاولة جلب تحدي حقيقي من السيرفر
             val challengeRes = RetrofitClient.apiService.getChallenge(employeeId, deviceId)
-            if (challengeRes.isSuccessful && challengeRes.body()?.challengeId != null) {
-                challengeId = challengeRes.body()!!.challengeId!!
+            if (!challengeRes.isSuccessful || challengeRes.body()?.challengeId.isNullOrBlank()) {
+                val message = challengeRes.errorBody()?.string()?.let {
+                    runCatching { org.json.JSONObject(it).optString("message") }.getOrNull()
+                } ?: challengeRes.body()?.message ?: "تعذر إنشاء تحدي البصمة"
+                withContext(Dispatchers.Main) {
+                    binding.tvFingerprintStatus.text = "مرفوضة"
+                    binding.tvFingerprintStatus.setTextColor(0xFFEF4444.toInt())
+                    Toast.makeText(this@DashboardActivity, "❌ $message", Toast.LENGTH_LONG).show()
+                }
+                return
             }
+            challengeId = challengeRes.body()!!.challengeId!!
 
             val request = AttendanceRequest(
                 employeeId = employeeId,
@@ -299,7 +309,7 @@ class DashboardActivity : AppCompatActivity() {
                     scheduleSync()
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             savePendingAttendance(employeeId, deviceId, challengeId, fingerprintToken, location, type, timestamp)
             withContext(Dispatchers.Main) {
                 refreshSyncStatus()
@@ -310,6 +320,16 @@ class DashboardActivity : AppCompatActivity() {
                 ).show()
             }
             scheduleSync()
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                binding.tvFingerprintStatus.text = "فشل التحقق"
+                binding.tvFingerprintStatus.setTextColor(0xFFEF4444.toInt())
+                Toast.makeText(
+                    this@DashboardActivity,
+                    "❌ تعذر معالجة البصمة: ${e.message ?: "خطأ غير معروف"}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 

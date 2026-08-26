@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.location.LocationManager as SystemLocationManager
 import android.os.Bundle
 import android.provider.Settings
@@ -20,7 +19,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Locale
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -53,7 +51,6 @@ class SettingsActivity : AppCompatActivity() {
 
             prefs.edit().putString("app_language", selectedLanguage).apply()
             applyLanguage(selectedLanguage)
-            recreate()
         }
 
         binding.rgTheme.setOnCheckedChangeListener { _, checkedId ->
@@ -65,7 +62,6 @@ class SettingsActivity : AppCompatActivity() {
 
             prefs.edit().putInt("app_theme_mode", selectedThemeMode).apply()
             AppCompatDelegate.setDefaultNightMode(selectedThemeMode)
-            recreate()
         }
 
         // بيانات الموظف والجهاز والشركة
@@ -156,12 +152,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun applyLanguage(languageCode: String) {
-        val locale = Locale(languageCode)
         val localeList = LocaleListCompat.forLanguageTags(languageCode)
         AppCompatDelegate.setApplicationLocales(localeList)
-
-        val config = Configuration(resources.configuration)
-        config.setLocale(locale)
-        createConfigurationContext(config)
     }
 }

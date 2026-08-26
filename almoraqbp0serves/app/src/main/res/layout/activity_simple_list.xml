@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F8FAFC"
+    android:background="@color/app_background"
     android:padding="16dp">
 
     <TextView
@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="#0F172A"
+        android:textColor="@color/text_primary"
         android:paddingBottom="12dp" />
 
     <TextView
@@ -20,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="لا توجد بيانات لعرضها حالياً"
-        android:textColor="#475569"
+        android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:gravity="center"
         android:padding="24dp"
@@ -37,6 +37,6 @@
         android:id="@+id/listData"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:divider="#1e293b"
+        android:divider="@color/divider_color"
         android:dividerHeight="8dp" />
 </LinearLayout>

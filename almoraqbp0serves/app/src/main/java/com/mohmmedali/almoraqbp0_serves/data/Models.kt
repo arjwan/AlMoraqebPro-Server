@@ -77,6 +77,9 @@ data class Notification(
     val type: String?,
     val message: String?,
     val audioUrl: String?,
+    val priority: String?,
+    val readAt: String?,
+    val listenedAt: String?,
     val createdAt: String?
 )
 

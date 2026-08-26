@@ -17,8 +17,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 class NotificationActivity : AppCompatActivity() {
@@ -66,14 +64,14 @@ class NotificationActivity : AppCompatActivity() {
                     empty.visibility = View.GONE
                     list.visibility = View.VISIBLE
 
-                    val df = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
                     val rows = notifications.map { n ->
                         val icon = if (n.type == "voice") "🎙️ رسالة صوتية" else "📩 رسالة من الإدارة"
-                        "$icon\n${n.message ?: ""}\n" + (n.createdAt?.let { df.format(Date(it)) } ?: "") +
+                        val urgent = if (n.priority == "urgent") "🚨 عاجل — " else ""
+                        "$urgent$icon\n${n.message ?: ""}\n${formatServerDate(n.createdAt)}" +
                             (if (!n.audioUrl.isNullOrEmpty()) "\n▶️ اضغط لتشغيل الصوت المرفق" else "")
                     }
                     list.adapter = ArrayAdapter(this@NotificationActivity,
-                        android.R.layout.simple_list_item_1, rows)
+                        R.layout.item_readable_list, rows)
 
                     // تشغيل الصوت المرفق أو قراءة النص بصوت أنثى عربي عند الضغط
                     list.setOnItemClickListener { _, _, pos, _ ->
@@ -84,9 +82,15 @@ class NotificationActivity : AppCompatActivity() {
                         }
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: java.io.IOException) {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@NotificationActivity, "تعذر الاتصال بالسيرفر", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    val empty = findViewById<TextView>(R.id.tvEmptyNotifications)
+                    empty.visibility = View.VISIBLE
+                    empty.text = "❌ تعذر قراءة الإشعارات: ${e.message ?: "خطأ غير معروف"}"
                 }
             }
         }
@@ -97,7 +101,7 @@ class NotificationActivity : AppCompatActivity() {
             player?.release()
             player = MediaPlayer().apply {
                 setAudioStreamType(AudioManager.STREAM_MUSIC)
-                setDataSource(url)
+                setDataSource(RetrofitClient.absoluteUrl(url))
                 prepare()
                 start()
             }

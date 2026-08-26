@@ -304,16 +304,16 @@
             const data = await response.json();
             if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تحميل طلبات الخدمات');
             const labels = { loan: 'سلفة', leave: 'إجازة', ambulance: 'إسعاف' };
-            const statusLabels = { pending: 'معلق', approved: 'مقبول', rejected: 'مرفوض' };
-            tbody.innerHTML = data.requests.length ? data.requests.map((request, index) => `
+            const pendingRequests = (data.requests || []).filter(request => request.status === 'pending');
+            tbody.innerHTML = pendingRequests.length ? pendingRequests.map((request, index) => `
                 <tr>
                     <td>${index + 1}</td>
                     <td>${escapeHtml(request.employeeName)}</td>
                     <td>${escapeHtml(labels[request.type] || request.type)}</td>
                     <td>${escapeHtml(request.reason || '—')}</td>
                     <td>${request.amount ? escapeHtml(request.amount) : request.requestedDate ? new Date(request.requestedDate).toLocaleDateString('ar-IQ') : '—'}</td>
-                    <td><span class="status-badge status-${escapeHtml(request.status)}">${escapeHtml(statusLabels[request.status] || request.status)}</span></td>
-                    <td>${request.status === 'pending' ? `<button class="btn btn-green" onclick="processServiceRequest('${request._id}','approved')">قبول</button> <button class="btn btn-red" onclick="processServiceRequest('${request._id}','rejected')">رفض</button>` : '—'}</td>
+                    <td><span class="status-badge status-pending">معلق</span></td>
+                    <td><button class="btn btn-green" onclick="processServiceRequest('${request._id}','approved')">قبول</button> <button class="btn btn-red" onclick="processServiceRequest('${request._id}','rejected')">رفض</button></td>
                 </tr>`).join('') : '<tr><td colspan="7">لا توجد طلبات خدمات</td></tr>';
         } catch (error) {
             tbody.innerHTML = `<tr><td colspan="7">${escapeHtml(error.message)}</td></tr>`;
