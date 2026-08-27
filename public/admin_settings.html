@@ -82,6 +82,24 @@ body.dark .status-card{background:#1e293b}
 </div>
 
 <div class="section">
+<h3>🕒 أرشفة سجلات البصمة</h3>
+<div class="grid">
+<div class="field">
+<label>مدة بقاء سجلات البصمة قبل نقلها إلى الأرشيف</label>
+<select id="attendanceRetentionDays">
+<option value="7">7 أيام</option>
+<option value="15">15 يومًا</option>
+<option value="30">30 يومًا</option>
+</select>
+</div>
+<div class="field">
+<label>طريقة التنفيذ</label>
+<input class="readonly" readonly value="بعد اعتماد واحتساب الرواتب، تُنقل السجلات المستحقة إلى الأرشيف الدائم">
+</div>
+</div>
+</div>
+
+<div class="section">
 <h3>🖥 حالة النظام والنسخة</h3>
 <div class="status-grid">
 <div class="status-card"><span>حالة السيرفر</span><b id="serverStatus">—</b></div>
@@ -319,6 +337,7 @@ async function loadSettings(){
 
     uiLanguage.value=s.uiLanguage||'ar';
     uiTheme.value=s.uiTheme||'light';
+    attendanceRetentionDays.value=String(s.attendanceRetentionDays||30);
     previewTheme();
 
     subscription.value=s.subscription||'—';
@@ -365,7 +384,8 @@ async function saveSettings(){
         managerPhone:managerPhone.value.trim(),
         adminUsername:adminUsername.value.trim(),
         uiLanguage:uiLanguage.value,
-        uiTheme:uiTheme.value
+        uiTheme:uiTheme.value,
+        attendanceRetentionDays:Number(attendanceRetentionDays.value)
     };
 
     if(adminPassword.value){

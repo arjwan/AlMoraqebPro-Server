@@ -204,6 +204,12 @@ const companySchema = new mongoose.Schema({
         default: 'light'
     },
 
+    attendanceRetentionDays: {
+        type: Number,
+        enum: [7, 15, 30],
+        default: 30
+    },
+
     approvedLocations: [{
         name: {
             type: String,
@@ -3334,6 +3340,11 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
                 uiTheme:
                     company.uiTheme || 'light',
 
+                attendanceRetentionDays:
+                    [7, 15, 30].includes(Number(company.attendanceRetentionDays))
+                        ? Number(company.attendanceRetentionDays)
+                        : 30,
+
                 /*
                  * للعرض فقط في صفحة المدير.
                  * لا يسمح بتعديلها من API المدير.
@@ -3444,6 +3455,17 @@ app.put('/api/admin/settings', requireAdmin, async (req, res) => {
             }
 
             company.uiTheme = theme;
+        }
+
+        if (req.body.attendanceRetentionDays !== undefined) {
+            const retentionDays = Number(req.body.attendanceRetentionDays);
+            if (![7, 15, 30].includes(retentionDays)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'مدة حفظ سجلات البصمة يجب أن تكون 7 أو 15 أو 30 يومًا'
+                });
+            }
+            company.attendanceRetentionDays = retentionDays;
         }
 
         if (req.body.adminPassword) {
@@ -8238,6 +8260,63 @@ function payrollBatchItemFromSalary(salary) {
     };
 }
 
+async function archiveAttendanceAfterPayroll({ companyId, retentionDays, archivedBy, payrollBatchId }) {
+    const days = [7, 15, 30].includes(Number(retentionDays)) ? Number(retentionDays) : 30;
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const attendance = await Attendance.find({
+        companyId,
+        timestamp: { $lte: cutoff }
+    }).lean();
+
+    if (!attendance.length) {
+        return { archivedCount: 0, retentionDays: days, cutoff };
+    }
+
+    const sourceIds = attendance.map(item => String(item._id));
+    const existing = await ArchiveRecord.find({
+        companyId,
+        sourceType: 'Attendance',
+        sourceId: { $in: sourceIds }
+    }).select('sourceId').lean();
+    const existingIds = new Set(existing.map(item => String(item.sourceId)));
+    const pending = attendance.filter(item => !existingIds.has(String(item._id)));
+
+    if (pending.length) {
+        await ArchiveRecord.insertMany(pending.map(item => ({
+            companyId,
+            category: 'information',
+            sourceType: 'Attendance',
+            sourceId: String(item._id),
+            snapshotId: String(payrollBatchId || ''),
+            employeeId: String(item.employeeId || ''),
+            employeeName: item.employeeName || '',
+            title: `سجل بصمة - ${item.employeeName || item.employeeId || item._id}`,
+            note: `أُرشف تلقائيًا بعد احتساب الرواتب وفق مدة الاحتفاظ (${days} يومًا)`,
+            payload: item,
+            archivedBy: archivedBy || 'admin'
+        })));
+    }
+
+    await Attendance.deleteMany({
+        companyId,
+        _id: { $in: attendance.map(item => item._id) }
+    });
+
+    await new ArchiveRecord({
+        companyId,
+        category: 'operation',
+        sourceType: 'AttendanceRetention',
+        sourceId: String(payrollBatchId || ''),
+        snapshotId: String(payrollBatchId || ''),
+        title: 'أرشفة سجلات البصمة بعد احتساب الرواتب',
+        note: `تم نقل ${attendance.length} سجل بصمة إلى الأرشيف بعد مرور ${days} يومًا`,
+        payload: { archivedCount: attendance.length, retentionDays: days, cutoff, payrollBatchId },
+        archivedBy: archivedBy || 'admin'
+    }).save();
+
+    return { archivedCount: attendance.length, retentionDays: days, cutoff };
+}
+
 
 app.post(
     '/api/admin/payroll-batches/preview',
@@ -8534,11 +8613,35 @@ app.post(
                 }
             );
 
+            const company = await Company.findOne({
+                companyId: req.session.companyId
+            }).select('attendanceRetentionDays').lean();
+
+            let attendanceArchive = {
+                archivedCount: 0,
+                retentionDays: Number(company?.attendanceRetentionDays || 30)
+            };
+            let archiveWarning = '';
+
+            try {
+                attendanceArchive = await archiveAttendanceAfterPayroll({
+                    companyId: req.session.companyId,
+                    retentionDays: company?.attendanceRetentionDays,
+                    archivedBy: req.session.username || 'admin',
+                    payrollBatchId: batch._id
+                });
+            } catch (archiveError) {
+                archiveWarning = 'تم احتساب الرواتب، لكن تعذرت أرشفة سجلات البصمة ولم يُحذف أي سجل غير مؤرشف';
+                console.error('[attendance-archive]', archiveError);
+            }
+
             return res.status(201).json({
                 success: true,
                 message:
-                    'تم اعتماد دفعة الرواتب',
-                batch
+                    'تم اعتماد واحتساب دفعة الرواتب',
+                batch,
+                attendanceArchive,
+                archiveWarning
             });
 
         } catch (err) {
@@ -8939,8 +9042,10 @@ app.get('/api/admin/archive', requireAdmin, async (req, res) => {
         const query = { companyId: req.session.companyId };
         const category = String(req.query.category || '').trim();
         const employeeId = String(req.query.employeeId || '').trim();
+        const sourceType = String(req.query.sourceType || '').trim();
         if (category) query.category = category;
         if (employeeId) query.employeeId = employeeId;
+        if (sourceType) query.sourceType = sourceType;
 
         const records = await ArchiveRecord.find(query)
             .sort({ createdAt: -1 })

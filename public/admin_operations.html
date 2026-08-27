@@ -1150,7 +1150,17 @@ async function approvePayrollBatch() {
             method: 'POST', body: JSON.stringify(currentPayrollRequest)
         });
         closePayrollPreview();
-        toast('✅ ' + (data.message || 'تم اعتماد دفعة الرواتب'), 'success');
+        const archivedCount = Number(data.attendanceArchive?.archivedCount || 0);
+        const retentionDays = Number(data.attendanceArchive?.retentionDays || 30);
+        const archiveMessage = archivedCount
+            ? ` ونُقل ${archivedCount} سجل بصمة إلى الأرشيف`
+            : ` ولا توجد سجلات بصمة تجاوزت مدة ${retentionDays} يومًا`;
+        toast(
+            data.archiveWarning
+                ? '⚠️ ' + data.archiveWarning
+                : '✅ ' + (data.message || 'تم احتساب الرواتب') + archiveMessage,
+            data.archiveWarning ? 'error' : 'success'
+        );
         currentPayrollPreview = null;
         currentPayrollRequest = null;
         await loadSalaries();
