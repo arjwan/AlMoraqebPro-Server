@@ -84,6 +84,8 @@ body.dark-mode .employee-pro-toolbar,body.dark-mode .employee-pro-stat,body.dark
 ">
     <strong id="syncState">🔄 فحص حالة المزامنة...</strong>
 
+    <strong id="localState" style="color:#047857">💾 اتصال محلي نشط</strong>
+
     <span id="syncPending" style="
         background:#f59e0b;
         color:#fff;
@@ -265,7 +267,10 @@ async function refreshSyncStatus(){
         state.textContent =
             navigator.onLine
                 ? '🟢 متصل بالسيرفر'
-                : '🔴 بدون إنترنت - العمل محفوظ محلياً';
+                : '🔴 غير متصل بالسيرفر';
+
+        const localState=document.getElementById('localState');
+        if(localState) localState.textContent='💾 اتصال محلي نشط - جاري العمل محلياً';
 
         pending.textContent =
             Number(status.pending || 0) +
@@ -321,7 +326,7 @@ window.addEventListener(
     refreshSyncStatus
 );
 
-async function checkServer(button){const el=document.getElementById('status');markWorking(button,true);try{const r=await fetch(API+'/api/admin/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});el.textContent=r.ok?'✓ السيرفر متصل ويعمل بشكل طبيعي':'⚠️ تعذر التحقق من السيرفر';el.style.background=r.ok?'#10b981':'#f59e0b'}catch{el.textContent='❌ السيرفر غير متاح';el.style.background='#ef4444'}finally{markWorking(button,false)}}
+async function checkServer(button){const el=document.getElementById('status');markWorking(button,true);try{const r=await fetch(API+'/api/admin/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});el.textContent=r.ok?'✓ السيرفر متصل ويعمل بشكل طبيعي':'💾 جاري العمل محلياً';el.style.background=r.ok?'#10b981':'#f59e0b'}catch{el.textContent='💾 جاري العمل محلياً';el.style.background='#f59e0b'}finally{markWorking(button,false)}}
 
 function backupData(button){markWorking(button,true);setTimeout(()=>location.href='backup_system.html',150)}
 function logout(){sessionStorage.removeItem('almoraqeb_admin_token');location.href='admin_login.html'}

@@ -36,6 +36,44 @@ async function pendingCount(){
     return rows.length;
 }
 
+async function pullServerData(token){
+    const companyId=getCompanyId();
+    const resources=[
+        {store:'employees',path:'/api/employees?companyId='+encodeURIComponent(companyId),key:'employees'},
+        {store:'locations',path:'/api/admin/locations',key:'locations'},
+        {store:'shifts',path:'/api/admin/shifts',key:'shifts'},
+        {store:'salaries',path:'/api/admin/salaries',key:'salaries'},
+        {store:'loans',path:'/api/admin/loans',key:'loans'},
+        {store:'attendance',path:'/api/admin/attendance',key:'attendance'},
+        {store:'serviceRequests',path:'/api/admin/service-requests',key:'requests'},
+        {store:'supportRequests',path:'/api/admin/support-requests',key:'requests'}
+    ];
+    const snapshots=await Promise.all(resources.map(async item=>{
+        const response=await fetch(item.path,{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok||data.success===false) throw new Error(data.message||data.error||('HTTP '+response.status));
+        return {...item,records:Array.isArray(data[item.key])?data[item.key]:[]};
+    }));
+    for(const item of snapshots){
+        await AlMoraqebOfflineDB.replaceCompanyData(
+            AlMoraqebOfflineDB.STORES[item.store],companyId,item.records
+        );
+    }
+    return snapshots.reduce((sum,item)=>sum+item.records.length,0);
+}
+
+async function status(){
+    return {
+        online:navigator.onLine,
+        local:true,
+        syncing,
+        pending:await pendingCount(),
+        lastSuccessfulSyncAt:window.AlMoraqebOfflineDB
+            ? await AlMoraqebOfflineDB.getMeta('lastSuccessfulSyncAt')
+            : null
+    };
+}
+
 function emit(detail){
     document.dispatchEvent(
         new CustomEvent(
@@ -87,6 +125,8 @@ async function syncPending(){
 
     let successCount=0;
     let failedCount=0;
+    let pulledCount=0;
+    let fullySynced=false;
 
     try{
         const rows=
@@ -165,13 +205,22 @@ async function syncPending(){
             }
         }
 
+        const remaining=await pendingCount();
+        if(remaining===0&&failedCount===0){
+            pulledCount=await pullServerData(token);
+            fullySynced=true;
+        }
+
+    }catch(err){
+        failedCount++;
+        emit({online:navigator.onLine,local:true,syncing:false,pending:await pendingCount(),failedCount,error:err.message});
     }finally{
         syncing=false;
 
         const pending=
             await pendingCount();
 
-        if(successCount>0){
+        if(fullySynced){
             await AlMoraqebOfflineDB.setMeta(
                 'lastSuccessfulSyncAt',
                 new Date().toISOString()
@@ -183,7 +232,10 @@ async function syncPending(){
             syncing:false,
             pending,
             successCount,
-            failedCount
+            failedCount,
+            pulledCount,
+            fullySynced,
+            local:true
         });
     }
 }
@@ -198,10 +250,20 @@ window.addEventListener('load',()=>{
     }
 });
 
+window.addEventListener('focus',()=>{
+    if(navigator.onLine) syncPending();
+});
+
+setInterval(()=>{
+    if(navigator.onLine) syncPending();
+},60000);
+
 window.AlMoraqebOfflineSync={
     queueOperation,
     syncPending,
-    pendingCount
+    pendingCount,
+    pullServerData,
+    status
 };
 
 })();
