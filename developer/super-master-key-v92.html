@@ -156,18 +156,8 @@
 </head>
 <body>
 
-    <!-- نافذة الحماية بكلمة السر -->
-    <div id="authOverlay">
-        <div class="auth-card">
-            <h3>🔐 بوابة المطور الرئيسي</h3>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">منطقة سرية محظورة على العملاء</p>
-            <input type="password" id="devPassword" placeholder="أدخل كلمة مرور المطور">
-            <button onclick="verifyDeveloper()">دخول آمن</button>
-        </div>
-    </div>
-
     <!-- لوحة تحكم التراخيص الفعلية -->
-    <div id="mainContent">
+    <div id="mainContent" style="display:block">
         <div class="top-nav">
             <h2>🛡️ نظام إدارة تراخيص واشتراكات العملاء</h2>
             <button onclick="lockOut()" style="background:#ef4444; color:#fff; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">قفل الخروج</button>
@@ -204,25 +194,14 @@
     </div>
 
     <script>
-        // كلمة المرور الخاصة بك كمطور (يمكنك تغييرها كما تريد)
-        const MASTER_SECRET = "AliAlObeidi_2026_MasterKey";
-
-        function verifyDeveloper() {
-            const pass = document.getElementById('devPassword').value;
-            if (pass === MASTER_SECRET) {
-                document.getElementById('authOverlay').style.display = 'none';
-                document.getElementById('mainContent').style.display = 'block';
-                loadLicenseData();
-            } else {
-                alert('❌ كلمة المرور غير صحيحة! تم رفض الدخول.');
-            }
-        }
-
         function lockOut() {
-            document.getElementById('mainContent').style.display = 'none';
-            document.getElementById('authOverlay').style.display = 'flex';
-            document.getElementById('devPassword').value = '';
+            location.href = '/developer/logout';
         }
+
+        window.addEventListener(
+            'DOMContentLoaded',
+            () => loadLicenseData()
+        );
 
         function loadLicenseData() {
             const license = JSON.parse(localStorage.getItem('companyLicense')) || {

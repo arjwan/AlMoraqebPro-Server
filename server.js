@@ -1763,6 +1763,95 @@ function readToken(token) {
 }
 
 
+
+function developerTokenFromRequest(req) {
+
+    const bearer =
+        req.headers.authorization
+            ?.replace(/^Bearer\s+/i, '')
+            ?.trim();
+
+    if (bearer) return bearer;
+
+    const cookies =
+        String(req.headers.cookie || '')
+            .split(';');
+
+    for (const cookie of cookies) {
+
+        const [name, ...value] =
+            cookie.trim().split('=');
+
+        if (
+            name ===
+            'almoraqeb_developer_session'
+        ) {
+
+            try {
+                return decodeURIComponent(
+                    value.join('=')
+                );
+            } catch {
+                return null;
+            }
+        }
+    }
+
+    return null;
+}
+
+
+function setDeveloperCookie(req, res, token) {
+
+    const secure =
+        req.secure ||
+        String(
+            req.headers['x-forwarded-proto'] || ''
+        ).toLowerCase() === 'https';
+
+    const parts = [
+        'almoraqeb_developer_session=' +
+            encodeURIComponent(token),
+        'HttpOnly',
+        'Path=/',
+        'SameSite=Strict',
+        'Max-Age=28800'
+    ];
+
+    if (secure) parts.push('Secure');
+
+    res.setHeader(
+        'Set-Cookie',
+        parts.join('; ')
+    );
+}
+
+
+function clearDeveloperCookie(req, res) {
+
+    const secure =
+        req.secure ||
+        String(
+            req.headers['x-forwarded-proto'] || ''
+        ).toLowerCase() === 'https';
+
+    const parts = [
+        'almoraqeb_developer_session=',
+        'HttpOnly',
+        'Path=/',
+        'SameSite=Strict',
+        'Max-Age=0'
+    ];
+
+    if (secure) parts.push('Secure');
+
+    res.setHeader(
+        'Set-Cookie',
+        parts.join('; ')
+    );
+}
+
+
 /*
 =========================================================
   AUTH
@@ -1777,11 +1866,9 @@ function requireDeveloper(
 
     const token =
         readToken(
-            req.headers.authorization
-                ?.replace(
-                    /^Bearer\s+/i,
-                    ''
-                )
+            developerTokenFromRequest(
+                req
+            )
         );
 
     if (
@@ -2265,21 +2352,190 @@ app.post(
 
         }
 
+        const token =
+            createToken({
+                role:
+                    'developer'
+            });
+
+        setDeveloperCookie(
+            req,
+            res,
+            token
+        );
+
         res.json({
 
             success: true,
 
-            token:
-                createToken({
-                    role:
-                        'developer'
-                })
+            token
 
         });
 
     }
 );
 
+
+
+/*
+=========================================================
+  DEVELOPER PRIVATE PAGES
+=========================================================
+*/
+
+app.get(
+    '/developer/login',
+    (req, res) => {
+
+        const token =
+            readToken(
+                developerTokenFromRequest(
+                    req
+                )
+            );
+
+        if (
+            token &&
+            token.role === 'developer'
+        ) {
+
+            return res.redirect(
+                '/developer/create-company'
+            );
+
+        }
+
+        res
+            .status(200)
+            .type('html')
+            .send(`<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>بوابة المطور | المراقب برو</title>
+</head>
+<body style="font-family:Tahoma,Arial,sans-serif;background:#0f172a;display:grid;place-items:center;min-height:100vh;margin:0">
+<form method="post" action="/developer/session"
+      style="background:#fff;padding:28px;border-radius:16px;width:min(380px,90vw)">
+<h2>🔐 بوابة المطور</h2>
+<p>هذه المنطقة غير متاحة لمديري الشركات.</p>
+<input type="password" name="password" required
+       placeholder="كلمة مرور المطور"
+       style="width:100%;box-sizing:border-box;padding:12px;margin:10px 0">
+<button type="submit"
+        style="width:100%;padding:12px;background:#2563eb;color:#fff;border:0;border-radius:8px">
+دخول آمن
+</button>
+</form>
+</body>
+</html>`);
+    }
+);
+
+app.post(
+    '/developer/session',
+    (req, res) => {
+
+        if (
+            !DEVELOPER_PASSWORD ||
+            !SESSION_SECRET
+        ) {
+
+            return res
+                .status(503)
+                .send(
+                    'حماية المطور غير مهيأة'
+                );
+
+        }
+
+        const password =
+            String(
+                req.body.password ||
+                ''
+            );
+
+        if (
+            password !==
+            DEVELOPER_PASSWORD
+        ) {
+
+            return res
+                .status(401)
+                .type('html')
+                .send(
+                    '<h3 dir="rtl">❌ كلمة مرور المطور غير صحيحة</h3>' +
+                    '<p dir="rtl"><a href="/developer/login">العودة</a></p>'
+                );
+
+        }
+
+        const token =
+            createToken({
+                role:
+                    'developer'
+            });
+
+        setDeveloperCookie(
+            req,
+            res,
+            token
+        );
+
+        res.redirect(
+            '/developer/create-company'
+        );
+    }
+);
+
+app.get(
+    '/developer/create-company',
+    requireDeveloper,
+    (req, res) => {
+
+        res.sendFile(
+            path.join(
+                __dirname,
+                'developer',
+                'create-company.html'
+            )
+        );
+
+    }
+);
+
+app.get(
+    '/developer/master',
+    requireDeveloper,
+    (req, res) => {
+
+        res.sendFile(
+            path.join(
+                __dirname,
+                'developer',
+                'super-master-key-v92.html'
+            )
+        );
+
+    }
+);
+
+app.get(
+    '/developer/logout',
+    (req, res) => {
+
+        clearDeveloperCookie(
+            req,
+            res
+        );
+
+        res.redirect(
+            '/developer/login'
+        );
+
+    }
+);
 
 /*
 =========================================================
