@@ -382,11 +382,9 @@ async function loadLocations(){
             await api('/api/admin/locations');
 
         locations =
-            (d.locations || []).filter(
-                x =>
-                    !x.isPrimary &&
-                    x.active !== false
-            );
+            (d.locations || [])
+                .filter(x => x.active !== false)
+                .sort((a, b) => Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary)));
 
         if(window.AlMoraqebOfflineDB){
 
@@ -420,7 +418,6 @@ async function loadLocations(){
             (local || [])
                 .filter(
                     x =>
-                        !x.isPrimary &&
                         x.active !== false
                 )
                 .map(x=>({
@@ -429,7 +426,8 @@ async function loadLocations(){
                         x.id ||
                         x._id ||
                         x._offlineKey
-                }));
+                }))
+                .sort((a, b) => Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary)));
     }
 
     const select =
@@ -438,8 +436,7 @@ async function loadLocations(){
     const filter =
         document.getElementById('locationFilter');
 
-    select.innerHTML =
-        '<option value="">اختر الموقع</option>';
+    select.innerHTML = '';
 
     filter.innerHTML =
         '<option value="">كل المواقع</option>';
@@ -451,8 +448,9 @@ async function loadLocations(){
             x._id ||
             x._offlineKey;
 
-        const label =
-            `${x.name} - ${x.province || ''}`;
+        const label = x.isPrimary
+            ? 'الفرع الرئيسي'
+            : `${x.name}${x.province ? ' - ' + x.province : ''}`;
 
         const o1 =
             document.createElement('option');

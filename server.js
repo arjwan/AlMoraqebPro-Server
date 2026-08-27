@@ -6854,14 +6854,22 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
          * إذا كان locationId معرف Mongo نبحث بـ _id،
          * وإذا كان local-* نبحث بـ clientOfflineId.
          */
-        const location = (company.approvedLocations || []).find(
-            item =>
-                String(item._id) === String(locationId) ||
-                (
-                    item.clientOfflineId &&
-                    String(item.clientOfflineId) === String(locationId)
-                )
-        );
+        const isHeadquarters = String(locationId) === 'headquarters';
+        const location = isHeadquarters
+            ? (
+                Number.isFinite(Number(company.latitude)) &&
+                Number.isFinite(Number(company.longitude))
+                    ? { _id: 'headquarters', name: 'الفرع الرئيسي', active: true }
+                    : null
+            )
+            : (company.approvedLocations || []).find(
+                item =>
+                    String(item._id) === String(locationId) ||
+                    (
+                        item.clientOfflineId &&
+                        String(item.clientOfflineId) === String(locationId)
+                    )
+            );
 
         if (!location) {
             return res.status(404).json({
@@ -7036,15 +7044,20 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
                 });
             }
 
-            const location =
-                (company.approvedLocations || []).find(
+            const isHeadquarters = String(locationId) === 'headquarters';
+            const location = isHeadquarters
+                ? (
+                    Number.isFinite(Number(company.latitude)) &&
+                    Number.isFinite(Number(company.longitude))
+                        ? { _id: 'headquarters', name: 'الفرع الرئيسي', active: true }
+                        : null
+                )
+                : (company.approvedLocations || []).find(
                     item =>
-                        String(item._id) ===
-                        String(locationId) ||
+                        String(item._id) === String(locationId) ||
                         (
                             item.clientOfflineId &&
-                            String(item.clientOfflineId) ===
-                            String(locationId)
+                            String(item.clientOfflineId) === String(locationId)
                         )
                 );
 
