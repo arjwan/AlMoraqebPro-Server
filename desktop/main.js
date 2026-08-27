@@ -1,42 +1,11 @@
 const { app, BrowserWindow, dialog, session, shell } = require('electron');
-const { spawn } = require('node:child_process');
 const path = require('node:path');
-const http = require('node:http');
 
-const desktopPort = Number(process.env.ALMORAQEB_DESKTOP_PORT || 8433);
-let serverProcess = null;
-
-function projectRoot() {
-    return app.getAppPath();
-}
-
-function waitForServer(timeoutMs = 30000) {
-    const started = Date.now();
-    return new Promise((resolve, reject) => {
-        const check = () => {
-            const request = http.get(`http://127.0.0.1:${desktopPort}/api/ping`, response => {
-                response.resume();
-                resolve();
-            });
-            request.on('error', () => {
-                if (Date.now() - started >= timeoutMs) reject(new Error('تعذر تشغيل خادم المراقب برو'));
-                else setTimeout(check, 350);
-            });
-            request.setTimeout(1500, () => request.destroy());
-        };
-        check();
-    });
-}
-
-function startServer() {
-    const root = projectRoot();
-    serverProcess = spawn(process.execPath, ['-r', path.join(root, 'server-preload.js'), '-r', path.join(root, 'admin-pages-preload.js'), path.join(root, 'server.js')], {
-        cwd: root,
-        env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PORT: String(desktopPort) },
-        stdio: 'ignore',
-        windowsHide: true
-    });
-}
+const appOrigin = new URL(
+    process.env.ALMORAQEB_APP_URL ||
+    'https://almoraqebpro-server-aymo.onrender.com/'
+).origin;
+const appUrl = `${appOrigin}/admin_login.html`;
 
 async function createWindow() {
     const window = new BrowserWindow({
@@ -48,33 +17,39 @@ async function createWindow() {
         autoHideMenuBar: true,
         backgroundColor: '#0f172a',
         title: 'AlMoraqeb Pro',
+        icon: path.join(__dirname, 'assets', 'icon.png'),
         webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
     });
     window.setMenuBarVisibility(false);
     window.webContents.setWindowOpenHandler(({ url }) => {
-        if (url.startsWith(`http://127.0.0.1:${desktopPort}`)) return { action: 'allow' };
+        try {
+            if (new URL(url).origin === appOrigin) return { action: 'allow' };
+        } catch (_) {
+            return { action: 'deny' };
+        }
         shell.openExternal(url);
         return { action: 'deny' };
     });
-    await window.loadURL(`http://127.0.0.1:${desktopPort}/admin_login.html`);
+    await window.loadURL(appUrl);
     window.once('ready-to-show', () => window.show());
 }
 
 app.whenReady().then(async () => {
     session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-        callback(permission === 'geolocation' && webContents.getURL().startsWith(`http://127.0.0.1:${desktopPort}`));
+        let trustedOrigin = false;
+        try { trustedOrigin = new URL(webContents.getURL()).origin === appOrigin; }
+        catch (_) { trustedOrigin = false; }
+        callback(permission === 'geolocation' && trustedOrigin);
     });
-    startServer();
     try {
-        await waitForServer();
         await createWindow();
     } catch (error) {
-        dialog.showErrorBox('AlMoraqeb Pro', error.message);
+        dialog.showErrorBox(
+            'AlMoraqeb Pro',
+            'تعذر فتح التطبيق. شغّله مرة واحدة على الأقل أثناء توفر الإنترنت لتجهيز النسخة المحلية، ثم حاول مجددًا.\n\n' + error.message
+        );
         app.quit();
     }
 });
 
 app.on('window-all-closed', () => app.quit());
-app.on('before-quit', () => {
-    if (serverProcess && !serverProcess.killed) serverProcess.kill('SIGTERM');
-});

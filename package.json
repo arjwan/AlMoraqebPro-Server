@@ -30,9 +30,10 @@
     "appId": "com.almoraqebpro.desktop",
     "productName": "AlMoraqeb Pro",
     "asar": false,
-    "files": ["desktop/**", "public/**", "routes/**", "server.js", "server-preload.js", "admin-pages-preload.js", "package.json", "node_modules/**"],
-    "linux": { "target": ["AppImage", "deb"], "category": "Office" },
-    "win": { "target": ["nsis"] },
-    "mac": { "target": ["dmg"], "category": "public.app-category.business" }
+    "directories": { "output": "dist-desktop" },
+    "files": ["desktop/**", "package.json"],
+    "linux": { "target": ["AppImage", "deb"], "category": "Office", "icon": "desktop/assets/icon.png" },
+    "win": { "target": ["nsis"], "icon": "desktop/assets/icon.ico" },
+    "mac": { "target": ["dmg"], "category": "public.app-category.business", "icon": "desktop/assets/icon.icns" }
   }
 }
