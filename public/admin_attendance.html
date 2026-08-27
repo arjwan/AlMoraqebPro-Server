@@ -25,6 +25,8 @@ table{width:100%;border-collapse:collapse;min-width:1100px}
 th{background:#1e293b;color:#fff;padding:11px}td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:center}
 .modal{display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center;z-index:1000}
 .modal.show{display:flex}.box{background:#fff;width:min(760px,94%);border-radius:16px;padding:22px}
+.box.wide{width:min(1200px,96%);max-height:90vh;overflow:auto}
+.employee-row{cursor:pointer}.employee-row:hover{background:#f0f9ff}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.full{grid-column:1/-1}
 .field label{display:block;font-weight:800;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #94a3b8;border-radius:8px}
 .notice{margin-top:15px;padding:12px;border-radius:10px;text-align:center;background:#e0f2fe;color:#075985;font-weight:800}
@@ -36,6 +38,7 @@ th{background:#1e293b;color:#fff;padding:11px}td{padding:10px;border-bottom:1px 
 <div class="brand">📍 البصمة والحضور والإيفاد <span id="companyBadge" class="badge">...</span></div>
 <div class="actions">
 <button class="btn orange" onclick="openDelegation()">✈️ إيفاد موظف</button>
+<button class="btn green" onclick="printAttendanceReport()">🖨️ طباعة الكشف</button>
 <button class="btn blue" onclick="loadAll()">🔄 تحديث</button>
 <button class="btn purple" onclick="goHome()">🏠 الرئيسية</button>
 </div>
@@ -61,6 +64,8 @@ th{background:#1e293b;color:#fff;padding:11px}td{padding:10px;border-bottom:1px 
 <input id="fromDate" type="date" onchange="loadAttendance()">
 <input id="toDate" type="date" onchange="loadAttendance()">
 <select id="employeeFilter" onchange="loadAttendance()"><option value="">كل الموظفين</option></select>
+<select id="shiftFilter" onchange="renderAll()"><option value="">كل الشفتات</option></select>
+<select id="locationFilter" onchange="renderAll()"><option value="">كل المواقع والفروع</option></select>
 <select id="typeFilter" onchange="loadAttendance()">
 <option value="">حضور وانصراف</option>
 <option value="attendance">الحضور فقط</option>
@@ -99,6 +104,14 @@ th{background:#1e293b;color:#fff;padding:11px}td{padding:10px;border-bottom:1px 
 </div>
 </div></div>
 
+<div class="modal" id="movementsModal"><div class="box wide">
+<div class="actions" style="justify-content:space-between;align-items:center">
+<h3 id="movementsTitle">حركات الموظف</h3>
+<div><button class="btn green" onclick="printSelectedEmployee()">🖨️ طباعة الحركات</button> <button class="btn red" onclick="closeMovements()">إغلاق</button></div>
+</div>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>الشفت</th><th>الموقع</th><th>الحالة</th><th>GPS</th></tr></thead><tbody id="movementsBody"></tbody></table></div>
+</div></div>
+
 <script>
 const API = location.origin;
 
@@ -107,6 +120,9 @@ let companyId = '';
 let employees = [];
 let attendance = [];
 let requests = [];
+let shifts = [];
+let locations = [];
+let selectedMovementEmployeeId = '';
 
 function session(){
     try{
@@ -415,6 +431,41 @@ function fillEmployeeSelectors(){
     });
 }
 
+function fillAttendanceFilters(){
+    const shiftFilter=document.getElementById('shiftFilter');
+    const locationFilter=document.getElementById('locationFilter');
+    const selectedShift=shiftFilter.value;
+    const selectedLocation=locationFilter.value;
+    const shiftNames=new Set(shifts.map(x=>x.name).filter(Boolean));
+    attendance.forEach(x=>x.shiftName&&shiftNames.add(x.shiftName));
+    shiftFilter.innerHTML='<option value="">كل الشفتات</option>'+[...shiftNames]
+        .sort((a,b)=>a.localeCompare(b,'ar'))
+        .map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    const locationNames=new Set(locations.map(x=>x.name).filter(Boolean));
+    shifts.forEach(x=>(x.locationName||x.branch)&&locationNames.add(x.locationName||x.branch));
+    employees.forEach(x=>(x.workplace||x.branch)&&locationNames.add(x.workplace||x.branch));
+    locationFilter.innerHTML='<option value="">كل المواقع والفروع</option>'+[...locationNames]
+        .sort((a,b)=>a.localeCompare(b,'ar'))
+        .map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    if([...shiftFilter.options].some(x=>x.value===selectedShift)) shiftFilter.value=selectedShift;
+    if([...locationFilter.options].some(x=>x.value===selectedLocation)) locationFilter.value=selectedLocation;
+}
+
+async function loadShiftsAndLocations(){
+    try{
+        const [shiftData,locationData]=await Promise.all([
+            api('/api/admin/shifts'),
+            api('/api/admin/locations')
+        ]);
+        shifts=shiftData.shifts||[];
+        locations=locationData.locations||[];
+    }catch{
+        shifts=await getLocalAttendanceStore(AlMoraqebOfflineDB.STORES.shifts);
+        locations=await getLocalAttendanceStore(AlMoraqebOfflineDB.STORES.locations);
+    }
+    fillAttendanceFilters();
+}
+
 
 async function loadEmployees(){
 
@@ -606,22 +657,26 @@ function renderAttendance(){
             'search'
         ).value.trim().toLowerCase();
 
-    const rows =
-        attendance.filter(x =>
-            !q ||
-            String(
-                x.employeeName || ''
-            )
-            .toLowerCase()
-            .includes(q)
-        );
+    const shift=document.getElementById('shiftFilter').value;
+    const location=document.getElementById('locationFilter').value;
+    const filtered=attendance.filter(x =>
+        (!q || String(x.employeeName||'').toLowerCase().includes(q)) &&
+        (!shift || String(x.shiftName||'')===shift) &&
+        (!location || [x.workplace,x.delegationLocationName].map(String).includes(location))
+    );
+    const latest=new Map();
+    filtered.forEach(x=>{
+        const id=String(x.employeeId||x.employeeName||'');
+        if(!latest.has(id)||new Date(x.timestamp)>new Date(latest.get(id).timestamp)) latest.set(id,x);
+    });
+    const rows=[...latest.values()].sort((a,b)=>String(a.employeeName||'').localeCompare(String(b.employeeName||''),'ar'));
 
     document.getElementById(
         'attendanceBody'
     ).innerHTML =
         rows.length
         ? rows.map((x,i)=>`
-        <tr>
+        <tr class="employee-row" onclick="openEmployeeMovements('${esc(x.employeeId)}')" title="اضغط لعرض جميع الحركات">
             <td>${i+1}</td>
             <td><b>${esc(x.employeeName||x.employeeId)}</b></td>
             <td>${x.type==='attendance'?'حضور':'انصراف'}</td>
@@ -640,6 +695,79 @@ function renderAttendance(){
         </tr>
         `).join('')
         : '<tr><td colspan="9">لا توجد سجلات</td></tr>';
+}
+
+function employeeMovements(employeeId){
+    const shift=document.getElementById('shiftFilter').value;
+    const location=document.getElementById('locationFilter').value;
+    return attendance.filter(x=>String(x.employeeId)===String(employeeId) &&
+        (!shift||String(x.shiftName||'')===shift) &&
+        (!location||String(x.workplace||x.delegationLocationName||'')===location))
+        .sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+}
+
+function openEmployeeMovements(employeeId){
+    selectedMovementEmployeeId=String(employeeId||'');
+    const emp=employees.find(x=>String(x._id||x.id||x._offlineKey||'')===selectedMovementEmployeeId);
+    const rows=employeeMovements(selectedMovementEmployeeId);
+    document.getElementById('movementsTitle').textContent='حركات الموظف: '+(emp?.name||rows[0]?.employeeName||selectedMovementEmployeeId);
+    document.getElementById('movementsBody').innerHTML=rows.length?rows.map((x,i)=>`<tr>
+        <td>${i+1}</td><td>${x.type==='attendance'?'حضور':'انصراف'}</td><td>${fmtDate(x.timestamp)}</td><td>${fmtTime(x.timestamp)}</td>
+        <td>${esc(x.shiftName||'—')}</td><td>${esc(x.workplace||x.delegationLocationName||'—')}</td>
+        <td>${x.delegationApplied?'إيفاد':'اعتيادي'}</td><td>${Number.isFinite(Number(x.latitude))&&Number.isFinite(Number(x.longitude))?Number(x.latitude).toFixed(5)+', '+Number(x.longitude).toFixed(5):'—'}</td>
+    </tr>`).join(''):'<tr><td colspan="8">لا توجد حركات مطابقة</td></tr>';
+    document.getElementById('movementsModal').classList.add('show');
+}
+
+function closeMovements(){ document.getElementById('movementsModal').classList.remove('show'); }
+
+function printSelectedEmployee(){
+    const filter=document.getElementById('employeeFilter');
+    const previous=filter.value;
+    filter.value=selectedMovementEmployeeId;
+    printAttendanceReport();
+    filter.value=previous;
+}
+
+function printAttendanceReport(){
+    const employeeId=document.getElementById('employeeFilter').value;
+    const shiftName=document.getElementById('shiftFilter').value;
+    const locationName=document.getElementById('locationFilter').value;
+    const from=document.getElementById('fromDate').value;
+    const to=document.getElementById('toDate').value;
+    const selectedEmployees=employees.filter(emp=>{
+        const id=String(emp._id||emp.id||emp._offlineKey||'');
+        const empLocation=String(emp.workplace||emp.branch||'');
+        const assignedShifts=shifts.filter(s=>(s.employeeIds||[]).map(String).includes(id));
+        return (!employeeId||id===String(employeeId)) &&
+            (!locationName||empLocation===locationName||assignedShifts.some(s=>(s.locationName||s.branch)===locationName)) &&
+            (!shiftName||assignedShifts.some(s=>s.name===shiftName)||attendance.some(a=>String(a.employeeId)===id&&a.shiftName===shiftName));
+    });
+    const cards=selectedEmployees.map(emp=>{
+        const id=String(emp._id||emp.id||emp._offlineKey||'');
+        const records=attendance.filter(a=>String(a.employeeId)===id && (!shiftName||a.shiftName===shiftName) && (!locationName||a.workplace===locationName||a.delegationLocationName===locationName));
+        const attendanceRecords=records.filter(a=>a.type==='attendance');
+        const departureRecords=records.filter(a=>a.type!=='attendance');
+        const days=[...new Set(attendanceRecords.map(a=>new Date(a.timestamp).toISOString().slice(0,10)))];
+        const leaveDates=requests.filter(r=>String(r.employeeId)===id&&r.type==='leave'&&r.status==='approved').map(r=>`${fmtDate(r.fromDate||r.requestedDate)} – ${fmtDate(r.toDate||r.fromDate||r.requestedDate)}`);
+        const delegationDates=records.filter(a=>a.delegationApplied).map(a=>fmtDate(a.timestamp));
+        const last=records[0];
+        return `<article><h2>${esc(emp.name||last?.employeeName||id)}</h2><div class="grid">
+        <span><b>الموقع/الفرع:</b> ${esc(emp.workplace||emp.branch||last?.workplace||'—')}</span>
+        <span><b>الشفت:</b> ${esc(last?.shiftName||'—')}</span>
+        <span><b>أيام البصمة:</b> ${days.length}</span><span><b>بصمات الحضور:</b> ${attendanceRecords.length}</span>
+        <span><b>بصمات الانصراف:</b> ${departureRecords.length}</span><span><b>آخر حالة:</b> ${last?(last.type==='attendance'?'حضور':'انصراف'):'لا توجد'}</span>
+        <span class="wide"><b>تواريخ الإيفاد:</b> ${[...new Set(delegationDates)].join('، ')||'—'}</span>
+        <span class="wide"><b>تواريخ الإجازة:</b> ${leaveDates.join('، ')||'—'}</span></div>
+        <table><thead><tr><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>الشفت</th><th>الموقع</th><th>الحالة</th><th>GPS</th></tr></thead><tbody>${records.map(a=>`<tr><td>${a.type==='attendance'?'حضور':'انصراف'}</td><td>${fmtDate(a.timestamp)}</td><td>${fmtTime(a.timestamp)}</td><td>${esc(a.shiftName||'—')}</td><td>${esc(a.workplace||a.delegationLocationName||'—')}</td><td>${a.delegationApplied?'إيفاد':'اعتيادي'}</td><td>${Number.isFinite(Number(a.latitude))&&Number.isFinite(Number(a.longitude))?Number(a.latitude).toFixed(5)+', '+Number(a.longitude).toFixed(5):'—'}</td></tr>`).join('')||'<tr><td colspan="7">لا توجد سجلات</td></tr>'}</tbody></table></article>`;
+    }).join('');
+    if(!cards){ alert('لا توجد بيانات مطابقة للطباعة'); return; }
+    const title=employeeId?'كشف بصمة موظف':locationName?'كشف بصمة فرع/موقع':'كشف البصمة العام';
+    const frame=document.createElement('iframe');
+    frame.style.position='fixed'; frame.style.width='0'; frame.style.height='0'; frame.style.border='0';
+    frame.srcdoc=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Tahoma;padding:20px;color:#0f172a}header{text-align:center;margin-bottom:18px}article{border:1px solid #94a3b8;border-radius:12px;padding:14px;margin-bottom:18px;break-inside:avoid}h2{margin-top:0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.wide{grid-column:1/-1}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:7px;text-align:center}th{background:#e2e8f0}</style></head><body><header><h1>${title}</h1><p>الفترة: ${esc(from||'بداية السجلات')} — ${esc(to||'نهاية السجلات')}</p></header>${cards}</body></html>`;
+    frame.onload=()=>{ try{ frame.contentWindow.focus(); frame.contentWindow.print(); }catch(e){ alert('تعذر تنفيذ الطباعة: '+e.message); } setTimeout(()=>frame.remove(),1000); };
+    document.body.appendChild(frame);
 }
 
 
@@ -1259,10 +1387,13 @@ async function loadAll(){
 
     try{
         await loadEmployees();
+        await loadShiftsAndLocations();
         await Promise.all([
             loadAttendance(),
             loadRequests()
         ]);
+
+        fillAttendanceFilters();
 
         renderAll();
 
