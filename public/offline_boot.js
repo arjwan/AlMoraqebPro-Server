@@ -1,6 +1,13 @@
 (function () {
 'use strict';
 
+if (!document.querySelector('script[data-almoraqeb-i18n]')) {
+    const script = document.createElement('script');
+    script.src = '/i18n.js';
+    script.dataset.almoraqebI18n = 'true';
+    document.head.appendChild(script);
+}
+
 if (
     'serviceWorker' in navigator &&
     location.protocol !== 'file:'

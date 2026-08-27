@@ -55,6 +55,9 @@ body.dark .status-card{background:#1e293b}
 <select id="uiLanguage">
 <option value="ar">العربية</option>
 <option value="en">English</option>
+<option value="ku">کوردی (سۆرانی)</option>
+<option value="fa">فارسی</option>
+<option value="tr">Türkçe</option>
 </select>
 </div>
 
@@ -336,6 +339,11 @@ async function loadSettings(){
     adminPassword.value='';
 
     uiLanguage.value=s.uiLanguage||'ar';
+    if(localStorage.getItem('almoraqeb_ui_language')!==uiLanguage.value){
+        localStorage.setItem('almoraqeb_ui_language',uiLanguage.value);
+        location.reload();
+        return;
+    }
     uiTheme.value=s.uiTheme||'light';
     attendanceRetentionDays.value=String(s.attendanceRetentionDays||30);
     previewTheme();
@@ -397,6 +405,9 @@ async function saveSettings(){
             method:'PUT',
             body:JSON.stringify(payload)
         });
+
+        localStorage.setItem('almoraqeb_ui_language',uiLanguage.value);
+        if(window.AlMoraqebI18n) window.AlMoraqebI18n.setLanguage(uiLanguage.value);
 
         notice.textContent='✅ تم حفظ الإعدادات';
         notice.style.background='#dcfce7';

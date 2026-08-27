@@ -194,7 +194,7 @@ const companySchema = new mongoose.Schema({
 
     uiLanguage: {
         type: String,
-        enum: ['ar', 'en'],
+        enum: ['ar', 'en', 'ku', 'fa', 'tr'],
         default: 'ar'
     },
 
@@ -3432,7 +3432,7 @@ app.put('/api/admin/settings', requireAdmin, async (req, res) => {
             const language =
                 String(req.body.uiLanguage || '').trim();
 
-            if (!['ar', 'en'].includes(language)) {
+            if (!['ar', 'en', 'ku', 'fa', 'tr'].includes(language)) {
                 return res.status(400).json({
                     success: false,
                     message: 'اللغة غير مدعومة'

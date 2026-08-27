@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'almoraqebpro-v5';
+const CACHE_NAME = 'almoraqebpro-v6';
 
 const CORE_FILES = [
     '/',
@@ -21,7 +21,8 @@ const CORE_FILES = [
     '/offline_db.js',
     '/offline_sync.js',
     '/offline_auth.js',
-    '/offline_boot.js'
+    '/offline_boot.js',
+    '/i18n.js'
 ];
 
 self.addEventListener('install', event => {
