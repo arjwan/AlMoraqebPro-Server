@@ -87,13 +87,156 @@ if (!fs.existsSync('uploads')) {
 }
 
 app.use(
-    '/uploads',
-    express.static(path.join(__dirname, 'uploads'))
-);
-
-app.use(
     express.static(path.join(__dirname, 'public'))
 );
+
+/*
+=========================================================
+  SIGNED PRIVATE MEDIA
+=========================================================
+*/
+
+const MEDIA_URL_TTL_SECONDS = 10 * 60;
+
+function signedMediaUrl(fileUrl) {
+
+    const value =
+        String(fileUrl || '').trim();
+
+    if (!value) {
+        return '';
+    }
+
+    if (!value.startsWith('/uploads/')) {
+        return value;
+    }
+
+    if (!SESSION_SECRET) {
+        return '';
+    }
+
+    const filename =
+        path.basename(value);
+
+    const expires =
+        Math.floor(Date.now() / 1000) +
+        MEDIA_URL_TTL_SECONDS;
+
+    const signature =
+        crypto
+            .createHmac(
+                'sha256',
+                SESSION_SECRET
+            )
+            .update(
+                `${filename}:${expires}`
+            )
+            .digest('hex');
+
+    return (
+        `/media/${encodeURIComponent(filename)}` +
+        `?expires=${expires}` +
+        `&signature=${signature}`
+    );
+}
+
+
+app.get(
+    '/media/:filename',
+    (req, res) => {
+
+        if (!SESSION_SECRET) {
+            return res.status(503).json({
+                success: false,
+                message: 'حماية الوسائط غير مهيأة'
+            });
+        }
+
+        const filename =
+            String(req.params.filename || '');
+
+        if (
+            !filename ||
+            filename !== path.basename(filename)
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'اسم الملف غير صالح'
+            });
+        }
+
+        const expires =
+            Number(req.query.expires);
+
+        const signature =
+            String(
+                req.query.signature || ''
+            );
+
+        if (
+            !Number.isInteger(expires) ||
+            expires < Math.floor(Date.now() / 1000) ||
+            !signature
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: 'رابط الوسائط منتهي أو غير صالح'
+            });
+        }
+
+        const expected =
+            crypto
+                .createHmac(
+                    'sha256',
+                    SESSION_SECRET
+                )
+                .update(
+                    `${filename}:${expires}`
+                )
+                .digest('hex');
+
+        const suppliedBuffer =
+            Buffer.from(signature);
+
+        const expectedBuffer =
+            Buffer.from(expected);
+
+        if (
+            suppliedBuffer.length !== expectedBuffer.length ||
+            !crypto.timingSafeEqual(
+                suppliedBuffer,
+                expectedBuffer
+            )
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: 'توقيع الوسائط غير صالح'
+            });
+        }
+
+        const filePath =
+            path.join(
+                __dirname,
+                'uploads',
+                filename
+            );
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({
+                success: false,
+                message: 'الملف غير موجود'
+            });
+        }
+
+        res.setHeader(
+            'Cache-Control',
+            'private, max-age=60'
+        );
+
+        return res.sendFile(filePath);
+    }
+);
+
 
 /*
 =========================================================
@@ -1952,6 +2095,21 @@ function publicEmployee(employee) {
     }
 
     return safeEmployee;
+}
+
+
+function employeeWithSignedMedia(employee) {
+
+    const safeEmployee =
+        publicEmployee(employee);
+
+    return {
+        ...safeEmployee,
+        photoUrl:
+            signedMediaUrl(
+                safeEmployee.photoUrl
+            )
+    };
 }
 
 
@@ -4838,7 +4996,7 @@ app.patch(
                     'تم تعيين بيانات دخول الموظف',
 
                 employee:
-                    publicEmployee(
+                    employeeWithSignedMedia(
                         employee
                     )
 
@@ -5017,6 +5175,7 @@ app.post(
 
 app.get(
     '/api/employees',
+    requireAdmin,
     async (req, res) => {
 
         try {
@@ -5060,7 +5219,7 @@ app.get(
                 employees:
                     employees.map(
                         employee =>
-                            publicEmployee(
+                            employeeWithSignedMedia(
                                 employee
                             )
                     )
@@ -5140,7 +5299,7 @@ app.post(
                         success: true,
                         alreadySynced: true,
                         employee:
-                            publicEmployee(
+                            employeeWithSignedMedia(
                                 existingOfflineEmployee
                             )
                     });
@@ -5247,7 +5406,7 @@ app.post(
             return res.status(201).json({
                 success: true,
                 message: 'تمت إضافة الموظف بنجاح',
-                employee: publicEmployee(employee)
+                employee: employeeWithSignedMedia(employee)
             });
 
         } catch (err) {
@@ -5288,7 +5447,7 @@ app.get(
 
             return res.json({
                 success: true,
-                employee: publicEmployee(employee)
+                employee: employeeWithSignedMedia(employee)
             });
         } catch (err) {
             console.error('GET /api/employees/:employeeId failed:', err);
@@ -5419,7 +5578,7 @@ app.put(
             return res.json({
                 success: true,
                 message: 'تم تعديل الموظف بنجاح',
-                employee: publicEmployee(employee)
+                employee: employeeWithSignedMedia(employee)
             });
         } catch (err) {
             console.error('PUT /api/employees/:employeeId failed:', err);
@@ -5772,7 +5931,7 @@ app.post(
                     'تم تسجيل الدخول بنجاح',
 
                 employee:
-                    publicEmployee(
+                    employeeWithSignedMedia(
                         employee
                     )
 
@@ -9308,7 +9467,17 @@ app.get('/api/admin/archive', requireAdmin, async (req, res) => {
             .limit(2000)
             .lean();
 
-        return res.json({ success: true, records });
+        return res.json({
+            success: true,
+            records:
+                records.map(record => ({
+                    ...record,
+                    fileUrl:
+                        signedMediaUrl(
+                            record.fileUrl
+                        )
+                }))
+        });
     } catch (err) {
         return res.status(500).json({ success: false, error: err.message });
     }
@@ -9405,7 +9574,13 @@ app.put(
             }
 
             await employee.save();
-            return res.json({ success: true, employee });
+            return res.json({
+                success: true,
+                employee:
+                    employeeWithSignedMedia(
+                        employee
+                    )
+            });
         } catch (err) {
             return res.status(500).json({ success: false, error: err.message });
         }
@@ -9686,6 +9861,10 @@ app.get(
                 notifications:
                     notifications.map(item => ({
                         ...item,
+                        audioUrl:
+                            signedMediaUrl(
+                                item.audioUrl
+                            ),
                         employeeName:
                             employeeMap.get(item.employeeId)?.name || '',
                         workplace:
@@ -9853,7 +10032,16 @@ app.get(
 
                 success: true,
 
-                notifications
+                notifications:
+                    notifications.map(
+                        notification => ({
+                            ...notification,
+                            audioUrl:
+                                signedMediaUrl(
+                                    notification.audioUrl
+                                )
+                        })
+                    )
 
             });
 
