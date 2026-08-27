@@ -422,6 +422,7 @@ let token = sessionStorage.getItem('almoraqeb_admin_token') || '';
 let companyId = new URLSearchParams(location.search).get('company') || localStorage.getItem('companyId') || '';
 
 let allEmployees = [];
+let allPayrollLocations = [];
 let allSalaries = [];
 let allLoans = [];
 let currentLoanEmployeeId = null;
@@ -652,15 +653,55 @@ async function addSalaryEmployee() {
     }
 }
 
+async function loadPayrollLocations() {
+    try {
+        const data = await api('/api/admin/locations');
+        allPayrollLocations = (data.locations || []).filter(location => location.active !== false);
+    } catch (error) {
+        allPayrollLocations = await getLocalOperationsStore(
+            window.AlMoraqebOfflineDB?.STORES?.locations
+        );
+        allPayrollLocations = (allPayrollLocations || []).filter(location => location.active !== false);
+    }
+    allPayrollLocations.sort((a, b) =>
+        Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary)) ||
+        String(a.name || '').localeCompare(String(b.name || ''), 'ar')
+    );
+    updatePayrollBranches();
+}
+
 function updatePayrollBranches() {
     const select = document.getElementById('payrollBranch');
     const selected = select.value;
-    const branches = [...new Set(allSalaries.map(s => String(s.workplace || '').trim()).filter(Boolean))]
-        .sort((a, b) => a.localeCompare(b, 'ar'));
-    select.innerHTML = '<option value="">كل الفروع</option>' + branches
-        .map(branch => `<option value="${escapeHtml(branch)}">${escapeHtml(branch)}</option>`)
+    const options = [];
+    const seen = new Set();
+
+    allPayrollLocations.forEach(location => {
+        const value = String(location.name || '').trim();
+        if (!value || seen.has(value)) return;
+        seen.add(value);
+        options.push({
+            value,
+            label: location.isPrimary ? 'الفرع الرئيسي' : value,
+            isPrimary: Boolean(location.isPrimary)
+        });
+    });
+
+    allSalaries.forEach(salary => {
+        const value = String(salary.workplace || '').trim();
+        if (!value || seen.has(value)) return;
+        seen.add(value);
+        options.push({ value, label: value, isPrimary: false });
+    });
+
+    options.sort((a, b) =>
+        Number(b.isPrimary) - Number(a.isPrimary) ||
+        a.label.localeCompare(b.label, 'ar')
+    );
+    select.innerHTML = '<option value="">كل الفروع</option>' + options
+        .map(option => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`)
         .join('');
-    if (branches.includes(selected)) select.value = selected;
+    if (options.some(option => option.value === selected)) select.value = selected;
 }
 
 
@@ -1850,6 +1891,7 @@ async function deleteLoan(id) {
 // تهيئة
 (async function init() {
     try {
+        await loadPayrollLocations();
         await loadSalaries();
         await loadLoans();
     } catch (e) {
