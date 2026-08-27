@@ -290,6 +290,10 @@ tr:hover{background:#f8fafc}
 <input id="locLongitude" type="number" step="any" required>
 </div>
 
+<div class="group full">
+<button type="button" class="btn blue" id="getLocationBtn" onclick="getCurrentLocation()">📍 جلب موقعي الحالي</button>
+</div>
+
 <div class="group">
 <label>نصف قطر قبول البصمة بالمتر</label>
 <input id="locRadius" type="number" min="1" value="200" required>
@@ -311,6 +315,27 @@ const API = location.origin;
 let token = '';
 let companyId = '';
 let locations = [];
+
+function getCurrentLocation(){
+    const button=document.getElementById('getLocationBtn');
+    if(!navigator.geolocation){
+        alert('تحديد الموقع غير مدعوم في هذا المتصفح');
+        return;
+    }
+    button.disabled=true;
+    button.textContent='جارٍ جلب الموقع...';
+    navigator.geolocation.getCurrentPosition(position=>{
+        document.getElementById('locLatitude').value=Number(position.coords.latitude).toFixed(7);
+        document.getElementById('locLongitude').value=Number(position.coords.longitude).toFixed(7);
+        button.disabled=false;
+        button.textContent='✅ تم جلب الموقع — تحديثه مجددًا';
+    },error=>{
+        button.disabled=false;
+        button.textContent='📍 جلب موقعي الحالي';
+        const message=error.code===1?'تم رفض إذن الموقع':error.code===2?'تعذر تحديد الموقع الحالي':'انتهت مهلة تحديد الموقع';
+        alert(message);
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
 
 const typeNames = {
     headquarters:'المقر الرئيسي',

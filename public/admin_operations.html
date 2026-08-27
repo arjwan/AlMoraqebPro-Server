@@ -232,6 +232,27 @@
             display: none;
         }
         .toast.show { display: block; }
+        .salary-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+        .salary-toolbar-actions { display:flex; flex-wrap:wrap; gap:8px; }
+        .salary-select-all { display:inline-flex; align-items:center; gap:7px; color:#cbd5e1; font-weight:700; }
+        .salary-select-all input,.salary-card-select { width:18px; height:18px; accent-color:#0284c7; }
+        .salary-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:14px; }
+        .salary-card { background:rgba(15,23,42,.72); border:1px solid rgba(56,189,248,.25); border-radius:16px; padding:15px; box-shadow:0 8px 24px rgba(0,0,0,.16); }
+        .salary-card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding-bottom:11px; border-bottom:1px solid rgba(255,255,255,.1); }
+        .salary-card-head h4 { font-size:1.05rem; color:#f8fafc; margin-bottom:4px; }
+        .salary-card-head p { color:#94a3b8; font-size:.82rem; line-height:1.5; }
+        .salary-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-top:12px; }
+        .salary-field label { display:block; color:#94a3b8; font-size:.76rem; font-weight:700; margin-bottom:4px; }
+        .salary-field input,.salary-field select { width:100%; max-width:175px; min-height:34px; padding:6px 8px; border-radius:8px; border:1px solid #475569; background:#0f172a; color:#fff; font-size:.82rem; }
+        .salary-payout { margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.1); }
+        .salary-payout-title { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; color:#cbd5e1; font-weight:800; }
+        .salary-summary { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:12px; }
+        .salary-total { background:rgba(2,132,199,.13); border-radius:10px; padding:9px; }
+        .salary-total small { display:block; color:#94a3b8; margin-bottom:3px; }
+        .salary-total strong { color:#38bdf8; }
+        .salary-total.net strong { color:#34d399; }
+        .salary-card-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+        .salary-empty { text-align:center; color:#94a3b8; padding:28px 10px; }
         @media (max-width: 768px) {
             body { background: #f1f5f9; color: #0f172a; padding: 8px; }
             .container { background: #fff; color: #0f172a; padding: 12px; border-radius: 14px; border-color: #cbd5e1; box-shadow: 0 5px 18px rgba(15,23,42,.12); }
@@ -251,6 +272,13 @@
             .summary-item { background: #f8fafc; }
             .summary-item strong { color: #0f172a; }
             .btn-outline { color: #0369a1; border-color: #0369a1; }
+            .salary-cards { grid-template-columns:1fr; }
+            .salary-card { background:#fff; color:#0f172a; border-color:#bae6fd; }
+            .salary-card-head { border-color:#e2e8f0; }
+            .salary-card-head h4 { color:#0f172a; }
+            .salary-field input,.salary-field select { background:#fff; color:#0f172a; border-color:#94a3b8; }
+            .salary-payout { border-color:#e2e8f0; }
+            .salary-select-all,.salary-payout-title { color:#334155; }
         }
     </style>
 </head>
@@ -269,7 +297,6 @@
     <!-- ================== الرواتب ================== -->
     <div id="tab-salaries" class="tab-content active">
         <div class="card-panel">
-            <h3>جدول الرواتب الشامل</h3>
             <div class="payroll-tools">
                 <div class="field">
                     <label for="payrollBranch">الفرع</label>
@@ -289,38 +316,14 @@
                 <button class="btn btn-outline" onclick="printCashPayroll()">طباعة النقدي حسب الفرع</button>
                 <button class="btn" onclick="openAddSalaryModal()">➕ إضافة موظف للرواتب</button>
             </div>
-            <div class="table-wrapper">
-                <table id="salariesTable">
-                    <thead>
-                        <tr>
-                            <th>اسم الموظف</th>
-                            <th>الاختصاص</th>
-                            <th>موقع العمل</th>
-                            <th>الشفت</th>
-                            <th>الضمان</th>
-                            <th>الراتب الأساسي</th>
-                            <th>المخصصات</th>
-                            <th>السلف</th>
-                            <th>استقطاع السلفة</th>
-                            <th>استقطاع الضمان</th>
-                            <th>الخصومات</th>
-                            <th>المكافآت</th>
-                            <th>مجموع الاستقطاع</th>
-                            <th>الراتب الكلي</th>
-                            <th>اختيار للتحويل</th>
-                            <th>طريقة الصرف</th>
-                            <th>اسم المصرف</th>
-                            <th>صاحب الحساب</th>
-                            <th>مرجع البطاقة/الحساب</th>
-                            <th>آخر 4 أرقام</th>
-                            <th>حالة الصرف</th>
-                            <th>حفظ الصرف</th>
-                            <th>حفظ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="salariesTableBody"></tbody>
-                </table>
+            <div class="salary-toolbar">
+                <div><h3>بطاقات رواتب الموظفين</h3><label class="salary-select-all"><input type="checkbox" id="selectAllSalaries" onchange="toggleAllSalaries(this.checked)"> تحديد كل البطاقات</label></div>
+                <div class="salary-toolbar-actions">
+                    <button class="btn btn-outline" onclick="printSalarySummary()">🖨 كشف رواتب مختصر</button>
+                    <button class="btn" onclick="printSelectedSalaryCards()">🖨 طباعة البطاقات المحددة</button>
+                </div>
             </div>
+            <div id="salaryCards" class="salary-cards"></div>
         </div>
     </div>
 
@@ -662,89 +665,60 @@ function updatePayrollBranches() {
 
 
 function renderSalaries() {
-
-    const tbody =
-        document.getElementById(
-            'salariesTableBody'
-        );
-
-    tbody.innerHTML = '';
+    const container = document.getElementById('salaryCards');
+    container.innerHTML = '';
+    document.getElementById('selectAllSalaries').checked = false;
+    if (!allSalaries.length) {
+        container.innerHTML = '<div class="salary-empty">لا توجد سجلات رواتب لعرضها</div>';
+        return;
+    }
 
     allSalaries.forEach(salary => {
-
-        const id =
-            salary._id ||
-            salary.id ||
-            salary._offlineKey;
-
-        const row =
-            document.createElement('tr');
-
-        row.innerHTML = `
-            <td>${escapeHtml(salary.employeeName)}</td>
-            <td>${escapeHtml(salary.specialty)}</td>
-            <td>${escapeHtml(salary.workplace)}</td>
-            <td>${escapeHtml(salary.shiftName)}</td>
-
-            <td>
-                <select class="form-select" id="ss-${id}">
-                    <option value="مسجل"
-                        ${salary.socialSecurity === 'مسجل' ? 'selected' : ''}>
-                        مسجل
-                    </option>
-                    <option value="غير مسجل"
-                        ${salary.socialSecurity !== 'مسجل' ? 'selected' : ''}>
-                        غير مسجل
-                    </option>
-                </select>
-            </td>
-
-            <td><input type="number" id="bs-${id}" value="${salary.basicSalary || 0}"></td>
-            <td><input type="number" id="allow-${id}" value="${salary.allowances || 0}"></td>
-            <td><input type="number" id="loans-${id}" value="${salary.loans || 0}"></td>
-            <td><input type="number" id="lded-${id}" value="${salary.loanDeduction || 0}"></td>
-            <td><input type="number" id="sec-${id}" value="${salary.securityDeduction || 0}"></td>
-            <td><input type="number" id="ded-${id}" value="${salary.otherDeductions || 0}"></td>
-            <td><input type="number" id="bon-${id}" value="${salary.bonuses || 0}"></td>
-
-            <td id="totalDed-${id}">
-                ${salary.totalDeductions || 0}
-            </td>
-
-            <td id="net-${id}">
-                ${salary.netSalary || 0}
-            </td>
-
-            <td style="text-align:center">
-                <input class="payout-check" type="checkbox" id="pselected-${id}"
-                    ${salary.payoutSelected ? 'checked' : ''}>
-            </td>
-            <td>
-                <select class="payout-input" id="pmethod-${id}" onchange="togglePayoutFields('${id}')">
-                    <option value="cash" ${(salary.payoutMethod || 'cash') === 'cash' ? 'selected' : ''}>نقدي</option>
-                    <option value="card" ${salary.payoutMethod === 'card' ? 'selected' : ''}>بطاقة</option>
-                    <option value="bank" ${salary.payoutMethod === 'bank' ? 'selected' : ''}>مصرفي</option>
-                </select>
-            </td>
-            <td><input class="payout-input" id="pbank-${id}" value="${escapeHtml(salary.payoutBankName)}"></td>
-            <td><input class="payout-input" id="paccount-${id}" value="${escapeHtml(salary.payoutAccountName)}"></td>
-            <td><input class="payout-input" id="preference-${id}" value="${escapeHtml(salary.payoutReference)}"></td>
-            <td><input class="payout-input" id="plast4-${id}" inputmode="numeric" maxlength="4" value="${escapeHtml(salary.payoutLast4)}"></td>
-            <td><span class="status-badge status-${escapeHtml(salary.payoutStatus || 'unpaid')}">${escapeHtml(payoutStatusLabels[salary.payoutStatus] || payoutStatusLabels.unpaid)}</span></td>
-            <td><button class="btn-sm btn-sm-blue" onclick="savePayoutSettings('${id}')">حفظ الصرف</button></td>
-
-            <td>
-                <button
-                    class="btn-sm btn-green"
-                    onclick="saveSalary('${id}')">
-                    حفظ
-                </button>
-            </td>
-        `;
-
-        tbody.appendChild(row);
+        const id = salary._id || salary.id || salary._offlineKey;
+        const card = document.createElement('article');
+        card.className = 'salary-card';
+        card.innerHTML = `
+            <div class="salary-card-head">
+                <div><h4>${escapeHtml(salary.employeeName || 'موظف')}</h4><p>${escapeHtml(salary.specialty || 'بدون اختصاص')} · ${escapeHtml(salary.workplace || 'بدون موقع')}<br>${escapeHtml(salary.shiftName || 'بدون شفت')}</p></div>
+                <input class="salary-card-select" type="checkbox" value="${escapeHtml(id)}" aria-label="تحديد بطاقة ${escapeHtml(salary.employeeName || '')}">
+            </div>
+            <div class="salary-fields">
+                <div class="salary-field"><label>الضمان</label><select id="ss-${id}"><option value="مسجل" ${salary.socialSecurity === 'مسجل' ? 'selected' : ''}>مسجل</option><option value="غير مسجل" ${salary.socialSecurity !== 'مسجل' ? 'selected' : ''}>غير مسجل</option></select></div>
+                ${salaryNumberField('الراتب الأساسي', 'bs', id, salary.basicSalary)}
+                ${salaryNumberField('المخصصات', 'allow', id, salary.allowances)}
+                ${salaryNumberField('السلف', 'loans', id, salary.loans)}
+                ${salaryNumberField('استقطاع السلفة', 'lded', id, salary.loanDeduction)}
+                ${salaryNumberField('استقطاع الضمان', 'sec', id, salary.securityDeduction)}
+                ${salaryNumberField('الخصومات الأخرى', 'ded', id, salary.otherDeductions)}
+                ${salaryNumberField('المكافآت', 'bon', id, salary.bonuses)}
+            </div>
+            <div class="salary-summary">
+                <div class="salary-total"><small>مجموع الاستقطاعات</small><strong id="totalDed-${id}">${formatMoney(salary.totalDeductions)} د.ع</strong></div>
+                <div class="salary-total net"><small>صافي الراتب</small><strong id="net-${id}">${formatMoney(salary.netSalary)} د.ع</strong></div>
+            </div>
+            <div class="salary-payout">
+                <div class="salary-payout-title"><span>بيانات الصرف</span><span class="status-badge status-${escapeHtml(salary.payoutStatus || 'unpaid')}">${escapeHtml(payoutStatusLabels[salary.payoutStatus] || payoutStatusLabels.unpaid)}</span></div>
+                <div class="salary-fields">
+                    <div class="salary-field"><label>اختيار للتحويل</label><input class="payout-check" type="checkbox" id="pselected-${id}" ${salary.payoutSelected ? 'checked' : ''}></div>
+                    <div class="salary-field"><label>طريقة الصرف</label><select id="pmethod-${id}" onchange="togglePayoutFields('${id}')"><option value="cash" ${(salary.payoutMethod || 'cash') === 'cash' ? 'selected' : ''}>نقدي</option><option value="card" ${salary.payoutMethod === 'card' ? 'selected' : ''}>بطاقة</option><option value="bank" ${salary.payoutMethod === 'bank' ? 'selected' : ''}>مصرفي</option></select></div>
+                    ${salaryTextField('اسم المصرف', 'pbank', id, salary.payoutBankName)}
+                    ${salaryTextField('صاحب الحساب', 'paccount', id, salary.payoutAccountName)}
+                    ${salaryTextField('مرجع البطاقة/الحساب', 'preference', id, salary.payoutReference)}
+                    <div class="salary-field"><label>آخر 4 أرقام</label><input id="plast4-${id}" inputmode="numeric" maxlength="4" value="${escapeHtml(salary.payoutLast4)}"></div>
+                </div>
+            </div>
+            <div class="salary-card-actions"><button class="btn-sm btn-green" onclick="saveSalary('${id}')">حفظ الراتب</button><button class="btn-sm btn-sm-blue" onclick="savePayoutSettings('${id}')">حفظ الصرف</button><button class="btn-sm btn-sm-blue" onclick="printSingleSalaryCard('${id}')">طباعة البطاقة</button></div>`;
+        container.appendChild(card);
         togglePayoutFields(id);
     });
+}
+
+function salaryNumberField(label, prefix, id, value) {
+    return `<div class="salary-field"><label>${label}</label><input type="number" min="0" step="1" id="${prefix}-${id}" value="${Number(value) || 0}"></div>`;
+}
+
+function salaryTextField(label, prefix, id, value) {
+    return `<div class="salary-field"><label>${label}</label><input id="${prefix}-${id}" value="${escapeHtml(value)}"></div>`;
 }
 
 function togglePayoutFields(id) {
@@ -871,13 +845,13 @@ function recalcSalary(id) {
         .getElementById(
             'totalDed-' + id
         ).textContent =
-        totalDed;
+        formatMoney(totalDed) + ' د.ع';
 
     document
         .getElementById(
             'net-' + id
         ).textContent =
-        net;
+        formatMoney(net) + ' د.ع';
 }
 
 
@@ -1018,7 +992,7 @@ async function saveSalary(id) {
 
         try {
 
-            await api(
+            const data = await api(
                 '/api/admin/salaries/' +
                 encodeURIComponent(id),
                 {
@@ -1029,6 +1003,10 @@ async function saveSalary(id) {
                         )
                 }
             );
+
+            if (!data.success || !data.salary) {
+                throw new Error(data.message || 'لم يؤكد الخادم حفظ الراتب');
+            }
 
             toast(
                 '✅ تم حفظ بيانات الراتب',
@@ -1215,6 +1193,77 @@ function printCashPayroll() {
         <button onclick="window.print()">طباعة</button></body></html>`);
     printWindow.document.close();
     printWindow.focus();
+}
+
+function toggleAllSalaries(checked) {
+    document.querySelectorAll('.salary-card-select').forEach(box => { box.checked = checked; });
+}
+
+function liveSalary(id) {
+    const salary = allSalaries.find(item => String(item._id || item.id || item._offlineKey) === String(id));
+    if (!salary) return null;
+    const numberValue = prefix => Number(document.getElementById(prefix + id)?.value) || 0;
+    const result = { ...salary,
+        socialSecurity: document.getElementById('ss-' + id)?.value || salary.socialSecurity,
+        basicSalary: numberValue('bs-'), allowances: numberValue('allow-'), loans: numberValue('loans-'), bonuses: numberValue('bon-'),
+        loanDeduction: numberValue('lded-'), securityDeduction: numberValue('sec-'), otherDeductions: numberValue('ded-'),
+        payoutSelected: Boolean(document.getElementById('pselected-' + id)?.checked),
+        payoutMethod: document.getElementById('pmethod-' + id)?.value || salary.payoutMethod || 'cash',
+        payoutBankName: document.getElementById('pbank-' + id)?.value || '', payoutAccountName: document.getElementById('paccount-' + id)?.value || '',
+        payoutReference: document.getElementById('preference-' + id)?.value || '', payoutLast4: document.getElementById('plast4-' + id)?.value || ''
+    };
+    result.totalDeductions = result.loanDeduction + result.securityDeduction + result.otherDeductions;
+    result.additions = result.allowances + result.loans + result.bonuses;
+    result.netSalary = result.basicSalary + result.additions - result.totalDeductions;
+    return result;
+}
+
+function printSalarySummary() {
+    const branch = document.getElementById('payrollBranch').value;
+    const from = document.getElementById('payrollFrom').value;
+    const to = document.getElementById('payrollTo').value;
+    const items = allSalaries.map(item => liveSalary(item._id || item.id || item._offlineKey)).filter(item => {
+        const day = item?.createdAt ? String(item.createdAt).slice(0, 10) : '';
+        return item && (!branch || String(item.workplace || '') === branch) && (!from || !day || day >= from) && (!to || !day || day <= to);
+    });
+    if (!items.length) return toast('⚠ لا توجد رواتب مطابقة لطباعة الكشف', 'error');
+    const rows = items.map(item => `<tr><td>${escapeHtml(item.employeeName)}</td><td>${formatMoney(item.basicSalary)} د.ع</td><td>${formatMoney(item.additions)} د.ع</td><td>${formatMoney(item.totalDeductions)} د.ع</td><td><strong>${formatMoney(item.netSalary)} د.ع</strong></td><td>${escapeHtml(payoutStatusLabels[item.payoutStatus] || payoutStatusLabels.unpaid)}</td><td>${printDate(item.createdAt)}</td></tr>`).join('');
+    openSalaryPrint('كشف الرواتب المختصر', `<h1>كشف الرواتب المختصر</h1><p class="print-meta">الفترة: ${escapeHtml(from || '—')} إلى ${escapeHtml(to || '—')} · الفرع: ${escapeHtml(branch || 'الكل')}</p><table><thead><tr><th>الموظف</th><th>الأساسي</th><th>الإضافات</th><th>الخصومات</th><th>الصافي</th><th>حالة الدفع</th><th>تاريخ السجل</th></tr></thead><tbody>${rows}</tbody></table>`);
+}
+
+function printSingleSalaryCard(id) {
+    const item = liveSalary(id);
+    if (!item) return toast('❌ تعذر العثور على سجل الراتب', 'error');
+    openSalaryPrint('بطاقة راتب - ' + item.employeeName, salaryPrintCard(item));
+}
+
+function printSelectedSalaryCards() {
+    const ids = Array.from(document.querySelectorAll('.salary-card-select:checked')).map(box => box.value);
+    if (!ids.length) return toast('⚠ حدد بطاقة راتب واحدة على الأقل', 'error');
+    const cards = ids.map(liveSalary).filter(Boolean).map(salaryPrintCard).join('');
+    if (!cards) return toast('❌ تعذر تجهيز البطاقات المحددة', 'error');
+    openSalaryPrint('بطاقات الرواتب', cards);
+}
+
+function salaryPrintCard(item) {
+    const method = { cash:'نقدي', card:'بطاقة', bank:'مصرفي' }[item.payoutMethod] || '—';
+    const details = [['الاختصاص',item.specialty||'—'],['موقع العمل',item.workplace||'—'],['الشفت',item.shiftName||'—'],['الضمان',item.socialSecurity||'—'],['الراتب الأساسي',formatMoney(item.basicSalary)+' د.ع'],['المخصصات',formatMoney(item.allowances)+' د.ع'],['السلف',formatMoney(item.loans)+' د.ع'],['المكافآت',formatMoney(item.bonuses)+' د.ع'],['استقطاع السلفة',formatMoney(item.loanDeduction)+' د.ع'],['استقطاع الضمان',formatMoney(item.securityDeduction)+' د.ع'],['الخصومات الأخرى',formatMoney(item.otherDeductions)+' د.ع'],['مجموع الاستقطاعات',formatMoney(item.totalDeductions)+' د.ع'],['صافي الراتب',formatMoney(item.netSalary)+' د.ع'],['حالة الدفع',payoutStatusLabels[item.payoutStatus]||payoutStatusLabels.unpaid],['طريقة الصرف',method],['اسم المصرف',item.payoutBankName||'—'],['صاحب الحساب',item.payoutAccountName||'—'],['مرجع البطاقة/الحساب',item.payoutReference||'—'],['آخر 4 أرقام',item.payoutLast4||'—'],['تاريخ السجل',printDate(item.createdAt)]];
+    return `<article class="print-card"><header><div><small>بطاقة راتب</small><h2>${escapeHtml(item.employeeName||'موظف')}</h2></div><strong>${formatMoney(item.netSalary)} د.ع</strong></header><div class="print-details">${details.map(([label,value])=>`<div><span>${label}</span><b>${escapeHtml(value)}</b></div>`).join('')}</div></article>`;
+}
+
+function printDate(value) {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('ar-IQ');
+}
+
+function openSalaryPrint(title, content) {
+    const printWindow = window.open('', '_blank', 'width=1000,height=750');
+    if (!printWindow) return toast('❌ تعذر فتح نافذة الطباعة؛ اسمح بالنوافذ المنبثقة', 'error');
+    printWindow.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>*{box-sizing:border-box}body{font-family:Tahoma,Arial;color:#0f172a;padding:20px}h1{text-align:center}.print-meta{text-align:center;color:#64748b}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #cbd5e1;padding:8px;text-align:right}th{background:#e0f2fe}.print-card{border:2px solid #0284c7;border-radius:14px;padding:16px;margin-bottom:12mm;break-inside:avoid}.print-card header{display:flex;justify-content:space-between;border-bottom:1px solid #cbd5e1;padding-bottom:10px}.print-card h2{margin:3px 0}.print-card header strong{color:#047857}.print-details{display:grid;grid-template-columns:1fr 1fr}.print-details div{display:flex;justify-content:space-between;gap:10px;padding:7px;border-bottom:1px solid #e2e8f0}.print-details span{color:#64748b}@page{size:A4;margin:12mm}@media print{body{padding:0}}</style></head><body>${content}</body></html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    window.setTimeout(() => { try { printWindow.print(); } catch (error) { toast('❌ تعذر بدء الطباعة: '+error.message,'error'); } }, 250);
 }
 
 

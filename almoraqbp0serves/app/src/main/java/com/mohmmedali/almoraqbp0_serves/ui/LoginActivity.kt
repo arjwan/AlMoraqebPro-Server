@@ -35,6 +35,18 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // إذا سبق تسجيل الدخول بنجاح، افتح التطبيق من النسخة المحلية حتى دون إنترنت.
+        // لا نخزن كلمة المرور؛ نعتمد فقط الجلسة المحلية التي أنشأها تسجيل دخول ناجح سابقًا.
+        if (
+            prefs.getBoolean("authenticated", false) &&
+            !prefs.getString("employeeId", "").isNullOrBlank() &&
+            !prefs.getString("companyId", "").isNullOrBlank()
+        ) {
+            startActivity(Intent(this, DashboardActivity::class.java))
+            finish()
+            return
+        }
+
         // إنشاء deviceId من ANDROID_ID
         val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
 

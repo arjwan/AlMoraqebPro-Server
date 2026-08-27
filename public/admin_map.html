@@ -131,6 +131,8 @@
             gap: 8px;
         }
         .area-item i { color: #38bdf8; }
+        .current-location { display:flex; flex-wrap:wrap; gap:8px; align-items:center; width:100%; }
+        .current-location input { flex:1; min-width:230px; padding:10px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:#fff; direction:ltr; text-align:left; }
         .loader {
             display: inline-block;
             width: 16px;
@@ -162,6 +164,11 @@
             </select>
         </div>
         <button class="btn" onclick="loadLocations()"><i class="fas fa-sync-alt"></i> تحديث المواقع</button>
+        <button class="btn btn-outline" id="getMapLocationBtn" onclick="getMapLocation()"><i class="fas fa-location-crosshairs"></i> جلب موقعي</button>
+        <div class="current-location" id="currentLocationBox" hidden>
+            <input id="currentLocationText" readonly aria-label="إحداثيات موقعي الحالي">
+            <button class="btn btn-outline" onclick="copyCurrentLocation()"><i class="fas fa-copy"></i> نسخ الموقع</button>
+        </div>
     </div>
 
     <div class="selected-list" id="selectedList"></div>
@@ -179,6 +186,47 @@ const API = location.origin;
 let map = null;
 let selectedEmployees = []; // قائمة معرفات الموظفين المختارين
 let employees = []; // كل الموظفين
+let currentUserMarker = null;
+
+function getMapLocation(){
+    const button=document.getElementById('getMapLocationBtn');
+    if(!navigator.geolocation){
+        alert('تحديد الموقع غير مدعوم في هذا المتصفح');
+        return;
+    }
+    button.disabled=true;
+    button.innerHTML='<span class="loader"></span> جارٍ جلب الموقع';
+    navigator.geolocation.getCurrentPosition(position=>{
+        const lat=Number(position.coords.latitude);
+        const lon=Number(position.coords.longitude);
+        const value=`${lat.toFixed(7)}, ${lon.toFixed(7)}`;
+        document.getElementById('currentLocationText').value=value;
+        document.getElementById('currentLocationBox').hidden=false;
+        if(currentUserMarker) currentUserMarker.remove();
+        currentUserMarker=L.marker([lat,lon]).addTo(map).bindPopup('موقعي الحالي').openPopup();
+        map.setView([lat,lon],16);
+        button.disabled=false;
+        button.innerHTML='<i class="fas fa-location-crosshairs"></i> تحديث موقعي';
+    },error=>{
+        button.disabled=false;
+        button.innerHTML='<i class="fas fa-location-crosshairs"></i> جلب موقعي';
+        alert(error.code===1?'تم رفض إذن الموقع':error.code===2?'تعذر تحديد الموقع الحالي':'انتهت مهلة تحديد الموقع');
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+
+async function copyCurrentLocation(){
+    const value=document.getElementById('currentLocationText').value;
+    if(!value) return;
+    try{
+        await navigator.clipboard.writeText(value);
+        alert('تم نسخ الإحداثيات');
+    }catch{
+        const field=document.getElementById('currentLocationText');
+        field.focus();
+        field.select();
+        alert('تعذر النسخ التلقائي؛ الإحداثيات محددة ويمكن نسخها يدويًا');
+    }
+}
 
 function getToken() {
     return sessionStorage.getItem('almoraqeb_admin_token') || '';

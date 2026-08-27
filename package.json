@@ -2,11 +2,13 @@
   "name": "almoraqebpro-server",
   "version": "1.0.0",
   "description": "AlMoraqebPro Server Backend",
-  "main": "server.js",
+  "main": "desktop/main.js",
   "scripts": {
     "start": "node -r ./server-preload.js -r ./admin-pages-preload.js server.js",
     "build": "npm install",
-    "test": "node test/smoke.js"
+    "test": "node test/smoke.js",
+    "desktop": "electron .",
+    "desktop:build": "electron-builder --publish never"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -20,6 +22,17 @@
     "node": "18.x"
   },
   "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12",
     "mongodb-memory-server": "^11.2.0"
+  },
+  "build": {
+    "appId": "com.almoraqebpro.desktop",
+    "productName": "AlMoraqeb Pro",
+    "asar": false,
+    "files": ["desktop/**", "public/**", "routes/**", "server.js", "server-preload.js", "admin-pages-preload.js", "package.json", "node_modules/**"],
+    "linux": { "target": ["AppImage", "deb"], "category": "Office" },
+    "win": { "target": ["nsis"] },
+    "mac": { "target": ["dmg"], "category": "public.app-category.business" }
   }
 }
