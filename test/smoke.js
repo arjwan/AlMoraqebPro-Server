@@ -315,6 +315,75 @@ async function waitForServer(url, retries, delay) {
             check('salary resets only after confirmed payment', Number(afterPaymentSalary.netSalary) === 0 &&
                 Number(afterPaymentSalary.carriedBalance) === 0 && !afterPaymentSalary.pendingPayoutBatchId);
 
+            const paidLeave = await (await fetch(BASE + '/api/admin/employees/' + approvedEmployee._id + '/leave', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ fromDate: '2026-08-26', toDate: '2026-08-26', leavePaymentType: 'paid', reason: 'إجازة اختبار براتب' })
+            })).json();
+            check('paid leave approved from employee management', paidLeave.success === true && paidLeave.request.leavePaymentType === 'paid');
+
+            const unpaidLeave = await (await fetch(BASE + '/api/admin/employees/' + approvedEmployee._id + '/leave', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ fromDate: '2026-08-27', toDate: '2026-08-27', leavePaymentType: 'unpaid', reason: 'إجازة اختبار بدون راتب' })
+            })).json();
+            check('unpaid leave approved from employee management', unpaidLeave.success === true && unpaidLeave.request.leavePaymentType === 'unpaid');
+
+            const delegation = await (await fetch(BASE + '/api/admin/employees/' + approvedEmployee._id + '/delegation', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ active: true, from: '2026-08-28T00:00:00.000Z', to: '2026-08-28T23:59:59.999Z',
+                    province: 'بغداد', locationName: 'موقع الإيفاد', allowProvinceWide: true, reason: 'إيفاد اختبار' })
+            })).json();
+            check('delegation approved from employee management', delegation.success === true && delegation.delegation.active === true);
+
+            const replacement = await (await fetch(BASE + '/api/admin/daily-workers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ workerName: 'موظف بديل', workDate: '2026-08-29', days: 1, dailyRate: 10,
+                    replacementForEmployeeId: approvedEmployee._id, deductionPolicy: 'employee', workplace: 'الفرع الثاني', notes: 'ملاحظة البديل' })
+            })).json();
+            if (!replacement.success) console.log('  replacement response:', replacement);
+            check('replacement linked to original employee', replacement.success === true && replacement.record.isReplacement === true && replacement.record.replacementForEmployeeId === approvedEmployee._id && Number(replacement.record.totalAmount) === 10);
+
+            const loan = await (await fetch(BASE + '/api/admin/loans', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ employeeId: approvedEmployee._id, employeeName: approvedEmployee.name,
+                    totalLoanAmount: 100, loanDate: '2026-08-20' })
+            })).json();
+            check('employee loan added automatically to payroll source', loan.success === true && Number(loan.loan.remainingAmount) === 100);
+
+            const deductionSettings = await (await fetch(BASE + '/api/admin/salaries/' + afterPaymentSalary._id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ loanDeduction: 20 })
+            })).json();
+            check('loan installment configured as payroll deduction', deductionSettings.success === true && Number(deductionSettings.salary.loanDeduction) === 20);
+
+            const eventPayroll = await (await fetch(BASE + '/api/admin/payroll/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ from: '2026-08-26', to: '2026-08-29' })
+            })).json();
+            check('leave delegation replacement and loan payroll calculated', eventPayroll.success === true && eventPayroll.calculatedCount === 1);
+
+            const eventSalaryList = await (await fetch(BASE + '/api/admin/salaries', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const eventSalary = eventSalaryList.salaries.find(row => row.employeeId === approvedEmployee._id);
+            if (!eventSalary || Number(eventSalary.paidLeaveDays) !== 1 || Number(eventSalary.attendanceDays) !== 3 || Number(eventSalary.replacementDeduction) !== 0) {
+                console.log('  event salary response:', eventSalary);
+            }
+            check('replacement metadata saved on original employee', eventSalary.replacementActive === true && eventSalary.replacementName === 'موظف بديل' && eventSalary.replacementFrom && eventSalary.replacementTo && eventSalary.replacementNote === 'ملاحظة البديل');
+            check('paid leave counts as payable salary day', Number(eventSalary.paidLeaveDays) === 1 && Number(eventSalary.attendanceDays) === 3);
+            check('unpaid leave does not count as payable salary day', Number(eventSalary.unpaidLeaveDays) === 1);
+            check('delegation counts automatically as payable salary day', Number(eventSalary.attendanceDays) === 3);
+            check('replacement period does not become absence', Number(eventSalary.replacementDays) === 1 && Number(eventSalary.absenceDays) === 0);
+            check('replacement has no salary deduction', Number(eventSalary.replacementDeduction) === 0 && Number(eventSalary.netSalary) >= Number(eventSalary.grossSalary) - Number(eventSalary.loanDeduction));
+            check('loan balance and installment remain separate from earnings', Number(eventSalary.loans) === 100 &&
+                Number(eventSalary.loanDeduction) === 20 && Number(eventSalary.grossSalary) === Number(eventSalary.basicSalary) / 31 * 3);
+
             const afterLink = await (await fetch(BASE + '/api/employees?companyId=' + encodeURIComponent(companyId), {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
             })).json();

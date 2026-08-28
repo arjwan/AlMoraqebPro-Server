@@ -334,7 +334,7 @@ function renderSalary(records){
     <tr>
     <th>#</th><th>الموظف</th><th>الفرع/الموقع</th><th>نوع الأجر</th>
     <th>الأساسي</th><th>المخصصات</th><th>الإضافي</th><th>المكافآت</th>
-    <th>السلف</th><th>استقطاع السلفة</th><th>استقطاع البديل</th>
+    <th>السلف</th><th>استقطاع السلفة</th><th>البديل</th><th>استقطاع البديل</th>
     <th>استقطاع الغياب</th><th>استقطاع الضمان</th><th>إجمالي الاستقطاع</th><th>الصافي</th>
     </tr>`;
 
@@ -350,6 +350,7 @@ function renderSalary(records){
     <td>${fmtMoney(x.bonuses)}</td>
     <td>${fmtMoney(x.loans)}</td>
     <td>${fmtMoney(x.loanDeduction)}</td>
+    <td>${x.replacementActive ? (x.replacementName || 'لديه بديل') + ' (' + fmtDate(x.replacementFrom) + ' - ' + fmtDate(x.replacementTo) + ')' : '—'}</td>
     <td>${fmtMoney(x.replacementDeduction)}</td>
     <td>${fmtMoney(x.absenceDeduction)}</td>
     <td>${fmtMoney(x.socialSecurityDeduction)}</td>

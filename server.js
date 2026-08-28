@@ -774,6 +774,14 @@ const employeeSchema = new mongoose.Schema({
         }
     },
 
+    replacement: {
+        active: { type: Boolean, default: false },
+        name: { type: String, default: '' },
+        from: Date,
+        to: Date,
+        note: { type: String, default: '' }
+    },
+
     createdAt: {
         type: Date,
         default: Date.now
@@ -1222,6 +1230,12 @@ const salaryRecordSchema = new mongoose.Schema({
     absenceDays: { type: Number, default: 0 },
 
     replacementDays: { type: Number, default: 0 },
+
+    replacementActive: { type: Boolean, default: false },
+    replacementName: { type: String, default: '' },
+    replacementFrom: Date,
+    replacementTo: Date,
+    replacementNote: { type: String, default: '' },
 
     totalDeductions: { type: Number, default: 0 },
     grossSalary: { type: Number, default: 0 },
@@ -1761,7 +1775,7 @@ const dailyWorkerRecordSchema = new mongoose.Schema({
 
 });
 
-dailyWorkerRecordSchema.pre('save', function(next) {
+dailyWorkerRecordSchema.pre('save', function() {
 
     const days =
         Number(this.days) > 0
@@ -1775,8 +1789,6 @@ dailyWorkerRecordSchema.pre('save', function(next) {
 
     this.totalAmount =
         days * rate;
-
-    next();
 
 });
 
@@ -8833,20 +8845,20 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                 ).forEach(day => result.add(day)));
             return result;
         };
-        const replacementFor = new Map();
-        const replacementEarned = new Map();
+        const replacementDaysByEmployee = new Map();
         replacements.forEach(item => {
             const start = new Date(item.workDate);
             const end = new Date(start);
             end.setDate(end.getDate() + Math.max(1, Number(item.days || 1)) - 1);
             if (end < from || start > to) return;
-            const overlapDays = payrollDateKeys(
-                new Date(Math.max(from.getTime(), start.getTime())),
-                new Date(Math.min(to.getTime(), end.getTime()))
-            ).length;
-            const amount = overlapDays * Number(item.dailyRate || 0);
-            if (item.workerEmployeeId) replacementEarned.set(String(item.workerEmployeeId), Number(replacementEarned.get(String(item.workerEmployeeId)) || 0) + amount);
-            if (item.replacementForEmployeeId && item.deductionPolicy === 'employee') replacementFor.set(String(item.replacementForEmployeeId), Number(replacementFor.get(String(item.replacementForEmployeeId)) || 0) + amount);
+            if (item.replacementForEmployeeId) {
+                const employeeId = String(item.replacementForEmployeeId);
+                if (!replacementDaysByEmployee.has(employeeId)) replacementDaysByEmployee.set(employeeId, new Set());
+                payrollDateKeys(
+                    new Date(Math.max(from.getTime(), start.getTime())),
+                    new Date(Math.min(to.getTime(), end.getTime()))
+                ).forEach(day => replacementDaysByEmployee.get(employeeId).add(day));
+            }
         });
         const loansByEmployee = new Map();
         loanRecords.forEach(loan => {
@@ -8872,6 +8884,7 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const attendanceDays = validAttendanceDays(id);
             const paidLeaveDays = leaveDays(id, 'paid');
             const unpaidLeaveDays = leaveDays(id, 'unpaid');
+            const replacementDays = replacementDaysByEmployee.get(id) || new Set();
             const delegationDays = new Set();
             const delegation = employee.delegation || {};
             if (delegation.active && delegation.from && delegation.to) {
@@ -8880,7 +8893,7 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                     new Date(Math.min(to.getTime(), new Date(delegation.to).getTime()))
                 ).forEach(day => delegationDays.add(day));
             }
-            const payableDays = new Set([...attendanceDays, ...paidLeaveDays, ...delegationDays]);
+            const payableDays = new Set([...attendanceDays, ...paidLeaveDays, ...delegationDays, ...replacementDays]);
             unpaidLeaveDays.forEach(day => payableDays.delete(day));
             const wageType = ['daily', 'weekly', 'monthly'].includes(employee.wageType) ? employee.wageType : 'monthly';
             const divisor = wageType === 'daily' ? 1 : wageType === 'weekly' ? 7 : new Date(from.getFullYear(), from.getMonth() + 1, 0).getDate();
@@ -8891,8 +8904,8 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const carriedBalance = salary.calculationKey === calculationKey
                 ? Number(salary.carriedBalance || 0)
                 : Number(salary.netSalary || 0);
-            const replacementAddition = Number(replacementEarned.get(id) || 0);
-            const replacementDeduction = Number(replacementFor.get(id) || 0);
+            const replacementAddition = 0;
+            const replacementDeduction = 0;
             const outstandingLoans = Number(loansByEmployee.get(id) || 0);
             const automaticInstallment = Math.min(outstandingLoans, (employee.loans || []).reduce((sum, loan) => sum + Math.min(Number(loan.monthlyInstallment || 0), Number(loan.remainingAmount || 0)), 0));
             const loanDeduction = automaticInstallment || Math.min(outstandingLoans, Number(salary.loanDeduction || 0));
@@ -8903,7 +8916,12 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                 shiftName: shift.name || '', wageType, basicSalary, dailyRate, weeklyRate: wageType === 'weekly' ? basicSalary : 0,
                 payrollFrom: from, payrollTo: to, attendanceDays: payableDays.size, attendanceCount: attendanceDays.size,
                 paidLeaveDays: paidLeaveDays.size, unpaidLeaveDays: unpaidLeaveDays.size,
-                absenceDays: Math.max(0, periodKeys.length - payableDays.size - unpaidLeaveDays.size), replacementDays: replacementAddition > 0 ? Math.round(replacementAddition / Math.max(dailyRate, 1)) : 0,
+                absenceDays: Math.max(0, periodKeys.length - payableDays.size - unpaidLeaveDays.size), replacementDays: replacementDays.size,
+                replacementActive: Boolean(employee.replacement && employee.replacement.active),
+                replacementName: employee.replacement && employee.replacement.name || '',
+                replacementFrom: employee.replacement && employee.replacement.from || null,
+                replacementTo: employee.replacement && employee.replacement.to || null,
+                replacementNote: employee.replacement && employee.replacement.note || '',
                 loans: outstandingLoans, loanDeduction, replacementDeduction, totalDeductions,
                 grossSalary: earnedFromDays + replacementAddition, carriedBalance, currentPeriodEarnings,
                 netSalary: carriedBalance + currentPeriodEarnings, calculatedAt: new Date(), calculationKey,
@@ -9935,6 +9953,21 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
                     replacementForEmployeeId || '',
                 replacementForEmployeeName
             }).save();
+
+        if (replacementForEmployeeId) {
+            await Employee.updateOne(
+                { _id: replacementForEmployeeId, companyId },
+                {
+                    $set: {
+                        'replacement.active': true,
+                        'replacement.name': workerName,
+                        'replacement.from': workDate,
+                        'replacement.to': new Date(workDate.getTime() + (days - 1) * 86400000),
+                        'replacement.note': notes
+                    }
+                }
+            );
+        }
 
         return res.status(201).json({
             success: true,
