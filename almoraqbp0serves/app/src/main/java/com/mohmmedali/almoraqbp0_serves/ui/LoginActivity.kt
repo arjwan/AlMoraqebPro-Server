@@ -37,6 +37,28 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val selectedLanguageButton = when (language) {
+            "en" -> R.id.rbLoginEnglish
+            "ku" -> R.id.rbLoginKurdish
+            "fa" -> R.id.rbLoginPersian
+            else -> R.id.rbLoginArabic
+        }
+        binding.rgLoginLanguage.check(selectedLanguageButton)
+        binding.rgLoginLanguage.setOnCheckedChangeListener { _, checkedId ->
+            val selectedLanguage = when (checkedId) {
+                R.id.rbLoginEnglish -> "en"
+                R.id.rbLoginKurdish -> "ku"
+                R.id.rbLoginPersian -> "fa"
+                else -> "ar"
+            }
+            if (selectedLanguage != prefs.getString("app_language", "ar")) {
+                prefs.edit().putString("app_language", selectedLanguage).apply()
+                AppCompatDelegate.setApplicationLocales(
+                    LocaleListCompat.forLanguageTags(selectedLanguage)
+                )
+            }
+        }
+
         // إذا سبق تسجيل الدخول بنجاح، افتح التطبيق من النسخة المحلية حتى دون إنترنت.
         // لا نخزن كلمة المرور؛ نعتمد فقط الجلسة المحلية التي أنشأها تسجيل دخول ناجح سابقًا.
         if (

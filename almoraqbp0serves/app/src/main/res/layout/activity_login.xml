@@ -26,6 +26,69 @@
             android:textSize="13sp"
             android:textStyle="bold" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/card_light"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/language"
+                android:textColor="#0F172A"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <RadioGroup
+                android:id="@+id/rgLoginLanguage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/rbLoginArabic"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/accent_color"
+                    android:text="@string/arabic"
+                    android:textColor="#0F172A"
+                    android:textSize="12sp" />
+
+                <RadioButton
+                    android:id="@+id/rbLoginEnglish"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/accent_color"
+                    android:text="@string/english"
+                    android:textColor="#0F172A"
+                    android:textSize="12sp" />
+
+                <RadioButton
+                    android:id="@+id/rbLoginKurdish"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/accent_color"
+                    android:text="@string/kurdish"
+                    android:textColor="#0F172A"
+                    android:textSize="12sp" />
+
+                <RadioButton
+                    android:id="@+id/rbLoginPersian"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/accent_color"
+                    android:text="@string/persian"
+                    android:textColor="#0F172A"
+                    android:textSize="12sp" />
+            </RadioGroup>
+        </LinearLayout>
+
         <!-- بطاقة الهوية الزرقاء -->
         <LinearLayout
             android:layout_width="match_parent"
