@@ -9334,10 +9334,6 @@ app.post(
             const filter = {
                 companyId:
                     req.session.companyId,
-
-                payoutMethod:
-                    payoutType,
-
                 pendingPayoutBatchId: {
                     $in: ['', null]
                 }
@@ -9346,16 +9342,14 @@ app.post(
             const salaryRecordId = String(req.body.salaryRecordId || '').trim();
             if (salaryRecordId) {
                 filter._id = salaryRecordId;
-            }
-
-            if (payoutType !== 'cash') {
-                filter.payoutSelected =
-                    true;
-            }
-
-            if (branch) {
-                filter.workplace =
-                    branch;
+            } else {
+                filter.payoutMethod = payoutType;
+                if (payoutType !== 'cash') {
+                    filter.payoutSelected = true;
+                }
+                if (branch) {
+                    filter.workplace = branch;
+                }
             }
 
             const salaries =
