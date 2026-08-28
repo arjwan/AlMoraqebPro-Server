@@ -5478,7 +5478,8 @@ app.post(
                 otherDeductions: 0,
                 bonuses: 0,
                 totalDeductions: 0,
-                netSalary: employee.salary || 0
+                grossSalary: 0,
+                netSalary: 0
             }).save();
 
             await Company.updateOne(
@@ -5655,7 +5656,7 @@ app.put(
             // تحديث سجل الراتب إذا وُجد
             await SalaryRecord.updateOne(
                 { companyId: employee.companyId, employeeId: String(employee._id) },
-                { $set: { employeeName: employee.name, specialty: employee.specialty || '', workplace: employee.workplace || '', basicSalary: employee.salary || 0, netSalary: employee.salary || 0 } }
+                { $set: { employeeName: employee.name, specialty: employee.specialty || '', workplace: employee.workplace || '', basicSalary: employee.salary || 0 } }
             );
 
             return res.json({
@@ -8601,8 +8602,8 @@ app.get('/api/admin/salaries', requireAdmin, async (req, res) => {
                     workplace: employee.workplace || employee.branch || '',
                     wageType: employee.wageType || 'monthly',
                     basicSalary: Number(employee.salary || 0),
-                    grossSalary: Number(employee.salary || 0),
-                    netSalary: Number(employee.salary || 0)
+                    grossSalary: 0,
+                    netSalary: 0
                 })),
                 { ordered: false }
             );
@@ -8619,7 +8620,6 @@ app.post('/api/admin/salaries', requireAdmin, async (req, res) => {
         const existing = await SalaryRecord.findOne({ companyId: req.session.companyId, employeeId });
         if (existing) return res.status(409).json({ success: false, message: 'سجل راتب موجود مسبقاً' });
         const totalDeductions = (loanDeduction || 0) + (securityDeduction || 0) + (otherDeductions || 0);
-        const netSalary = (basicSalary || 0) + (allowances || 0) + (loans || 0) + (bonuses || 0) - totalDeductions;
         const salary = await new SalaryRecord({
             companyId: req.session.companyId,
             employeeId,
@@ -8636,7 +8636,8 @@ app.post('/api/admin/salaries', requireAdmin, async (req, res) => {
             otherDeductions: otherDeductions || 0,
             bonuses: bonuses || 0,
             totalDeductions,
-            netSalary
+            grossSalary: 0,
+            netSalary: 0
         }).save();
         res.status(201).json({ success: true, salary });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -8656,7 +8657,15 @@ app.put('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
         salary.otherDeductions = otherDeductions ?? salary.otherDeductions;
         salary.bonuses = bonuses ?? salary.bonuses;
         salary.totalDeductions = salary.loanDeduction + salary.securityDeduction + salary.otherDeductions;
-        salary.netSalary = salary.basicSalary + salary.allowances + salary.loans + salary.bonuses - salary.totalDeductions;
+        salary.currentPeriodEarnings = Math.max(
+            0,
+            Number(salary.grossSalary || 0) +
+            Number(salary.allowances || 0) +
+            Number(salary.bonuses || 0) +
+            Number(salary.overtimeAmount || 0) -
+            Number(salary.totalDeductions || 0)
+        );
+        salary.netSalary = Number(salary.carriedBalance || 0) + salary.currentPeriodEarnings;
         await salary.save();
         res.json({ success: true, salary });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }

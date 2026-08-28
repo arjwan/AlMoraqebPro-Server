@@ -1290,8 +1290,8 @@ function liveSalary(id) {
         payoutReference: document.getElementById('preference-' + id)?.value || '', payoutLast4: document.getElementById('plast4-' + id)?.value || ''
     };
     result.totalDeductions = result.loanDeduction + result.securityDeduction + result.otherDeductions;
-    result.additions = result.allowances + result.loans + result.bonuses;
-    result.netSalary = result.basicSalary + result.additions - result.totalDeductions;
+    result.additions = result.allowances + result.bonuses + Number(result.overtimeAmount || 0);
+    result.netSalary = Number(result.carriedBalance || 0) + Math.max(0, Number(result.grossSalary || 0) + result.additions - result.totalDeductions);
     return result;
 }
 
