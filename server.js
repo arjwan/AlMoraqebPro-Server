@@ -7729,6 +7729,96 @@ app.delete('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
 =========================================================
 */
 
+app.post(
+    '/api/admin/employees/:employeeId/leave',
+    requireAdmin,
+    async (req, res) => {
+        try {
+            const companyId = req.session.companyId;
+            const employee = await Employee.findOne({
+                _id: req.params.employeeId,
+                companyId
+            }).lean();
+
+            if (!employee) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'الموظف غير موجود'
+                });
+            }
+
+            const fromDate = new Date(req.body.fromDate);
+            const toDate = new Date(req.body.toDate);
+            if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'حدد تاريخ بداية ونهاية الإجازة'
+                });
+            }
+            fromDate.setHours(0, 0, 0, 0);
+            toDate.setHours(23, 59, 59, 999);
+            if (toDate < fromDate) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'نهاية الإجازة يجب أن تكون بعد بدايتها'
+                });
+            }
+
+            const leavePaymentType =
+                req.body.leavePaymentType === 'unpaid' ? 'unpaid' : 'paid';
+            const existingLeaves = await ServiceRequest.find({
+                companyId,
+                employeeId: String(employee._id),
+                type: 'leave',
+                status: { $in: ['pending', 'approved'] }
+            }).lean();
+            const overlaps = existingLeaves.some(item => {
+                const start = new Date(item.fromDate || item.requestedDate);
+                const end = new Date(item.toDate || item.fromDate || item.requestedDate);
+                if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
+                return fromDate <= end && toDate >= start;
+            });
+            if (overlaps) {
+                return res.status(409).json({
+                    success: false,
+                    code: 'OVERLAPPING_LEAVE',
+                    message: 'توجد إجازة أخرى للموظف ضمن هذه الفترة'
+                });
+            }
+
+            const request = await new ServiceRequest({
+                companyId,
+                employeeId: String(employee._id),
+                employeeName: employee.name,
+                type: 'leave',
+                reason: String(req.body.reason || '').trim(),
+                requestedDate: fromDate,
+                fromDate,
+                toDate,
+                leavePaymentType,
+                status: 'approved',
+                processedAt: new Date(),
+                processedBy: req.session.username || 'admin'
+            }).save();
+
+            return res.status(201).json({
+                success: true,
+                message: leavePaymentType === 'paid'
+                    ? 'تم اعتماد الإجازة براتب'
+                    : 'تم اعتماد الإجازة بدون راتب',
+                request
+            });
+        } catch (err) {
+            return res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+    }
+);
+
 app.put(
     '/api/admin/employees/:employeeId/delegation',
     requireAdmin,
@@ -9467,6 +9557,17 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
         const dailyRate =
             Number(req.body.dailyRate ?? req.body.dailyWage ?? 0);
 
+        const days =
+            Number(req.body.days || 1);
+
+        const deductionPolicy =
+            req.body.deductionPolicy === 'employee'
+                ? 'employee'
+                : 'company';
+
+        const notes =
+            String(req.body.notes || '').trim();
+
         const workDate =
             req.body.workDate
                 ? new Date(req.body.workDate)
@@ -9486,6 +9587,13 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'الأجر اليومي يجب أن يكون أكبر من صفر'
+            });
+        }
+
+        if (!Number.isInteger(days) || days <= 0 || days > 366) {
+            return res.status(400).json({
+                success: false,
+                message: 'عدد أيام البديل غير صحيح'
             });
         }
 
@@ -9554,7 +9662,10 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
                 workplace,
                 branch,
                 dailyRate,
+                days,
                 workDate,
+                deductionPolicy,
+                notes,
                 isReplacement:
                     Boolean(replacementForEmployeeId),
 
