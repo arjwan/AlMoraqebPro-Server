@@ -105,7 +105,7 @@
         </div>
         <div id="replacementOperationFields" class="operation-section">
             <div class="form-group"><label>اسم البديل الخارجي</label><input id="operationReplacementName" required></div>
-            <div class="form-group"><label>الأجر اليومي للبديل</label><input type="number" min="1" id="operationReplacementRate"></div>
+            <div class="form-group"><label>ملاحظات البديل</label><textarea id="operationReplacementNotes" rows="3"></textarea></div>
         </div>
         <div class="form-group"><label>السبب / ملاحظات</label><input id="operationReason"></div>
         <div class="modal-actions"><button type="button" class="btn btn-red" onclick="closeOperationModal()">إلغاء</button><button type="button" class="btn btn-green" id="saveOperationButton" onclick="saveEmployeeOperation()">اعتماد وترحيل</button></div>
@@ -535,7 +535,7 @@
         document.getElementById('operationReason').value = '';
         document.getElementById('operationType').value = 'leave';
         document.getElementById('operationReplacementName').value = '';
-        document.getElementById('operationReplacementRate').value = '';
+        document.getElementById('operationReplacementNotes').value = '';
         toggleOperationFields();
         document.getElementById('employeeOperationModal').classList.add('show');
     }
@@ -576,11 +576,11 @@
                 });
             } else {
                 const replacementName = document.getElementById('operationReplacementName').value.trim();
-                const dailyRate = Number(document.getElementById('operationReplacementRate').value || 0);
-                if (!replacementName || dailyRate <= 0) throw new Error('أدخل اسم البديل الخارجي وأجره اليومي');
+                const replacementNotes = document.getElementById('operationReplacementNotes').value.trim();
+                if (!replacementName || !replacementNotes) throw new Error('أدخل اسم البديل الخارجي وملاحظاته');
                 response = await fetch(API + '/api/admin/daily-workers', {
                     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                    body: JSON.stringify({ workerName: replacementName, fromDate: from, toDate: to, dailyRate, replacementForEmployeeId: employeeId, workplace: employee.workplace || employee.location || '', branch: employee.branch || '', notes: reason })
+                    body: JSON.stringify({ workerName: replacementName, fromDate: from, toDate: to, replacementForEmployeeId: employeeId, workplace: employee.workplace || employee.location || '', branch: employee.branch || '', notes: replacementNotes })
                 });
             }
             const data = await response.json().catch(() => ({}));

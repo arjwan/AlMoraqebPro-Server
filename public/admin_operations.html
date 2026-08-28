@@ -753,7 +753,7 @@ function renderSalaries() {
                     <div class="salary-field"><label>آخر 4 أرقام</label><input id="plast4-${id}" inputmode="numeric" maxlength="4" value="${escapeHtml(salary.payoutLast4)}"></div>
                 </div>
             </div>
-            <div class="salary-card-actions"><button class="btn-sm btn-green" onclick="saveSalary('${id}')">حفظ الراتب</button><button class="btn-sm btn-sm-blue" onclick="savePayoutSettings('${id}')">حفظ الصرف</button>${salary.payoutStatus === 'unpaid' ? `<button class="btn-sm btn-green" onclick="confirmSalaryPayment('${id}')">تأكيد الدفع</button>` : ''}<button class="btn-sm btn-sm-blue" onclick="printSingleSalaryCard('${id}')">طباعة البطاقة</button></div>`;
+            <div class="salary-card-actions"><button class="btn-sm btn-green" onclick="saveSalary('${id}')">حفظ الراتب</button><button class="btn-sm btn-sm-blue" onclick="savePayoutSettings('${id}')">حفظ الصرف</button>${canConfirmSalaryPayment(salary) ? `<button class="btn-sm btn-green" onclick="confirmSalaryPayment('${id}')">تأكيد الدفع</button>` : ''}<button class="btn-sm btn-sm-blue" onclick="printSingleSalaryCard('${id}')">طباعة البطاقة</button></div>`;
         container.appendChild(card);
         togglePayoutFields(id);
     });
@@ -767,9 +767,13 @@ function salaryTextField(label, prefix, id, value) {
     return `<div class="salary-field"><label>${label}</label><input id="${prefix}-${id}" value="${escapeHtml(value)}"></div>`;
 }
 
+function canConfirmSalaryPayment(salary) {
+    return !salary.payoutStatus || ['unpaid', 'ready'].includes(salary.payoutStatus);
+}
+
 async function confirmSalaryPayment(id) {
     const salary = allSalaries.find(item => String(item._id || item.id || item._offlineKey) === String(id));
-    if (!salary || salary.payoutStatus !== 'unpaid' || !navigator.onLine) {
+    if (!salary || !canConfirmSalaryPayment(salary) || !navigator.onLine) {
         if (!navigator.onLine) toast('⚠ تأكيد الدفع يحتاج اتصالًا بالسيرفر', 'error');
         return;
     }

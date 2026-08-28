@@ -9883,10 +9883,7 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
             });
         }
 
-        if (
-            !Number.isFinite(dailyRate) ||
-            dailyRate <= 0
-        ) {
+        if (!Number.isFinite(dailyRate) || (!replacementForEmployeeId && dailyRate <= 0)) {
             return res.status(400).json({
                 success: false,
                 message: 'الأجر اليومي يجب أن يكون أكبر من صفر'
