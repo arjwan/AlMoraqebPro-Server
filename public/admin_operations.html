@@ -310,6 +310,7 @@
                     <label for="payrollTo">إلى تاريخ</label>
                     <input type="date" id="payrollTo">
                 </div>
+                <button class="btn btn-green" id="calculatePayrollButton" onclick="calculatePayroll()">🧮 احتساب الاستحقاق تلقائيًا</button>
                 <button class="btn" onclick="openPayrollPreview('card')">كشف تحويل البطاقات</button>
                 <button class="btn" onclick="openPayrollPreview('bank')">كشف التحويل المصرفي</button>
                 <button class="btn btn-outline" onclick="openPayrollPreview('cash')">كشف الصرف النقدي</button>
@@ -1119,6 +1120,28 @@ function payrollRequest(payoutType) {
     };
 }
 
+async function calculatePayroll() {
+    const from = document.getElementById('payrollFrom').value;
+    const to = document.getElementById('payrollTo').value;
+    if (!from || !to || to < from) return toast('❌ حدد فترة رواتب صحيحة', 'error');
+    if (!navigator.onLine) return toast('⚠ احتساب الرواتب يحتاج اتصالًا بالسيرفر', 'error');
+    const button = document.getElementById('calculatePayrollButton');
+    button.disabled = true;
+    button.textContent = 'جارٍ الاحتساب...';
+    try {
+        const data = await api('/api/admin/payroll/calculate', { method: 'POST', body: JSON.stringify({ from, to }) });
+        const excluded = (data.invalid || []).map(item => `${item.employeeName}: ${(item.reasons || []).join('، ')}`).join('\n');
+        toast(`✅ احتُسب ${data.calculatedCount || 0} موظف${data.invalidCount ? ` — واستُبعد ${data.invalidCount} لنقص البيانات` : ''}`, data.invalidCount ? 'info' : 'success');
+        if (excluded) window.setTimeout(() => alert('الموظفون غير المحتسبين:\n' + excluded), 100);
+        await loadSalaries();
+    } catch (error) {
+        toast('❌ ' + error.message, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = '🧮 احتساب الاستحقاق تلقائيًا';
+    }
+}
+
 async function openPayrollPreview(payoutType) {
     if (!navigator.onLine) {
         toast('⚠ معاينة واعتماد الدفعات يحتاجان اتصالًا بالسيرفر', 'error');
@@ -1894,6 +1917,11 @@ async function deleteLoan(id) {
 // تهيئة
 (async function init() {
     try {
+        const now = new Date();
+        const today = now.toISOString().slice(0, 10);
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        document.getElementById('payrollFrom').value = monthStart.toISOString().slice(0, 10);
+        document.getElementById('payrollTo').value = today;
         await loadPayrollLocations();
         await loadSalaries();
         await loadLoans();

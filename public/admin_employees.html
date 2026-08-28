@@ -584,7 +584,7 @@
                 const days = Math.floor((new Date(to + 'T00:00:00') - new Date(from + 'T00:00:00')) / 86400000) + 1;
                 response = await fetch(API + '/api/admin/daily-workers', {
                     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                    body: JSON.stringify({ workerName: replacement.name, specialty: replacement.specialty || '', workplace: employee.workplace || employee.location || '', branch: employee.branch || '', workDate: from, days, dailyRate, replacementForEmployeeId: employeeId, deductionPolicy: document.getElementById('operationDeductionPolicy').value, notes: reason })
+                    body: JSON.stringify({ workerName: replacement.name, workerEmployeeId: String(replacement._id || replacement.id), specialty: replacement.specialty || '', workplace: employee.workplace || employee.location || '', branch: employee.branch || '', workDate: from, days, dailyRate, replacementForEmployeeId: employeeId, deductionPolicy: document.getElementById('operationDeductionPolicy').value, notes: reason })
                 });
             }
             const data = await response.json().catch(() => ({}));

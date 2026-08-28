@@ -129,6 +129,7 @@ class DashboardActivity : AppCompatActivity() {
         binding.btnSendLocation.setOnClickListener { sendCurrentLocation() }
 
         checkServerStatus()
+        refreshAttendanceRequirement()
         requestPermissionsIfNeeded()
 
         // حركة ظهور خفيفة للعناصر (الصورة المرجعية 2)
@@ -146,6 +147,7 @@ class DashboardActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         checkServerStatus()
+        refreshAttendanceRequirement()
         updateGpsTile()
         refreshSyncStatus()
     }
@@ -165,6 +167,34 @@ class DashboardActivity : AppCompatActivity() {
                     binding.tvServerStatus.text = getString(R.string.dash_server_local)
                     binding.tvServerStatus.setTextColor(0xFFF59E0B.toInt())
                 }
+            }
+        }
+    }
+
+    private fun refreshAttendanceRequirement() {
+        val prefs = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
+        val employeeId = prefs.getString("employeeId", "") ?: ""
+        val deviceId = prefs.getString("deviceId", "") ?: ""
+        if (employeeId.isBlank() || deviceId.isBlank()) return
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.apiService.getAttendanceRequirement(employeeId, deviceId)
+                val requirement = response.body()
+                if (response.isSuccessful && requirement?.success == true) {
+                    withContext(Dispatchers.Main) {
+                        val required = requirement.requiresAttendance != false
+                        binding.btnCheckIn.isEnabled = required
+                        binding.btnCheckOut.isEnabled = required
+                        binding.btnCheckIn.alpha = if (required) 1f else 0.45f
+                        binding.btnCheckOut.alpha = if (required) 1f else 0.45f
+                        if (!required && !requirement.message.isNullOrBlank()) {
+                            binding.tvServerStatus.text = requirement.message
+                            binding.tvServerStatus.setTextColor(0xFF0284C7.toInt())
+                        }
+                    }
+                }
+            } catch (_: Exception) {
+                // عند انقطاع الإنترنت تبقى آلية الحضور المحلية الحالية متاحة للمزامنة لاحقًا.
             }
         }
     }

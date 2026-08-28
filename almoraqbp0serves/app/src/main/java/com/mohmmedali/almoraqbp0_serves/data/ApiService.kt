@@ -16,6 +16,12 @@ interface ApiService {
         @Query("deviceId") deviceId: String
     ): Response<ChallengeResponse>
 
+    @GET("api/employee/attendance-requirement")
+    suspend fun getAttendanceRequirement(
+        @Query("employeeId") employeeId: String,
+        @Query("deviceId") deviceId: String
+    ): Response<AttendanceRequirementResponse>
+
     // إرسال تسجيل الحضور/الانصراف
     @POST("api/attendance")
     suspend fun sendAttendance(@Body body: AttendanceRequest): Response<AttendanceResponse>

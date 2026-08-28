@@ -37,6 +37,13 @@ data class ChallengeResponse(
     val message: String?
 )
 
+data class AttendanceRequirementResponse(
+    val success: Boolean,
+    val requiresAttendance: Boolean?,
+    val code: String?,
+    val message: String?
+)
+
 data class AttendanceRequest(
     val employeeId: String,
     val deviceId: String,

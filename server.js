@@ -1215,6 +1215,8 @@ const salaryRecordSchema = new mongoose.Schema({
     totalDeductions: { type: Number, default: 0 },
     grossSalary: { type: Number, default: 0 },
     netSalary: { type: Number, default: 0 },
+    carriedBalance: { type: Number, default: 0 },
+    currentPeriodEarnings: { type: Number, default: 0 },
 
     attendanceDays: { type: Number, default: 0 },
     attendanceCount: { type: Number, default: 0 },
@@ -1667,6 +1669,12 @@ const dailyWorkerRecordSchema = new mongoose.Schema({
     workerName: {
         type: String,
         required: true
+    },
+
+    workerEmployeeId: {
+        type: String,
+        default: '',
+        index: true
     },
 
     specialty: {
@@ -8662,6 +8670,158 @@ app.delete('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+function payrollDayKey(value) {
+    return new Intl.DateTimeFormat('en-CA', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        timeZone: 'Asia/Baghdad'
+    }).format(new Date(value));
+}
+
+function payrollDateKeys(from, to) {
+    const keys = [];
+    const cursor = new Date(from);
+    cursor.setHours(12, 0, 0, 0);
+    const end = new Date(to);
+    end.setHours(12, 0, 0, 0);
+    while (cursor <= end && keys.length < 370) {
+        keys.push(payrollDayKey(cursor));
+        cursor.setDate(cursor.getDate() + 1);
+    }
+    return keys;
+}
+
+app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
+    try {
+        const companyId = req.session.companyId;
+        const from = new Date(req.body.from);
+        const to = new Date(req.body.to);
+        if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) {
+            return res.status(400).json({ success: false, message: 'فترة الرواتب غير صحيحة' });
+        }
+        from.setHours(0, 0, 0, 0);
+        to.setHours(23, 59, 59, 999);
+        const periodKeys = payrollDateKeys(from, to);
+        if (!periodKeys.length || periodKeys.length > 366) {
+            return res.status(400).json({ success: false, message: 'فترة الرواتب يجب ألا تتجاوز سنة' });
+        }
+        const calculationKey = `${periodKeys[0]}:${periodKeys[periodKeys.length - 1]}`;
+        const [employees, shifts, attendance, leaves, replacements, loanRecords, salaries] = await Promise.all([
+            Employee.find({ companyId, employmentStatus: { $ne: 'inactive' } }).lean(),
+            Shift.find({ companyId }).lean(),
+            Attendance.find({ companyId, timestamp: { $gte: from, $lte: to } }).lean(),
+            ServiceRequest.find({ companyId, type: 'leave', status: 'approved', fromDate: { $lte: to }, toDate: { $gte: from } }).lean(),
+            DailyWorkerRecord.find({ companyId, workDate: { $lte: to } }).lean(),
+            LoanRecord.find({ companyId }).lean(),
+            SalaryRecord.find({ companyId })
+        ]);
+        const salaryByEmployee = new Map(salaries.map(item => [String(item.employeeId), item]));
+        const attendanceByEmployee = new Map();
+        attendance.forEach(item => {
+            const id = String(item.employeeId);
+            const day = payrollDayKey(item.timestamp);
+            if (!attendanceByEmployee.has(id)) attendanceByEmployee.set(id, new Map());
+            if (!attendanceByEmployee.get(id).has(day)) attendanceByEmployee.get(id).set(day, new Set());
+            attendanceByEmployee.get(id).get(day).add(item.type === 'attendance' ? 'in' : 'out');
+        });
+        const validAttendanceDays = id => new Set(
+            [...(attendanceByEmployee.get(id) || new Map()).entries()]
+                .filter(([, types]) => types.has('in') && types.has('out'))
+                .map(([day]) => day)
+        );
+        const leaveDays = (id, paymentType) => {
+            const result = new Set();
+            leaves.filter(item => String(item.employeeId) === id && item.leavePaymentType === paymentType)
+                .forEach(item => payrollDateKeys(
+                    new Date(Math.max(from.getTime(), new Date(item.fromDate || item.requestedDate).getTime())),
+                    new Date(Math.min(to.getTime(), new Date(item.toDate || item.fromDate || item.requestedDate).getTime()))
+                ).forEach(day => result.add(day)));
+            return result;
+        };
+        const replacementFor = new Map();
+        const replacementEarned = new Map();
+        replacements.forEach(item => {
+            const start = new Date(item.workDate);
+            const end = new Date(start);
+            end.setDate(end.getDate() + Math.max(1, Number(item.days || 1)) - 1);
+            if (end < from || start > to) return;
+            const overlapDays = payrollDateKeys(
+                new Date(Math.max(from.getTime(), start.getTime())),
+                new Date(Math.min(to.getTime(), end.getTime()))
+            ).length;
+            const amount = overlapDays * Number(item.dailyRate || 0);
+            if (item.workerEmployeeId) replacementEarned.set(String(item.workerEmployeeId), Number(replacementEarned.get(String(item.workerEmployeeId)) || 0) + amount);
+            if (item.replacementForEmployeeId && item.deductionPolicy === 'employee') replacementFor.set(String(item.replacementForEmployeeId), Number(replacementFor.get(String(item.replacementForEmployeeId)) || 0) + amount);
+        });
+        const loansByEmployee = new Map();
+        loanRecords.forEach(loan => {
+            const paid = (loan.repayments || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+            const remaining = Math.max(0, Number(loan.totalLoanAmount || 0) - paid);
+            loansByEmployee.set(String(loan.employeeId), Number(loansByEmployee.get(String(loan.employeeId)) || 0) + remaining);
+        });
+        const invalid = [];
+        const calculated = [];
+        for (const employee of employees) {
+            const id = String(employee._id);
+            const basicSalary = Number(employee.salary || 0);
+            const workplace = String(employee.workplace || employee.branch || employee.location || '').trim();
+            const shift = shifts.find(item => (item.employeeIds || []).map(String).includes(id));
+            const reasons = [];
+            if (!(basicSalary > 0)) reasons.push('الراتب أو الأجر صفر');
+            if (!workplace) reasons.push('موقع العمل غير محدد');
+            if (!shift) reasons.push('الشفت غير محدد');
+            if (reasons.length) {
+                invalid.push({ employeeId: id, employeeName: employee.name, reasons });
+                continue;
+            }
+            const attendanceDays = validAttendanceDays(id);
+            const paidLeaveDays = leaveDays(id, 'paid');
+            const unpaidLeaveDays = leaveDays(id, 'unpaid');
+            const delegationDays = new Set();
+            const delegation = employee.delegation || {};
+            if (delegation.active && delegation.from && delegation.to) {
+                payrollDateKeys(
+                    new Date(Math.max(from.getTime(), new Date(delegation.from).getTime())),
+                    new Date(Math.min(to.getTime(), new Date(delegation.to).getTime()))
+                ).forEach(day => delegationDays.add(day));
+            }
+            const payableDays = new Set([...attendanceDays, ...paidLeaveDays, ...delegationDays]);
+            unpaidLeaveDays.forEach(day => payableDays.delete(day));
+            const wageType = ['daily', 'weekly', 'monthly'].includes(employee.wageType) ? employee.wageType : 'monthly';
+            const divisor = wageType === 'daily' ? 1 : wageType === 'weekly' ? 7 : new Date(from.getFullYear(), from.getMonth() + 1, 0).getDate();
+            const dailyRate = wageType === 'daily' ? basicSalary : basicSalary / divisor;
+            const earnedFromDays = dailyRate * payableDays.size;
+            let salary = salaryByEmployee.get(id);
+            if (!salary) salary = new SalaryRecord({ companyId, employeeId: id });
+            const carriedBalance = salary.calculationKey === calculationKey
+                ? Number(salary.carriedBalance || 0)
+                : Number(salary.netSalary || 0);
+            const replacementAddition = Number(replacementEarned.get(id) || 0);
+            const replacementDeduction = Number(replacementFor.get(id) || 0);
+            const outstandingLoans = Number(loansByEmployee.get(id) || 0);
+            const automaticInstallment = Math.min(outstandingLoans, (employee.loans || []).reduce((sum, loan) => sum + Math.min(Number(loan.monthlyInstallment || 0), Number(loan.remainingAmount || 0)), 0));
+            const loanDeduction = automaticInstallment || Math.min(outstandingLoans, Number(salary.loanDeduction || 0));
+            const totalDeductions = loanDeduction + replacementDeduction + Number(salary.securityDeduction || 0) + Number(salary.otherDeductions || 0);
+            const currentPeriodEarnings = Math.max(0, earnedFromDays + replacementAddition + Number(salary.allowances || 0) + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
+            salary.set({
+                employeeName: employee.name || '', employeeSerial: employee.employeeSerial || '', specialty: employee.specialty || '', workplace,
+                shiftName: shift.name || '', wageType, basicSalary, dailyRate, weeklyRate: wageType === 'weekly' ? basicSalary : 0,
+                payrollFrom: from, payrollTo: to, attendanceDays: payableDays.size, attendanceCount: attendanceDays.size,
+                paidLeaveDays: paidLeaveDays.size, unpaidLeaveDays: unpaidLeaveDays.size,
+                absenceDays: Math.max(0, periodKeys.length - payableDays.size - unpaidLeaveDays.size), replacementDays: replacementAddition > 0 ? Math.round(replacementAddition / Math.max(dailyRate, 1)) : 0,
+                loans: outstandingLoans, loanDeduction, replacementDeduction, totalDeductions,
+                grossSalary: earnedFromDays + replacementAddition, carriedBalance, currentPeriodEarnings,
+                netSalary: carriedBalance + currentPeriodEarnings, calculatedAt: new Date(), calculationKey,
+                payoutStatus: salary.pendingPayoutBatchId ? salary.payoutStatus : 'unpaid'
+            });
+            await salary.save();
+            calculated.push({ employeeId: id, employeeName: employee.name, payableDays: payableDays.size, netSalary: salary.netSalary, carriedBalance });
+        }
+        return res.json({ success: true, calculationKey, calculatedCount: calculated.length, invalidCount: invalid.length, calculated, invalid });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 /*
 =========================================================
   LOAN RECORDS API (جديد)
@@ -9369,6 +9529,8 @@ app.post(
                                 totalDeductions: 0,
                                 grossSalary: 0,
                                 netSalary: 0,
+                                carriedBalance: 0,
+                                currentPeriodEarnings: 0,
                                 attendanceDays: 0,
                                 attendanceCount: 0,
                                 calculatedAt: null,
@@ -9542,6 +9704,9 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
         const workerName =
             String(req.body.workerName || '').trim();
 
+        const workerEmployeeId =
+            String(req.body.workerEmployeeId || '').trim();
+
         const specialty =
             String(req.body.specialty || '').trim();
 
@@ -9658,6 +9823,7 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
             await new DailyWorkerRecord({
                 companyId,
                 workerName,
+                workerEmployeeId,
                 specialty,
                 workplace,
                 branch,
@@ -10515,6 +10681,78 @@ function isWithinShiftWindow(timestamp, start, end) {
         : minutes >= startMinutes || minutes <= endMinutes;
 }
 
+async function attendanceRequirementForEmployee(employee, at = new Date()) {
+    const dayStart = new Date(at);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(at);
+    dayEnd.setHours(23, 59, 59, 999);
+    const leave = await ServiceRequest.findOne({
+        companyId: employee.companyId,
+        employeeId: String(employee._id),
+        type: 'leave',
+        status: 'approved',
+        $or: [
+            { fromDate: { $lte: dayEnd }, toDate: { $gte: dayStart } },
+            { requestedDate: { $gte: dayStart, $lte: dayEnd } }
+        ]
+    }).lean();
+    if (leave) {
+        const paid = leave.leavePaymentType !== 'unpaid';
+        return {
+            requiresAttendance: false,
+            code: paid ? 'PAID_LEAVE' : 'UNPAID_LEAVE',
+            message: paid
+                ? 'الموظف في إجازة براتب اليوم ولا تُطلب منه البصمة'
+                : 'الموظف في إجازة بدون راتب اليوم ولا تُطلب منه البصمة',
+            leavePaymentType: leave.leavePaymentType || 'paid'
+        };
+    }
+    const candidates = await DailyWorkerRecord.find({
+        companyId: employee.companyId,
+        replacementForEmployeeId: String(employee._id),
+        workDate: { $lte: dayEnd }
+    }).sort({ workDate: -1 }).limit(100).lean();
+    const replacement = candidates.find(item => {
+        const start = new Date(item.workDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(start);
+        end.setDate(end.getDate() + Math.max(1, Number(item.days || 1)) - 1);
+        end.setHours(23, 59, 59, 999);
+        return at >= start && at <= end;
+    });
+    if (replacement) {
+        return {
+            requiresAttendance: false,
+            code: 'REPLACED',
+            message: `تم تعيين ${replacement.workerName || 'موظف بديل'} بديلًا اليوم؛ لا تُطلب البصمة من الموظف الأصلي`
+        };
+    }
+    const delegation = employee.delegation || {};
+    const activeDelegation = delegation.active && delegation.from && delegation.to &&
+        at >= new Date(delegation.from) && at <= new Date(delegation.to);
+    return {
+        requiresAttendance: true,
+        code: activeDelegation ? 'DELEGATION' : 'REGULAR',
+        message: activeDelegation
+            ? `البصمة مطلوبة في موقع الإيفاد: ${delegation.locationName || delegation.province || 'الموقع المعتمد'}`
+            : 'البصمة مطلوبة حسب الشفت وموقع العمل'
+    };
+}
+
+app.get('/api/employee/attendance-requirement', async (req, res) => {
+    try {
+        const employeeId = String(req.query.employeeId || '').trim();
+        const deviceId = String(req.query.deviceId || '').trim();
+        const employee = await Employee.findById(employeeId).lean();
+        if (!employee || !employee.deviceId || employee.deviceId !== deviceId) {
+            return res.status(403).json({ success: false, message: 'هذا الجهاز غير مرتبط بالموظف' });
+        }
+        return res.json({ success: true, ...(await attendanceRequirementForEmployee(employee)) });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 app.get(
     '/api/attendance/challenge',
     async (req, res) => {
@@ -10545,6 +10783,14 @@ app.get(
                 return res.status(403).json({
                     success: false,
                     message: 'هذا الجهاز غير مرتبط بالموظف'
+                });
+            }
+
+            const requirement = await attendanceRequirementForEmployee(employee);
+            if (!requirement.requiresAttendance) {
+                return res.status(409).json({
+                    success: false,
+                    ...requirement
                 });
             }
 
