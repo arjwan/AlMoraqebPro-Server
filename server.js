@@ -8752,7 +8752,7 @@ app.put('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
     try {
         const salary = await SalaryRecord.findOne({ _id: req.params.id, companyId: req.session.companyId });
         if (!salary) return res.status(404).json({ success: false, message: 'السجل غير موجود' });
-        const { basicSalary, allowances, loans, loanDeduction, securityDeduction, otherDeductions, bonuses, socialSecurity } = req.body;
+        const { basicSalary, allowances, loans, loanDeduction, securityDeduction, otherDeductions, bonuses, socialSecurity, replacementName, replacementFrom, replacementTo, replacementNote } = req.body;
         salary.socialSecurity = socialSecurity ?? salary.socialSecurity;
         salary.basicSalary = basicSalary ?? salary.basicSalary;
         salary.allowances = allowances ?? salary.allowances;
@@ -8761,6 +8761,24 @@ app.put('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
         salary.securityDeduction = securityDeduction ?? salary.securityDeduction;
         salary.otherDeductions = otherDeductions ?? salary.otherDeductions;
         salary.bonuses = bonuses ?? salary.bonuses;
+        if (replacementName !== undefined) {
+            const cleanReplacementName = String(replacementName || '').trim();
+            const cleanReplacementNote = String(replacementNote || '').trim();
+            const replacementFromDate = new Date(replacementFrom);
+            const replacementToDate = new Date(replacementTo);
+            if (!cleanReplacementName || Number.isNaN(replacementFromDate.getTime()) || Number.isNaN(replacementToDate.getTime()) || replacementToDate < replacementFromDate) {
+                return res.status(400).json({ success: false, message: 'تحقق من اسم البديل وفترته' });
+            }
+            salary.replacementName = cleanReplacementName;
+            salary.replacementFrom = replacementFromDate;
+            salary.replacementTo = replacementToDate;
+            salary.replacementNote = cleanReplacementNote;
+            salary.replacementActive = true;
+            await Employee.updateOne(
+                { _id: salary.employeeId, companyId: req.session.companyId },
+                { $set: { 'replacement.active': true, 'replacement.name': cleanReplacementName, 'replacement.from': replacementFromDate, 'replacement.to': replacementToDate, 'replacement.note': cleanReplacementNote } }
+            );
+        }
         salary.totalDeductions = salary.loanDeduction + salary.securityDeduction + salary.otherDeductions;
         salary.currentPeriodEarnings = Math.max(
             0,

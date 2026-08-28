@@ -740,7 +740,7 @@ function renderSalaries() {
                 <div class="salary-total"><small>مجموع الاستقطاعات</small><strong id="totalDed-${id}">${formatMoney(salary.totalDeductions)} د.ع</strong></div>
                 <div class="salary-total net"><small>صافي الراتب</small><strong id="net-${id}">${formatMoney(salary.netSalary)} د.ع</strong></div>
             </div>
-            ${salary.replacementActive ? `<div class="salary-payout"><strong>البديل: ${escapeHtml(salary.replacementName || '—')} — من ${escapeHtml(printDate(salary.replacementFrom))} إلى ${escapeHtml(printDate(salary.replacementTo))}</strong></div>` : ''}
+            ${salary.replacementActive ? `<div class="salary-payout"><strong>بيانات البديل</strong><div class="salary-fields"><div class="salary-field"><label>اسم البديل</label><input id="rname-${id}" value="${escapeHtml(salary.replacementName || '')}"></div><div class="salary-field"><label>من تاريخ</label><input type="date" id="rfrom-${id}" value="${dateInputValue(salary.replacementFrom)}"></div><div class="salary-field"><label>إلى تاريخ</label><input type="date" id="rto-${id}" value="${dateInputValue(salary.replacementTo)}"></div><div class="salary-field"><label>ملاحظات البديل</label><textarea id="rnote-${id}" rows="2">${escapeHtml(salary.replacementNote || '')}</textarea></div></div></div>` : ''}
             ${salary.lastPaidAt ? `<div class="salary-payout"><strong>✅ تم دفع راتب شهر ${escapeHtml(salary.lastPaidPeriod || '—')} بتاريخ ${escapeHtml(printDate(salary.lastPaidAt))}</strong><br><small>المبلغ المدفوع: ${formatMoney(salary.lastPaidAmount)} د.ع</small></div>` : ''}
             <div class="salary-payout">
                 <div class="salary-payout-title"><span>بيانات الصرف</span><span class="status-badge status-${escapeHtml(salary.payoutStatus || 'unpaid')}">${escapeHtml(payoutStatusLabels[salary.payoutStatus] || payoutStatusLabels.unpaid)}</span></div>
@@ -765,6 +765,12 @@ function salaryNumberField(label, prefix, id, value) {
 
 function salaryTextField(label, prefix, id, value) {
     return `<div class="salary-field"><label>${label}</label><input id="${prefix}-${id}" value="${escapeHtml(value)}"></div>`;
+}
+
+function dateInputValue(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
 }
 
 function canConfirmSalaryPayment(salary) {
@@ -1071,6 +1077,18 @@ async function saveSalary(id) {
         totalDeductions,
         netSalary
     };
+
+    const replacementNameField = document.getElementById('rname-' + id);
+    if (replacementNameField) {
+        payload.replacementName = replacementNameField.value.trim();
+        payload.replacementFrom = document.getElementById('rfrom-' + id).value;
+        payload.replacementTo = document.getElementById('rto-' + id).value;
+        payload.replacementNote = document.getElementById('rnote-' + id).value.trim();
+        if (!payload.replacementName || !payload.replacementFrom || !payload.replacementTo || payload.replacementTo < payload.replacementFrom) {
+            toast('❌ تحقق من اسم البديل وفترته', 'error');
+            return;
+        }
+    }
 
     /*
      * نجرب السيرفر أولاً.
