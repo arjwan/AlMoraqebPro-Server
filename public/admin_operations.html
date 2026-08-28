@@ -435,6 +435,8 @@ const payoutStatusLabels = {
     ready: 'جاهز',
     processing: 'قيد المعالجة',
     paid: 'مصروف',
+    transferred: 'تم التحويل',
+    'cash-paid': 'تم الدفع نقدًا',
     failed: 'متعذر'
 };
 
@@ -737,6 +739,7 @@ function renderSalaries() {
                 <div class="salary-total"><small>مجموع الاستقطاعات</small><strong id="totalDed-${id}">${formatMoney(salary.totalDeductions)} د.ع</strong></div>
                 <div class="salary-total net"><small>صافي الراتب</small><strong id="net-${id}">${formatMoney(salary.netSalary)} د.ع</strong></div>
             </div>
+            ${salary.lastPaidAt ? `<div class="salary-payout"><strong>✅ تم دفع راتب شهر ${escapeHtml(salary.lastPaidPeriod || '—')} بتاريخ ${escapeHtml(printDate(salary.lastPaidAt))}</strong><br><small>المبلغ المدفوع: ${formatMoney(salary.lastPaidAmount)} د.ع</small></div>` : ''}
             <div class="salary-payout">
                 <div class="salary-payout-title"><span>بيانات الصرف</span><span class="status-badge status-${escapeHtml(salary.payoutStatus || 'unpaid')}">${escapeHtml(payoutStatusLabels[salary.payoutStatus] || payoutStatusLabels.unpaid)}</span></div>
                 <div class="salary-fields">

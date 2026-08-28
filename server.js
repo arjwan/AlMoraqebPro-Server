@@ -1287,6 +1287,12 @@ const salaryRecordSchema = new mongoose.Schema({
 
     lastPayoutAt: Date,
 
+    lastPaidAmount: { type: Number, default: 0 },
+    lastPaidPeriod: { type: String, default: '' },
+    lastPaidBatchId: { type: String, default: '', index: true },
+
+    pendingPayoutBatchId: { type: String, default: '', index: true },
+
     createdAt: { type: Date, default: Date.now }
 });
 const SalaryRecord = mongoose.model('SalaryRecord', salaryRecordSchema);
@@ -1467,6 +1473,18 @@ const payrollBatchSchema = new mongoose.Schema({
     approvedAt: Date,
 
     completedAt: Date,
+
+    paymentConfirmedBy: {
+        type: String,
+        default: ''
+    },
+
+    paymentConfirmedAt: Date,
+
+    paymentPeriod: {
+        type: String,
+        default: ''
+    },
 
     createdAt: {
         type: Date,
@@ -8823,7 +8841,11 @@ app.post(
                     req.session.companyId,
 
                 payoutMethod:
-                    payoutType
+                    payoutType,
+
+                pendingPayoutBatchId: {
+                    $in: ['', null]
+                }
             };
 
             if (payoutType !== 'cash') {
@@ -8926,7 +8948,11 @@ app.post(
                     req.session.companyId,
 
                 payoutMethod:
-                    payoutType
+                    payoutType,
+
+                pendingPayoutBatchId: {
+                    $in: ['', null]
+                }
             };
 
             if (payoutType !== 'cash') {
@@ -9080,7 +9106,9 @@ app.post(
                         payoutStatus:
                             payoutType === 'cash'
                                 ? 'ready'
-                                : 'processing'
+                                : 'processing',
+                        pendingPayoutBatchId:
+                            String(batch._id)
                     }
                 }
             );
@@ -9153,6 +9181,137 @@ app.get(
 
         } catch (err) {
 
+            return res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+    }
+);
+
+app.post(
+    '/api/admin/payroll-batches/:id/confirm-payment',
+    requireAdmin,
+    async (req, res) => {
+        try {
+            const companyId = req.session.companyId;
+            const batch = await PayrollBatch.findOne({
+                _id: req.params.id,
+                companyId
+            });
+
+            if (!batch) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'دفعة الرواتب غير موجودة'
+                });
+            }
+
+            if (batch.paymentConfirmedAt || batch.status === 'completed') {
+                return res.json({
+                    success: true,
+                    alreadyConfirmed: true,
+                    message: 'تم تأكيد دفع هذه الدفعة مسبقًا',
+                    batch
+                });
+            }
+
+            if (!['approved', 'processing', 'partially-completed'].includes(batch.status)) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'حالة الدفعة لا تسمح بتأكيد الدفع'
+                });
+            }
+
+            const paidAt = new Date();
+            const periodDate = batch.payrollTo || batch.payrollFrom || batch.approvedAt || paidAt;
+            const paymentPeriod = new Intl.DateTimeFormat('ar-IQ', {
+                month: 'long',
+                year: 'numeric',
+                timeZone: 'Asia/Baghdad'
+            }).format(periodDate);
+            const paidStatus = batch.payoutType === 'cash' ? 'cash-paid' : 'transferred';
+
+            batch.items.forEach(item => {
+                item.payoutStatus = paidStatus;
+                item.paidAt = paidAt;
+                item.notes = `تم دفع راتب شهر ${paymentPeriod} بتاريخ ${paidAt.toLocaleDateString('ar-IQ', { timeZone: 'Asia/Baghdad' })}`;
+            });
+            batch.status = 'completed';
+            batch.completedAt = paidAt;
+            batch.paymentConfirmedAt = paidAt;
+            batch.paymentConfirmedBy = req.session.username || 'admin';
+            batch.paymentPeriod = paymentPeriod;
+            await batch.save();
+
+            const salaryUpdates = batch.items
+                .filter(item => item.salaryRecordId)
+                .map(item => ({
+                    updateOne: {
+                        filter: {
+                            _id: item.salaryRecordId,
+                            companyId
+                        },
+                        update: {
+                            $set: {
+                                payoutStatus: paidStatus,
+                                lastPayoutAt: paidAt,
+                                lastPaidAmount: Number(item.netSalary || 0),
+                                lastPaidPeriod: paymentPeriod,
+                                lastPaidBatchId: String(batch._id),
+                                pendingPayoutBatchId: '',
+                                payrollFrom: null,
+                                payrollTo: null,
+                                allowances: 0,
+                                loans: 0,
+                                loanDeduction: 0,
+                                replacementDeduction: 0,
+                                absenceDeduction: 0,
+                                socialSecurityDeduction: 0,
+                                securityDeduction: 0,
+                                otherDeductions: 0,
+                                bonuses: 0,
+                                overtimeAmount: 0,
+                                paidLeaveDays: 0,
+                                unpaidLeaveDays: 0,
+                                absenceDays: 0,
+                                replacementDays: 0,
+                                totalDeductions: 0,
+                                grossSalary: 0,
+                                netSalary: 0,
+                                attendanceDays: 0,
+                                attendanceCount: 0,
+                                calculatedAt: null,
+                                calculationKey: '',
+                                lastAttendanceAt: null
+                            }
+                        }
+                    }
+                }));
+
+            if (salaryUpdates.length) {
+                await SalaryRecord.bulkWrite(salaryUpdates);
+            }
+
+            const paymentMessage = `تم دفع راتب شهر ${paymentPeriod} بتاريخ ${paidAt.toLocaleDateString('ar-IQ', { timeZone: 'Asia/Baghdad' })}`;
+            await new ArchiveRecord({
+                companyId,
+                category: 'operation',
+                sourceType: 'PayrollPayment',
+                sourceId: String(batch._id),
+                snapshotId: batch.batchNumber,
+                title: paymentMessage,
+                note: `المبلغ المدفوع: ${Number(batch.totalAmount || 0)} - عدد الموظفين: ${Number(batch.employeesCount || 0)}`,
+                payload: batch.toObject(),
+                archivedBy: req.session.username || 'admin'
+            }).save();
+
+            return res.json({
+                success: true,
+                message: paymentMessage,
+                batch
+            });
+        } catch (err) {
             return res.status(500).json({
                 success: false,
                 error: err.message
