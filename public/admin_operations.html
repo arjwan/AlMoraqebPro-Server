@@ -740,6 +740,7 @@ function renderSalaries() {
                 <div class="salary-total"><small>مجموع الاستقطاعات</small><strong id="totalDed-${id}">${formatMoney(salary.totalDeductions)} د.ع</strong></div>
                 <div class="salary-total net"><small>صافي الراتب</small><strong id="net-${id}">${formatMoney(salary.netSalary)} د.ع</strong></div>
             </div>
+            ${salary.replacementActive ? `<div class="salary-payout"><strong>البديل: ${escapeHtml(salary.replacementName || '—')} — من ${escapeHtml(printDate(salary.replacementFrom))} إلى ${escapeHtml(printDate(salary.replacementTo))}</strong></div>` : ''}
             ${salary.lastPaidAt ? `<div class="salary-payout"><strong>✅ تم دفع راتب شهر ${escapeHtml(salary.lastPaidPeriod || '—')} بتاريخ ${escapeHtml(printDate(salary.lastPaidAt))}</strong><br><small>المبلغ المدفوع: ${formatMoney(salary.lastPaidAmount)} د.ع</small></div>` : ''}
             <div class="salary-payout">
                 <div class="salary-payout-title"><span>بيانات الصرف</span><span class="status-badge status-${escapeHtml(salary.payoutStatus || 'unpaid')}">${escapeHtml(payoutStatusLabels[salary.payoutStatus] || payoutStatusLabels.unpaid)}</span></div>
@@ -752,7 +753,7 @@ function renderSalaries() {
                     <div class="salary-field"><label>آخر 4 أرقام</label><input id="plast4-${id}" inputmode="numeric" maxlength="4" value="${escapeHtml(salary.payoutLast4)}"></div>
                 </div>
             </div>
-            <div class="salary-card-actions"><button class="btn-sm btn-green" onclick="saveSalary('${id}')">حفظ الراتب</button><button class="btn-sm btn-sm-blue" onclick="savePayoutSettings('${id}')">حفظ الصرف</button><button class="btn-sm btn-sm-blue" onclick="printSingleSalaryCard('${id}')">طباعة البطاقة</button></div>`;
+            <div class="salary-card-actions"><button class="btn-sm btn-green" onclick="saveSalary('${id}')">حفظ الراتب</button><button class="btn-sm btn-sm-blue" onclick="savePayoutSettings('${id}')">حفظ الصرف</button>${salary.payoutStatus === 'unpaid' ? `<button class="btn-sm btn-green" onclick="confirmSalaryPayment('${id}')">تأكيد الدفع</button>` : ''}<button class="btn-sm btn-sm-blue" onclick="printSingleSalaryCard('${id}')">طباعة البطاقة</button></div>`;
         container.appendChild(card);
         togglePayoutFields(id);
     });
@@ -764,6 +765,43 @@ function salaryNumberField(label, prefix, id, value) {
 
 function salaryTextField(label, prefix, id, value) {
     return `<div class="salary-field"><label>${label}</label><input id="${prefix}-${id}" value="${escapeHtml(value)}"></div>`;
+}
+
+async function confirmSalaryPayment(id) {
+    const salary = allSalaries.find(item => String(item._id || item.id || item._offlineKey) === String(id));
+    if (!salary || salary.payoutStatus !== 'unpaid' || !navigator.onLine) {
+        if (!navigator.onLine) toast('⚠ تأكيد الدفع يحتاج اتصالًا بالسيرفر', 'error');
+        return;
+    }
+
+    const button = document.querySelector(`button[onclick="confirmSalaryPayment('${CSS.escape(String(id))}')"]`);
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'جارٍ التأكيد...';
+    }
+    try {
+        const batchData = await api('/api/admin/payroll-batches', {
+            method: 'POST',
+            body: JSON.stringify({
+                payoutType: salary.payoutMethod || 'cash',
+                branch: salary.workplace || '',
+                payrollFrom: salary.payrollFrom,
+                payrollTo: salary.payrollTo,
+                salaryRecordId: String(salary._id || salary.id)
+            })
+        });
+        if (!batchData.success || !batchData.batch?._id) throw new Error(batchData.message || 'لم ينشئ الخادم دفعة الدفع');
+        const paymentData = await api('/api/admin/payroll-batches/' + encodeURIComponent(batchData.batch._id) + '/confirm-payment', { method: 'POST', body: '{}' });
+        if (!paymentData.success) throw new Error(paymentData.message || 'لم يؤكد الخادم الدفع');
+        await loadSalaries();
+        toast('✅ تم تأكيد الدفع وتحديث الراتب', 'success');
+    } catch (error) {
+        toast('❌ ' + error.message, 'error');
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'تأكيد الدفع';
+        }
+    }
 }
 
 function togglePayoutFields(id) {

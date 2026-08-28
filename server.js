@@ -9319,6 +9319,11 @@ app.post(
                 }
             };
 
+            const salaryRecordId = String(req.body.salaryRecordId || '').trim();
+            if (salaryRecordId) {
+                filter._id = salaryRecordId;
+            }
+
             if (payoutType !== 'cash') {
                 filter.payoutSelected =
                     true;
@@ -9818,9 +9823,6 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
         const workerName =
             String(req.body.workerName || '').trim();
 
-        const workerEmployeeId =
-            String(req.body.workerEmployeeId || '').trim();
-
         const specialty =
             String(req.body.specialty || '').trim();
 
@@ -9839,18 +9841,34 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
         const days =
             Number(req.body.days || 1);
 
-        const deductionPolicy =
-            req.body.deductionPolicy === 'employee'
-                ? 'employee'
-                : 'company';
+        const deductionPolicy = 'company';
 
         const notes =
             String(req.body.notes || '').trim();
 
-        const workDate =
-            req.body.workDate
-                ? new Date(req.body.workDate)
-                : new Date();
+        const fromDate = req.body.fromDate ? new Date(req.body.fromDate) : null;
+        const toDate = req.body.toDate ? new Date(req.body.toDate) : null;
+        const workDate = fromDate && !Number.isNaN(fromDate.getTime())
+            ? fromDate
+            : req.body.workDate ? new Date(req.body.workDate) : new Date();
+
+        if (replacementForEmployeeId && (!fromDate || !toDate || Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime()) || toDate < fromDate)) {
+            return res.status(400).json({
+                success: false,
+                message: 'فترة البديل من وإلى مطلوبة وصحيحة'
+            });
+        }
+
+        if (replacementForEmployeeId && !notes) {
+            return res.status(400).json({
+                success: false,
+                message: 'ملاحظة البديل مطلوبة'
+            });
+        }
+
+        const replacementDays = replacementForEmployeeId && fromDate && toDate
+            ? Math.floor((toDate - fromDate) / 86400000) + 1
+            : days;
 
         if (!workerName) {
             return res.status(400).json({
@@ -9869,7 +9887,7 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
             });
         }
 
-        if (!Number.isInteger(days) || days <= 0 || days > 366) {
+        if (!Number.isInteger(replacementDays) || replacementDays <= 0 || replacementDays > 366) {
             return res.status(400).json({
                 success: false,
                 message: 'عدد أيام البديل غير صحيح'
@@ -9937,12 +9955,12 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
             await new DailyWorkerRecord({
                 companyId,
                 workerName,
-                workerEmployeeId,
+                workerEmployeeId: '',
                 specialty,
                 workplace,
                 branch,
                 dailyRate,
-                days,
+                days: replacementDays,
                 workDate,
                 deductionPolicy,
                 notes,
@@ -9962,7 +9980,7 @@ app.post('/api/admin/daily-workers', requireAdmin, async (req, res) => {
                         'replacement.active': true,
                         'replacement.name': workerName,
                         'replacement.from': workDate,
-                        'replacement.to': new Date(workDate.getTime() + (days - 1) * 86400000),
+                        'replacement.to': toDate || new Date(workDate.getTime() + (replacementDays - 1) * 86400000),
                         'replacement.note': notes
                     }
                 }

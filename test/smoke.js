@@ -340,11 +340,11 @@ async function waitForServer(url, retries, delay) {
             const replacement = await (await fetch(BASE + '/api/admin/daily-workers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
-                body: JSON.stringify({ workerName: 'موظف بديل', workDate: '2026-08-29', days: 1, dailyRate: 10,
-                    replacementForEmployeeId: approvedEmployee._id, deductionPolicy: 'employee', workplace: 'الفرع الثاني', notes: 'ملاحظة البديل' })
+                body: JSON.stringify({ workerName: 'بديل خارجي', fromDate: '2026-08-29', toDate: '2026-08-29', dailyRate: 10,
+                    replacementForEmployeeId: approvedEmployee._id, workplace: 'الفرع الثاني', notes: 'ملاحظة البديل' })
             })).json();
             if (!replacement.success) console.log('  replacement response:', replacement);
-            check('replacement linked to original employee', replacement.success === true && replacement.record.isReplacement === true && replacement.record.replacementForEmployeeId === approvedEmployee._id && Number(replacement.record.totalAmount) === 10);
+            check('replacement linked to original employee', replacement.success === true && replacement.record.isReplacement === true && replacement.record.replacementForEmployeeId === approvedEmployee._id && !replacement.record.workerEmployeeId && Number(replacement.record.totalAmount) === 10);
 
             const loan = await (await fetch(BASE + '/api/admin/loans', {
                 method: 'POST',
@@ -375,7 +375,7 @@ async function waitForServer(url, retries, delay) {
             if (!eventSalary || Number(eventSalary.paidLeaveDays) !== 1 || Number(eventSalary.attendanceDays) !== 3 || Number(eventSalary.replacementDeduction) !== 0) {
                 console.log('  event salary response:', eventSalary);
             }
-            check('replacement metadata saved on original employee', eventSalary.replacementActive === true && eventSalary.replacementName === 'موظف بديل' && eventSalary.replacementFrom && eventSalary.replacementTo && eventSalary.replacementNote === 'ملاحظة البديل');
+            check('replacement metadata saved on original employee', eventSalary.replacementActive === true && eventSalary.replacementName === 'بديل خارجي' && eventSalary.replacementFrom && eventSalary.replacementTo && eventSalary.replacementNote === 'ملاحظة البديل');
             check('paid leave counts as payable salary day', Number(eventSalary.paidLeaveDays) === 1 && Number(eventSalary.attendanceDays) === 3);
             check('unpaid leave does not count as payable salary day', Number(eventSalary.unpaidLeaveDays) === 1);
             check('delegation counts automatically as payable salary day', Number(eventSalary.attendanceDays) === 3);

@@ -104,9 +104,8 @@
             <div class="form-group"><label>المحافظة</label><input id="operationDelegationProvince"></div>
         </div>
         <div id="replacementOperationFields" class="operation-section">
-            <div class="form-group"><label>الموظف البديل</label><select id="operationReplacementEmployee"></select></div>
+            <div class="form-group"><label>اسم البديل الخارجي</label><input id="operationReplacementName" required></div>
             <div class="form-group"><label>الأجر اليومي للبديل</label><input type="number" min="1" id="operationReplacementRate"></div>
-            <div class="form-group"><label>جهة تحمل البدل</label><select id="operationDeductionPolicy"><option value="company">الشركة</option><option value="employee">الموظف الأصلي</option></select></div>
         </div>
         <div class="form-group"><label>السبب / ملاحظات</label><input id="operationReason"></div>
         <div class="modal-actions"><button type="button" class="btn btn-red" onclick="closeOperationModal()">إلغاء</button><button type="button" class="btn btn-green" id="saveOperationButton" onclick="saveEmployeeOperation()">اعتماد وترحيل</button></div>
@@ -535,9 +534,8 @@
         document.getElementById('operationTo').value = today;
         document.getElementById('operationReason').value = '';
         document.getElementById('operationType').value = 'leave';
-        document.getElementById('operationReplacementEmployee').innerHTML = '<option value="">اختر الموظف البديل</option>' + employeesCache
-            .filter(item => String(item._id || item.id || item._offlineKey) !== String(id) && !String(item._id || item.id || '').startsWith('local-'))
-            .map(item => `<option value="${escapeHtml(item._id || item.id)}">${escapeHtml(item.name || '')} — ${escapeHtml(item.workplace || item.location || '')}</option>`).join('');
+        document.getElementById('operationReplacementName').value = '';
+        document.getElementById('operationReplacementRate').value = '';
         toggleOperationFields();
         document.getElementById('employeeOperationModal').classList.add('show');
     }
@@ -577,14 +575,12 @@
                     body: JSON.stringify({ active: true, from: from + 'T00:00:00', to: to + 'T23:59:59', locationName: document.getElementById('operationDelegationLocation').value.trim(), province: document.getElementById('operationDelegationProvince').value.trim(), reason })
                 });
             } else {
-                const replacementId = document.getElementById('operationReplacementEmployee').value;
-                const replacement = employeesCache.find(item => String(item._id || item.id) === String(replacementId));
+                const replacementName = document.getElementById('operationReplacementName').value.trim();
                 const dailyRate = Number(document.getElementById('operationReplacementRate').value || 0);
-                if (!replacement || dailyRate <= 0) throw new Error('اختر الموظف البديل وأدخل أجره اليومي');
-                const days = Math.floor((new Date(to + 'T00:00:00') - new Date(from + 'T00:00:00')) / 86400000) + 1;
+                if (!replacementName || dailyRate <= 0) throw new Error('أدخل اسم البديل الخارجي وأجره اليومي');
                 response = await fetch(API + '/api/admin/daily-workers', {
                     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                    body: JSON.stringify({ workerName: replacement.name, workerEmployeeId: String(replacement._id || replacement.id), specialty: replacement.specialty || '', workplace: employee.workplace || employee.location || '', branch: employee.branch || '', workDate: from, days, dailyRate, replacementForEmployeeId: employeeId, deductionPolicy: document.getElementById('operationDeductionPolicy').value, notes: reason })
+                    body: JSON.stringify({ workerName: replacementName, fromDate: from, toDate: to, dailyRate, replacementForEmployeeId: employeeId, workplace: employee.workplace || employee.location || '', branch: employee.branch || '', notes: reason })
                 });
             }
             const data = await response.json().catch(() => ({}));
