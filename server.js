@@ -9331,33 +9331,50 @@ app.post(
                     req.body.branch || ''
                 ).trim();
 
-            const filter = {
-                companyId:
-                    req.session.companyId,
-                pendingPayoutBatchId: {
-                    $in: ['', null]
-                }
-            };
-
             const salaryRecordId = String(req.body.salaryRecordId || '').trim();
+            let salaries;
             if (salaryRecordId) {
-                filter._id = salaryRecordId;
+                const salary = await SalaryRecord.findOne({
+                    _id: salaryRecordId,
+                    companyId: req.session.companyId
+                });
+                if (!salary) {
+                    return res.status(404).json({ success: false, message: 'سجل الراتب غير موجود' });
+                }
+
+                const pendingBatchId = String(salary.pendingPayoutBatchId || '').trim();
+                if (pendingBatchId) {
+                    const pendingBatch = await PayrollBatch.findOne({
+                        _id: pendingBatchId,
+                        companyId: req.session.companyId
+                    });
+                    if (pendingBatch && pendingBatch.status !== 'completed' && !pendingBatch.paymentConfirmedAt) {
+                        return res.json({
+                            success: true,
+                            reused: true,
+                            message: 'تم العثور على دفعة الراتب المعلّقة',
+                            batch: pendingBatch
+                        });
+                    }
+                    salary.pendingPayoutBatchId = '';
+                    salary.payoutStatus = 'unpaid';
+                    await salary.save();
+                }
+                salaries = [salary];
             } else {
-                filter.payoutMethod = payoutType;
+                const filter = {
+                    companyId: req.session.companyId,
+                    payoutMethod: payoutType,
+                    pendingPayoutBatchId: { $in: ['', null] }
+                };
                 if (payoutType !== 'cash') {
                     filter.payoutSelected = true;
                 }
                 if (branch) {
                     filter.workplace = branch;
                 }
+                salaries = await SalaryRecord.find(filter).sort({ employeeName: 1 });
             }
-
-            const salaries =
-                await SalaryRecord
-                    .find(filter)
-                    .sort({
-                        employeeName: 1
-                    });
 
             if (!salaries.length) {
                 return res.status(400).json({

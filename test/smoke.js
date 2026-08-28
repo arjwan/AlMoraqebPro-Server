@@ -300,6 +300,14 @@ async function waitForServer(url, retries, delay) {
             const beforePaymentSalary = beforePaymentList.salaries.find(row => row.employeeId === approvedEmployee._id);
             check('salary stays visible until payment confirmation', Number(beforePaymentSalary.netSalary) === augustBalance && !!beforePaymentSalary.pendingPayoutBatchId);
 
+            const reusedBatch = await (await fetch(BASE + '/api/admin/payroll-batches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ payoutType: 'cash', salaryRecordId: beforePaymentSalary._id })
+            })).json();
+            check('individual payment reuses pending payroll batch', reusedBatch.success === true &&
+                reusedBatch.reused === true && reusedBatch.batch._id === payrollBatch.batch._id);
+
             const confirmedPayment = await (await fetch(BASE + '/api/admin/payroll-batches/' + payrollBatch.batch._id + '/confirm-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
