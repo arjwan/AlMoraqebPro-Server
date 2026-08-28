@@ -222,14 +222,14 @@ async function waitForServer(url, retries, delay) {
             })).json();
             check('employee attendance shift created', shift.success === true && !!shift.shift);
 
-            async function submitAttendance(latitude, longitude, timestamp) {
+            async function submitAttendance(latitude, longitude, timestamp, type = 'attendance') {
                 const challenge = await (await fetch(BASE + '/api/attendance/challenge?employeeId=' +
                     encodeURIComponent(approvedEmployee._id) + '&deviceId=' + encodeURIComponent(linkedDeviceId))).json();
                 const response = await fetch(BASE + '/api/attendance', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ employeeId: approvedEmployee._id, deviceId: linkedDeviceId,
                         challengeId: challenge.challengeId, fingerprintToken: 'biometric-test',
-                        latitude, longitude, type: 'attendance', timestamp })
+                        latitude, longitude, type, timestamp })
                 });
                 return { status: response.status, body: await response.json() };
             }
@@ -254,12 +254,66 @@ async function waitForServer(url, retries, delay) {
             const withinShift = await submitAttendance(31, 45, '2026-08-25T05:30:00.000Z');
             check('attendance accepted within assigned shift window', withinShift.status === 201 && withinShift.body.success === true);
 
+            const withinDeparture = await submitAttendance(31, 45, '2026-08-25T13:30:00.000Z', 'departure');
+            check('departure accepted within assigned shift window', withinDeparture.status === 201 && withinDeparture.body.success === true);
+
             const managerAttendance = await (await fetch(BASE + '/api/admin/attendance', {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
             })).json();
             check('attendance appears in manager dashboard with employee name', managerAttendance.success === true &&
                 managerAttendance.attendance.some(record => record.employeeId === approvedEmployee._id && record.employeeName === approvedEmployee.name));
             check('manager attendance endpoint rejects anonymous access', (await fetch(BASE + '/api/admin/attendance')).status === 401);
+
+            const calculateAugust = await (await fetch(BASE + '/api/admin/payroll/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ from: '2026-08-25', to: '2026-08-25' })
+            })).json();
+            check('payroll calculated from complete attendance day', calculateAugust.success === true &&
+                calculateAugust.calculated.some(row => row.employeeId === approvedEmployee._id && row.payableDays === 1 && row.netSalary > 0));
+
+            const firstSalaryList = await (await fetch(BASE + '/api/admin/salaries', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const firstSalary = firstSalaryList.salaries.find(row => row.employeeId === approvedEmployee._id);
+            const augustBalance = Number(firstSalary && firstSalary.netSalary);
+            check('calculated salary remains unpaid and above zero', augustBalance > 0 && firstSalary.payoutStatus === 'unpaid');
+
+            const calculateSeptember = await (await fetch(BASE + '/api/admin/payroll/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ from: '2026-09-01', to: '2026-09-01' })
+            })).json();
+            check('unpaid salary carries into the following period', calculateSeptember.success === true &&
+                calculateSeptember.calculated.some(row => row.employeeId === approvedEmployee._id && Number(row.carriedBalance) === augustBalance && Number(row.netSalary) === augustBalance));
+
+            const payrollBatch = await (await fetch(BASE + '/api/admin/payroll-batches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ payoutType: 'cash', payrollFrom: '2026-09-01', payrollTo: '2026-09-30' })
+            })).json();
+            check('payroll batch approval does not reset salary', payrollBatch.success === true && !!payrollBatch.batch);
+
+            const beforePaymentList = await (await fetch(BASE + '/api/admin/salaries', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const beforePaymentSalary = beforePaymentList.salaries.find(row => row.employeeId === approvedEmployee._id);
+            check('salary stays visible until payment confirmation', Number(beforePaymentSalary.netSalary) === augustBalance && !!beforePaymentSalary.pendingPayoutBatchId);
+
+            const confirmedPayment = await (await fetch(BASE + '/api/admin/payroll-batches/' + payrollBatch.batch._id + '/confirm-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: '{}'
+            })).json();
+            check('payment confirmation records month and date', confirmedPayment.success === true &&
+                confirmedPayment.message.includes('تم دفع راتب شهر') && confirmedPayment.message.includes('بتاريخ'));
+
+            const afterPaymentList = await (await fetch(BASE + '/api/admin/salaries', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const afterPaymentSalary = afterPaymentList.salaries.find(row => row.employeeId === approvedEmployee._id);
+            check('salary resets only after confirmed payment', Number(afterPaymentSalary.netSalary) === 0 &&
+                Number(afterPaymentSalary.carriedBalance) === 0 && !afterPaymentSalary.pendingPayoutBatchId);
 
             const afterLink = await (await fetch(BASE + '/api/employees?companyId=' + encodeURIComponent(companyId), {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
