@@ -2059,6 +2059,27 @@ function requireDeveloper(
 }
 
 
+function requireDeveloperPage(req, res, next) {
+
+    const token = readToken(
+        developerTokenFromRequest(req)
+    );
+
+    if (!token || token.role !== 'developer') {
+        const nextPath = encodeURIComponent(
+            req.originalUrl || '/developer/create-company'
+        );
+
+        return res.redirect(
+            '/developer/login?next=' + nextPath
+        );
+    }
+
+    req.session = token;
+    next();
+}
+
+
 function requireAdmin(
     req,
     res,
@@ -2589,33 +2610,23 @@ app.get(
 
         }
 
-        res
-            .status(200)
-            .type('html')
-            .send(`<!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>بوابة المطور | المراقب برو</title>
-</head>
-<body style="font-family:Tahoma,Arial,sans-serif;background:#0f172a;display:grid;place-items:center;min-height:100vh;margin:0">
-<form method="post" action="/developer/session"
-      style="background:#fff;padding:28px;border-radius:16px;width:min(380px,90vw)">
-<h2>🔐 بوابة المطور</h2>
-<p>هذه المنطقة غير متاحة لمديري الشركات.</p>
-<input type="password" name="password" required
-       placeholder="كلمة مرور المطور"
-       style="width:100%;box-sizing:border-box;padding:12px;margin:10px 0">
-<button type="submit"
-        style="width:100%;padding:12px;background:#2563eb;color:#fff;border:0;border-radius:8px">
-دخول آمن
-</button>
-</form>
-</body>
-</html>`);
+        res.sendFile(
+            path.join(
+                __dirname,
+                'public',
+                'developer_login.html'
+            )
+        );
     }
 );
+
+app.get('/developer', (req, res) => {
+    res.redirect('/developer/create-company');
+});
+
+app.get('/developer/options', (req, res) => {
+    res.redirect('/developer/create-company');
+});
 
 app.post(
     '/developer/session',
@@ -2675,7 +2686,7 @@ app.post(
 
 app.get(
     '/developer/create-company',
-    requireDeveloper,
+    requireDeveloperPage,
     (req, res) => {
 
         res.sendFile(
@@ -2691,7 +2702,7 @@ app.get(
 
 app.get(
     '/developer/master',
-    requireDeveloper,
+    requireDeveloperPage,
     (req, res) => {
 
         res.sendFile(
