@@ -365,9 +365,18 @@ async function waitForServer(url, retries, delay) {
             const deductionSettings = await (await fetch(BASE + '/api/admin/salaries/' + afterPaymentSalary._id, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
-                body: JSON.stringify({ loanDeduction: 20 })
+                body: JSON.stringify({ loanDeduction: 20, allowances: 15, securityDeduction: 5, socialSecurity: 'مسجل' })
             })).json();
-            check('loan installment configured as payroll deduction', deductionSettings.success === true && Number(deductionSettings.salary.loanDeduction) === 20);
+            check('persistent payroll settings configured', deductionSettings.success === true &&
+                Number(deductionSettings.salary.loanDeduction) === 20 && Number(deductionSettings.salary.allowances) === 15 &&
+                Number(deductionSettings.salary.securityDeduction) === 5 && deductionSettings.salary.socialSecurity === 'مسجل');
+
+            const refreshedEmployees = await (await fetch(BASE + '/api/admin/salaries/refresh-employees', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: '{}'
+            })).json();
+            check('salary employee data refresh keeps payroll settings', refreshedEmployees.success === true && refreshedEmployees.updatedCount === 1);
 
             const eventPayroll = await (await fetch(BASE + '/api/admin/payroll/calculate', {
                 method: 'POST',
@@ -391,6 +400,47 @@ async function waitForServer(url, retries, delay) {
             check('replacement has no salary deduction', Number(eventSalary.replacementDeduction) === 0 && Number(eventSalary.netSalary) >= Number(eventSalary.grossSalary) - Number(eventSalary.loanDeduction));
             check('loan balance and installment remain separate from earnings', Number(eventSalary.loans) === 100 &&
                 Number(eventSalary.loanDeduction) === 20 && Number(eventSalary.grossSalary) === Number(eventSalary.basicSalary) / 31 * 3);
+
+            const eventBatch = await (await fetch(BASE + '/api/admin/payroll-batches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ payoutType: 'cash', salaryRecordId: eventSalary._id,
+                    payrollFrom: '2026-08-26', payrollTo: '2026-08-29' })
+            })).json();
+            const eventPayment = await (await fetch(BASE + '/api/admin/payroll-batches/' + eventBatch.batch._id + '/confirm-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: '{}'
+            })).json();
+            check('payroll with loan installment confirms successfully', eventPayment.success === true);
+
+            const paidLoanList = await (await fetch(BASE + '/api/admin/loans', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const paidLoan = paidLoanList.loans.find(row => row.employeeId === approvedEmployee._id);
+            check('confirmed payroll installment reduces loan balance', Number(paidLoan.remainingAmount) === 80 &&
+                paidLoan.repayments.some(row => Number(row.amount) === 20 && String(row.clientOfflineId).startsWith('payroll:')));
+
+            const paidEventSalaryList = await (await fetch(BASE + '/api/admin/salaries', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const paidEventSalary = paidEventSalaryList.salaries.find(row => row.employeeId === approvedEmployee._id);
+            check('payment keeps allowances insurance and installment settings', Number(paidEventSalary.allowances) === 15 &&
+                Number(paidEventSalary.securityDeduction) === 5 && Number(paidEventSalary.loanDeduction) === 20 &&
+                paidEventSalary.socialSecurity === 'مسجل' && Number(paidEventSalary.loans) === 80);
+
+            const recalculatedAfterPayment = await (await fetch(BASE + '/api/admin/payroll/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ from: '2026-08-26', to: '2026-08-29' })
+            })).json();
+            const recalculatedSalaryList = await (await fetch(BASE + '/api/admin/salaries', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const recalculatedSalary = recalculatedSalaryList.salaries.find(row => row.employeeId === approvedEmployee._id);
+            check('recalculation preserves settings and updated loan balance', recalculatedAfterPayment.success === true &&
+                Number(recalculatedSalary.allowances) === 15 && Number(recalculatedSalary.securityDeduction) === 5 &&
+                Number(recalculatedSalary.loanDeduction) === 20 && Number(recalculatedSalary.loans) === 80);
 
             const afterLink = await (await fetch(BASE + '/api/employees?companyId=' + encodeURIComponent(companyId), {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }

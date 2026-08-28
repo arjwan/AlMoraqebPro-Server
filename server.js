@@ -1448,6 +1448,26 @@ const payrollBatchSchema = new mongoose.Schema({
             default: 0
         },
 
+        loans: {
+            type: Number,
+            default: 0
+        },
+
+        loanDeduction: {
+            type: Number,
+            default: 0
+        },
+
+        securityDeduction: {
+            type: Number,
+            default: 0
+        },
+
+        otherDeductions: {
+            type: Number,
+            default: 0
+        },
+
         bonuses: {
             type: Number,
             default: 0
@@ -8718,6 +8738,60 @@ app.get('/api/admin/salaries', requireAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+app.post('/api/admin/salaries/refresh-employees', requireAdmin, async (req, res) => {
+    try {
+        const companyId = req.session.companyId;
+        const [employees, shifts, loans] = await Promise.all([
+            Employee.find({ companyId, employmentStatus: { $ne: 'inactive' } }).lean(),
+            Shift.find({ companyId }).lean(),
+            LoanRecord.find({ companyId }).lean()
+        ]);
+        const outstandingByEmployee = new Map();
+        loans.forEach(loan => {
+            const paid = (loan.repayments || []).reduce((sum, repayment) => sum + Number(repayment.amount || 0), 0);
+            const remaining = Math.max(0, Number(loan.totalLoanAmount || 0) - paid);
+            const employeeId = String(loan.employeeId);
+            outstandingByEmployee.set(employeeId, Number(outstandingByEmployee.get(employeeId) || 0) + remaining);
+        });
+
+        const operations = employees.map(employee => {
+            const employeeId = String(employee._id);
+            const shift = shifts.find(item => (item.employeeIds || []).map(String).includes(employeeId));
+            const set = {
+                employeeName: employee.name || '',
+                employeeSerial: employee.employeeSerial || '',
+                specialty: employee.specialty || '',
+                workplace: String(employee.workplace || employee.branch || employee.location || '').trim(),
+                shiftName: shift?.name || employee.shift || '',
+                wageType: ['monthly', 'weekly', 'daily'].includes(employee.wageType) ? employee.wageType : 'monthly',
+                basicSalary: Number(employee.salary || 0),
+                loans: Number(outstandingByEmployee.get(employeeId) || 0)
+            };
+            if (String(employee.socialSecurity || '').trim()) {
+                set.socialSecurity = String(employee.socialSecurity).trim();
+            }
+            return {
+                updateOne: {
+                    filter: { companyId, employeeId },
+                    update: {
+                        $set: set,
+                        $setOnInsert: { payoutStatus: 'unpaid' }
+                    },
+                    upsert: true
+                }
+            };
+        });
+        if (operations.length) await SalaryRecord.bulkWrite(operations);
+        return res.json({
+            success: true,
+            message: `تم تحديث بيانات ${employees.length} موظف في بطاقات الرواتب`,
+            updatedCount: employees.length
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 app.post('/api/admin/salaries', requireAdmin, async (req, res) => {
     try {
         const { employeeId, employeeName, specialty, workplace, shiftName, socialSecurity, basicSalary, allowances, loans, loanDeduction, securityDeduction, otherDeductions, bonuses } = req.body;
@@ -9116,6 +9190,26 @@ function payrollBatchItemFromSalary(salary) {
         allowances:
             Number(
                 salary.allowances || 0
+            ),
+
+        loans:
+            Number(
+                salary.loans || 0
+            ),
+
+        loanDeduction:
+            Number(
+                salary.loanDeduction || 0
+            ),
+
+        securityDeduction:
+            Number(
+                salary.securityDeduction || 0
+            ),
+
+        otherDeductions:
+            Number(
+                salary.otherDeductions || 0
             ),
 
         bonuses:
@@ -9593,6 +9687,55 @@ app.get(
     }
 );
 
+async function applyPayrollLoanDeductions({ companyId, batch, paidAt }) {
+    const employeeIds = [...new Set(
+        batch.items
+            .filter(item => Number(item.loanDeduction || 0) > 0 && item.employeeId)
+            .map(item => String(item.employeeId))
+    )];
+    if (!employeeIds.length) return new Map();
+
+    const loans = await LoanRecord.find({
+        companyId,
+        employeeId: { $in: employeeIds }
+    }).sort({ loanDate: 1, createdAt: 1 });
+    const loansByEmployee = new Map();
+    loans.forEach(loan => {
+        const employeeId = String(loan.employeeId);
+        if (!loansByEmployee.has(employeeId)) loansByEmployee.set(employeeId, []);
+        loansByEmployee.get(employeeId).push(loan);
+    });
+
+    const remainingByEmployee = new Map();
+    for (const item of batch.items) {
+        const employeeId = String(item.employeeId || '');
+        let deductionLeft = Math.max(0, Number(item.loanDeduction || 0));
+        const employeeLoans = loansByEmployee.get(employeeId) || [];
+        for (const loan of employeeLoans) {
+            const clientOfflineId = `payroll:${batch._id}:${item.salaryRecordId}:${loan._id}`;
+            const existingRepayment = (loan.repayments || []).find(repayment => repayment.clientOfflineId === clientOfflineId);
+            if (existingRepayment) {
+                deductionLeft = Math.max(0, deductionLeft - Number(existingRepayment.amount || 0));
+                continue;
+            }
+            const paid = (loan.repayments || []).reduce((sum, repayment) => sum + Number(repayment.amount || 0), 0);
+            const remaining = Math.max(0, Number(loan.totalLoanAmount || 0) - paid);
+            if (remaining <= 0 || deductionLeft <= 0) continue;
+            const amount = Math.min(remaining, deductionLeft);
+            loan.repayments.push({ date: paidAt, amount, clientOfflineId });
+            loan.remainingAmount = Math.max(0, remaining - amount);
+            await loan.save();
+            deductionLeft -= amount;
+        }
+        const totalRemaining = employeeLoans.reduce((sum, loan) => {
+            const totalPaid = (loan.repayments || []).reduce((paid, repayment) => paid + Number(repayment.amount || 0), 0);
+            return sum + Math.max(0, Number(loan.totalLoanAmount || 0) - totalPaid);
+        }, 0);
+        remainingByEmployee.set(employeeId, totalRemaining);
+    }
+    return remainingByEmployee;
+}
+
 app.post(
     '/api/admin/payroll-batches/:id/confirm-payment',
     requireAdmin,
@@ -9646,6 +9789,7 @@ app.post(
             batch.paymentConfirmedAt = paidAt;
             batch.paymentConfirmedBy = req.session.username || 'admin';
             batch.paymentPeriod = paymentPeriod;
+            const remainingLoans = await applyPayrollLoanDeductions({ companyId, batch, paidAt });
             await batch.save();
 
             const salaryUpdates = batch.items
@@ -9666,13 +9810,11 @@ app.post(
                                 pendingPayoutBatchId: '',
                                 payrollFrom: null,
                                 payrollTo: null,
-                                allowances: 0,
-                                loans: 0,
-                                loanDeduction: 0,
+                                loans: remainingLoans.has(String(item.employeeId))
+                                    ? remainingLoans.get(String(item.employeeId))
+                                    : Number(item.loans || 0),
                                 replacementDeduction: 0,
                                 absenceDeduction: 0,
-                                socialSecurityDeduction: 0,
-                                securityDeduction: 0,
                                 otherDeductions: 0,
                                 bonuses: 0,
                                 overtimeAmount: 0,

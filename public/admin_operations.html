@@ -429,6 +429,7 @@
                 <button class="btn btn-outline" onclick="openPayrollPreview('cash')">كشف الصرف النقدي</button>
                 <button class="btn btn-outline" onclick="printCashPayroll()">طباعة النقدي حسب الفرع</button>
                 <button class="btn" onclick="openAddSalaryModal()">➕ إضافة موظف للرواتب</button>
+                <button class="btn btn-green" id="refreshSalaryEmployeesButton" onclick="refreshSalaryEmployees()">🔄 تحديث بيانات الموظفين</button>
             </div>
             <div class="salary-toolbar">
                 <div><h3>بطاقات رواتب الموظفين</h3><label class="salary-select-all"><input type="checkbox" id="selectAllSalaries" onchange="toggleAllSalaries(this.checked)"> تحديد كل البطاقات</label></div>
@@ -702,6 +703,30 @@ async function loadSalaries() {
                 'error'
             );
         }
+    }
+}
+
+async function refreshSalaryEmployees() {
+    if (!navigator.onLine) {
+        toast('⚠ تحديث بيانات الموظفين يحتاج اتصالًا بالسيرفر', 'error');
+        return;
+    }
+    const button = document.getElementById('refreshSalaryEmployeesButton');
+    button.disabled = true;
+    const oldText = button.textContent;
+    button.textContent = 'جارٍ التحديث...';
+    try {
+        const data = await api('/api/admin/salaries/refresh-employees', {
+            method: 'POST',
+            body: '{}'
+        });
+        await Promise.all([loadSalaries(), loadLoans()]);
+        toast('✅ ' + (data.message || 'تم تحديث بيانات الموظفين'), 'success');
+    } catch (error) {
+        toast('❌ ' + error.message, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = oldText;
     }
 }
 
