@@ -603,6 +603,16 @@ const employeeSchema = new mongoose.Schema({
         default: 'monthly'
     },
 
+    shift: {
+        type: String,
+        default: ''
+    },
+
+    socialSecurity: {
+        type: String,
+        default: ''
+    },
+
     employeeSerial: {
         type: String,
         default: '',
@@ -928,7 +938,8 @@ const serviceRequestSchema = new mongoose.Schema({
         type: String,
         enum: [
             'leave',
-            'loan'
+            'loan',
+            'ambulance'
         ],
         required: true
     },
@@ -4878,6 +4889,28 @@ app.post(
                     workHours:
                         request.workHours,
 
+                    wageType:
+                        ({
+                            'شهري': 'monthly',
+                            'أسبوعي': 'weekly',
+                            'اسبوعي': 'weekly',
+                            'يومي': 'daily'
+                        })[request.wageType] ||
+                        (
+                            ['monthly', 'weekly', 'daily']
+                                .includes(request.wageType)
+                                ? request.wageType
+                                : 'monthly'
+                        ),
+
+                    shift:
+                        request.shift === 'طوارئ'
+                            ? 'طارئ'
+                            : (request.shift || ''),
+
+                    socialSecurity:
+                        request.socialSecurity || '',
+
                     specialty:
                         request.jobTitle,
 
@@ -4909,6 +4942,48 @@ app.post(
                         []
 
                 }).save();
+
+            /*
+             * إذا كان المدير قد أنشأ الشفت مسبقاً، نربط الموظف به
+             * تلقائياً عند اعتماد الطلب. عند وجود أكثر من شفت بالاسم
+             * نفسه نعطي الأولوية للموقع المكتوب في طلب الموظف.
+             */
+            const requestedShiftName =
+                request.shift === 'طوارئ'
+                    ? 'طارئ'
+                    : String(request.shift || '').trim();
+
+            if (requestedShiftName) {
+                const matchingShifts = await Shift.find({
+                    companyId: request.companyId,
+                    name: requestedShiftName
+                });
+
+                const requestedWorkplace =
+                    String(request.workLocation || '').trim();
+
+                const matchingShift =
+                    matchingShifts.find(item =>
+                        requestedWorkplace &&
+                        [item.locationName, item.branch]
+                            .some(value =>
+                                String(value || '').trim() ===
+                                    requestedWorkplace
+                            )
+                    ) ||
+                    (
+                        matchingShifts.length === 1
+                            ? matchingShifts[0]
+                            : null
+                    );
+
+                if (matchingShift) {
+                    await Shift.updateOne(
+                        { _id: matchingShift._id },
+                        { $addToSet: { employeeIds: String(employee._id) } }
+                    );
+                }
+            }
 
             request.status =
                 'approved';
@@ -6153,7 +6228,8 @@ app.post(
                 !deviceId ||
                 ![
                     'leave',
-                    'loan'
+                    'loan',
+                    'ambulance'
                 ].includes(type)
             ) {
 

@@ -127,11 +127,13 @@ async function waitForServer(url, retries, delay) {
             })).json();
             check('employee request saved in EmployeeRequest', requestResult.success === true && !!requestResult.requestId && requestResult.status === 'pending');
 
-            const pending = await (await fetch(BASE + '/api/employee/requests/' + encodeURIComponent(companyId) + '/pending')).json();
+            const pending = await (await fetch(BASE + '/api/employee/requests/' + encodeURIComponent(companyId) + '/pending', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
             check('pending request visible to admin', Array.isArray(pending.requests) && pending.requests.length >= 1);
 
             const approve = await (await fetch(BASE + '/api/employee/request/' + requestResult.requestId + '/approve', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'employee@example.com' })
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token }, body: JSON.stringify({ email: 'employee@example.com' })
             })).json();
             check('approve request creates employee', approve.success === true && !!approve.employee);
 
@@ -200,11 +202,25 @@ async function waitForServer(url, retries, delay) {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + login.token },
                 body: JSON.stringify({
-                    latitude: 33.3152, longitude: 44.3661, geofenceRadiusMeters: 200,
-                    allowedLocations: [{ name: 'الفرع الثاني', latitude: 31, longitude: 45, radius: 250, employeeIds: [approvedEmployee._id] }]
+                    latitude: 33.3152, longitude: 44.3661, geofenceRadiusMeters: 200
                 })
             })).json();
-            check('multiple authorized company locations saved', locationUpdate.success === true);
+            check('company headquarters location saved', locationUpdate.success === true);
+
+            const secondaryLocation = await (await fetch(BASE + '/api/admin/locations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ name: 'الفرع الثاني', type: 'worksite', latitude: 31, longitude: 45, radiusMeters: 250 })
+            })).json();
+            check('secondary authorized company location saved', secondaryLocation.success === true && !!secondaryLocation.location);
+
+            const shift = await (await fetch(BASE + '/api/admin/shifts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ name: 'صباحي', locationId: secondaryLocation.location._id, employeeIds: [approvedEmployee._id],
+                    attendanceStart: '00:00', attendanceEnd: '23:59', departureStart: '00:00', departureEnd: '23:59' })
+            })).json();
+            check('employee attendance shift created', shift.success === true && !!shift.shift);
 
             async function submitAttendance(latitude, longitude, timestamp) {
                 const challenge = await (await fetch(BASE + '/api/attendance/challenge?employeeId=' +
@@ -224,13 +240,13 @@ async function waitForServer(url, retries, delay) {
             const invalidLocation = await submitAttendance(30, 46, new Date().toISOString());
             check('attendance rejected outside every authorized location', invalidLocation.status === 403 && invalidLocation.body.success === false);
 
-            const shift = await (await fetch(BASE + '/api/admin/shifts', {
-                method: 'POST',
+            const narrowedShift = await (await fetch(BASE + '/api/admin/shifts/' + shift.shift._id, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
-                body: JSON.stringify({ name: 'صباحي', branch: 'الفرع الثاني', employeeIds: [],
+                body: JSON.stringify({ name: 'صباحي', locationId: 'headquarters', employeeIds: [approvedEmployee._id],
                     attendanceStart: '08:00', attendanceEnd: '09:00', departureStart: '16:00', departureEnd: '17:00' })
             })).json();
-            check('employee attendance shift created', shift.success === true);
+            check('employee attendance shift updated', narrowedShift.success === true);
 
             const outsideShift = await submitAttendance(31, 45, '2026-08-25T09:00:00.000Z');
             check('attendance rejected outside assigned shift window', outsideShift.status === 403 && outsideShift.body.success === false);
@@ -252,7 +268,7 @@ async function waitForServer(url, retries, delay) {
 
             // approve مرة ثانية على نفس الطلب لا ينشئ موظفاً مكرراً
             const reApprove = await (await fetch(BASE + '/api/employee/request/' + requestResult.requestId + '/approve', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token }, body: '{}'
             })).json();
             check('re-approve handled gracefully', reApprove.success === true);
         } else {
@@ -273,7 +289,7 @@ async function waitForServer(url, retries, delay) {
 
         const reportsPage = await (await fetch(BASE + '/admin_reports.html')).text();
         check('manager reports page contains a complete attendance dashboard',
-            reportsPage.includes('id="attendanceTable"') && reportsPage.includes('/api/admin/attendance') && reportsPage.includes('</html>'));
+            reportsPage.includes('id="reportBody"') && reportsPage.includes('/api/admin/reports') && reportsPage.includes('</html>'));
 
         const sh = await fetch(BASE + '/health');
         check('X-Content-Type-Options => nosniff', sh.headers.get('x-content-type-options') === 'nosniff');
