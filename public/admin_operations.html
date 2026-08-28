@@ -455,7 +455,9 @@
                             <th>الاختصاص</th>
                             <th>موقع العمل</th>
                             <th>مجموع السلف</th>
+                            <th>القسط الشهري</th>
                             <th>تاريخ السلفة</th>
+                            <th>المبلغ المدفوع</th>
                             <th>المبلغ المتبقي</th>
                             <th>التسديدات</th>
                             <th>إجراءات</th>
@@ -474,6 +476,7 @@
         <h3>إضافة سلفة لموظف</h3>
         <div class="field"><label>الموظف</label><select id="loanEmployee"><option value="">اختر الموظف</option></select></div>
         <div class="field"><label>مبلغ السلفة</label><input type="number" id="newLoanAmount" min="1"></div>
+        <div class="field"><label>القسط الشهري</label><input type="number" id="newLoanInstallment" min="1"></div>
         <div class="field"><label>تاريخ السلفة</label><input type="date" id="newLoanDate"></div>
         <div class="modal-actions"><button class="btn btn-outline" onclick="closeAddLoanModal()">إغلاق</button><button class="btn" id="addLoanBtn" onclick="addLoanEmployee()">إضافة السلفة</button></div>
     </div>
@@ -868,7 +871,7 @@ function renderSalaries() {
                 <div class="salary-field"><label>الضمان</label><select id="ss-${id}"><option value="مسجل" ${salary.socialSecurity === 'مسجل' ? 'selected' : ''}>مسجل</option><option value="غير مسجل" ${salary.socialSecurity !== 'مسجل' ? 'selected' : ''}>غير مسجل</option></select></div>
                 ${salaryNumberField('الراتب الأساسي', 'bs', id, salary.basicSalary)}
                 ${salaryNumberField('المخصصات', 'allow', id, salary.allowances)}
-                ${salaryNumberField('السلف', 'loans', id, salary.loans)}
+                <div class="salary-field"><label>رصيد السلف</label><input type="number" id="loans-${id}" value="${Number(salary.loans) || 0}" readonly title="يُحدّث من صفحة السلف"></div>
                 ${salaryNumberField('استقطاع السلفة', 'lded', id, salary.loanDeduction)}
                 ${salaryNumberField('استقطاع الضمان', 'sec', id, salary.securityDeduction)}
                 ${salaryNumberField('الخصومات الأخرى', 'ded', id, salary.otherDeductions)}
@@ -1013,27 +1016,6 @@ async function savePayoutSettings(id) {
 
 function recalcSalary(id) {
 
-    const basic =
-        Number(
-            document.getElementById(
-                'bs-' + id
-            ).value
-        ) || 0;
-
-    const allow =
-        Number(
-            document.getElementById(
-                'allow-' + id
-            ).value
-        ) || 0;
-
-    const loans =
-        Number(
-            document.getElementById(
-                'loans-' + id
-            ).value
-        ) || 0;
-
     const lded =
         Number(
             document.getElementById(
@@ -1055,22 +1037,8 @@ function recalcSalary(id) {
             ).value
         ) || 0;
 
-    const bon =
-        Number(
-            document.getElementById(
-                'bon-' + id
-            ).value
-        ) || 0;
-
     const totalDed =
         lded + sec + ded;
-
-    const net =
-        basic +
-        allow +
-        loans +
-        bon -
-        totalDed;
 
     document
         .getElementById(
@@ -1078,11 +1046,7 @@ function recalcSalary(id) {
         ).textContent =
         formatMoney(totalDed) + ' د.ع';
 
-    document
-        .getElementById(
-            'net-' + id
-        ).textContent =
-        formatMoney(net) + ' د.ع';
+    // صافي الراتب يبقى نتيجة حساب البصمة، ولا يتغير قبل إعادة الاحتساب من الخادم.
 }
 
 
@@ -1683,7 +1647,8 @@ function renderLoans() {
             <td>${escapeHtml(employee.name || loan?.employeeName || '')}</td>
             <td>${escapeHtml(employee.specialty || loan?.specialty || '')}</td>
             <td>${escapeHtml(employee.workplace || employee.branch || loan?.workplace || '')}</td>
-            <td>${loan ? formatMoney(loan.totalLoanAmount) : '—'}</td>
+            <td>${loan ? `<input type="number" min="0" id="loan-total-${id}" value="${Number(loan.totalLoanAmount || 0)}">` : '—'}</td>
+            <td>${loan ? `<input type="number" min="0" id="loan-installment-${id}" value="${Number(loan.monthlyInstallment || 0)}">` : '—'}</td>
 
             <td>
                 ${
@@ -1697,7 +1662,8 @@ function renderLoans() {
                 }
             </td>
 
-            <td>${loan ? formatMoney(loan.remainingAmount) : '—'}</td>
+            <td>${loan ? `<input type="number" min="0" id="loan-paid-${id}" value="${Number(loan.paidAmount ?? ((loan.totalLoanAmount || 0) - (loan.remainingAmount || 0)))}">` : '—'}</td>
+            <td>${loan ? `<input type="number" min="0" id="loan-remaining-${id}" value="${Number(loan.remainingAmount || 0)}">` : '—'}</td>
 
             <td>
                 ${loan ? `<button
@@ -1708,7 +1674,8 @@ function renderLoans() {
             </td>
 
             <td>
-                ${loan ? `<button
+                ${loan ? `<button class="btn-sm btn-green" onclick="saveLoanSettings('${id}')">حفظ</button>
+                <button
                     class="btn-sm btn-red"
                     onclick="deleteLoan('${id}')">
                     حذف
@@ -1718,6 +1685,25 @@ function renderLoans() {
 
         tbody.appendChild(row);
     });
+}
+
+async function saveLoanSettings(id) {
+    const payload = {
+        totalLoanAmount: Number(document.getElementById('loan-total-' + id).value),
+        monthlyInstallment: Number(document.getElementById('loan-installment-' + id).value),
+        paidAmount: Number(document.getElementById('loan-paid-' + id).value),
+        remainingAmount: Number(document.getElementById('loan-remaining-' + id).value)
+    };
+    if (payload.totalLoanAmount <= 0 || payload.monthlyInstallment < 0 || payload.paidAmount < 0 || payload.remainingAmount < 0 || Math.abs(payload.totalLoanAmount - payload.paidAmount - payload.remainingAmount) > 0.01) {
+        return toast('يجب أن يساوي المدفوع مع المتبقي مجموع السلفة', 'error');
+    }
+    try {
+        await api('/api/admin/loans/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(payload) });
+        await Promise.all([loadLoans(), loadSalaries()]);
+        toast('✅ تم حفظ تعديل السلفة يدويًا', 'success');
+    } catch (error) {
+        toast(error.message, 'error');
+    }
 }
 
 function openAddLoanModal(preselectedEmployeeId = '') {
@@ -1739,6 +1725,7 @@ function openAddLoanModal(preselectedEmployeeId = '') {
         document.getElementById('loanEmployee').value = String(preselectedEmployeeId);
     }
     document.getElementById('newLoanAmount').value = '';
+    document.getElementById('newLoanInstallment').value = '';
     const today = new Date();
     today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
     document.getElementById('newLoanDate').value = today.toISOString().slice(0, 10);
@@ -1752,13 +1739,14 @@ function closeAddLoanModal() {
 async function addLoanEmployee() {
     const employeeId = document.getElementById('loanEmployee').value;
     const amount = Number(document.getElementById('newLoanAmount').value || 0);
+    const monthlyInstallment = Number(document.getElementById('newLoanInstallment').value || 0);
     const loanDate = document.getElementById('newLoanDate').value;
     const employee = allEmployees.find(item =>
         String(item._id || item.id || item._offlineKey) === String(employeeId)
     );
 
-    if (!employee || amount <= 0 || !loanDate) {
-        toast('❌ اختر الموظف وأدخل مبلغًا وتاريخًا صحيحين', 'error');
+    if (!employee || amount <= 0 || monthlyInstallment <= 0 || monthlyInstallment > amount || !loanDate) {
+        toast('❌ اختر الموظف وأدخل مبلغ السلفة وقسطًا شهريًا صحيحًا', 'error');
         return;
     }
 
@@ -1770,6 +1758,7 @@ async function addLoanEmployee() {
         specialty: employee.specialty || '',
         workplace: employee.workplace || employee.branch || '',
         totalLoanAmount: amount,
+        monthlyInstallment,
         loanDate
     };
     const button = document.getElementById('addLoanBtn');

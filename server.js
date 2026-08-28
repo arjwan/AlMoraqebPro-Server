@@ -909,10 +909,21 @@ const attendanceSchema = new mongoose.Schema({
         type: String,
         enum: [
             'within-shift',
-            'delegation'
+            'delegation',
+            'early-exit-pending',
+            'early-exit-approved'
         ],
         default: 'within-shift'
-    }
+    },
+
+    managerApprovalStatus: {
+        type: String,
+        enum: ['not-required', 'pending', 'approved', 'rejected'],
+        default: 'not-required',
+        index: true
+    },
+    managerApprovedAt: Date,
+    managerApprovedBy: { type: String, default: '' }
 
 });
 
@@ -1675,6 +1686,8 @@ const loanRecordSchema = new mongoose.Schema({
     specialty: { type: String, default: '' },
     workplace: { type: String, default: '' },
     totalLoanAmount: { type: Number, default: 0 },
+    monthlyInstallment: { type: Number, default: 0 },
+    manualPaidAdjustment: { type: Number, default: 0 },
     loanDate: { type: Date, default: Date.now },
     repayments: [{
         date: { type: Date, default: Date.now },
@@ -1696,6 +1709,30 @@ const loanRecordSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 const LoanRecord = mongoose.model('LoanRecord', loanRecordSchema);
+
+function loanPaidAmount(loan) {
+    return (loan.repayments || []).reduce((sum, row) => sum + Number(row.amount || 0), 0) +
+        Number(loan.manualPaidAdjustment || 0);
+}
+
+function loanRemainingAmount(loan) {
+    return Math.max(0, Number(loan.totalLoanAmount || 0) - loanPaidAmount(loan));
+}
+
+async function syncEmployeeLoanSummary(companyId, employeeId) {
+    const loans = await LoanRecord.find({ companyId, employeeId: String(employeeId) });
+    let balance = 0;
+    let installment = 0;
+    for (const loan of loans) {
+        const remaining = loanRemainingAmount(loan);
+        balance += remaining;
+        installment += Math.min(remaining, Math.max(0, Number(loan.monthlyInstallment || 0)));
+    }
+    await SalaryRecord.updateOne(
+        { companyId, employeeId: String(employeeId) },
+        { $set: { loans: balance, loanDeduction: Math.min(balance, installment) } }
+    );
+}
 
 
 /*
@@ -8692,6 +8729,29 @@ app.get('/api/admin/attendance', requireAdmin, async (req, res) => {
     }
 });
 
+app.post('/api/admin/attendance/:id/approve-early-exit', requireAdmin, async (req, res) => {
+    try {
+        const attendance = await Attendance.findOne({
+            _id: req.params.id,
+            companyId: req.session.companyId,
+            type: { $in: ['departure', 'exit'] }
+        });
+        if (!attendance) return res.status(404).json({ success: false, message: 'بصمة الانصراف غير موجودة' });
+        if (attendance.managerApprovalStatus === 'approved') {
+            return res.json({ success: true, alreadyApproved: true, attendance });
+        }
+        if (attendance.timeStatus !== 'early-exit-pending' || attendance.managerApprovalStatus !== 'pending') {
+            return res.status(400).json({ success: false, message: 'هذه البصمة لا تنتظر موافقة المدير' });
+        }
+        attendance.timeStatus = 'early-exit-approved';
+        attendance.managerApprovalStatus = 'approved';
+        attendance.managerApprovedAt = new Date();
+        attendance.managerApprovedBy = req.session.username || 'admin';
+        await attendance.save();
+        res.json({ success: true, message: 'تم اعتماد الخروج المبكر واحتسابه كبصمة صحيحة', attendance });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 app.get('/api/employee/payroll', async (req, res) => {
     try {
         const employeeId = String(req.query.employeeId || '').trim();
@@ -8748,8 +8808,7 @@ app.post('/api/admin/salaries/refresh-employees', requireAdmin, async (req, res)
         ]);
         const outstandingByEmployee = new Map();
         loans.forEach(loan => {
-            const paid = (loan.repayments || []).reduce((sum, repayment) => sum + Number(repayment.amount || 0), 0);
-            const remaining = Math.max(0, Number(loan.totalLoanAmount || 0) - paid);
+            const remaining = loanRemainingAmount(loan);
             const employeeId = String(loan.employeeId);
             outstandingByEmployee.set(employeeId, Number(outstandingByEmployee.get(employeeId) || 0) + remaining);
         });
@@ -8854,15 +8913,6 @@ app.put('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
             );
         }
         salary.totalDeductions = salary.loanDeduction + salary.securityDeduction + salary.otherDeductions;
-        salary.currentPeriodEarnings = Math.max(
-            0,
-            Number(salary.grossSalary || 0) +
-            Number(salary.allowances || 0) +
-            Number(salary.bonuses || 0) +
-            Number(salary.overtimeAmount || 0) -
-            Number(salary.totalDeductions || 0)
-        );
-        salary.netSalary = Number(salary.carriedBalance || 0) + salary.currentPeriodEarnings;
         await salary.save();
         res.json({ success: true, salary });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -8927,7 +8977,11 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const day = payrollDayKey(item.timestamp);
             if (!attendanceByEmployee.has(id)) attendanceByEmployee.set(id, new Map());
             if (!attendanceByEmployee.get(id).has(day)) attendanceByEmployee.get(id).set(day, new Set());
-            attendanceByEmployee.get(id).get(day).add(item.type === 'attendance' ? 'in' : 'out');
+            if (item.type === 'attendance') {
+                attendanceByEmployee.get(id).get(day).add('in');
+            } else if (item.timeStatus !== 'early-exit-pending' && item.managerApprovalStatus !== 'rejected') {
+                attendanceByEmployee.get(id).get(day).add('out');
+            }
         });
         const validAttendanceDays = id => new Set(
             [...(attendanceByEmployee.get(id) || new Map()).entries()]
@@ -8959,10 +9013,15 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             }
         });
         const loansByEmployee = new Map();
+        const loanInstallmentsByEmployee = new Map();
         loanRecords.forEach(loan => {
-            const paid = (loan.repayments || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
-            const remaining = Math.max(0, Number(loan.totalLoanAmount || 0) - paid);
+            const remaining = loanRemainingAmount(loan);
             loansByEmployee.set(String(loan.employeeId), Number(loansByEmployee.get(String(loan.employeeId)) || 0) + remaining);
+            loanInstallmentsByEmployee.set(
+                String(loan.employeeId),
+                Number(loanInstallmentsByEmployee.get(String(loan.employeeId)) || 0) +
+                    Math.min(remaining, Math.max(0, Number(loan.monthlyInstallment || 0)))
+            );
         });
         const invalid = [];
         const calculated = [];
@@ -9005,7 +9064,9 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const replacementAddition = 0;
             const replacementDeduction = 0;
             const outstandingLoans = Number(loansByEmployee.get(id) || 0);
-            const automaticInstallment = Math.min(outstandingLoans, (employee.loans || []).reduce((sum, loan) => sum + Math.min(Number(loan.monthlyInstallment || 0), Number(loan.remainingAmount || 0)), 0));
+            const recordInstallment = Number(loanInstallmentsByEmployee.get(id) || 0);
+            const legacyInstallment = (employee.loans || []).reduce((sum, loan) => sum + Math.min(Number(loan.monthlyInstallment || 0), Number(loan.remainingAmount || 0)), 0);
+            const automaticInstallment = Math.min(outstandingLoans, recordInstallment || legacyInstallment);
             const loanDeduction = automaticInstallment || Math.min(outstandingLoans, Number(salary.loanDeduction || 0));
             const totalDeductions = loanDeduction + replacementDeduction + Number(salary.securityDeduction || 0) + Number(salary.otherDeductions || 0);
             const currentPeriodEarnings = Math.max(0, earnedFromDays + replacementAddition + Number(salary.allowances || 0) + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
@@ -9718,8 +9779,7 @@ async function applyPayrollLoanDeductions({ companyId, batch, paidAt }) {
                 deductionLeft = Math.max(0, deductionLeft - Number(existingRepayment.amount || 0));
                 continue;
             }
-            const paid = (loan.repayments || []).reduce((sum, repayment) => sum + Number(repayment.amount || 0), 0);
-            const remaining = Math.max(0, Number(loan.totalLoanAmount || 0) - paid);
+            const remaining = loanRemainingAmount(loan);
             if (remaining <= 0 || deductionLeft <= 0) continue;
             const amount = Math.min(remaining, deductionLeft);
             loan.repayments.push({ date: paidAt, amount, clientOfflineId });
@@ -9727,10 +9787,7 @@ async function applyPayrollLoanDeductions({ companyId, batch, paidAt }) {
             await loan.save();
             deductionLeft -= amount;
         }
-        const totalRemaining = employeeLoans.reduce((sum, loan) => {
-            const totalPaid = (loan.repayments || []).reduce((paid, repayment) => paid + Number(repayment.amount || 0), 0);
-            return sum + Math.max(0, Number(loan.totalLoanAmount || 0) - totalPaid);
-        }, 0);
+        const totalRemaining = employeeLoans.reduce((sum, loan) => sum + loanRemainingAmount(loan), 0);
         remainingByEmployee.set(employeeId, totalRemaining);
     }
     return remainingByEmployee;
@@ -9815,7 +9872,6 @@ app.post(
                                     : Number(item.loans || 0),
                                 replacementDeduction: 0,
                                 absenceDeduction: 0,
-                                otherDeductions: 0,
                                 bonuses: 0,
                                 overtimeAmount: 0,
                                 paidLeaveDays: 0,
@@ -9872,8 +9928,8 @@ app.get('/api/admin/loans', requireAdmin, async (req, res) => {
     try {
         const loans = await LoanRecord.find({ companyId: req.session.companyId }).sort({ createdAt: -1 }).lean();
         loans.forEach(loan => {
-            const totalRepayments = (loan.repayments || []).reduce((sum, r) => sum + (r.amount || 0), 0);
-            loan.remainingAmount = loan.totalLoanAmount - totalRepayments;
+            loan.paidAmount = loanPaidAmount(loan);
+            loan.remainingAmount = loanRemainingAmount(loan);
         });
         res.json({ success: true, loans });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -9902,8 +9958,12 @@ app.post('/api/admin/loans', requireAdmin, async (req, res) => {
             }
         }
 
-        const { employeeId, employeeName, specialty, workplace, totalLoanAmount, loanDate } = req.body;
+        const { employeeId, employeeName, specialty, workplace, totalLoanAmount, monthlyInstallment, loanDate } = req.body;
         if (!employeeId || !totalLoanAmount || totalLoanAmount <= 0) return res.status(400).json({ success: false, message: 'بيانات السلفة ناقصة' });
+        const installment = Number(monthlyInstallment || 0);
+        if (!Number.isFinite(installment) || installment <= 0 || installment > Number(totalLoanAmount)) {
+            return res.status(400).json({ success: false, message: 'قسط السلفة الشهري مطلوب ويجب ألا يتجاوز مبلغ السلفة' });
+        }
         const loan = await new LoanRecord({
             clientOfflineId,
 
@@ -9913,10 +9973,12 @@ app.post('/api/admin/loans', requireAdmin, async (req, res) => {
             specialty: specialty || '',
             workplace: workplace || '',
             totalLoanAmount,
+            monthlyInstallment: installment,
             loanDate: loanDate ? new Date(loanDate) : new Date(),
             repayments: [],
             remainingAmount: totalLoanAmount
         }).save();
+        await syncEmployeeLoanSummary(req.session.companyId, employeeId);
         res.status(201).json({ success: true, loan });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
@@ -9969,10 +10031,41 @@ app.post('/api/admin/loans/:employeeId/repayments', requireAdmin, async (req, re
             amount,
             clientOfflineId
         });
-        const totalRepayments = loan.repayments.reduce((sum, r) => sum + r.amount, 0);
-        loan.remainingAmount = loan.totalLoanAmount - totalRepayments;
+        loan.remainingAmount = loanRemainingAmount(loan);
         await loan.save();
+        await syncEmployeeLoanSummary(req.session.companyId, loan.employeeId);
         res.json({ success: true, loan });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.put('/api/admin/loans/:id', requireAdmin, async (req, res) => {
+    try {
+        const loan = await LoanRecord.findOne({ _id: req.params.id, companyId: req.session.companyId });
+        if (!loan) return res.status(404).json({ success: false, message: 'السلفة غير موجودة' });
+
+        const total = Number(req.body.totalLoanAmount);
+        const installment = Number(req.body.monthlyInstallment);
+        const paid = Number(req.body.paidAmount);
+        const remaining = Number(req.body.remainingAmount);
+        if (![total, installment, paid, remaining].every(Number.isFinite) || total <= 0 || installment < 0 || paid < 0 || remaining < 0) {
+            return res.status(400).json({ success: false, message: 'تحقق من مبالغ السلفة والقسط والمدفوع والمتبقي' });
+        }
+        if (installment > total || paid > total || remaining > total || Math.abs(total - paid - remaining) > 0.01) {
+            return res.status(400).json({ success: false, message: 'يجب أن يساوي المدفوع مع المتبقي مجموع السلفة' });
+        }
+
+        const recordedRepayments = (loan.repayments || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+        loan.totalLoanAmount = total;
+        loan.monthlyInstallment = installment;
+        loan.manualPaidAdjustment = paid - recordedRepayments;
+        loan.remainingAmount = remaining;
+        await loan.save();
+        await syncEmployeeLoanSummary(req.session.companyId, loan.employeeId);
+
+        const result = loan.toObject();
+        result.paidAmount = loanPaidAmount(loan);
+        result.remainingAmount = loanRemainingAmount(loan);
+        res.json({ success: true, loan: result });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
@@ -9980,6 +10073,7 @@ app.delete('/api/admin/loans/:id', requireAdmin, async (req, res) => {
     try {
         const loan = await LoanRecord.findOneAndDelete({ _id: req.params.id, companyId: req.session.companyId });
         if (!loan) return res.status(404).json({ success: false, message: 'السلفة غير موجودة' });
+        await syncEmployeeLoanSummary(req.session.companyId, loan.employeeId);
         res.json({ success: true, message: 'تم حذف السلفة' });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
@@ -11002,6 +11096,20 @@ function isWithinShiftWindow(timestamp, start, end) {
         : minutes >= startMinutes || minutes <= endMinutes;
 }
 
+function isBeforeShiftWindow(timestamp, start, end) {
+    const startMinutes = shiftTimeInMinutes(start);
+    const endMinutes = shiftTimeInMinutes(end);
+    if (startMinutes === null || endMinutes === null) return false;
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Baghdad', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(timestamp);
+    const minutes = Number(parts.find(part => part.type === 'hour').value) * 60 +
+        Number(parts.find(part => part.type === 'minute').value);
+    return startMinutes <= endMinutes
+        ? minutes < startMinutes
+        : minutes > endMinutes && minutes < startMinutes;
+}
+
 async function attendanceRequirementForEmployee(employee, at = new Date()) {
     const dayStart = new Date(at);
     dayStart.setHours(0, 0, 0, 0);
@@ -11467,6 +11575,8 @@ app.post(
                     )
                     : '';
 
+            let earlyExitPending = false;
+
             if (!activeDelegation) {
 
                 if (
@@ -11487,22 +11597,21 @@ app.post(
 
                 }
 
-                if (
-                    !isWithinShiftWindow(
-                        attendanceTime,
-                        shiftStart,
-                        shiftEnd
-                    )
-                ) {
+                if (!isWithinShiftWindow(attendanceTime, shiftStart, shiftEnd)) {
 
-                    return res.status(403).json({
+                    if (!isCheckIn && isBeforeShiftWindow(attendanceTime, shiftStart, shiftEnd)) {
+                        earlyExitPending = true;
+                    } else {
 
-                        success: false,
+                        return res.status(403).json({
 
-                        message:
-                            'أنت خارج وقت الشفت.'
+                            success: false,
 
-                    });
+                            message:
+                                'أنت خارج وقت الشفت.'
+
+                        });
+                    }
 
                 }
 
@@ -11846,7 +11955,14 @@ app.post(
                     timeStatus:
                         activeDelegation
                             ? 'delegation'
-                            : 'within-shift',
+                            : earlyExitPending
+                                ? 'early-exit-pending'
+                                : 'within-shift',
+
+                    managerApprovalStatus:
+                        earlyExitPending
+                            ? 'pending'
+                            : 'not-required',
 
                     deviceId,
 
@@ -11896,7 +12012,9 @@ app.post(
                 success: true,
 
                 message:
-                    'تم تسجيل الحضور بالبصمة والجهاز والموقع وحفظه في MongoDB',
+                    earlyExitPending
+                        ? 'تم تسجيل الخروج المبكر وهو بانتظار موافقة المدير'
+                        : 'تم تسجيل الحضور بالبصمة والجهاز والموقع وحفظه في MongoDB',
 
                 attendanceId:
                     attendance._id

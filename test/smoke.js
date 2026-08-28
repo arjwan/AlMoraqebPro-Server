@@ -257,11 +257,21 @@ async function waitForServer(url, retries, delay) {
             const withinDeparture = await submitAttendance(31, 45, '2026-08-25T13:30:00.000Z', 'departure');
             check('departure accepted within assigned shift window', withinDeparture.status === 201 && withinDeparture.body.success === true);
 
+            const earlyDeparture = await submitAttendance(31, 45, '2026-08-26T12:00:00.000Z', 'departure');
+            check('early departure waits for manager approval', earlyDeparture.status === 201 &&
+                String(earlyDeparture.body.message).includes('موافقة المدير'));
+
             const managerAttendance = await (await fetch(BASE + '/api/admin/attendance', {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
             })).json();
             check('attendance appears in manager dashboard with employee name', managerAttendance.success === true &&
                 managerAttendance.attendance.some(record => record.employeeId === approvedEmployee._id && record.employeeName === approvedEmployee.name));
+            const pendingEarlyExit = managerAttendance.attendance.find(record => record._id === earlyDeparture.body.attendanceId);
+            const approvedEarlyExit = await (await fetch(BASE + '/api/admin/attendance/' + pendingEarlyExit._id + '/approve-early-exit', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token }, body: '{}'
+            })).json();
+            check('manager approval makes early departure valid', approvedEarlyExit.success === true &&
+                approvedEarlyExit.attendance.timeStatus === 'early-exit-approved');
             check('manager attendance endpoint rejects anonymous access', (await fetch(BASE + '/api/admin/attendance')).status === 401);
 
             const calculateAugust = await (await fetch(BASE + '/api/admin/payroll/calculate', {
@@ -358,7 +368,7 @@ async function waitForServer(url, retries, delay) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
                 body: JSON.stringify({ employeeId: approvedEmployee._id, employeeName: approvedEmployee.name,
-                    totalLoanAmount: 100, loanDate: '2026-08-20' })
+                    totalLoanAmount: 100, monthlyInstallment: 20, loanDate: '2026-08-20' })
             })).json();
             check('employee loan added automatically to payroll source', loan.success === true && Number(loan.loan.remainingAmount) === 100);
 
@@ -441,6 +451,15 @@ async function waitForServer(url, retries, delay) {
             check('recalculation preserves settings and updated loan balance', recalculatedAfterPayment.success === true &&
                 Number(recalculatedSalary.allowances) === 15 && Number(recalculatedSalary.securityDeduction) === 5 &&
                 Number(recalculatedSalary.loanDeduction) === 20 && Number(recalculatedSalary.loans) === 80);
+
+            const manualLoanEdit = await (await fetch(BASE + '/api/admin/loans/' + paidLoan._id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ totalLoanAmount: 100, monthlyInstallment: 15, paidAmount: 30, remainingAmount: 70 })
+            })).json();
+            check('loan total installment paid and remaining support manual correction', manualLoanEdit.success === true &&
+                Number(manualLoanEdit.loan.monthlyInstallment) === 15 && Number(manualLoanEdit.loan.paidAmount) === 30 &&
+                Number(manualLoanEdit.loan.remainingAmount) === 70);
 
             const afterLink = await (await fetch(BASE + '/api/employees?companyId=' + encodeURIComponent(companyId), {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }

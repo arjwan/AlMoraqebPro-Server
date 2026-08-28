@@ -74,7 +74,7 @@ th{background:#1e293b;color:#fff;padding:11px}td{padding:10px;border-bottom:1px 
 </select>
 </div>
 
-<section id="panel-attendance" class="panel active"><div class="table-wrap"><table><thead><tr><th>#</th><th>الموظف</th><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>الشفت</th><th>الموقع</th><th>الحالة</th><th>GPS</th></tr></thead><tbody id="attendanceBody"></tbody></table></div></section>
+<section id="panel-attendance" class="panel active"><div class="table-wrap"><table><thead><tr><th>#</th><th>الموظف</th><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>الشفت</th><th>الموقع</th><th>الحالة</th><th>GPS</th><th>إجراء</th></tr></thead><tbody id="attendanceBody"></tbody></table></div></section>
 
 <section id="panel-absence" class="panel"><div class="table-wrap"><table><thead><tr><th>#</th><th>الموظف</th><th>الاختصاص</th><th>موقع العمل</th><th>الحالة</th></tr></thead><tbody id="absenceBody"></tbody></table></div></section>
 
@@ -686,15 +686,36 @@ function renderAttendance(){
             <td>${esc(x.workplace||x.delegationLocationName||'—')}</td>
             <td>
                 ${
-                    x.delegationApplied
+                    x.timeStatus === 'early-exit-pending'
+                    ? '<span class="tag tag-orange">خروج مبكر بانتظار الموافقة</span>'
+                    : x.timeStatus === 'early-exit-approved'
+                    ? '<span class="tag tag-green">خروج مبكر معتمد</span>'
+                    : x.delegationApplied
                     ? '<span class="tag tag-orange">إيفاد</span>'
                     : '<span class="tag tag-green">اعتيادي</span>'
                 }
             </td>
             <td>${Number(x.latitude).toFixed(5)}, ${Number(x.longitude).toFixed(5)}</td>
+            <td>${x.timeStatus === 'early-exit-pending' ? `<button class="btn green" onclick="event.stopPropagation();approveEarlyExit('${esc(x._id)}')">موافقة المدير</button>` : '—'}</td>
         </tr>
         `).join('')
-        : '<tr><td colspan="9">لا توجد سجلات</td></tr>';
+        : '<tr><td colspan="10">لا توجد سجلات</td></tr>';
+}
+
+async function approveEarlyExit(id) {
+    try {
+        const result = await api('/api/admin/attendance/' + encodeURIComponent(id) + '/approve-early-exit', { method: 'POST' });
+        await loadAttendance();
+        const notice = document.getElementById('notice');
+        notice.textContent = '✅ ' + result.message;
+        notice.style.background = '#dcfce7';
+        notice.style.color = '#166534';
+    } catch (error) {
+        const notice = document.getElementById('notice');
+        notice.textContent = '❌ ' + error.message;
+        notice.style.background = '#fee2e2';
+        notice.style.color = '#991b1b';
+    }
 }
 
 function employeeMovements(employeeId){
