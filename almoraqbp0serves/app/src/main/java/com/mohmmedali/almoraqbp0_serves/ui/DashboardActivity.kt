@@ -46,6 +46,7 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var locationManager: LocationManager
     private val db by lazy { AppDatabase.getDatabase(this) }
     private var pendingType = "attendance"
+    private var permissionRequestedForAttendance = false
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -53,6 +54,10 @@ class DashboardActivity : AppCompatActivity() {
         if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
             Toast.makeText(this, getString(R.string.dash_location_permission_granted), Toast.LENGTH_SHORT).show()
+            if (permissionRequestedForAttendance) {
+                permissionRequestedForAttendance = false
+                startAttendance(pendingType)
+            }
         } else {
             Toast.makeText(this, getString(R.string.dash_location_permission_required), Toast.LENGTH_SHORT).show()
         }
@@ -245,6 +250,7 @@ class DashboardActivity : AppCompatActivity() {
         pendingType = type
         if (!ensureGpsEnabled()) return
         if (!locationManager.hasPermission()) {
+            permissionRequestedForAttendance = true
             Toast.makeText(this, getString(R.string.dash_location_permission_first), Toast.LENGTH_SHORT).show()
             requestPermissionsIfNeeded()
             return
@@ -301,6 +307,7 @@ class DashboardActivity : AppCompatActivity() {
 
             val request = AttendanceRequest(
                 employeeId = employeeId,
+                companyId = prefs.getString("companyId", "") ?: "",
                 deviceId = deviceId,
                 challengeId = challengeId,
                 fingerprintToken = fingerprintToken,
@@ -386,6 +393,7 @@ class DashboardActivity : AppCompatActivity() {
             CoroutineScope(Dispatchers.IO).launch {
                 val prefs = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
                 val employeeId = prefs.getString("employeeId", "") ?: ""
+                val companyId = prefs.getString("companyId", "") ?: ""
                 val deviceId = prefs.getString("deviceId", "")
                     ?: Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
 
@@ -401,6 +409,7 @@ class DashboardActivity : AppCompatActivity() {
                     val response = RetrofitClient.apiService.sendLocation(
                         LocationUpdateRequest(
                             employeeId = employeeId,
+                            companyId = companyId,
                             deviceId = deviceId,
                             latitude = location.latitude,
                             longitude = location.longitude,
@@ -439,9 +448,12 @@ class DashboardActivity : AppCompatActivity() {
         type: String,
         timestamp: String
     ) {
+        val companyId = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
+            .getString("companyId", "") ?: ""
         db.attendanceDao().insert(
             PendingAttendance(
                 employeeId = employeeId,
+                companyId = companyId,
                 deviceId = deviceId,
                 challengeId = challengeId,
                 fingerprintToken = fingerprintToken,

@@ -162,7 +162,7 @@
     <string name="dash_open_settings">فتح الإعدادات</string>
     <string name="dash_cancel">إلغاء</string>
     <string name="dash_location_permission_first">يرجى منح إذن الموقع أولاً</string>
-    <string name="dash_location_error">تعذر الحصول على الموقع، تأكد من تفعيل GPS</string>
+    <string name="dash_location_error">تعذر تحديد موقعك، فعّل GPS وحاول مرة أخرى.</string>
     <string name="dash_fingerprint_error">خطأ في البصمة: %1$s</string>
     <string name="dash_challenge_failed">تعذر إنشاء تحدي البصمة</string>
     <string name="dash_fingerprint_rejected">مرفوضة</string>

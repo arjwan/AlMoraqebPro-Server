@@ -534,6 +534,12 @@ const employeeRequestSchema = new mongoose.Schema({
 
     location: String,
 
+    lastKnownLocation: {
+        latitude: Number,
+        longitude: Number,
+        timestamp: Date
+    },
+
     username: String,
 
     password: String,
@@ -10900,6 +10906,35 @@ app.get('/api/employee/attendance-requirement', async (req, res) => {
     }
 });
 
+app.post('/api/employee/location', async (req, res) => {
+    try {
+        const employeeId = String(req.body.employeeId || '').trim();
+        const companyId = String(req.body.companyId || '').trim();
+        const deviceId = String(req.body.deviceId || '').trim();
+        const latitude = Number(req.body.latitude);
+        const longitude = Number(req.body.longitude);
+        const timestamp = req.body.timestamp ? new Date(req.body.timestamp) : new Date();
+
+        if (!employeeId || !companyId || !deviceId ||
+            !Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+            !Number.isFinite(longitude) || longitude < -180 || longitude > 180 ||
+            (latitude === 0 && longitude === 0) || Number.isNaN(timestamp.getTime())) {
+            return res.status(400).json({ success: false, message: 'بيانات الموقع غير صحيحة' });
+        }
+
+        const employee = await Employee.findOne({ _id: employeeId, companyId, deviceId });
+        if (!employee) {
+            return res.status(403).json({ success: false, message: 'هذا الجهاز غير مرتبط بالموظف' });
+        }
+
+        employee.lastKnownLocation = { latitude, longitude, timestamp };
+        await employee.save();
+        return res.json({ success: true, message: 'تم حفظ الموقع الحالي' });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 app.get(
     '/api/attendance/challenge',
     async (req, res) => {
@@ -11297,7 +11332,7 @@ app.post(
                         success: false,
 
                         message:
-                            `البصمة خارج وقت ${isCheckIn ? 'الحضور' : 'الانصراف'} للشفت ${shift.name} (${shiftStart} - ${shiftEnd})`
+                            'أنت خارج وقت الشفت.'
 
                     });
 
@@ -11547,7 +11582,7 @@ app.post(
                         success: false,
 
                         message:
-                            `فشل تسجيل البصمة: الموظف خارج جميع المواقع المعتمدة للشركة${nearestDistance !== null ? ` (أقرب موقع ${Math.round(nearestDistance)}م)` : ''}`
+                            'فشل تسجيل البصمة: أنت خارج نطاق موقع الشركة.'
 
                     });
 

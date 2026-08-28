@@ -18,6 +18,7 @@ data class PendingAttendance(
     val id: Long = 0,
 
     val employeeId: String,
+    val companyId: String,
     val deviceId: String,
     val challengeId: String,
     val fingerprintToken: String,
@@ -88,7 +89,7 @@ interface AttendanceDao {
         PendingAttendance::class,
         PendingServiceRequest::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -133,7 +134,11 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "almoraqebpro_database"
                 )
-                    .addMigrations(migration1To2)
+                    .addMigrations(migration1To2, object : Migration(2, 3) {
+                        override fun migrate(db: SupportSQLiteDatabase) {
+                            db.execSQL("ALTER TABLE pending_attendance ADD COLUMN companyId TEXT NOT NULL DEFAULT ''")
+                        }
+                    })
                     .build()
 
                 INSTANCE = instance

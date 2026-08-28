@@ -46,6 +46,7 @@ data class AttendanceRequirementResponse(
 
 data class AttendanceRequest(
     val employeeId: String,
+    val companyId: String,
     val deviceId: String,
     val challengeId: String,
     val fingerprintToken: String,
@@ -147,6 +148,7 @@ data class RegisterResponse(
 // ========== إرسال الموقع الحالي ==========
 data class LocationUpdateRequest(
     val employeeId: String,
+    val companyId: String,
     val deviceId: String,
     val latitude: Double,
     val longitude: Double,

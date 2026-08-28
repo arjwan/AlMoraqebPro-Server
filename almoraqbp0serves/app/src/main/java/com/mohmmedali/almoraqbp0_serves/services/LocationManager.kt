@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -48,9 +50,45 @@ class LocationManager(private val context: Context) {
             Priority.PRIORITY_HIGH_ACCURACY,
             cancellationTokenSource.token
         ).addOnSuccessListener { location ->
-            callback(location)
+            if (location != null && location.hasValidCoordinates()) {
+                callback(location)
+            } else {
+                requestFreshLocation(callback)
+            }
         }.addOnFailureListener {
-            callback(null)
+            requestFreshLocation(callback)
         }
     }
+
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+    private fun requestFreshLocation(callback: (Location?) -> Unit) {
+        val request = com.google.android.gms.location.LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            1000L
+        ).setMaxUpdates(1).setWaitForAccurateLocation(true).build()
+        val completed = java.util.concurrent.atomic.AtomicBoolean(false)
+        val locationCallback = object : com.google.android.gms.location.LocationCallback() {
+            override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
+                if (completed.compareAndSet(false, true)) {
+                    fusedClient.removeLocationUpdates(this)
+                    callback(result.lastLocation?.takeIf { it.hasValidCoordinates() })
+                }
+            }
+        }
+        fusedClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper())
+            .addOnFailureListener {
+                if (completed.compareAndSet(false, true)) callback(null)
+            }
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (completed.compareAndSet(false, true)) {
+                fusedClient.removeLocationUpdates(locationCallback)
+                callback(null)
+            }
+        }, 10000L)
+    }
+
+    private fun Location.hasValidCoordinates(): Boolean =
+        latitude.isFinite() && longitude.isFinite() &&
+            latitude != 0.0 && longitude != 0.0 &&
+            latitude in -90.0..90.0 && longitude in -180.0..180.0
 }

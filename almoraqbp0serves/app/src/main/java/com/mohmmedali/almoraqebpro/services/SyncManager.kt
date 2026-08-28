@@ -140,6 +140,7 @@ class SyncManager(
                 val request =
                     AttendanceRequest(
                         employeeId = record.employeeId,
+                        companyId = record.companyId,
                         deviceId = record.deviceId,
                         challengeId = challengeId,
                         fingerprintToken = record.fingerprintToken,
