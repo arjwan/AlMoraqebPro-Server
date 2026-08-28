@@ -4567,6 +4567,23 @@ app.get(
                     ''
                 ).trim();
 
+            const sessionCompanyId =
+                String(
+                    req.session.companyId ||
+                    ''
+                ).trim();
+
+            if (
+                !sessionCompanyId ||
+                companyId !== sessionCompanyId
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        'لا يمكنك عرض طلبات شركة أخرى'
+                });
+            }
+
             const requests =
                 await EmployeeRequest
                     .find({
@@ -4604,6 +4621,7 @@ app.get(
 
 app.get(
     '/api/employee/requests/:companyId/pending',
+    requireAdmin,
     async (req, res) => {
 
         try {
@@ -4613,6 +4631,23 @@ app.get(
                     req.params.companyId ||
                     ''
                 ).trim();
+
+            const sessionCompanyId =
+                String(
+                    req.session.companyId ||
+                    ''
+                ).trim();
+
+            if (
+                !sessionCompanyId ||
+                companyId !== sessionCompanyId
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        'لا يمكنك عرض طلبات شركة أخرى'
+                });
+            }
 
             const requests =
                 await EmployeeRequest
@@ -4659,6 +4694,7 @@ app.get(
 
 app.post(
     '/api/employee/request/:requestId/approve',
+    requireAdmin,
     async (req, res) => {
 
         const requestId =
@@ -4693,6 +4729,24 @@ app.post(
 
                 });
 
+            }
+
+            const sessionCompanyId =
+                String(
+                    req.session.companyId ||
+                    ''
+                ).trim();
+
+            if (
+                !sessionCompanyId ||
+                String(request.companyId || '').trim() !==
+                    sessionCompanyId
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        'لا يمكنك اعتماد طلب تابع لشركة أخرى'
+                });
             }
 
             if (
@@ -4753,7 +4807,7 @@ app.post(
                         'الموظف موجود بالفعل في الشركة، وتم اعتماد الطلب فقط.',
 
                     employee:
-                        publicEmployee(
+                        employeeWithSignedMedia(
                             existingEmployee
                         )
 
@@ -4840,7 +4894,7 @@ app.post(
                     'تم اعتماد الموظف. بيانات الدخول تُحدد من لوحة المدير.',
 
                 employee:
-                    publicEmployee(
+                    employeeWithSignedMedia(
                         employee
                     )
 
@@ -4912,9 +4966,12 @@ app.patch(
             }
 
             const employee =
-                await Employee.findById(
-                    req.params.employeeId
-                );
+                await Employee.findOne({
+                    _id:
+                        req.params.employeeId,
+                    companyId:
+                        req.session.companyId
+                });
 
             if (
                 !employee ||
@@ -11054,14 +11111,18 @@ app.get(
 
 app.post(
     '/api/employees/:employeeId/loan',
+    requireAdmin,
     async (req, res) => {
 
         try {
 
             const employee =
-                await Employee.findById(
-                    req.params.employeeId
-                );
+                await Employee.findOne({
+                    _id:
+                        req.params.employeeId,
+                    companyId:
+                        req.session.companyId
+                });
 
             if (!employee) {
 
@@ -11127,7 +11188,7 @@ app.post(
                     'تم إضافة السلفة بنجاح',
 
                 employee:
-                    publicEmployee(
+                    employeeWithSignedMedia(
                         employee
                     )
 
