@@ -28,6 +28,7 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        binding.tvAppInfo.text = getString(R.string.settings_app_info, packageManager.getPackageInfo(packageName, 0).versionName ?: "-")
 
         val prefs = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
         val savedLanguage = prefs.getString("app_language", "ar") ?: "ar"
@@ -35,6 +36,8 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.rbArabic.isChecked = savedLanguage == "ar"
         binding.rbEnglish.isChecked = savedLanguage == "en"
+        binding.rbKurdish.isChecked = savedLanguage == "ku"
+        binding.rbPersian.isChecked = savedLanguage == "fa"
 
         when (savedThemeMode) {
             AppCompatDelegate.MODE_NIGHT_NO -> binding.rbLight.isChecked = true
@@ -46,6 +49,8 @@ class SettingsActivity : AppCompatActivity() {
             val selectedLanguage = when (checkedId) {
                 R.id.rbArabic -> "ar"
                 R.id.rbEnglish -> "en"
+                R.id.rbKurdish -> "ku"
+                R.id.rbPersian -> "fa"
                 else -> savedLanguage
             }
 
@@ -70,9 +75,9 @@ class SettingsActivity : AppCompatActivity() {
         val deviceId = prefs.getString("deviceId", "")
             ?: Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: "-"
 
-        binding.tvEmployeeNameInfo.text = "الاسم: $employeeName"
-        binding.tvDeviceIdInfo.text = "Device ID: $deviceId"
-        binding.tvCompanyIdInfo.text = "رمز الشركة: $companyId"
+        binding.tvEmployeeNameInfo.text = getString(R.string.settings_employee_name, employeeName)
+        binding.tvDeviceIdInfo.text = getString(R.string.settings_device_id, deviceId)
+        binding.tvCompanyIdInfo.text = getString(R.string.settings_company_code, companyId)
 
         // حالة الموقع
         updateLocationStatus()
@@ -83,14 +88,9 @@ class SettingsActivity : AppCompatActivity() {
         // معلومات المطور
         binding.btnDevInfoSettings.setOnClickListener {
             AlertDialog.Builder(this)
-                .setTitle("ℹ️ معلومات المطور")
-                .setMessage(
-                    "المطور: محمد علي\n\n" +
-                    "التطبيق: المراقب برو - تطبيق الموظفين\n" +
-                    "الإصدار: 4.0.1\n\n" +
-                    "للتواصل والدعم الفني يرجى مراجعة إدارة الشركة."
-                )
-                .setPositiveButton("حسناً", null)
+                .setTitle(getString(R.string.settings_dev_title))
+                .setMessage(getString(R.string.settings_dev_message, packageManager.getPackageInfo(packageName, 0).versionName ?: "-"))
+                .setPositiveButton(getString(R.string.settings_ok), null)
                 .show()
         }
 
@@ -121,15 +121,15 @@ class SettingsActivity : AppCompatActivity() {
                 lm.isProviderEnabled(SystemLocationManager.NETWORK_PROVIDER)
 
         binding.tvLocationStatus.text = when {
-            hasPermission && gpsOn -> "✅ الصلاحية ممنوحة و GPS مفعّل"
-            hasPermission && !gpsOn -> "⚠️ الصلاحية ممنوحة لكن GPS مغلق — فعّله من الإعدادات"
-            !hasPermission && gpsOn -> "⚠️ GPS مفعّل لكن إذن الموقع غير ممنوح"
-            else -> "❌ لا توجد صلاحية موقع و GPS مغلق"
+            hasPermission && gpsOn -> getString(R.string.settings_location_ready)
+            hasPermission && !gpsOn -> getString(R.string.settings_location_gps_off)
+            !hasPermission && gpsOn -> getString(R.string.settings_location_permission_missing)
+            else -> getString(R.string.settings_location_all_off)
         }
     }
 
     private fun testConnection() {
-        binding.tvServerStatusSettings.text = "⏳ جارٍ الاختبار..."
+        binding.tvServerStatusSettings.text = getString(R.string.settings_testing)
         binding.tvServerStatusSettings.setTextColor(0xFFFACC15.toInt())
         CoroutineScope(Dispatchers.IO).launch {
             var connected = false
@@ -139,13 +139,13 @@ class SettingsActivity : AppCompatActivity() {
             }
             withContext(Dispatchers.Main) {
                 if (connected) {
-                    binding.tvServerStatusSettings.text = "🟢 متصل — السيرفر يعمل"
+                    binding.tvServerStatusSettings.text = getString(R.string.settings_server_connected)
                     binding.tvServerStatusSettings.setTextColor(0xFF22C55E.toInt())
-                    Toast.makeText(this@SettingsActivity, "الاتصال ناجح ✅", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@SettingsActivity, getString(R.string.settings_connection_success), Toast.LENGTH_SHORT).show()
                 } else {
-                    binding.tvServerStatusSettings.text = "🔴 غير متصل — تحقق من الإنترنت"
+                    binding.tvServerStatusSettings.text = getString(R.string.settings_server_disconnected)
                     binding.tvServerStatusSettings.setTextColor(0xFFEF4444.toInt())
-                    Toast.makeText(this@SettingsActivity, "فشل الاتصال بالسيرفر ❌", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@SettingsActivity, getString(R.string.settings_connection_failed), Toast.LENGTH_SHORT).show()
                 }
             }
         }

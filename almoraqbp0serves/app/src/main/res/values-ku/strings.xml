@@ -1,0 +1,353 @@
+<resources>
+    <string name="app_name">چاودێر پرۆ 4.0.2</string>
+    <string name="settings_title">ڕێکخستنەکانی ئەپ</string>
+    <string name="employee_info">👤 زانیاری کارمەند</string>
+    <string name="server_status">🌐 دۆخی سێرڤەر</string>
+    <string name="test_connection">🔄 تاقیکردنەوەی پەیوەندی سێرڤەر</string>
+    <string name="location_status">📍 دۆخی شوێن</string>
+    <string name="language">زمان</string>
+    <string name="arabic">العربية</string>
+    <string name="english">English</string>
+    <string name="kurdish">کوردی</string>
+    <string name="persian">فارسی</string>
+    <string name="appearance">ڕووکار</string>
+    <string name="light">ڕووناک</string>
+    <string name="dark">تاریک</string>
+    <string name="system_default">بەپێی سیستەم</string>
+    <string name="developer_info">ℹ زانیاری گەشەپێدەر</string>
+    <string name="logout">🚪 چوونەدەرەوە</string>
+    <string name="back">گەڕانەوە</string>
+
+    <string name="login_server_checking">⏳ پشکنینی سێرڤەری ناوەندی...</string>
+    <string name="login_brand">☀ 🛡 چاودێر پرۆ</string>
+    <string name="login_portal">دەروازەی زیرەکی کارمەندان</string>
+    <string name="join_request">📝 داواکاری بەشداربوون</string>
+    <string name="login_tab">🔒 چوونەژوورەوە</string>
+    <string name="employee_login_title">چوونەژوورەوەی کارمەند</string>
+    <string name="employee_login_subtitle">زانیاری هەژمارە پەسەندکراوەکە لەلایەن کۆمپانیاوە بنووسە.</string>
+    <string name="company_code">کۆدی کۆمپانیا</string>
+    <string name="company_code_example">نموونە: B-2080</string>
+    <string name="username">ناوی بەکارهێنەر</string>
+    <string name="password">وشەی نهێنی</string>
+    <string name="login_button">🚀 چوونەژوورەوە بۆ هەژمارەکەم</string>
+    <string name="developer_information">زانیاری گەشەپێدەر</string>
+    <string name="developer_company">کۆمپانیای ئەرجوان بۆ بەرنامەسازی</string>
+    <string name="developer_name">گەشەپێدەر: محمد العبيدي</string>
+
+    <string name="register_title">داواکاری نوێی بەشداربوونی کارمەند</string>
+    <string name="company_name">ناوی کۆمپانیا</string>
+    <string name="employee_name">ناوی کارمەند</string>
+    <string name="phone_number">ژمارەی تەلەفۆن</string>
+    <string name="job_title">ناونیشانی کار</string>
+    <string name="work_location">شوێنی کار</string>
+    <string name="salary">مووچە</string>
+    <string name="shift">شیفت</string>
+    <string name="work_hours">کاتژمێرەکانی کار</string>
+    <string name="wage_type">جۆری مووچە</string>
+    <string name="social_security">دەستەبەری کۆمەڵایەتی</string>
+    <string name="location">شوێن</string>
+    <string name="send_request">ناردنی داواکاری</string>
+    <string name="services_brand">چاودێر پرۆ</string>
+    <string name="services_checking">● پشکنین...</string>
+    <string name="services_banner">📢 بەخێربێیت بۆ خزمەتگوزارییەکانی چاودێر پرۆ • 🦺 بەیانی: پابەند بە ڕێنماییەکانی سەلامەتی پیشەیی بە و ئامرازەکانی پاراستن بەکاربهێنە • 🧯 ڕێنماییەکانی بەرگری شارستانی، دەرگاکانی فریاکەوتن و شوێنی کۆبوونەوە جێبەجێ بکە • 🛡 لە کاتی گەیشتن تۆماری ئامادەبوون بکە • 📅 لێرە دەتوانیت داواکاری مۆڵەت و پێشەکی بنێریت • 🚪 لە کۆتایی کار تۆماری چوون بکە و بە پێی ڕێنمایی کۆمپانیا و سەلامەتی شوێنی کار جێبهێڵە</string>
+    <string name="services_employee">کارمەند: -</string>
+    <string name="services_company">کۆمپانیا: -</string>
+    <string name="services_device">ئامێر: -</string>
+    <string name="services_account_active">دۆخی هەژمار: چالاک ✅</string>
+    <string name="loan_title">داواکاری پێشەکی</string>
+    <string name="loan_desc">ناردنی داواکاری پێشەکی دارایی</string>
+    <string name="leave_title">داواکاری مۆڵەت</string>
+    <string name="leave_desc">مۆڵەتی ئاسایی یان نەخۆشی</string>
+    <string name="my_requests_title">دۆخی داواکارییەکانم</string>
+    <string name="my_requests_desc">بەدواداچوونی داواکارییە نێردراوەکان</string>
+    <string name="attendance_history_title">مێژووی ئامادەبوون</string>
+    <string name="attendance_history_desc">هاتن، چوون و بەروارەکان</string>
+    <string name="manager_notifications_title">ئاگادارکردنەوەکانی بەڕێوەبەر</string>
+    <string name="manager_notifications_desc">نامە و ئاگادارکردنەوەکانی بەڕێوەبردن</string>
+    <string name="first_aid_title">فریاکەوتنی سەرەتایی</string>
+    <string name="first_aid_desc">ڕێنمایی پزیشکی دەنگی</string>
+    <string name="rewards_title">پاداشت و کەمکردنەوە</string>
+    <string name="rewards_desc">پیشاندانی زانیاری بەردەست</string>
+    <string name="account_status_title">دۆخی هەژمار</string>
+    <string name="account_status_desc">پشکنینی سێرڤەر و ئامێر</string>
+    <string name="app_settings_title">ڕێکخستنەکانی ئەپ</string>
+    <string name="app_settings_desc">زمان، ڕووکار و پەیوەندی</string>
+    <string name="back_attendance_title">گەڕانەوە بۆ ئامادەبوون</string>
+    <string name="back_attendance_desc">ڕووکارى کامێرا و ئامادەبوون</string>
+    <string name="svc_employee_value">کارمەند: %1$s</string>
+    <string name="svc_company_value">کۆمپانیا: %1$s</string>
+    <string name="svc_device_linked">ئامێر: بەستراوە ✅</string>
+    <string name="svc_device_unknown">ئامێر: نەناسراو</string>
+    <string name="svc_welcome_tts">بەخێربێیت %1$s. ئێستا دەتوانیت خزمەتگوزارییەکانی چاودێر پرۆ بەکاربهێنیت.</string>
+    <string name="svc_default_employee">کارمەند</string>
+    <string name="svc_morning_title">🌅 بەیانی باش</string>
+    <string name="svc_afternoon_title">🌤 نیوەڕۆ باش</string>
+    <string name="svc_evening_title">🌆 ئێوارە باش</string>
+    <string name="svc_night_title">🌙 شەو باش</string>
+    <string name="svc_morning_message">سڵاو %1$s – تۆماری ئامادەبوون لەبیر مەکە</string>
+    <string name="svc_general_message">سڵاو %1$s – هەموو خزمەتگوزارییەکانت لە یەک شوێن</string>
+    <string name="svc_evening_message">سڵاو %1$s – تۆماری چوون لەبیر مەکە</string>
+    <string name="svc_connected">● پەیوەستە</string>
+    <string name="svc_offline">● بێ ئینتەرنێت</string>
+    <string name="svc_loan_amount_hint">بڕی پارە بە دیناری عێراقی (نموونە: 500000)</string>
+    <string name="svc_loan_reason_hint">هۆکاری داواکاری پێشەکی بنووسە...</string>
+    <string name="svc_loan_dialog_title">💰 داواکاری پێشەکی دارایی</string>
+    <string name="svc_send_request">ناردنی داواکاری</string>
+    <string name="svc_cancel">هەڵوەشاندنەوە</string>
+    <string name="svc_invalid_loan_amount">⚠ بڕێکی دروستی پێشەکی بنووسە</string>
+    <string name="svc_loan_reason_required">⚠ هۆکاری پێشەکی بنووسە</string>
+    <string name="svc_loan_sent">داواکاری پێشەکی نێردرا</string>
+    <string name="svc_leave_normal">ئاسایی</string>
+    <string name="svc_leave_sick">نەخۆشی</string>
+    <string name="svc_leave_emergency">فریاکەوتن</string>
+    <string name="svc_leave_hourly">کاتی</string>
+    <string name="svc_leave_type">جۆری مۆڵەت</string>
+    <string name="svc_leave_from_hint">📅 لە بەرواری</string>
+    <string name="svc_leave_to_hint">📅 تا بەرواری</string>
+    <string name="svc_leave_reason_hint">هۆکاری مۆڵەت بنووسە...</string>
+    <string name="svc_leave_start_first">⚠ سەرەتا بەرواری دەستپێکی مۆڵەت دیاری بکە</string>
+    <string name="svc_leave_dialog_title">📅 داواکاری مۆڵەت</string>
+    <string name="svc_leave_start_required">⚠ بەرواری دەستپێکی مۆڵەت دیاری بکە</string>
+    <string name="svc_leave_end_required">⚠ بەرواری کۆتایی مۆڵەت دیاری بکە</string>
+    <string name="svc_leave_reason_required">⚠ هۆکاری مۆڵەت بنووسە</string>
+    <string name="svc_leave_reason_format">جۆری مۆڵەت: %1$s – %2$s</string>
+    <string name="svc_leave_sent">داواکاری مۆڵەت نێردرا</string>
+    <string name="svc_rewards_dialog_title">🎁 پاداشت و کەمکردنەوە</string>
+    <string name="svc_rewards_unavailable">ℹ لە ئێستادا APIی تایبەت بە پاداشت و کەمکردنەوە لە سێرڤەر نییە، بۆیە هیچ داتای ساختە پیشان نادرێت. کاتێک API زیاد کرا ئەم کارتەتە ڕاستەوخۆ دەبەسترێت.</string>
+    <string name="svc_ok">باشە</string>
+    <string name="svc_sending">⏳ ناردن...</string>
+    <string name="svc_request_success">داواکارییەکەت بە سەرکەوتوویی بۆ بەڕێوەبردن نێردرا.</string>
+    <string name="svc_server_rejected">سێرڤەر داواکارییەکەی ڕەتکردەوە (کۆد %1$d)</string>
+    <string name="svc_prepare_error">❌ هەڵەیەک لە ئامادەکردنی داواکاری ڕوویدا</string>
+    <string name="svc_local_mode">● کارکردنی ناوخۆیی</string>
+    <string name="svc_saved_locally">🟠 داواکارییەکە ناوخۆیی پاشەکەوت کرا\nکاتێک ئینتەرنێت بگەڕێتەوە خۆکارانە دەنێردرێت</string>
+    <string name="login_fill_all_fields">تکایە هەموو خانەکان پڕ بکەرەوە</string>
+    <string name="login_whatsapp_unavailable">واتساپ لەم ئامێرەدا بەردەست نییە</string>
+    <string name="login_email_unavailable">ئەپڵیکەیشنی ئیمەیڵ بەردەست نییە</string>
+    <string name="login_server_checking_full">⏳ پشکنینی پەیوەندی سێرڤەر...</string>
+    <string name="login_server_connected">🟢 سێرڤەر پەیوەستە</string>
+    <string name="login_server_disconnected">🔴 سێرڤەر پەیوەست نییە</string>
+    <string name="login_developer_title">ℹ زانیاری گەشەپێدەر</string>
+    <string name="login_developer_info">🏢 کۆمپانیای ئەرجوان بۆ نەرمەکاڵا\n👨‍💻 گەشەپێدەر: محمد العبيدي\n📱 واتساپ: 07807807491\n✉ ئیمەیڵ: mohmmed1628@gmail.com</string>
+    <string name="login_whatsapp_button">💬 واتساپ</string>
+    <string name="login_email_button">✉ ئیمەیڵ</string>
+    <string name="login_close">داخستن</string>
+    <string name="login_success">چوونەژوورەوە سەرکەوتوو بوو</string>
+    <string name="login_invalid_credentials">زانیاری چوونەژوورەوە هەڵەیە</string>
+    <string name="login_failed_code">چوونەژوورەوە سەرکەوتوو نەبوو (کۆد %1$d)</string>
+    <string name="login_connection_error">ناتوانرێت بە سێرڤەر پەیوەندی بکرێت. ئینتەرنێت بپشکنە</string>
+    <string name="register_screen_title">داواکاری بەشداربوونی کارمەندی نوێ</string>
+    <string name="register_company_name_required">⚠ کۆدی کۆمپانیا و ناوی کارمەند بنووسە</string>
+    <string name="register_salary_invalid">⚠ مووچەیەکی دروست و زیاتر لە سفر بنووسە</string>
+    <string name="register_hours_invalid">⚠ کاتژمێری کاری دروست و زیاتر لە سفر بنووسە</string>
+    <string name="register_sending">ناردن...</string>
+    <string name="register_success">✅ داواکاری بە سەرکەوتوویی نێردرا</string>
+    <string name="register_failed_code">ناردنی داواکاری سەرکەوتوو نەبوو (کۆد %1$d)</string>
+    <string name="register_connection_error">ناتوانرێت بە سێرڤەر پەیوەندی بکرێت. ئینتەرنێت بپشکنە و دووبارە هەوڵ بدەوە.</string>
+    <string name="register_send_button">ناردنی داواکاری</string>
+    <string name="dash_default_employee">کارمەند</string>
+    <string name="dash_welcome">بەخێربێیت %1$s</string>
+    <string name="dash_employee_label">کارمەند: %1$s</string>
+    <string name="dash_company_code_label">کۆدی کۆمپانیا: %1$s</string>
+    <string name="dash_home_hint">لە پەڕەی سەرەکی پەنجەمۆر و شوێندانیت</string>
+    <string name="dash_server_connected">🟢 سێرڤەر پەیوەستە</string>
+    <string name="dash_server_local">🟠 دۆخی ناوخۆیی – بێ ئینتەرنێت</string>
+    <string name="dash_gps_on">چالاکە</string>
+    <string name="dash_gps_off">ناچالاکە</string>
+    <string name="dash_location_permission_granted">مۆڵەتی شوێن درا</string>
+    <string name="dash_location_permission_required">بۆ تۆمارکردنی ئامادەبوون پێویستە مۆڵەتی شوێن بدرێت</string>
+    <string name="dash_gps_dialog_title">خزمەتگوزارییەکانی شوێن ناچالاکن</string>
+    <string name="dash_gps_dialog_message">بۆ تۆمارکردنی ئامادەبوون و ناردنی شوێن پێویستە GPS چالاک بێت. ڕێکخستنەکانی شوێن بکرێتەوە؟</string>
+    <string name="dash_open_settings">کردنەوەی ڕێکخستنەکان</string>
+    <string name="dash_cancel">هەڵوەشاندنەوە</string>
+    <string name="dash_location_permission_first">تکایە سەرەتا مۆڵەتی شوێن بدە</string>
+    <string name="dash_location_error">نەتوانرا شوێن دیاری بکرێت، دڵنیابە GPS چالاکە</string>
+    <string name="dash_fingerprint_error">هەڵەی پەنجەمۆر: %1$s</string>
+    <string name="dash_challenge_failed">نەتوانرا داواکاری پەنجەمۆر دروست بکرێت</string>
+    <string name="dash_fingerprint_rejected">ڕەتکرایەوە</string>
+    <string name="dash_fingerprint_synced">هاوکاتکرا</string>
+    <string name="dash_attendance_success">✅ %1$s بە سەرکەوتوویی تۆمارکرا</string>
+    <string name="dash_attendance_word">هاتن</string>
+    <string name="dash_exit_word">چوونەدەرەوە</string>
+    <string name="dash_fingerprint_accept_failed">پەنجەمۆر پەسەند نەکرا</string>
+    <string name="dash_saved_local">⚠ پەنجەمۆر ناوخۆیی پاشەکەوت کرا و چاوەڕێی هاوکاتکردنە</string>
+    <string name="dash_offline_saved">📴 پەیوەندی نییە، تۆمارەکە ناوخۆیی پاشەکەوت کرا و دواتر هاوکات دەکرێت</string>
+    <string name="dash_fingerprint_verify_failed">پشتڕاستکردنەوە سەرکەوتوو نەبوو</string>
+    <string name="dash_processing_error">❌ نەتوانرا پەنجەمۆر چارەسەر بکرێت: %1$s</string>
+    <string name="dash_unknown_error">هەڵەی نەناسراو</string>
+    <string name="dash_location_updated_now">ئێستا نوێکرایەوە</string>
+    <string name="dash_accuracy_meters">%1$.0f مەتر</string>
+    <string name="dash_employee_data_incomplete">زانیاری کارمەند تەواو نییە، سەرەتا بچۆ ژوورەوە</string>
+    <string name="dash_location_sent">✅ شوێنی ئێستا بە سەرکەوتوویی نێردرا</string>
+    <string name="dash_location_send_failed">ناردنی شوێن سەرکەوتوو نەبوو (کۆد %1$d)</string>
+    <string name="dash_location_offline_failed">📴 پەیوەندی بە سێرڤەر نییە، نەتوانرا شوێن بنێردرێت</string>
+    <string name="dash_local_pending">دۆخی ناوخۆیی – چاوەڕێی هاوکاتکردن (%1$d)</string>
+    <string name="dash_synced_ready">ئامادە و هاوکاتکراوە</string>
+    <string name="settings_employee_name">ناو: %1$s</string>
+    <string name="settings_device_id">ناسنامەی ئامێر: %1$s</string>
+    <string name="settings_company_code">کۆدی کۆمپانیا: %1$s</string>
+    <string name="settings_dev_title">ℹ زانیاری گەشەپێدەر</string>
+    <string name="settings_dev_message">گەشەپێدەر: محمد علي
+
+بەرنامە: المراقب برو - بەرنامەی کارمەندان
+وەشان: %1$s
+
+بۆ پشتگیری تەکنیکی تکایە پەیوەندی بە بەڕێوەبەرایەتی کۆمپانیاوە بکە.</string>
+    <string name="settings_ok">باشە</string>
+    <string name="settings_location_ready">✅ مۆڵەتی شوێن دراوە و GPS چالاکە</string>
+    <string name="settings_location_gps_off">⚠ مۆڵەتی شوێن دراوە بەڵام GPS داخراوە — لە ڕێکخستنەکان چالاکی بکە</string>
+    <string name="settings_location_permission_missing">⚠ GPS چالاکە بەڵام مۆڵەتی شوێن نەدراوە</string>
+    <string name="settings_location_all_off">❌ مۆڵەتی شوێن نییە و GPS داخراوە</string>
+    <string name="settings_testing">⏳ تاقیکردنەوە...</string>
+    <string name="settings_server_connected">🟢 پەیوەستە — سێرڤەر کار دەکات</string>
+    <string name="settings_connection_success">پەیوەندی سەرکەوتوو بوو ✅</string>
+    <string name="settings_server_disconnected">🔴 پەیوەست نییە — ئینتەرنێت بپشکنە</string>
+    <string name="settings_connection_failed">پەیوەندی بە سێرڤەر شکستی هێنا ❌</string>
+    <string name="settings_employee_placeholder">ناو: -</string>
+    <string name="settings_device_placeholder">ناسنامەی ئامێر: -</string>
+    <string name="settings_company_placeholder">کۆدی کۆمپانیا: -</string>
+    <string name="settings_server_not_tested">⏳ تاقی نەکراوەتەوە</string>
+    <string name="settings_app_info">📱 المراقب برو - وەشان %1$s</string>
+    <string name="dash_xml_title">پەنجەمۆر و شوێن</string>
+    <string name="dash_xml_welcome">بەخێربێیت</string>
+    <string name="dash_xml_employee">کارمەند: -</string>
+    <string name="dash_xml_company">کۆمپانیا: -</string>
+    <string name="dash_xml_fingerprint_status_label">دۆخی پەنجەمۆر</string>
+    <string name="dash_xml_fingerprint_ready">ئامادەیە</string>
+    <string name="dash_xml_gps_ready">چالاکە</string>
+    <string name="dash_xml_server_status_label">دۆخی سێرڤەر</string>
+    <string name="dash_xml_server_checking">پشکنین</string>
+    <string name="dash_xml_last_location_label">دوا شوێن</string>
+    <string name="dash_xml_location_not_updated">نوێ نەکراوەتەوە</string>
+    <string name="dash_xml_accuracy_label">وردی</string>
+    <string name="dash_xml_ready_to_register">ئامادەی تۆمارکردن</string>
+    <string name="dash_xml_fingerprint_hint">پەنجەمۆر دابگرە بۆ پشتڕاستکردنەوە</string>
+    <string name="dash_xml_send_location">📍 شوێنی ئێستا بنێرە</string>
+    <string name="dash_xml_check_in">🫆 تۆماری هاتن</string>
+    <string name="dash_xml_check_out">🫆 تۆماری دەرچوون</string>
+    <string name="dash_xml_nav_settings">⚙\nڕێکخستنەکان</string>
+    <string name="dash_xml_nav_services">🔲\nخزمەتگوزارییەکان</string>
+    <string name="dash_xml_nav_biometric">🫆\nپەنجەمۆر و شوێن</string>
+    <string name="dash_xml_nav_notifications">🔔\nئاگادارکردنەوەکان</string>
+    <string name="dash_xml_nav_home">🏠\nسەرەکی</string>
+    <string name="notifications_title">🔔 ئاگادارکردنەوەکانی بەڕێوەبەر</string>
+    <string name="notifications_empty">هیچ ئاگادارکردنەوەیەکی نوێ لە بەڕێوەبەرایەتی نییە.</string>
+    <string name="simple_list_empty">هیچ داتایەک بۆ پیشاندان نییە.</string>
+    <string name="notif_fetch_failed">نەتوانرا ئاگادارکردنەوەکان لە سێرڤەر وەربگیرێن</string>
+    <string name="notif_voice_message">🎙 پەیامی دەنگی</string>
+    <string name="notif_admin_message">📩 پەیام لە بەڕێوەبەرایەتی</string>
+    <string name="notif_urgent">🚨 پەلەدار — </string>
+    <string name="notif_play_audio">▶ بۆ لێدانی دەنگە هاوپێچەکە دابگرە</string>
+    <string name="notif_no_text">هیچ دەقێک نییە</string>
+    <string name="notif_server_unreachable">نەتوانرا پەیوەندی بە سێرڤەرەوە بکرێت</string>
+    <string name="notif_read_failed">❌ نەتوانرا ئاگادارکردنەوەکان بخوێندرێنەوە: %1$s</string>
+    <string name="notif_unknown_error">هەڵەی نەناسراو</string>
+    <string name="notif_audio_failed">نەتوانرا دەنگەکە لێبدرێت</string>
+    <string name="requests_title">📄 دۆخی داواکارییەکانم</string>
+    <string name="requests_fetch_failed">نەتوانرا داواکارییەکان لە سێرڤەر وەربگیرێن</string>
+    <string name="requests_empty">ℹ هێشتا هیچ داواکارییەک نەنێردراوە. لە خزمەتگوزارییەکان داواکاری پێشەکی یان مۆڵەت بنێرە.</string>
+    <string name="requests_approved">✅ پەسەندکراو</string>
+    <string name="requests_rejected">❌ ڕەتکراوە</string>
+    <string name="requests_pending">⏳ چاوەڕوانە</string>
+    <string name="requests_loan">💰 پێشەکی</string>
+    <string name="requests_leave">📅 مۆڵەت</string>
+    <string name="requests_server_unreachable">❌ نەتوانرا پەیوەندی بە سێرڤەرەوە بکرێت. دووبارە هەوڵ بدەوە.</string>
+    <string name="requests_connection_toast">نەتوانرا پەیوەندی بە سێرڤەرەوە بکرێت</string>
+    <string name="requests_read_failed">❌ نەتوانرا زانیاری داواکارییەکان بخوێندرێتەوە: %1$s</string>
+    <string name="requests_unknown_error">هەڵەی نەناسراو</string>
+    <string name="history_title">👋 مێژووی پەنجەمۆر و ئامادەبوون</string>
+    <string name="history_fetch_failed">نەتوانرا مێژووی ئامادەبوون لە سێرڤەر وەربگیرێت</string>
+    <string name="history_empty">ℹ هێشتا هیچ تۆمارێکی ئامادەبوون نییە. لە پەڕەی سەرەکی هاتن تۆمار بکە.</string>
+    <string name="history_attendance">🟢 هاتن</string>
+    <string name="history_departure">🔴 دەرچوون</string>
+    <string name="history_server_unreachable">❌ نەتوانرا پەیوەندی بە سێرڤەرەوە بکرێت. دووبارە هەوڵ بدەوە.</string>
+    <string name="history_connection_toast">نەتوانرا پەیوەندی بە سێرڤەرەوە بکرێت</string>
+    <string name="sync_channel_name">هاوکاتکردنی داتای ناوخۆیی</string>
+    <string name="sync_message_both">%1$d تۆمار هاوکات کرا، %2$d تۆمار لەلایەن سێرڤەرەوە ڕەتکرایەوە</string>
+    <string name="sync_message_synced">%1$d کردارە ناوخۆییەکە بە سەرکەوتوویی هاوکات کرا</string>
+    <string name="sync_message_rejected">%1$d کردار لەلایەن سێرڤەرەوە ڕەتکرایەوە</string>
+    <string name="sync_notification_title">AlMoraqeb Pro</string>
+
+    <string name="account_employee">👤 کارمەند: %1$s</string>
+    <string name="account_company">🏢 کۆمپانیا: %1$s</string>
+    <string name="account_device">📱 ناسنامەی ئامێر: %1$s</string>
+    <string name="account_gps">📍 GPS: %1$s</string>
+    <string name="account_gps_on">چالاکە ✅</string>
+    <string name="account_gps_off">کوژاوەتەوە ❌</string>
+    <string name="account_server">🌐 سێرڤەر: %1$s</string>
+    <string name="account_server_online">پەیوەستە ✅</string>
+    <string name="account_server_offline">پەیوەست نییە ❌</string>
+    <string name="biometric_failed">پەنجەمۆرەکە دروست نەبوو، دووبارە هەوڵ بدەوە</string>
+    <string name="biometric_title">پشتڕاستکردنەوەی پەنجەمۆر</string>
+    <string name="biometric_subtitle">پەنجەمۆرت بەکاربهێنە بۆ تۆمارکردنی ئامادەبوون</string>
+    <string name="biometric_cancel">هەڵوەشاندنەوە</string>
+
+    <string-array name="first_aid_cases">
+        <item>🩸 خوێنڕێژی</item>
+        <item>🔥 سووتان</item>
+        <item>🦴 شکاندن</item>
+        <item>😮 خنکان</item>
+        <item>❤ زیندووکردنەوەی دڵ و سییەکان</item>
+        <item>😵 بێهۆشی</item>
+        <item>☠ ژەهراویبوون</item>
+        <item>🌡 لێدانی گەرما</item>
+        <item>⚡ تەشنج</item>
+        <item>🩹 برین</item>
+    </string-array>
+
+    <string-array name="first_aid_summaries">
+        <item>وەستاندنی خوێنڕێژی دەرەکی</item>
+        <item>فریاکەوتنی سووتانی گەرمایی</item>
+        <item>جێگیرکردنی ئەندامی شکێنراو</item>
+        <item>جوڵەی هایملیخ</item>
+        <item>CPR بۆ گەورەکان</item>
+        <item>فریاکەوتنی لەدەستدانی هۆش</item>
+        <item>مامەڵەکردن لەگەڵ ژەهراویبوون</item>
+        <item>ساردکردنەوەی خێرا</item>
+        <item>پاراستنی تووشبوو لە کاتی تەشنج</item>
+        <item>پاککردنەوە و پێچانی برین</item>
+    </string-array>
+
+    <string-array name="first_aid_details">
+        <item>بە پارچە قوماشێکی پاک ڕاستەوخۆ فشار بخەرە سەر برینەکە، ئەندامی بریندار بەرز بکەرەوە ئەگەر گونجاو بوو، شتی تێچوو مەکێشە دەرەوە، فشار بەردەوام بکە تا خوێنڕێژی بوەستێت، و ئەگەر خوێنڕێژی زۆر بوو دەستبەجێ پەیوەندی بە فریاکەوتنەوە بکە.</item>
+        <item>شوێنی سووتاو بە ئاوی ساردی ڕۆیشتوو بۆ 15-20 خولەک سارد بکەرەوە. سەهۆڵ، خمیری ددان یان کەرە مەخە سەری. بە پانسمانی سترێل و نەچسباو دایپۆشە و پۆکەکان مەترقێنە.</item>
+        <item>تووشبوو مەجوڵێنە مەگەر پێویست بێت. ئەندامی شکێنراو بە جبیرەی کاتی جێگیر بکە، کۆمپرێسی سارد بەکاربهێنە بۆ کەمکردنەوەی ورم، و پەیوەندی بە فریاکەوتنەوە بکە.</item>
+        <item>لە پشتەوە بوەستە، مشتەکەت لە سەر ناف دابنێ، بە دەستی دیکە بیگرە و 5 جار بەهێز بۆ ناوەوە و سەرەوە فشار بدە. دووبارەی بکەرەوە تا شتە گیرکراوەکە دەرچێت.</item>
+        <item>هۆشیاری و هەناسە بپشکنە، پەیوەندی بە فریاکەوتنەوە بکە، 30 فشار لەسەر سنگ بە خێرایی 100-120 جار لە خولەکێکدا دەستپێبکە، پاشان 2 هەناسەی ڕزگارکەر بدە ئەگەر فێرکراویت، و تا گەیشتنی یارمەتی بەردەوام بە.</item>
+        <item>تووشبوو لەسەر پشت بخەوێنە، پێکان نزیکەی 30 سم بەرز بکەرەوە، جلە تەنگەکان شل بکە، هیچ شتێک لە ڕێی دەمەوە مەدە، و ئەگەر بێهۆشی بەردەوام بوو داوای یارمەتی فریاکەوتن بکە.</item>
+        <item>هەوڵی هەڵدانەوە مەدە مەگەر ناوەندی ژەهر ڕێنماییت بکات. دەستبەجێ پەیوەندی بە فریاکەوتنەوە بکە، قاپی مادەکە بپارێزە، و چاودێری هەناسە بکە.</item>
+        <item>تووشبوو بگوازەرەوە بۆ شوێنێکی سارد، جلە زیادەکان لاببە، جەستە بە پەڕۆی تەڕ سارد بکەرەوە، تەنها ئەگەر بە تەواوی هۆشیارە شلەمەنی پێ بدە، و دەستبەجێ پەیوەندی بە فریاکەوتنەوە بکە.</item>
+        <item>تووشبوو لە کەلوپەل دوور بخەرە سەر زەوی، شتێکی نەرم لە ژێر سەری دابنێ، هیچ شتێک لە دەمیدا مەخە، و دوای کۆتایی تەشنجەکە لەسەر لایەک بخەوێنە.</item>
+        <item>برینەکە بە ئاوی پاک بشۆ، پاککەرەوەی پزیشکی بەکاربهێنە، بە پانسمانی سترێل دایپۆشە، و چاودێری نیشانەکانی تووشبوون بە هەوکردن بکە.</item>
+    </string-array>
+
+    <string name="first_aid_listen">🔊 گوێگرتن</string>
+    <string name="first_aid_close">داخستن</string>
+    <string name="first_aid_audio_unavailable">دەنگ لەم ئامێرەدا بەردەست نییە</string>
+
+
+    <string name="support_title">داواکاری پشتگیری</string>
+    <string name="support_subject_label">ناونیشانی داواکاری</string>
+    <string name="support_subject_hint">نموونە: کێشە لە تۆمارکردنی ئامادەبوون</string>
+    <string name="support_details_label">وردەکاری کێشە</string>
+    <string name="support_details_hint">وردەکاری کێشە یان پرسیارەکەت بنووسە...</string>
+    <string name="support_send">ناردنی داواکاری پشتگیری</string>
+    <string name="support_developer_info">زانیاری گەشەپێدەر</string>
+    <string name="support_back">گەڕانەوە</string>
+    <string name="support_required">تکایە ناونیشان و وردەکاری داواکاری بنووسە</string>
+    <string name="support_message_body">ناونیشانی داواکاری: %1$s
+
+%2$s</string>
+    <string name="support_success">داواکاری پشتگیری ئامادە کرا</string>
+    <string name="support_email_subject">داواکاری پشتگیری - المراقب پرو</string>
+    <string name="support_email_unavailable">هیچ ئەپی ئیمەیڵێک بەردەست نییە</string>
+    <string name="support_developer_dialog">کۆمپانیای ئەلئەر جوان بۆ نەرمەکاڵا
+
+واتساپ: 0780807491
+ئیمەیڵ: mohmmed1628@gmail.com
+گەشەپێدەر: محمد العبيدي</string>
+    <string name="support_ok">باشە</string>
+    <string name="support_whatsapp">واتساپ</string>
+    <string name="support_whatsapp_unavailable">واتساپ لەم ئامێرەدا بەردەست نییە</string>
+
+</resources>

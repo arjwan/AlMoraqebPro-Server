@@ -24,7 +24,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="المراقب برو"
+                android:text="@string/services_brand"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="#ffffff" />
@@ -33,7 +33,7 @@
                 android:id="@+id/tvConnectionBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="● جارٍ الفحص..."
+                android:text="@string/services_checking"
                 android:textSize="11px"
                 android:textStyle="bold"
                 android:textColor="#fde68a"
@@ -48,7 +48,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/ticker_bg"
-            android:text="📢 مرحباً بك في خدمات المراقب برو • 🛡️ تأكد من تسجيل بصمة الحضور عند الوصول • 📅 يمكنك إرسال طلبات الإجازة والسلف من هنا"
+            android:text="@string/services_banner"
             android:textColor="#cbd5e1"
             android:textSize="13sp"
             android:textStyle="bold"
@@ -102,7 +102,7 @@
                 android:id="@+id/tvEmpNameCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="الموظف: -"
+                android:text="@string/services_employee"
                 android:textColor="#0f172a"
                 android:textSize="15sp"
                 android:textStyle="bold"
@@ -112,7 +112,7 @@
                 android:id="@+id/tvCompanyCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="الشركة: -"
+                android:text="@string/services_company"
                 android:textColor="#64748b"
                 android:textSize="13sp"
                 android:paddingBottom="3dp" />
@@ -121,7 +121,7 @@
                 android:id="@+id/tvDeviceCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="الجهاز: -"
+                android:text="@string/services_device"
                 android:textColor="#64748b"
                 android:textSize="13sp"
                 android:paddingBottom="3dp" />
@@ -130,7 +130,7 @@
                 android:id="@+id/tvAccountState"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="حالة الحساب: نشط ✅"
+                android:text="@string/services_account_active"
                 android:textColor="#16a34a"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -140,65 +140,65 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
             <LinearLayout android:id="@+id/cardLoan" style="@style/ServiceCard">
                 <TextView style="@style/ServiceIcon" android:text="💰" />
-                <TextView style="@style/ServiceTitle" android:text="طلب سلفة" />
-                <TextView style="@style/ServiceDesc" android:text="تقديم طلب سلفة مالية" />
+                <TextView style="@style/ServiceTitle" android:text="@string/loan_title" />
+                <TextView style="@style/ServiceDesc" android:text="@string/loan_desc" />
             </LinearLayout>
             <LinearLayout android:id="@+id/cardLeave" style="@style/ServiceCard">
                 <TextView style="@style/ServiceIcon" android:text="📅" />
-                <TextView style="@style/ServiceTitle" android:text="طلب إجازة" />
-                <TextView style="@style/ServiceDesc" android:text="إجازة اعتيادية أو مرضية" />
+                <TextView style="@style/ServiceTitle" android:text="@string/leave_title" />
+                <TextView style="@style/ServiceDesc" android:text="@string/leave_desc" />
             </LinearLayout>
         </LinearLayout>
         <!-- الصف 2 -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
             <LinearLayout android:id="@+id/cardMyRequests" style="@style/ServiceCard">
                 <TextView style="@style/ServiceIcon" android:text="📄" />
-                <TextView style="@style/ServiceTitle" android:text="حالة طلباتي" />
-                <TextView style="@style/ServiceDesc" android:text="متابعة الطلبات المرسلة" />
+                <TextView style="@style/ServiceTitle" android:text="@string/my_requests_title" />
+                <TextView style="@style/ServiceDesc" android:text="@string/my_requests_desc" />
             </LinearLayout>
             <LinearLayout android:id="@+id/cardAttendanceLog" style="@style/ServiceCard">
                 <TextView style="@style/ServiceIcon" android:text="👋" />
-                <TextView style="@style/ServiceTitle" android:text="سجل البصمات والحضور" />
-                <TextView style="@style/ServiceDesc" android:text="دخول وخروج وتواريخ" />
+                <TextView style="@style/ServiceTitle" android:text="@string/attendance_history_title" />
+                <TextView style="@style/ServiceDesc" android:text="@string/attendance_history_desc" />
             </LinearLayout>
         </LinearLayout>
         <!-- الصف 3 -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
             <LinearLayout android:id="@+id/cardNotifications" style="@style/ServiceCard">
                 <TextView style="@style/ServiceIcon" android:text="🔔" />
-                <TextView style="@style/ServiceTitle" android:text="إشعارات المدير" />
-                <TextView style="@style/ServiceDesc" android:text="رسائل وتنبيهات الإدارة" />
+                <TextView style="@style/ServiceTitle" android:text="@string/manager_notifications_title" />
+                <TextView style="@style/ServiceDesc" android:text="@string/manager_notifications_desc" />
             </LinearLayout>
             <LinearLayout android:id="@+id/cardFirstAid" style="@style/ServiceCard">
                 <TextView style="@style/ServiceIcon" android:text="⛑️" />
-                <TextView style="@style/ServiceTitle" android:text="الإسعافات الأولية" />
-                <TextView style="@style/ServiceDesc" android:text="شروحات طبية صوتية" />
+                <TextView style="@style/ServiceTitle" android:text="@string/first_aid_title" />
+                <TextView style="@style/ServiceDesc" android:text="@string/first_aid_desc" />
             </LinearLayout>
         </LinearLayout>
         <!-- الصف 4 -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
             <LinearLayout android:id="@+id/cardRewards" style="@style/ServiceCard">
                 <TextView style="@style/ServiceIcon" android:text="🎁" />
-                <TextView style="@style/ServiceTitle" android:text="المكافآت والخصومات" />
-                <TextView style="@style/ServiceDesc" android:text="عرض البيانات المتاحة" />
+                <TextView style="@style/ServiceTitle" android:text="@string/rewards_title" />
+                <TextView style="@style/ServiceDesc" android:text="@string/rewards_desc" />
             </LinearLayout>
             <LinearLayout android:id="@+id/cardAccountStatus" style="@style/ServiceCard">
                 <TextView style="@style/ServiceIcon" android:text="📊" />
-                <TextView style="@style/ServiceTitle" android:text="حالة الحساب" />
-                <TextView style="@style/ServiceDesc" android:text="فحص السيرفر والجهاز" />
+                <TextView style="@style/ServiceTitle" android:text="@string/account_status_title" />
+                <TextView style="@style/ServiceDesc" android:text="@string/account_status_desc" />
             </LinearLayout>
         </LinearLayout>
         <!-- الصف 5 -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
             <LinearLayout android:id="@+id/cardSettings" style="@style/ServiceCard">
                 <TextView style="@style/ServiceIcon" android:text="⚙️" />
-                <TextView style="@style/ServiceTitle" android:text="إعدادات التطبيق" />
-                <TextView style="@style/ServiceDesc" android:text="لغة ومظهر واتصال" />
+                <TextView style="@style/ServiceTitle" android:text="@string/app_settings_title" />
+                <TextView style="@style/ServiceDesc" android:text="@string/app_settings_desc" />
             </LinearLayout>
             <LinearLayout android:id="@+id/cardBack" style="@style/ServiceCard">
                 <TextView style="@style/ServiceIcon" android:text="⬅" />
-                <TextView style="@style/ServiceTitle" android:text="عودة للبصمة" />
-                <TextView style="@style/ServiceDesc" android:text="واجهة الكاميرا والبصمة" />
+                <TextView style="@style/ServiceTitle" android:text="@string/back_attendance_title" />
+                <TextView style="@style/ServiceDesc" android:text="@string/back_attendance_desc" />
             </LinearLayout>
         </LinearLayout>
 

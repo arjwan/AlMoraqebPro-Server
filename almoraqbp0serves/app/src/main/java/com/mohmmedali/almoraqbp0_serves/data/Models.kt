@@ -62,7 +62,10 @@ data class ServiceRequest(
     val type: String, // "loan" أو "leave"
     val amount: Double?,
     val reason: String?,
-    val requestedDate: String?
+    val requestedDate: String?,
+    val fromDate: String? = null,
+    val toDate: String? = null,
+    val leavePaymentType: String? = null
 )
 
 data class ServiceResponse(

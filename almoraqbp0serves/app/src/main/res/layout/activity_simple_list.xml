@@ -19,7 +19,7 @@
         android:id="@+id/tvEmptyState"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="لا توجد بيانات لعرضها حالياً"
+        android:text="@string/simple_list_empty"
         android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:gravity="center"

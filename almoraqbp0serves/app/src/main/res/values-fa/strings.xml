@@ -1,0 +1,353 @@
+<resources>
+    <string name="app_name">المراقب پرو 4.0.2</string>
+    <string name="settings_title">تنظیمات برنامه</string>
+    <string name="employee_info">👤 اطلاعات کارمند</string>
+    <string name="server_status">🌐 وضعیت سرور</string>
+    <string name="test_connection">🔄 آزمایش اتصال به سرور</string>
+    <string name="location_status">📍 وضعیت مکان</string>
+    <string name="language">زبان</string>
+    <string name="arabic">العربية</string>
+    <string name="english">English</string>
+    <string name="kurdish">کوردی</string>
+    <string name="persian">فارسی</string>
+    <string name="appearance">ظاهر</string>
+    <string name="light">روشن</string>
+    <string name="dark">تیره</string>
+    <string name="system_default">طبق سیستم</string>
+    <string name="developer_info">ℹ اطلاعات توسعه‌دهنده</string>
+    <string name="logout">🚪 خروج</string>
+    <string name="back">بازگشت</string>
+
+    <string name="login_server_checking">⏳ در حال بررسی سرور مرکزی...</string>
+    <string name="login_brand">☀ 🛡 المراقب پرو</string>
+    <string name="login_portal">درگاه هوشمند کارکنان</string>
+    <string name="join_request">📝 درخواست عضویت</string>
+    <string name="login_tab">🔒 ورود</string>
+    <string name="employee_login_title">ورود کارمند</string>
+    <string name="employee_login_subtitle">اطلاعات حساب تأییدشده توسط شرکت را وارد کنید.</string>
+    <string name="company_code">کد شرکت</string>
+    <string name="company_code_example">مثال: B-2080</string>
+    <string name="username">نام کاربری</string>
+    <string name="password">رمز عبور</string>
+    <string name="login_button">🚀 ورود به حساب من</string>
+    <string name="developer_information">اطلاعات توسعه‌دهنده</string>
+    <string name="developer_company">شرکت نرم‌افزاری ارجوان</string>
+    <string name="developer_name">توسعه‌دهنده: محمد العبیدی</string>
+
+    <string name="register_title">درخواست عضویت کارمند جدید</string>
+    <string name="company_name">نام شرکت</string>
+    <string name="employee_name">نام کارمند</string>
+    <string name="phone_number">شماره تلفن</string>
+    <string name="job_title">عنوان شغلی</string>
+    <string name="work_location">محل کار</string>
+    <string name="salary">حقوق</string>
+    <string name="shift">شیفت</string>
+    <string name="work_hours">ساعات کاری</string>
+    <string name="wage_type">نوع دستمزد</string>
+    <string name="social_security">تأمین اجتماعی</string>
+    <string name="location">مکان</string>
+    <string name="send_request">ارسال درخواست</string>
+    <string name="services_brand">المراقب پرو</string>
+    <string name="services_checking">● در حال بررسی...</string>
+    <string name="services_banner">📢 به خدمات المراقب پرو خوش آمدید • 🦺 صبح: دستورالعمل‌های ایمنی شغلی را رعایت کنید و از تجهیزات حفاظتی لازم استفاده کنید • 🧯 دستورالعمل‌های دفاع مدنی، خروجی‌های اضطراری و محل‌های تجمع را رعایت کنید • 🛡 هنگام ورود ثبت حضور را فراموش نکنید • 📅 از اینجا می‌توانید درخواست مرخصی و وام ارسال کنید • 🚪 در پایان کار ثبت خروج را انجام دهید و طبق دستورالعمل‌های شرکت و ایمنی محل کار را ترک کنید</string>
+    <string name="services_employee">کارمند: -</string>
+    <string name="services_company">شرکت: -</string>
+    <string name="services_device">دستگاه: -</string>
+    <string name="services_account_active">وضعیت حساب: فعال ✅</string>
+    <string name="loan_title">درخواست وام</string>
+    <string name="loan_desc">ارسال درخواست وام مالی</string>
+    <string name="leave_title">درخواست مرخصی</string>
+    <string name="leave_desc">مرخصی عادی یا استعلاجی</string>
+    <string name="my_requests_title">وضعیت درخواست‌های من</string>
+    <string name="my_requests_desc">پیگیری درخواست‌های ارسال‌شده</string>
+    <string name="attendance_history_title">سابقه حضور و غیاب</string>
+    <string name="attendance_history_desc">ورود، خروج و تاریخ‌ها</string>
+    <string name="manager_notifications_title">اعلان‌های مدیر</string>
+    <string name="manager_notifications_desc">پیام‌ها و هشدارهای مدیریت</string>
+    <string name="first_aid_title">کمک‌های اولیه</string>
+    <string name="first_aid_desc">راهنمای پزشکی صوتی</string>
+    <string name="rewards_title">پاداش‌ها و کسورات</string>
+    <string name="rewards_desc">نمایش اطلاعات موجود</string>
+    <string name="account_status_title">وضعیت حساب</string>
+    <string name="account_status_desc">بررسی سرور و دستگاه</string>
+    <string name="app_settings_title">تنظیمات برنامه</string>
+    <string name="app_settings_desc">زبان، ظاهر و اتصال</string>
+    <string name="back_attendance_title">بازگشت به حضور و غیاب</string>
+    <string name="back_attendance_desc">صفحه دوربین و ثبت حضور</string>
+    <string name="svc_employee_value">کارمند: %1$s</string>
+    <string name="svc_company_value">شرکت: %1$s</string>
+    <string name="svc_device_linked">دستگاه: متصل ✅</string>
+    <string name="svc_device_unknown">دستگاه: ناشناخته</string>
+    <string name="svc_welcome_tts">خوش آمدید %1$s. اکنون می‌توانید از خدمات المراقب پرو استفاده کنید.</string>
+    <string name="svc_default_employee">کارمند</string>
+    <string name="svc_morning_title">🌅 صبح بخیر</string>
+    <string name="svc_afternoon_title">🌤 ظهر بخیر</string>
+    <string name="svc_evening_title">🌆 عصر بخیر</string>
+    <string name="svc_night_title">🌙 شب بخیر</string>
+    <string name="svc_morning_message">سلام %1$s – ثبت حضور را فراموش نکنید</string>
+    <string name="svc_general_message">سلام %1$s – همه خدمات شما در یک مکان</string>
+    <string name="svc_evening_message">سلام %1$s – ثبت خروج را فراموش نکنید</string>
+    <string name="svc_connected">● متصل</string>
+    <string name="svc_offline">● بدون اینترنت</string>
+    <string name="svc_loan_amount_hint">مبلغ به دینار عراق (مثال: 500000)</string>
+    <string name="svc_loan_reason_hint">دلیل درخواست وام را وارد کنید...</string>
+    <string name="svc_loan_dialog_title">💰 درخواست وام مالی</string>
+    <string name="svc_send_request">ارسال درخواست</string>
+    <string name="svc_cancel">لغو</string>
+    <string name="svc_invalid_loan_amount">⚠ مبلغ معتبر وام را وارد کنید</string>
+    <string name="svc_loan_reason_required">⚠ دلیل درخواست وام را وارد کنید</string>
+    <string name="svc_loan_sent">درخواست وام ارسال شد</string>
+    <string name="svc_leave_normal">عادی</string>
+    <string name="svc_leave_sick">استعلاجی</string>
+    <string name="svc_leave_emergency">اضطراری</string>
+    <string name="svc_leave_hourly">ساعتی</string>
+    <string name="svc_leave_type">نوع مرخصی</string>
+    <string name="svc_leave_from_hint">📅 از تاریخ</string>
+    <string name="svc_leave_to_hint">📅 تا تاریخ</string>
+    <string name="svc_leave_reason_hint">دلیل مرخصی را وارد کنید...</string>
+    <string name="svc_leave_start_first">⚠ ابتدا تاریخ شروع مرخصی را انتخاب کنید</string>
+    <string name="svc_leave_dialog_title">📅 درخواست مرخصی</string>
+    <string name="svc_leave_start_required">⚠ تاریخ شروع مرخصی را انتخاب کنید</string>
+    <string name="svc_leave_end_required">⚠ تاریخ پایان مرخصی را انتخاب کنید</string>
+    <string name="svc_leave_reason_required">⚠ دلیل مرخصی را وارد کنید</string>
+    <string name="svc_leave_reason_format">نوع مرخصی: %1$s – %2$s</string>
+    <string name="svc_leave_sent">درخواست مرخصی ارسال شد</string>
+    <string name="svc_rewards_dialog_title">🎁 پاداش‌ها و کسورات</string>
+    <string name="svc_rewards_unavailable">ℹ در حال حاضر API مستقلی برای پاداش‌ها و کسورات روی سرور وجود ندارد، بنابراین اطلاعات ساختگی نمایش داده نمی‌شود. پس از افزودن API این بخش متصل خواهد شد.</string>
+    <string name="svc_ok">باشه</string>
+    <string name="svc_sending">⏳ در حال ارسال...</string>
+    <string name="svc_request_success">درخواست شما با موفقیت برای مدیریت ارسال شد.</string>
+    <string name="svc_server_rejected">سرور درخواست را رد کرد (کد %1$d)</string>
+    <string name="svc_prepare_error">❌ هنگام آماده‌سازی درخواست خطایی رخ داد</string>
+    <string name="svc_local_mode">● حالت محلی</string>
+    <string name="svc_saved_locally">🟠 درخواست به‌صورت محلی ذخیره شد\nپس از بازگشت اینترنت به‌طور خودکار ارسال می‌شود</string>
+    <string name="login_fill_all_fields">لطفاً همه فیلدها را تکمیل کنید</string>
+    <string name="login_whatsapp_unavailable">واتساپ روی این دستگاه در دسترس نیست</string>
+    <string name="login_email_unavailable">برنامه ایمیل در دسترس نیست</string>
+    <string name="login_server_checking_full">⏳ در حال بررسی اتصال به سرور...</string>
+    <string name="login_server_connected">🟢 سرور متصل است</string>
+    <string name="login_server_disconnected">🔴 سرور متصل نیست</string>
+    <string name="login_developer_title">ℹ اطلاعات توسعه‌دهنده</string>
+    <string name="login_developer_info">🏢 شرکت نرم‌افزاری الارجوان\n👨‍💻 توسعه‌دهنده: محمد العبيدي\n📱 واتساپ: 07807807491\n✉ ایمیل: mohmmed1628@gmail.com</string>
+    <string name="login_whatsapp_button">💬 واتساپ</string>
+    <string name="login_email_button">✉ ایمیل</string>
+    <string name="login_close">بستن</string>
+    <string name="login_success">ورود با موفقیت انجام شد</string>
+    <string name="login_invalid_credentials">اطلاعات ورود نادرست است</string>
+    <string name="login_failed_code">ورود ناموفق بود (کد %1$d)</string>
+    <string name="login_connection_error">اتصال به سرور ممکن نیست. اینترنت را بررسی کنید</string>
+    <string name="register_screen_title">درخواست عضویت کارمند جدید</string>
+    <string name="register_company_name_required">⚠ کد شرکت و نام کارمند را وارد کنید</string>
+    <string name="register_salary_invalid">⚠ حقوق معتبر و بیشتر از صفر وارد کنید</string>
+    <string name="register_hours_invalid">⚠ ساعات کاری معتبر و بیشتر از صفر وارد کنید</string>
+    <string name="register_sending">در حال ارسال...</string>
+    <string name="register_success">✅ درخواست با موفقیت ارسال شد</string>
+    <string name="register_failed_code">ارسال درخواست ناموفق بود (کد %1$d)</string>
+    <string name="register_connection_error">اتصال به سرور ممکن نیست. اینترنت را بررسی کرده و دوباره تلاش کنید.</string>
+    <string name="register_send_button">ارسال درخواست</string>
+    <string name="dash_default_employee">کارمند</string>
+    <string name="dash_welcome">خوش آمدید %1$s</string>
+    <string name="dash_employee_label">کارمند: %1$s</string>
+    <string name="dash_company_code_label">کد شرکت: %1$s</string>
+    <string name="dash_home_hint">در صفحه اصلی اثر انگشت و موقعیت هستید</string>
+    <string name="dash_server_connected">🟢 سرور متصل است</string>
+    <string name="dash_server_local">🟠 حالت محلی – بدون اینترنت</string>
+    <string name="dash_gps_on">فعال</string>
+    <string name="dash_gps_off">خاموش</string>
+    <string name="dash_location_permission_granted">مجوز موقعیت داده شد</string>
+    <string name="dash_location_permission_required">برای ثبت حضور باید مجوز موقعیت داده شود</string>
+    <string name="dash_gps_dialog_title">خدمات موقعیت غیرفعال است</string>
+    <string name="dash_gps_dialog_message">برای ثبت حضور و ارسال موقعیت باید GPS فعال باشد. تنظیمات موقعیت باز شود؟</string>
+    <string name="dash_open_settings">باز کردن تنظیمات</string>
+    <string name="dash_cancel">لغو</string>
+    <string name="dash_location_permission_first">لطفاً ابتدا مجوز موقعیت را بدهید</string>
+    <string name="dash_location_error">دریافت موقعیت ممکن نشد، مطمئن شوید GPS فعال است</string>
+    <string name="dash_fingerprint_error">خطای اثر انگشت: %1$s</string>
+    <string name="dash_challenge_failed">ایجاد چالش اثر انگشت ممکن نشد</string>
+    <string name="dash_fingerprint_rejected">رد شد</string>
+    <string name="dash_fingerprint_synced">همگام شد</string>
+    <string name="dash_attendance_success">✅ %1$s با موفقیت ثبت شد</string>
+    <string name="dash_attendance_word">ورود</string>
+    <string name="dash_exit_word">خروج</string>
+    <string name="dash_fingerprint_accept_failed">اثر انگشت پذیرفته نشد</string>
+    <string name="dash_saved_local">⚠ اثر انگشت به‌صورت محلی ذخیره شد و منتظر همگام‌سازی است</string>
+    <string name="dash_offline_saved">📴 اتصال وجود ندارد، رکورد محلی ذخیره شد و بعداً همگام می‌شود</string>
+    <string name="dash_fingerprint_verify_failed">تأیید ناموفق بود</string>
+    <string name="dash_processing_error">❌ پردازش اثر انگشت ممکن نشد: %1$s</string>
+    <string name="dash_unknown_error">خطای ناشناخته</string>
+    <string name="dash_location_updated_now">هم‌اکنون به‌روزرسانی شد</string>
+    <string name="dash_accuracy_meters">%1$.0f متر</string>
+    <string name="dash_employee_data_incomplete">اطلاعات کارمند کامل نیست، ابتدا وارد شوید</string>
+    <string name="dash_location_sent">✅ موقعیت فعلی با موفقیت ارسال شد</string>
+    <string name="dash_location_send_failed">ارسال موقعیت ناموفق بود (کد %1$d)</string>
+    <string name="dash_location_offline_failed">📴 اتصال به سرور وجود ندارد، موقعیت ارسال نشد</string>
+    <string name="dash_local_pending">حالت محلی – در انتظار همگام‌سازی (%1$d)</string>
+    <string name="dash_synced_ready">آماده و همگام</string>
+    <string name="settings_employee_name">نام: %1$s</string>
+    <string name="settings_device_id">شناسه دستگاه: %1$s</string>
+    <string name="settings_company_code">کد شرکت: %1$s</string>
+    <string name="settings_dev_title">ℹ اطلاعات توسعه‌دهنده</string>
+    <string name="settings_dev_message">توسعه‌دهنده: محمد علی
+
+برنامه: المراقب پرو - برنامه کارکنان
+نسخه: %1$s
+
+برای پشتیبانی فنی لطفاً با مدیریت شرکت تماس بگیرید.</string>
+    <string name="settings_ok">باشه</string>
+    <string name="settings_location_ready">✅ مجوز موقعیت داده شده و GPS فعال است</string>
+    <string name="settings_location_gps_off">⚠ مجوز موقعیت داده شده اما GPS خاموش است — آن را در تنظیمات فعال کنید</string>
+    <string name="settings_location_permission_missing">⚠ GPS فعال است اما مجوز موقعیت داده نشده است</string>
+    <string name="settings_location_all_off">❌ مجوز موقعیت وجود ندارد و GPS خاموش است</string>
+    <string name="settings_testing">⏳ در حال آزمایش...</string>
+    <string name="settings_server_connected">🟢 متصل — سرور فعال است</string>
+    <string name="settings_connection_success">اتصال موفق بود ✅</string>
+    <string name="settings_server_disconnected">🔴 قطع — اتصال اینترنت را بررسی کنید</string>
+    <string name="settings_connection_failed">اتصال به سرور ناموفق بود ❌</string>
+    <string name="settings_employee_placeholder">نام: -</string>
+    <string name="settings_device_placeholder">شناسه دستگاه: -</string>
+    <string name="settings_company_placeholder">کد شرکت: -</string>
+    <string name="settings_server_not_tested">⏳ آزمایش نشده</string>
+    <string name="settings_app_info">📱 المراقب پرو - نسخه %1$s</string>
+    <string name="dash_xml_title">اثر انگشت و موقعیت</string>
+    <string name="dash_xml_welcome">خوش آمدید</string>
+    <string name="dash_xml_employee">کارمند: -</string>
+    <string name="dash_xml_company">شرکت: -</string>
+    <string name="dash_xml_fingerprint_status_label">وضعیت اثر انگشت</string>
+    <string name="dash_xml_fingerprint_ready">آماده</string>
+    <string name="dash_xml_gps_ready">فعال</string>
+    <string name="dash_xml_server_status_label">وضعیت سرور</string>
+    <string name="dash_xml_server_checking">در حال بررسی</string>
+    <string name="dash_xml_last_location_label">آخرین موقعیت</string>
+    <string name="dash_xml_location_not_updated">به‌روزرسانی نشده</string>
+    <string name="dash_xml_accuracy_label">دقت</string>
+    <string name="dash_xml_ready_to_register">آماده ثبت</string>
+    <string name="dash_xml_fingerprint_hint">برای تأیید اثر انگشت را لمس کنید</string>
+    <string name="dash_xml_send_location">📍 ارسال موقعیت فعلی</string>
+    <string name="dash_xml_check_in">🫆 ثبت ورود</string>
+    <string name="dash_xml_check_out">🫆 ثبت خروج</string>
+    <string name="dash_xml_nav_settings">⚙\nتنظیمات</string>
+    <string name="dash_xml_nav_services">🔲\nخدمات</string>
+    <string name="dash_xml_nav_biometric">🫆\nاثر انگشت و موقعیت</string>
+    <string name="dash_xml_nav_notifications">🔔\nاعلان‌ها</string>
+    <string name="dash_xml_nav_home">🏠\nخانه</string>
+    <string name="notifications_title">🔔 اعلان‌های مدیر</string>
+    <string name="notifications_empty">اعلان جدیدی از مدیریت وجود ندارد.</string>
+    <string name="simple_list_empty">داده‌ای برای نمایش وجود ندارد.</string>
+    <string name="notif_fetch_failed">دریافت اعلان‌ها از سرور ممکن نشد</string>
+    <string name="notif_voice_message">🎙 پیام صوتی</string>
+    <string name="notif_admin_message">📩 پیام مدیریت</string>
+    <string name="notif_urgent">🚨 فوری — </string>
+    <string name="notif_play_audio">▶ برای پخش صدای پیوست‌شده لمس کنید</string>
+    <string name="notif_no_text">متنی وجود ندارد</string>
+    <string name="notif_server_unreachable">اتصال به سرور ممکن نشد</string>
+    <string name="notif_read_failed">❌ خواندن اعلان‌ها ممکن نشد: %1$s</string>
+    <string name="notif_unknown_error">خطای ناشناخته</string>
+    <string name="notif_audio_failed">پخش صدا ممکن نشد</string>
+    <string name="requests_title">📄 وضعیت درخواست‌های من</string>
+    <string name="requests_fetch_failed">دریافت درخواست‌ها از سرور ممکن نشد</string>
+    <string name="requests_empty">ℹ هنوز درخواستی ارسال نشده است. درخواست مساعده یا مرخصی را از بخش خدمات ارسال کنید.</string>
+    <string name="requests_approved">✅ تأیید شده</string>
+    <string name="requests_rejected">❌ رد شده</string>
+    <string name="requests_pending">⏳ در انتظار</string>
+    <string name="requests_loan">💰 مساعده</string>
+    <string name="requests_leave">📅 مرخصی</string>
+    <string name="requests_server_unreachable">❌ اتصال به سرور ممکن نشد. دوباره تلاش کنید.</string>
+    <string name="requests_connection_toast">اتصال به سرور ممکن نشد</string>
+    <string name="requests_read_failed">❌ خواندن اطلاعات درخواست‌ها ممکن نشد: %1$s</string>
+    <string name="requests_unknown_error">خطای ناشناخته</string>
+    <string name="history_title">👋 سابقه اثر انگشت و حضور</string>
+    <string name="history_fetch_failed">دریافت سابقه حضور از سرور ممکن نشد</string>
+    <string name="history_empty">ℹ هنوز سابقه حضوری وجود ندارد. ورود را از صفحه اصلی ثبت کنید.</string>
+    <string name="history_attendance">🟢 ورود</string>
+    <string name="history_departure">🔴 خروج</string>
+    <string name="history_server_unreachable">❌ اتصال به سرور ممکن نشد. دوباره تلاش کنید.</string>
+    <string name="history_connection_toast">اتصال به سرور ممکن نشد</string>
+    <string name="sync_channel_name">همگام‌سازی داده‌های محلی</string>
+    <string name="sync_message_both">%1$d رکورد همگام شد و %2$d رکورد توسط سرور رد شد</string>
+    <string name="sync_message_synced">%1$d عملیات محلی با موفقیت همگام شد</string>
+    <string name="sync_message_rejected">%1$d عملیات توسط سرور رد شد</string>
+    <string name="sync_notification_title">AlMoraqeb Pro</string>
+
+    <string name="account_employee">👤 کارمند: %1$s</string>
+    <string name="account_company">🏢 شرکت: %1$s</string>
+    <string name="account_device">📱 شناسه دستگاه: %1$s</string>
+    <string name="account_gps">📍 GPS: %1$s</string>
+    <string name="account_gps_on">فعال ✅</string>
+    <string name="account_gps_off">خاموش ❌</string>
+    <string name="account_server">🌐 سرور: %1$s</string>
+    <string name="account_server_online">متصل ✅</string>
+    <string name="account_server_offline">قطع ❌</string>
+    <string name="biometric_failed">اثر انگشت شناسایی نشد، دوباره تلاش کنید</string>
+    <string name="biometric_title">تأیید اثر انگشت</string>
+    <string name="biometric_subtitle">برای ثبت حضور از اثر انگشت خود استفاده کنید</string>
+    <string name="biometric_cancel">لغو</string>
+
+    <string-array name="first_aid_cases">
+        <item>🩸 خونریزی</item>
+        <item>🔥 سوختگی</item>
+        <item>🦴 شکستگی</item>
+        <item>😮 خفگی</item>
+        <item>❤ احیای قلبی ریوی</item>
+        <item>😵 غش</item>
+        <item>☠ مسمومیت</item>
+        <item>🌡 گرمازدگی</item>
+        <item>⚡ تشنج</item>
+        <item>🩹 زخم‌ها</item>
+    </string-array>
+
+    <string-array name="first_aid_summaries">
+        <item>کنترل خونریزی خارجی</item>
+        <item>کمک‌های اولیه سوختگی حرارتی</item>
+        <item>ثابت کردن عضو شکسته</item>
+        <item>مانور هایملیخ</item>
+        <item>CPR بزرگسالان</item>
+        <item>کمک‌های اولیه بیهوشی</item>
+        <item>رسیدگی به مسمومیت</item>
+        <item>خنک‌سازی سریع</item>
+        <item>محافظت از فرد هنگام تشنج</item>
+        <item>تمیز کردن و پانسمان زخم</item>
+    </string-array>
+
+    <string-array name="first_aid_details">
+        <item>با یک پارچه تمیز مستقیماً روی زخم فشار وارد کنید، در صورت مناسب بودن عضو آسیب‌دیده را بالا نگه دارید، جسم فرو رفته را خارج نکنید، فشار را تا توقف خونریزی ادامه دهید و اگر خونریزی شدید است فوراً با اورژانس تماس بگیرید.</item>
+        <item>سوختگی را 15 تا 20 دقیقه زیر آب خنک جاری نگه دارید. از یخ، خمیردندان یا کره استفاده نکنید. محل را با پانسمان استریل و نچسب بپوشانید و تاول‌ها را نترکانید.</item>
+        <item>فرد آسیب‌دیده را مگر در صورت ضرورت حرکت ندهید. عضو شکسته را با آتل موقت ثابت کنید، برای کاهش تورم کمپرس سرد بگذارید و با اورژانس تماس بگیرید.</item>
+        <item>پشت فرد بایستید، مشت خود را بالای ناف قرار دهید، با دست دیگر آن را بگیرید و 5 فشار محکم به داخل و بالا وارد کنید. تا خارج شدن جسم گیر کرده تکرار کنید.</item>
+        <item>هوشیاری و تنفس را بررسی کنید، با اورژانس تماس بگیرید، 30 فشار قفسه سینه با سرعت 100 تا 120 بار در دقیقه انجام دهید، سپس در صورت آموزش‌دیدگی 2 تنفس نجات‌بخش بدهید و تا رسیدن کمک ادامه دهید.</item>
+        <item>فرد را به پشت بخوابانید، پاها را حدود 30 سانتی‌متر بالا ببرید، لباس‌های تنگ را شل کنید، چیزی از راه دهان ندهید و اگر بیهوشی ادامه داشت کمک اورژانسی بخواهید.</item>
+        <item>مگر با دستور مرکز مسمومیت، فرد را وادار به استفراغ نکنید. فوراً با اورژانس تماس بگیرید، ظرف ماده را نگه دارید و تنفس را زیر نظر داشته باشید.</item>
+        <item>فرد را به محل خنک منتقل کنید، لباس اضافی را خارج کنید، بدن را با حوله خیس خنک کنید، فقط در صورت هوشیاری کامل مایعات بدهید و فوراً با اورژانس تماس بگیرید.</item>
+        <item>فرد را از وسایل اطراف دور کنید، چیزی نرم زیر سرش بگذارید، چیزی داخل دهانش نگذارید و پس از پایان تشنج او را به پهلو قرار دهید.</item>
+        <item>زخم را با آب تمیز بشویید، ضدعفونی کنید، با پانسمان استریل بپوشانید و علائم عفونت را زیر نظر داشته باشید.</item>
+    </string-array>
+
+    <string name="first_aid_listen">🔊 گوش دادن</string>
+    <string name="first_aid_close">بستن</string>
+    <string name="first_aid_audio_unavailable">صدا در این دستگاه در دسترس نیست</string>
+
+
+    <string name="support_title">درخواست پشتیبانی</string>
+    <string name="support_subject_label">عنوان درخواست</string>
+    <string name="support_subject_hint">مثال: مشکل در ثبت حضور</string>
+    <string name="support_details_label">جزئیات مشکل</string>
+    <string name="support_details_hint">جزئیات مشکل یا سؤال را بنویسید...</string>
+    <string name="support_send">ارسال درخواست پشتیبانی</string>
+    <string name="support_developer_info">اطلاعات توسعه‌دهنده</string>
+    <string name="support_back">بازگشت</string>
+    <string name="support_required">لطفاً عنوان و جزئیات درخواست را وارد کنید</string>
+    <string name="support_message_body">عنوان درخواست: %1$s
+
+%2$s</string>
+    <string name="support_success">درخواست پشتیبانی آماده شد</string>
+    <string name="support_email_subject">درخواست پشتیبانی - المراقب پرو</string>
+    <string name="support_email_unavailable">برنامه ایمیل در دسترس نیست</string>
+    <string name="support_developer_dialog">شرکت الارجوان نرم‌افزار
+
+واتساپ: 0780807491
+ایمیل: mohmmed1628@gmail.com
+توسعه‌دهنده: محمد العبیدی</string>
+    <string name="support_ok">تأیید</string>
+    <string name="support_whatsapp">واتساپ</string>
+    <string name="support_whatsapp_unavailable">واتساپ در این دستگاه در دسترس نیست</string>
+
+</resources>

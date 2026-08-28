@@ -1,4 +1,5 @@
 package com.mohmmedali.almoraqebpro.ui
+import com.mohmmedali.almoraqebpro.R
 
 import android.Manifest
 import android.app.AlertDialog
@@ -51,9 +52,9 @@ class DashboardActivity : AppCompatActivity() {
     ) { permissions ->
         if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
-            Toast.makeText(this, "تم منح إذن الموقع", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.dash_location_permission_granted), Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, "يجب منح إذن الموقع لتسجيل الحضور", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.dash_location_permission_required), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -97,15 +98,15 @@ class DashboardActivity : AppCompatActivity() {
 
         locationManager = LocationManager(this)
 
-        val name = prefs.getString("employeeName", "موظف") ?: "موظف"
-        binding.tvWelcome.text = "مرحباً $name"
+        val name = prefs.getString("employeeName", getString(R.string.dash_default_employee)) ?: getString(R.string.dash_default_employee)
+        binding.tvWelcome.text = getString(R.string.dash_welcome, name)
 
         // عرض Device ID ورمز الشركة
         val shownDeviceId = prefs.getString("deviceId", "")
             ?: Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
         binding.tvDeviceInfo.text = shortDeviceId(shownDeviceId ?: "-")
-        binding.tvEmployeeIdTile.text = "الموظف: ${prefs.getString("employeeId", "-") ?: "-"}"
-        binding.tvCompanyInfo.text = "رمز الشركة: ${prefs.getString("companyId", "-") ?: "-"}"
+        binding.tvEmployeeIdTile.text = getString(R.string.dash_employee_label, prefs.getString("employeeId", "-") ?: "-")
+        binding.tvCompanyInfo.text = getString(R.string.dash_company_code_label, prefs.getString("companyId", "-") ?: "-")
 
         // أزرار البصمة (الصورة المرجعية 2)
         binding.btnCheckIn.setOnClickListener { startAttendance("attendance") }
@@ -116,7 +117,7 @@ class DashboardActivity : AppCompatActivity() {
         binding.navNotif.setOnClickListener { startActivity(Intent(this, NotificationActivity::class.java)) }
         binding.navSettings.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         binding.navHome.setOnClickListener {
-            Toast.makeText(this, "أنت في الصفحة الرئيسية للبصمة والموقع", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.dash_home_hint), Toast.LENGTH_SHORT).show()
         }
         binding.btnBackTop.setOnClickListener { finish() }
 
@@ -158,11 +159,11 @@ class DashboardActivity : AppCompatActivity() {
             }
             withContext(Dispatchers.Main) {
                 if (connected) {
-                    binding.tvServerStatus.text = "🟢 السيرفر متصل"
+                    binding.tvServerStatus.text = getString(R.string.dash_server_connected)
                     binding.tvServerStatus.setTextColor(0xFF22C55E.toInt())
                 } else {
-                    binding.tvServerStatus.text = "🔴 غير متصل بالسيرفر"
-                    binding.tvServerStatus.setTextColor(0xFFEF4444.toInt())
+                    binding.tvServerStatus.text = getString(R.string.dash_server_local)
+                    binding.tvServerStatus.setTextColor(0xFFF59E0B.toInt())
                 }
             }
         }
@@ -175,7 +176,7 @@ class DashboardActivity : AppCompatActivity() {
 
     private fun updateGpsTile() {
         val on = isGpsEnabled()
-        binding.tvGpsStatus.text = if (on) "مفعل" else "مغلق"
+        binding.tvGpsStatus.text = if (on) getString(R.string.dash_gps_on) else getString(R.string.dash_gps_off)
         binding.tvGpsStatus.setTextColor(if (on) 0xFF22C55E.toInt() else 0xFFEF4444.toInt())
     }
 
@@ -189,12 +190,12 @@ class DashboardActivity : AppCompatActivity() {
     private fun ensureGpsEnabled(): Boolean {
         if (isGpsEnabled()) return true
         AlertDialog.Builder(this)
-            .setTitle("خدمات الموقع معطلة")
-            .setMessage("يجب تفعيل GPS لتسجيل الحضور وإرسال الموقع. هل تريد فتح إعدادات الموقع؟")
-            .setPositiveButton("فتح الإعدادات") { _, _ ->
+            .setTitle(getString(R.string.dash_gps_dialog_title))
+            .setMessage(getString(R.string.dash_gps_dialog_message))
+            .setPositiveButton(getString(R.string.dash_open_settings)) { _, _ ->
                 startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
-            .setNegativeButton("إلغاء", null)
+            .setNegativeButton(getString(R.string.dash_cancel), null)
             .show()
         return false
     }
@@ -214,7 +215,7 @@ class DashboardActivity : AppCompatActivity() {
         pendingType = type
         if (!ensureGpsEnabled()) return
         if (!locationManager.hasPermission()) {
-            Toast.makeText(this, "يرجى منح إذن الموقع أولاً", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.dash_location_permission_first), Toast.LENGTH_SHORT).show()
             requestPermissionsIfNeeded()
             return
         }
@@ -223,7 +224,7 @@ class DashboardActivity : AppCompatActivity() {
             if (location != null) {
                 authenticateAndSend(type, location)
             } else {
-                Toast.makeText(this, "تعذر الحصول على الموقع، تأكد من تفعيل GPS", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.dash_location_error), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -237,7 +238,7 @@ class DashboardActivity : AppCompatActivity() {
                 }
             },
             onError = { error ->
-                Toast.makeText(this, "خطأ في البصمة: $error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.dash_fingerprint_error, error), Toast.LENGTH_SHORT).show()
             }
         )
     }
@@ -258,9 +259,9 @@ class DashboardActivity : AppCompatActivity() {
             if (!challengeRes.isSuccessful || challengeRes.body()?.challengeId.isNullOrBlank()) {
                 val message = challengeRes.errorBody()?.string()?.let {
                     runCatching { org.json.JSONObject(it).optString("message") }.getOrNull()
-                } ?: challengeRes.body()?.message ?: "تعذر إنشاء تحدي البصمة"
+                } ?: challengeRes.body()?.message ?: getString(R.string.dash_challenge_failed)
                 withContext(Dispatchers.Main) {
-                    binding.tvFingerprintStatus.text = "مرفوضة"
+                    binding.tvFingerprintStatus.text = getString(R.string.dash_fingerprint_rejected)
                     binding.tvFingerprintStatus.setTextColor(0xFFEF4444.toInt())
                     Toast.makeText(this@DashboardActivity, "❌ $message", Toast.LENGTH_LONG).show()
                 }
@@ -282,11 +283,11 @@ class DashboardActivity : AppCompatActivity() {
             val response = RetrofitClient.apiService.sendAttendance(request)
             if (response.isSuccessful && response.body()?.success == true) {
                 withContext(Dispatchers.Main) {
-                    binding.tvFingerprintStatus.text = "تمت المزامنة"
+                    binding.tvFingerprintStatus.text = getString(R.string.dash_fingerprint_synced)
                     binding.tvFingerprintStatus.setTextColor(0xFF22C55E.toInt())
                     Toast.makeText(
                         this@DashboardActivity,
-                        "✅ تم تسجيل ${if (type == "attendance") "الحضور" else "الانصراف"} بنجاح",
+                        getString(R.string.dash_attendance_success, getString(if (type == "attendance") R.string.dash_attendance_word else R.string.dash_exit_word)),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -294,9 +295,9 @@ class DashboardActivity : AppCompatActivity() {
                 if (response.code() in 400..499) {
                     val message = response.errorBody()?.string()?.let {
                         runCatching { org.json.JSONObject(it).optString("message") }.getOrNull()
-                    } ?: response.body()?.message ?: "تعذر قبول البصمة"
+                    } ?: response.body()?.message ?: getString(R.string.dash_fingerprint_accept_failed)
                     withContext(Dispatchers.Main) {
-                        binding.tvFingerprintStatus.text = "مرفوضة"
+                        binding.tvFingerprintStatus.text = getString(R.string.dash_fingerprint_rejected)
                         binding.tvFingerprintStatus.setTextColor(0xFFEF4444.toInt())
                         Toast.makeText(this@DashboardActivity, "❌ $message", Toast.LENGTH_LONG).show()
                     }
@@ -304,7 +305,7 @@ class DashboardActivity : AppCompatActivity() {
                     savePendingAttendance(employeeId, deviceId, challengeId, fingerprintToken, location, type, timestamp)
                     withContext(Dispatchers.Main) {
                         refreshSyncStatus()
-                        Toast.makeText(this@DashboardActivity, "⚠️ تم حفظ البصمة محليًا بانتظار المزامنة", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@DashboardActivity, getString(R.string.dash_saved_local), Toast.LENGTH_LONG).show()
                     }
                     scheduleSync()
                 }
@@ -315,18 +316,18 @@ class DashboardActivity : AppCompatActivity() {
                 refreshSyncStatus()
                 Toast.makeText(
                     this@DashboardActivity,
-                    "📴 لا يوجد اتصال، تم حفظ السجل محليًا وستتم المزامنة لاحقًا",
+                    getString(R.string.dash_offline_saved),
                     Toast.LENGTH_SHORT
                 ).show()
             }
             scheduleSync()
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
-                binding.tvFingerprintStatus.text = "فشل التحقق"
+                binding.tvFingerprintStatus.text = getString(R.string.dash_fingerprint_verify_failed)
                 binding.tvFingerprintStatus.setTextColor(0xFFEF4444.toInt())
                 Toast.makeText(
                     this@DashboardActivity,
-                    "❌ تعذر معالجة البصمة: ${e.message ?: "خطأ غير معروف"}",
+                    getString(R.string.dash_processing_error, e.message ?: getString(R.string.dash_unknown_error)),
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -336,7 +337,7 @@ class DashboardActivity : AppCompatActivity() {
     /** زر إرسال الموقع الحالي: صلاحيات -> GPS -> إحداثيات -> إرسال للسيرفر */
     private fun sendCurrentLocation() {
         if (!locationManager.hasPermission()) {
-            Toast.makeText(this, "يرجى منح إذن الموقع أولاً", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.dash_location_permission_first), Toast.LENGTH_SHORT).show()
             requestPermissionsIfNeeded()
             return
         }
@@ -344,13 +345,13 @@ class DashboardActivity : AppCompatActivity() {
 
         locationManager.getCurrentLocation { location ->
             if (location == null) {
-                Toast.makeText(this, "تعذر الحصول على الموقع، تأكد من تفعيل GPS", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.dash_location_error), Toast.LENGTH_LONG).show()
                 return@getCurrentLocation
             }
             runOnUiThread {
-                binding.tvLastLocation.text = "تم التحديث الآن"
+                binding.tvLastLocation.text = getString(R.string.dash_location_updated_now)
                 binding.tvLastLocation.setTextColor(0xFF22C55E.toInt())
-                binding.tvAccuracy.text = String.format(Locale.US, "%.0f متر", location.accuracy)
+                binding.tvAccuracy.text = getString(R.string.dash_accuracy_meters, location.accuracy)
             }
             CoroutineScope(Dispatchers.IO).launch {
                 val prefs = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
@@ -360,7 +361,7 @@ class DashboardActivity : AppCompatActivity() {
 
                 if (employeeId.isEmpty() || deviceId.isNullOrEmpty()) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(this@DashboardActivity, "بيانات الموظف غير مكتملة، سجل الدخول أولاً", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@DashboardActivity, getString(R.string.dash_employee_data_incomplete), Toast.LENGTH_SHORT).show()
                     }
                     return@launch
                 }
@@ -380,18 +381,18 @@ class DashboardActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         if (ok) {
                             Toast.makeText(this@DashboardActivity,
-                                "✅ تم إرسال الموقع الحالي بنجاح",
+                                getString(R.string.dash_location_sent),
                                 Toast.LENGTH_LONG).show()
                         } else {
                             Toast.makeText(this@DashboardActivity,
-                                response.body()?.message ?: ("فشل إرسال الموقع (رمز " + response.code() + ")"),
+                                response.body()?.message ?: getString(R.string.dash_location_send_failed, response.code()),
                                 Toast.LENGTH_LONG).show()
                         }
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(this@DashboardActivity,
-                            "📴 لا يوجد اتصال بالخادم، تعذر إرسال الموقع",
+                            getString(R.string.dash_location_offline_failed),
                             Toast.LENGTH_LONG).show()
                     }
                 }
@@ -427,7 +428,7 @@ class DashboardActivity : AppCompatActivity() {
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
         WorkManager.getInstance(this).enqueueUniqueWork(
-            "sync_attendance",
+            "sync_local_data",
             ExistingWorkPolicy.KEEP,
             work
         )
@@ -436,15 +437,34 @@ class DashboardActivity : AppCompatActivity() {
     private fun refreshSyncStatus() {
         val employeeId = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
             .getString("employeeId", "") ?: return
+
         CoroutineScope(Dispatchers.IO).launch {
-            val pending = db.attendanceDao().countUnsynced(employeeId)
+
+            val pendingAttendance =
+                db.attendanceDao().countUnsynced(employeeId)
+
+            val pendingRequests =
+                db.serviceRequestDao().countUnsynced(employeeId)
+
+            val pendingTotal =
+                pendingAttendance + pendingRequests
+
             withContext(Dispatchers.Main) {
-                if (pending > 0) {
-                    binding.tvFingerprintStatus.text = "بانتظار المزامنة ($pending)"
-                    binding.tvFingerprintStatus.setTextColor(0xFFFACC15.toInt())
+
+                if (pendingTotal > 0) {
+                    binding.tvFingerprintStatus.text =
+                        getString(R.string.dash_local_pending, pendingTotal)
+
+                    binding.tvFingerprintStatus.setTextColor(
+                        0xFFFACC15.toInt()
+                    )
                 } else {
-                    binding.tvFingerprintStatus.text = "جاهزة ومتزامنة"
-                    binding.tvFingerprintStatus.setTextColor(0xFF22C55E.toInt())
+                    binding.tvFingerprintStatus.text =
+                        getString(R.string.dash_synced_ready)
+
+                    binding.tvFingerprintStatus.setTextColor(
+                        0xFF22C55E.toInt()
+                    )
                 }
             }
         }

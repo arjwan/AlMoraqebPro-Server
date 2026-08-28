@@ -8,6 +8,8 @@
     <string name="language">اللغة</string>
     <string name="arabic">العربية</string>
     <string name="english">English</string>
+    <string name="kurdish">کوردی</string>
+    <string name="persian">فارسی</string>
     <string name="appearance">المظهر</string>
     <string name="light">فاتح</string>
     <string name="dark">داكن</string>
@@ -15,4 +17,338 @@
     <string name="developer_info">ℹ️ معلومات المطور</string>
     <string name="logout">🚪 تسجيل الخروج</string>
     <string name="back">عودة</string>
+
+    <string name="login_server_checking">⏳ جارٍ فحص السيرفر المركزي...</string>
+    <string name="login_brand">☀ 🛡 المراقب برو</string>
+    <string name="login_portal">بوابة الموظفين الذكية</string>
+    <string name="join_request">📝 طلب انضمام</string>
+    <string name="login_tab">🔒 تسجيل دخول</string>
+    <string name="employee_login_title">تسجيل دخول الموظف</string>
+    <string name="employee_login_subtitle">أدخل بيانات الحساب المعتمدة من إدارة الشركة.</string>
+    <string name="company_code">رمز الشركة</string>
+    <string name="company_code_example">مثال: B-2080</string>
+    <string name="username">اسم المستخدم</string>
+    <string name="password">كلمة المرور</string>
+    <string name="login_button">🚀 دخول إلى حسابي</string>
+    <string name="developer_information">معلومات المطور</string>
+    <string name="developer_company">شركة الأرجوان للبرمجيات</string>
+    <string name="developer_name">المطور: محمد العبيدي</string>
+
+    <string name="register_title">طلب انضمام موظف جديد</string>
+    <string name="company_name">اسم الشركة</string>
+    <string name="employee_name">اسم الموظف</string>
+    <string name="phone_number">رقم الهاتف</string>
+    <string name="job_title">المسمى الوظيفي</string>
+    <string name="work_location">مكان العمل</string>
+    <string name="salary">الراتب</string>
+    <string name="shift">الوردية</string>
+    <string name="work_hours">ساعات العمل</string>
+    <string name="wage_type">نوع الأجر</string>
+    <string name="social_security">الضمان الاجتماعي</string>
+    <string name="location">الموقع</string>
+    <string name="send_request">إرسال الطلب</string>
+
+    <string name="services_brand">المراقب برو</string>
+    <string name="services_checking">● جارٍ الفحص...</string>
+    <string name="services_banner">📢 مرحباً بك في خدمات المراقب برو • 🦺 صباحاً: التزم بتعليمات السلامة المهنية وارتدِ معدات الوقاية المطلوبة • 🧯 اتبع تعليمات الدفاع المدني ومخارج الطوارئ ونقاط التجمع • 🛡 تأكد من تسجيل بصمة الحضور عند الوصول • 📅 يمكنك إرسال طلبات الإجازة والسلف من هنا • 🚪 عند نهاية العمل سجّل الانصراف وغادر موقع العمل حسب تعليمات الشركة والسلامة</string>
+    <string name="services_employee">الموظف: -</string>
+    <string name="services_company">الشركة: -</string>
+    <string name="services_device">الجهاز: -</string>
+    <string name="services_account_active">حالة الحساب: نشط ✅</string>
+    <string name="loan_title">طلب سلفة</string>
+    <string name="loan_desc">تقديم طلب سلفة مالية</string>
+    <string name="leave_title">طلب إجازة</string>
+    <string name="leave_desc">إجازة اعتيادية أو مرضية</string>
+    <string name="my_requests_title">حالة طلباتي</string>
+    <string name="my_requests_desc">متابعة الطلبات المرسلة</string>
+    <string name="attendance_history_title">سجل البصمات والحضور</string>
+    <string name="attendance_history_desc">دخول وخروج وتواريخ</string>
+    <string name="manager_notifications_title">إشعارات المدير</string>
+    <string name="manager_notifications_desc">رسائل وتنبيهات الإدارة</string>
+    <string name="first_aid_title">الإسعافات الأولية</string>
+    <string name="first_aid_desc">شروحات طبية صوتية</string>
+    <string name="rewards_title">المكافآت والخصومات</string>
+    <string name="rewards_desc">عرض البيانات المتاحة</string>
+    <string name="account_status_title">حالة الحساب</string>
+    <string name="account_status_desc">فحص السيرفر والجهاز</string>
+    <string name="app_settings_title">إعدادات التطبيق</string>
+    <string name="app_settings_desc">لغة ومظهر واتصال</string>
+    <string name="back_attendance_title">عودة للبصمة</string>
+    <string name="back_attendance_desc">واجهة الكاميرا والبصمة</string>
+    <string name="svc_employee_value">الموظف: %1$s</string>
+    <string name="svc_company_value">الشركة: %1$s</string>
+    <string name="svc_device_linked">الجهاز: مرتبط ✅</string>
+    <string name="svc_device_unknown">الجهاز: غير معروف</string>
+    <string name="svc_welcome_tts">أهلاً بك يا %1$s. يمكنك الآن استخدام خدمات المراقب برو.</string>
+    <string name="svc_default_employee">الموظف</string>
+    <string name="svc_morning_title">🌅 صباح الخير</string>
+    <string name="svc_afternoon_title">🌤 مساء الخير</string>
+    <string name="svc_evening_title">🌆 مساء الخير</string>
+    <string name="svc_night_title">🌙 مساء الخير</string>
+    <string name="svc_morning_message">مرحباً %1$s – تذكر تسجيل بصمة الحضور</string>
+    <string name="svc_general_message">مرحباً %1$s – خدماتك في مكان واحد</string>
+    <string name="svc_evening_message">مرحباً %1$s – تذكر تسجيل بصمة الانصراف</string>
+    <string name="svc_connected">● متصل</string>
+    <string name="svc_offline">● بدون إنترنت</string>
+    <string name="svc_loan_amount_hint">المبلغ بالدينار العراقي (مثال: 500000)</string>
+    <string name="svc_loan_reason_hint">اكتب سبب طلب السلفة...</string>
+    <string name="svc_loan_dialog_title">💰 طلب سلفة مالية</string>
+    <string name="svc_send_request">إرسال الطلب</string>
+    <string name="svc_cancel">إلغاء</string>
+    <string name="svc_invalid_loan_amount">⚠ أدخل مبلغ سلفة صحيحاً</string>
+    <string name="svc_loan_reason_required">⚠ اكتب سبب السلفة</string>
+    <string name="svc_loan_sent">تم إرسال طلب السلفة</string>
+    <string name="svc_leave_normal">اعتيادية</string>
+    <string name="svc_leave_sick">مرضية</string>
+    <string name="svc_leave_emergency">طارئة</string>
+    <string name="svc_leave_hourly">زمنية</string>
+    <string name="svc_leave_type">نوع الإجازة</string>
+    <string name="svc_leave_from_hint">📅 من تاريخ</string>
+    <string name="svc_leave_to_hint">📅 إلى تاريخ</string>
+    <string name="svc_leave_reason_hint">اكتب سبب الإجازة...</string>
+    <string name="svc_leave_start_first">⚠ حدد تاريخ بداية الإجازة أولاً</string>
+    <string name="svc_leave_dialog_title">📅 طلب إجازة</string>
+    <string name="svc_leave_start_required">⚠ حدد تاريخ بداية الإجازة</string>
+    <string name="svc_leave_end_required">⚠ حدد تاريخ نهاية الإجازة</string>
+    <string name="svc_leave_reason_required">⚠ اكتب سبب الإجازة</string>
+    <string name="svc_leave_reason_format">نوع الإجازة: %1$s – %2$s</string>
+    <string name="svc_leave_sent">تم إرسال طلب الإجازة</string>
+    <string name="svc_rewards_dialog_title">🎁 المكافآت والخصومات</string>
+    <string name="svc_rewards_unavailable">ℹ لا يوجد حالياً API مستقل للمكافآت والخصومات في السيرفر، ولذلك لا نعرض بيانات وهمية. عند إضافة مسار المكافآت إلى السيرفر سيتم ربط هذه البطاقة مباشرة.</string>
+    <string name="svc_ok">حسناً</string>
+    <string name="svc_sending">⏳ جارٍ الإرسال...</string>
+    <string name="svc_request_success">تم إرسال طلبك إلى الإدارة بنجاح.</string>
+    <string name="svc_server_rejected">رفض السيرفر الطلب (رمز %1$d)</string>
+    <string name="svc_prepare_error">❌ حدث خطأ أثناء تجهيز الطلب</string>
+    <string name="svc_local_mode">● يعمل محلياً</string>
+    <string name="svc_saved_locally">🟠 تم حفظ الطلب محلياً\nسيتم إرساله تلقائياً عند عودة الإنترنت</string>
+    <string name="login_fill_all_fields">يرجى ملء جميع الحقول</string>
+    <string name="login_whatsapp_unavailable">واتساب غير متوفر على هذا الجهاز</string>
+    <string name="login_email_unavailable">تطبيق البريد غير متوفر</string>
+    <string name="login_server_checking_full">⏳ جارٍ فحص الاتصال بالسيرفر...</string>
+    <string name="login_server_connected">🟢 السيرفر متصل</string>
+    <string name="login_server_disconnected">🔴 غير متصل بالسيرفر</string>
+    <string name="login_developer_title">ℹ معلومات المطور</string>
+    <string name="login_developer_info">🏢 شركة الارجوان للبرمجيات\n👨‍💻 المطور: محمد العبيدي\n📱 واتساب: 07807807491\n✉ البريد: mohmmed1628@gmail.com</string>
+    <string name="login_whatsapp_button">💬 واتساب</string>
+    <string name="login_email_button">✉ بريد</string>
+    <string name="login_close">إغلاق</string>
+    <string name="login_success">تم تسجيل الدخول بنجاح</string>
+    <string name="login_invalid_credentials">بيانات الدخول غير صحيحة</string>
+    <string name="login_failed_code">فشل تسجيل الدخول (رمز %1$d)</string>
+    <string name="login_connection_error">تعذر الاتصال بالخادم، تحقق من الإنترنت</string>
+    <string name="register_screen_title">طلب انضمام موظف جديد</string>
+    <string name="register_company_name_required">⚠ أدخل رمز الشركة واسم الموظف</string>
+    <string name="register_salary_invalid">⚠ أدخل راتباً صحيحاً أكبر من صفر</string>
+    <string name="register_hours_invalid">⚠ أدخل ساعات عمل صحيحة أكبر من صفر</string>
+    <string name="register_sending">جارٍ الإرسال...</string>
+    <string name="register_success">✅ تم إرسال الطلب بنجاح</string>
+    <string name="register_failed_code">فشل إرسال الطلب (رمز %1$d)</string>
+    <string name="register_connection_error">تعذر الاتصال بالسيرفر. تحقق من الإنترنت وحاول مرة أخرى.</string>
+    <string name="register_send_button">إرسال الطلب</string>
+    <string name="dash_default_employee">موظف</string>
+    <string name="dash_welcome">مرحباً %1$s</string>
+    <string name="dash_employee_label">الموظف: %1$s</string>
+    <string name="dash_company_code_label">رمز الشركة: %1$s</string>
+    <string name="dash_home_hint">أنت في الصفحة الرئيسية للبصمة والموقع</string>
+    <string name="dash_server_connected">🟢 السيرفر متصل</string>
+    <string name="dash_server_local">🟠 يعمل محلياً – بدون اتصال</string>
+    <string name="dash_gps_on">مفعل</string>
+    <string name="dash_gps_off">مغلق</string>
+    <string name="dash_location_permission_granted">تم منح إذن الموقع</string>
+    <string name="dash_location_permission_required">يجب منح إذن الموقع لتسجيل الحضور</string>
+    <string name="dash_gps_dialog_title">خدمات الموقع معطلة</string>
+    <string name="dash_gps_dialog_message">يجب تفعيل GPS لتسجيل الحضور وإرسال الموقع. هل تريد فتح إعدادات الموقع؟</string>
+    <string name="dash_open_settings">فتح الإعدادات</string>
+    <string name="dash_cancel">إلغاء</string>
+    <string name="dash_location_permission_first">يرجى منح إذن الموقع أولاً</string>
+    <string name="dash_location_error">تعذر الحصول على الموقع، تأكد من تفعيل GPS</string>
+    <string name="dash_fingerprint_error">خطأ في البصمة: %1$s</string>
+    <string name="dash_challenge_failed">تعذر إنشاء تحدي البصمة</string>
+    <string name="dash_fingerprint_rejected">مرفوضة</string>
+    <string name="dash_fingerprint_synced">تمت المزامنة</string>
+    <string name="dash_attendance_success">✅ تم تسجيل %1$s بنجاح</string>
+    <string name="dash_attendance_word">الحضور</string>
+    <string name="dash_exit_word">الانصراف</string>
+    <string name="dash_fingerprint_accept_failed">تعذر قبول البصمة</string>
+    <string name="dash_saved_local">⚠ تم حفظ البصمة محليًا بانتظار المزامنة</string>
+    <string name="dash_offline_saved">📴 لا يوجد اتصال، تم حفظ السجل محليًا وستتم المزامنة لاحقًا</string>
+    <string name="dash_fingerprint_verify_failed">فشل التحقق</string>
+    <string name="dash_processing_error">❌ تعذر معالجة البصمة: %1$s</string>
+    <string name="dash_unknown_error">خطأ غير معروف</string>
+    <string name="dash_location_updated_now">تم التحديث الآن</string>
+    <string name="dash_accuracy_meters">%1$.0f متر</string>
+    <string name="dash_employee_data_incomplete">بيانات الموظف غير مكتملة، سجل الدخول أولاً</string>
+    <string name="dash_location_sent">✅ تم إرسال الموقع الحالي بنجاح</string>
+    <string name="dash_location_send_failed">فشل إرسال الموقع (رمز %1$d)</string>
+    <string name="dash_location_offline_failed">📴 لا يوجد اتصال بالخادم، تعذر إرسال الموقع</string>
+    <string name="dash_local_pending">وضع محلي – بانتظار المزامنة (%1$d)</string>
+    <string name="dash_synced_ready">جاهزة ومتزامنة</string>
+    <string name="settings_employee_name">الاسم: %1$s</string>
+    <string name="settings_device_id">معرّف الجهاز: %1$s</string>
+    <string name="settings_company_code">رمز الشركة: %1$s</string>
+    <string name="settings_dev_title">ℹ معلومات المطور</string>
+    <string name="settings_dev_message">المطور: محمد علي
+
+التطبيق: المراقب برو - تطبيق الموظفين
+الإصدار: %1$s
+
+للتواصل والدعم الفني يرجى مراجعة إدارة الشركة.</string>
+    <string name="settings_ok">حسناً</string>
+    <string name="settings_location_ready">✅ الصلاحية ممنوحة و GPS مفعّل</string>
+    <string name="settings_location_gps_off">⚠ الصلاحية ممنوحة لكن GPS مغلق — فعّله من الإعدادات</string>
+    <string name="settings_location_permission_missing">⚠ GPS مفعّل لكن إذن الموقع غير ممنوح</string>
+    <string name="settings_location_all_off">❌ لا توجد صلاحية موقع و GPS مغلق</string>
+    <string name="settings_testing">⏳ جارٍ الاختبار...</string>
+    <string name="settings_server_connected">🟢 متصل — السيرفر يعمل</string>
+    <string name="settings_connection_success">الاتصال ناجح ✅</string>
+    <string name="settings_server_disconnected">🔴 غير متصل — تحقق من الإنترنت</string>
+    <string name="settings_connection_failed">فشل الاتصال بالسيرفر ❌</string>
+    <string name="settings_employee_placeholder">الاسم: -</string>
+    <string name="settings_device_placeholder">معرّف الجهاز: -</string>
+    <string name="settings_company_placeholder">رمز الشركة: -</string>
+    <string name="settings_server_not_tested">⏳ غير مُختبر</string>
+    <string name="settings_app_info">📱 المراقب برو - إصدار %1$s</string>
+    <string name="dash_xml_title">البصمة والموقع</string>
+    <string name="dash_xml_welcome">مرحباً بك</string>
+    <string name="dash_xml_employee">الموظف: -</string>
+    <string name="dash_xml_company">الشركة: -</string>
+    <string name="dash_xml_fingerprint_status_label">حالة البصمة</string>
+    <string name="dash_xml_fingerprint_ready">جاهزة</string>
+    <string name="dash_xml_gps_ready">مفعل</string>
+    <string name="dash_xml_server_status_label">حالة السيرفر</string>
+    <string name="dash_xml_server_checking">جارٍ الفحص</string>
+    <string name="dash_xml_last_location_label">آخر موقع</string>
+    <string name="dash_xml_location_not_updated">لم يتم التحديث</string>
+    <string name="dash_xml_accuracy_label">الدقة</string>
+    <string name="dash_xml_ready_to_register">جاهز للتسجيل</string>
+    <string name="dash_xml_fingerprint_hint">اضغط بصمة الإصبع للتأكد</string>
+    <string name="dash_xml_send_location">📍 إرسال موقعي الحالي</string>
+    <string name="dash_xml_check_in">🫆 تسجيل حضور</string>
+    <string name="dash_xml_check_out">🫆 تسجيل انصراف</string>
+    <string name="dash_xml_nav_settings">⚙\nالإعدادات</string>
+    <string name="dash_xml_nav_services">🔲\nالخدمات</string>
+    <string name="dash_xml_nav_biometric">🫆\nالبصمة والموقع</string>
+    <string name="dash_xml_nav_notifications">🔔\nالإشعارات</string>
+    <string name="dash_xml_nav_home">🏠\nالرئيسية</string>
+    <string name="notifications_title">🔔 إشعارات المدير</string>
+    <string name="notifications_empty">لا توجد إشعارات جديدة من الإدارة.</string>
+    <string name="simple_list_empty">لا توجد بيانات لعرضها حالياً</string>
+    <string name="notif_fetch_failed">تعذر جلب الإشعارات من السيرفر</string>
+    <string name="notif_voice_message">🎙 رسالة صوتية</string>
+    <string name="notif_admin_message">📩 رسالة من الإدارة</string>
+    <string name="notif_urgent">🚨 عاجل — </string>
+    <string name="notif_play_audio">▶ اضغط لتشغيل الصوت المرفق</string>
+    <string name="notif_no_text">لا يوجد نص</string>
+    <string name="notif_server_unreachable">تعذر الاتصال بالسيرفر</string>
+    <string name="notif_read_failed">❌ تعذر قراءة الإشعارات: %1$s</string>
+    <string name="notif_unknown_error">خطأ غير معروف</string>
+    <string name="notif_audio_failed">تعذر تشغيل الصوت</string>
+    <string name="requests_title">📄 حالة طلباتي</string>
+    <string name="requests_fetch_failed">تعذر جلب الطلبات من السيرفر</string>
+    <string name="requests_empty">ℹ لا توجد طلبات مرسلة بعد. أرسل طلب سلفة أو إجازة من صفحة الخدمات.</string>
+    <string name="requests_approved">✅ مقبول</string>
+    <string name="requests_rejected">❌ مرفوض</string>
+    <string name="requests_pending">⏳ قيد الانتظار</string>
+    <string name="requests_loan">💰 سلفة</string>
+    <string name="requests_leave">📅 إجازة</string>
+    <string name="requests_server_unreachable">❌ تعذر الاتصال بالسيرفر، حاول مرة أخرى</string>
+    <string name="requests_connection_toast">تعذر الاتصال بالسيرفر</string>
+    <string name="requests_read_failed">❌ تعذر قراءة بيانات الطلبات: %1$s</string>
+    <string name="requests_unknown_error">خطأ غير معروف</string>
+    <string name="history_title">👋 سجل البصمات والحضور</string>
+    <string name="history_fetch_failed">تعذر جلب السجل من السيرفر</string>
+    <string name="history_empty">ℹ لا يوجد سجل حضور بعد. سجّل بصمة الحضور من الصفحة الرئيسية.</string>
+    <string name="history_attendance">🟢 حضور</string>
+    <string name="history_departure">🔴 انصراف</string>
+    <string name="history_server_unreachable">❌ تعذر الاتصال بالسيرفر، حاول مرة أخرى</string>
+    <string name="history_connection_toast">تعذر الاتصال بالسيرفر</string>
+    <string name="sync_channel_name">مزامنة البيانات المحلية</string>
+    <string name="sync_message_both">تمت مزامنة %1$d سجل، ورفض %2$d سجل بواسطة السيرفر</string>
+    <string name="sync_message_synced">تمت مزامنة %1$d عملية محلية بنجاح</string>
+    <string name="sync_message_rejected">تم رفض %1$d عملية بواسطة السيرفر</string>
+    <string name="sync_notification_title">المراقب برو</string>
+
+    <string name="account_employee">👤 الموظف: %1$s</string>
+    <string name="account_company">🏢 الشركة: %1$s</string>
+    <string name="account_device">📱 Device ID: %1$s</string>
+    <string name="account_gps">📍 GPS: %1$s</string>
+    <string name="account_gps_on">مفعّل ✅</string>
+    <string name="account_gps_off">مغلق ❌</string>
+    <string name="account_server">🌐 السيرفر: %1$s</string>
+    <string name="account_server_online">متصل ✅</string>
+    <string name="account_server_offline">غير متصل ❌</string>
+    <string name="biometric_failed">البصمة غير صحيحة، حاول مرة أخرى</string>
+    <string name="biometric_title">التحقق من البصمة</string>
+    <string name="biometric_subtitle">استخدم بصمة إصبعك لتسجيل الحضور</string>
+    <string name="biometric_cancel">إلغاء</string>
+
+    <string-array name="first_aid_cases">
+        <item>🩸 النزيف</item>
+        <item>🔥 الحروق</item>
+        <item>🦴 الكسور</item>
+        <item>😮 الاختناق</item>
+        <item>❤ الإنعاش القلبي الرئوي</item>
+        <item>😵 الإغماء</item>
+        <item>☠ التسمم</item>
+        <item>🌡 ضربة الشمس</item>
+        <item>⚡ التشنجات</item>
+        <item>🩹 الجروح</item>
+    </string-array>
+
+    <string-array name="first_aid_summaries">
+        <item>وقف النزيف الخارجي</item>
+        <item>إسعاف الحروق الحرارية</item>
+        <item>تثبيت العضو المكسور</item>
+        <item>مناورة هيمليك</item>
+        <item>CPR للبالغين</item>
+        <item>إسعاف فقدان الوعي</item>
+        <item>التعامل مع التسمم</item>
+        <item>التبريد السريع</item>
+        <item>حماية المصاب أثناء النوبة</item>
+        <item>تنظيف وتضميد الجروح</item>
+    </string-array>
+
+    <string-array name="first_aid_details">
+        <item>الضغط المباشر على الجرح بقطعة قماش نظيفة، رفع العضو المصاب، لا تقم بإزالة الجسم الغائر، اضغط بقوة حتى يتوقف النزيف، اطلب الإسعاف فوراً إذا كان النزيف حاداً.</item>
+        <item>برد الحرق بماء جارٍ بارد لمدة 15-20 دقيقة، لا تضع ثلجاً أو معجون أسنان أو زبدة، غطّ الحرق بضمادة معقمة غير لاصقة، لا تفقع الفقاعات.</item>
+        <item>لا تحرك المصاب إلا للضرورة، ثبّت العضو المكسور بجبيرة مؤقتة، ضع كمادات باردة لتقليل التورم، واطلب الإسعاف.</item>
+        <item>قف خلف المصاب، ضع قبضة يدك فوق السرة، أمسكها باليد الأخرى واضغط بقوة للداخل والأعلى 5 مرات، وكرر حتى خروج الجسم الغريب.</item>
+        <item>تأكد من الوعي والتنفس، اتصل بالإسعاف، ابدأ 30 ضغطة صدرية بمعدل 100-120 ضغطة في الدقيقة، ثم نفَسين إنقاذيين، وكرر حتى وصول الإسعاف.</item>
+        <item>مدد المصاب على ظهره، ارفع ساقيه 30 سم، فك الملابس الضيقة، لا تعطه شيئاً بالفم، واطلب الإسعاف إذا استمر الإغماء.</item>
+        <item>لا تحاول إحداث التقيؤ إلا إذا طلب مركز السموم ذلك، اتصل بالإسعاف فوراً، احتفظ بعبوة المادة المسببة، وراقب التنفس.</item>
+        <item>انقل المصاب إلى مكان بارد، أزل الملابس الزائدة، برد الجسم بمناشف مبللة، أعطه سوائل إذا كان واعياً، واطلب الإسعاف فوراً.</item>
+        <item>ضع المصاب على الأرض بعيداً عن الأثاث، ضع شيئاً ناعماً تحت رأسه، لا تضع شيئاً في فمه، وبعد انتهاء النوبة ضعه على جانبه.</item>
+        <item>اغسل الجرح بماء نظيف، طهره بمطهر، غطّه بضمادة معقمة، وراقب علامات الالتهاب.</item>
+    </string-array>
+
+    <string name="first_aid_listen">🔊 استماع</string>
+    <string name="first_aid_close">إغلاق</string>
+    <string name="first_aid_audio_unavailable">الصوت غير متوفر على هذا الجهاز</string>
+
+
+    <string name="support_title">طلب دعم</string>
+    <string name="support_subject_label">عنوان الطلب</string>
+    <string name="support_subject_hint">مثال: مشكلة في تسجيل الحضور</string>
+    <string name="support_details_label">تفاصيل المشكلة</string>
+    <string name="support_details_hint">اكتب تفاصيل المشكلة أو السؤال...</string>
+    <string name="support_send">إرسال طلب الدعم</string>
+    <string name="support_developer_info">معلومات المطور</string>
+    <string name="support_back">عودة</string>
+    <string name="support_required">يرجى إدخال عنوان الطلب ومحتواه</string>
+    <string name="support_message_body">عنوان الطلب: %1$s
+
+%2$s</string>
+    <string name="support_success">تم إعداد طلب الدعم بنجاح</string>
+    <string name="support_email_subject">طلب دعم - المراقب برو سيرفس</string>
+    <string name="support_email_unavailable">لا يوجد تطبيق بريد إلكتروني متاح</string>
+    <string name="support_developer_dialog">شركة الارجوان للبرمجيات
+
+واتساب: 0780807491
+البريد: mohmmed1628@gmail.com
+المطور: محمد العبيدي</string>
+    <string name="support_ok">موافق</string>
+    <string name="support_whatsapp">واتساب</string>
+    <string name="support_whatsapp_unavailable">لا يوجد تطبيق واتساب متاح</string>
+
 </resources>

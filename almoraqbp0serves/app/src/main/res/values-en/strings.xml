@@ -8,6 +8,8 @@
     <string name="language">Language</string>
     <string name="arabic">العربية</string>
     <string name="english">English</string>
+    <string name="kurdish">Kurdish</string>
+    <string name="persian">Persian</string>
     <string name="appearance">Appearance</string>
     <string name="light">Light</string>
     <string name="dark">Dark</string>
@@ -15,4 +17,338 @@
     <string name="developer_info">ℹ️ Developer Information</string>
     <string name="logout">🚪 Log Out</string>
     <string name="back">Back</string>
+
+    <string name="login_server_checking">⏳ Checking central server...</string>
+    <string name="login_brand">☀ 🛡 Almoraqeb Pro</string>
+    <string name="login_portal">Smart Employee Portal</string>
+    <string name="join_request">📝 Join Request</string>
+    <string name="login_tab">🔒 Sign In</string>
+    <string name="employee_login_title">Employee Sign In</string>
+    <string name="employee_login_subtitle">Enter the account details approved by your company.</string>
+    <string name="company_code">Company Code</string>
+    <string name="company_code_example">Example: B-2080</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="login_button">🚀 Sign In</string>
+    <string name="developer_information">Developer Information</string>
+    <string name="developer_company">Al Arjwan Software Company</string>
+    <string name="developer_name">Developer: Mohammed Al-Obaidi</string>
+
+    <string name="register_title">New Employee Join Request</string>
+    <string name="company_name">Company Name</string>
+    <string name="employee_name">Employee Name</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="job_title">Job Title</string>
+    <string name="work_location">Work Location</string>
+    <string name="salary">Salary</string>
+    <string name="shift">Shift</string>
+    <string name="work_hours">Work Hours</string>
+    <string name="wage_type">Wage Type</string>
+    <string name="social_security">Social Security</string>
+    <string name="location">Location</string>
+    <string name="send_request">Send Request</string>
+
+    <string name="services_brand">Almoraqeb Pro</string>
+    <string name="services_checking">● Checking...</string>
+    <string name="services_banner">📢 Welcome to Almoraqeb Pro services • 🦺 Morning: follow occupational safety rules and wear required protective equipment • 🧯 Follow Civil Defense instructions, emergency exits and assembly points • 🛡 Remember to record attendance on arrival • 📅 You can send leave and loan requests here • 🚪 At the end of work, record check-out and leave the site according to company and safety instructions</string>
+    <string name="services_employee">Employee: -</string>
+    <string name="services_company">Company: -</string>
+    <string name="services_device">Device: -</string>
+    <string name="services_account_active">Account status: Active ✅</string>
+    <string name="loan_title">Loan Request</string>
+    <string name="loan_desc">Submit a financial loan request</string>
+    <string name="leave_title">Leave Request</string>
+    <string name="leave_desc">Regular or sick leave</string>
+    <string name="my_requests_title">My Requests Status</string>
+    <string name="my_requests_desc">Track submitted requests</string>
+    <string name="attendance_history_title">Attendance History</string>
+    <string name="attendance_history_desc">Check-in, check-out and dates</string>
+    <string name="manager_notifications_title">Manager Notifications</string>
+    <string name="manager_notifications_desc">Management messages and alerts</string>
+    <string name="first_aid_title">First Aid</string>
+    <string name="first_aid_desc">Audio medical guidance</string>
+    <string name="rewards_title">Rewards and Deductions</string>
+    <string name="rewards_desc">View available data</string>
+    <string name="account_status_title">Account Status</string>
+    <string name="account_status_desc">Check server and device</string>
+    <string name="app_settings_title">App Settings</string>
+    <string name="app_settings_desc">Language, appearance and connection</string>
+    <string name="back_attendance_title">Back to Attendance</string>
+    <string name="back_attendance_desc">Camera and attendance screen</string>
+    <string name="svc_employee_value">Employee: %1$s</string>
+    <string name="svc_company_value">Company: %1$s</string>
+    <string name="svc_device_linked">Device: Linked ✅</string>
+    <string name="svc_device_unknown">Device: Unknown</string>
+    <string name="svc_welcome_tts">Welcome %1$s. You can now use Almoraqeb Pro services.</string>
+    <string name="svc_default_employee">Employee</string>
+    <string name="svc_morning_title">🌅 Good morning</string>
+    <string name="svc_afternoon_title">🌤 Good afternoon</string>
+    <string name="svc_evening_title">🌆 Good evening</string>
+    <string name="svc_night_title">🌙 Good evening</string>
+    <string name="svc_morning_message">Hello %1$s – remember to record attendance</string>
+    <string name="svc_general_message">Hello %1$s – all your services in one place</string>
+    <string name="svc_evening_message">Hello %1$s – remember to record check-out</string>
+    <string name="svc_connected">● Connected</string>
+    <string name="svc_offline">● Offline</string>
+    <string name="svc_loan_amount_hint">Amount in Iraqi dinars (example: 500000)</string>
+    <string name="svc_loan_reason_hint">Enter the reason for the loan request...</string>
+    <string name="svc_loan_dialog_title">💰 Financial Loan Request</string>
+    <string name="svc_send_request">Send Request</string>
+    <string name="svc_cancel">Cancel</string>
+    <string name="svc_invalid_loan_amount">⚠ Enter a valid loan amount</string>
+    <string name="svc_loan_reason_required">⚠ Enter the reason for the loan</string>
+    <string name="svc_loan_sent">Loan request sent</string>
+    <string name="svc_leave_normal">Regular</string>
+    <string name="svc_leave_sick">Sick</string>
+    <string name="svc_leave_emergency">Emergency</string>
+    <string name="svc_leave_hourly">Hourly</string>
+    <string name="svc_leave_type">Leave Type</string>
+    <string name="svc_leave_from_hint">📅 From Date</string>
+    <string name="svc_leave_to_hint">📅 To Date</string>
+    <string name="svc_leave_reason_hint">Enter the reason for leave...</string>
+    <string name="svc_leave_start_first">⚠ Select the leave start date first</string>
+    <string name="svc_leave_dialog_title">📅 Leave Request</string>
+    <string name="svc_leave_start_required">⚠ Select the leave start date</string>
+    <string name="svc_leave_end_required">⚠ Select the leave end date</string>
+    <string name="svc_leave_reason_required">⚠ Enter the reason for leave</string>
+    <string name="svc_leave_reason_format">Leave type: %1$s – %2$s</string>
+    <string name="svc_leave_sent">Leave request sent</string>
+    <string name="svc_rewards_dialog_title">🎁 Rewards and Deductions</string>
+    <string name="svc_rewards_unavailable">ℹ There is currently no separate rewards and deductions API on the server, so no fake data is shown. This card will be connected when the API is added.</string>
+    <string name="svc_ok">OK</string>
+    <string name="svc_sending">⏳ Sending...</string>
+    <string name="svc_request_success">Your request was sent to management successfully.</string>
+    <string name="svc_server_rejected">The server rejected the request (code %1$d)</string>
+    <string name="svc_prepare_error">❌ An error occurred while preparing the request</string>
+    <string name="svc_local_mode">● Local mode</string>
+    <string name="svc_saved_locally">🟠 Request saved locally\nIt will be sent automatically when the internet returns</string>
+    <string name="login_fill_all_fields">Please fill in all fields</string>
+    <string name="login_whatsapp_unavailable">WhatsApp is not available on this device</string>
+    <string name="login_email_unavailable">Email app is not available</string>
+    <string name="login_server_checking_full">⏳ Checking server connection...</string>
+    <string name="login_server_connected">🟢 Server connected</string>
+    <string name="login_server_disconnected">🔴 Server disconnected</string>
+    <string name="login_developer_title">ℹ Developer Information</string>
+    <string name="login_developer_info">🏢 Al-Arjwan Software Company\n👨‍💻 Developer: Mohammed Al-Obaidi\n📱 WhatsApp: 07807807491\n✉ Email: mohmmed1628@gmail.com</string>
+    <string name="login_whatsapp_button">💬 WhatsApp</string>
+    <string name="login_email_button">✉ Email</string>
+    <string name="login_close">Close</string>
+    <string name="login_success">Login successful</string>
+    <string name="login_invalid_credentials">Invalid login credentials</string>
+    <string name="login_failed_code">Login failed (code %1$d)</string>
+    <string name="login_connection_error">Unable to connect to the server. Check your internet connection</string>
+    <string name="register_screen_title">New Employee Join Request</string>
+    <string name="register_company_name_required">⚠ Enter the company code and employee name</string>
+    <string name="register_salary_invalid">⚠ Enter a valid salary greater than zero</string>
+    <string name="register_hours_invalid">⚠ Enter valid work hours greater than zero</string>
+    <string name="register_sending">Sending...</string>
+    <string name="register_success">✅ Request sent successfully</string>
+    <string name="register_failed_code">Request failed (code %1$d)</string>
+    <string name="register_connection_error">Unable to connect to the server. Check your internet and try again.</string>
+    <string name="register_send_button">Send Request</string>
+    <string name="dash_default_employee">Employee</string>
+    <string name="dash_welcome">Welcome %1$s</string>
+    <string name="dash_employee_label">Employee: %1$s</string>
+    <string name="dash_company_code_label">Company code: %1$s</string>
+    <string name="dash_home_hint">You are on the fingerprint and location home screen</string>
+    <string name="dash_server_connected">🟢 Server connected</string>
+    <string name="dash_server_local">🟠 Local mode – offline</string>
+    <string name="dash_gps_on">Enabled</string>
+    <string name="dash_gps_off">Off</string>
+    <string name="dash_location_permission_granted">Location permission granted</string>
+    <string name="dash_location_permission_required">Location permission is required to record attendance</string>
+    <string name="dash_gps_dialog_title">Location services are disabled</string>
+    <string name="dash_gps_dialog_message">GPS must be enabled to record attendance and send location. Open location settings?</string>
+    <string name="dash_open_settings">Open settings</string>
+    <string name="dash_cancel">Cancel</string>
+    <string name="dash_location_permission_first">Please grant location permission first</string>
+    <string name="dash_location_error">Unable to get location. Make sure GPS is enabled</string>
+    <string name="dash_fingerprint_error">Fingerprint error: %1$s</string>
+    <string name="dash_challenge_failed">Unable to create fingerprint challenge</string>
+    <string name="dash_fingerprint_rejected">Rejected</string>
+    <string name="dash_fingerprint_synced">Synced</string>
+    <string name="dash_attendance_success">✅ %1$s recorded successfully</string>
+    <string name="dash_attendance_word">Check-in</string>
+    <string name="dash_exit_word">Check-out</string>
+    <string name="dash_fingerprint_accept_failed">Unable to accept fingerprint</string>
+    <string name="dash_saved_local">⚠ Fingerprint saved locally and waiting for sync</string>
+    <string name="dash_offline_saved">📴 No connection. The record was saved locally and will sync later</string>
+    <string name="dash_fingerprint_verify_failed">Verification failed</string>
+    <string name="dash_processing_error">❌ Unable to process fingerprint: %1$s</string>
+    <string name="dash_unknown_error">Unknown error</string>
+    <string name="dash_location_updated_now">Updated now</string>
+    <string name="dash_accuracy_meters">%1$.0f m</string>
+    <string name="dash_employee_data_incomplete">Employee data is incomplete. Please log in first</string>
+    <string name="dash_location_sent">✅ Current location sent successfully</string>
+    <string name="dash_location_send_failed">Failed to send location (code %1$d)</string>
+    <string name="dash_location_offline_failed">📴 No server connection. Location could not be sent</string>
+    <string name="dash_local_pending">Local mode – waiting for sync (%1$d)</string>
+    <string name="dash_synced_ready">Ready and synced</string>
+    <string name="settings_employee_name">Name: %1$s</string>
+    <string name="settings_device_id">Device ID: %1$s</string>
+    <string name="settings_company_code">Company code: %1$s</string>
+    <string name="settings_dev_title">ℹ Developer information</string>
+    <string name="settings_dev_message">Developer: Mohammed Ali
+
+App: AlMoraqeb Pro - Employee App
+Version: %1$s
+
+For technical support, please contact company management.</string>
+    <string name="settings_ok">OK</string>
+    <string name="settings_location_ready">✅ Location permission granted and GPS enabled</string>
+    <string name="settings_location_gps_off">⚠ Location permission granted but GPS is off — enable it in Settings</string>
+    <string name="settings_location_permission_missing">⚠ GPS is enabled but location permission is not granted</string>
+    <string name="settings_location_all_off">❌ Location permission is missing and GPS is off</string>
+    <string name="settings_testing">⏳ Testing...</string>
+    <string name="settings_server_connected">🟢 Connected — server is working</string>
+    <string name="settings_connection_success">Connection successful ✅</string>
+    <string name="settings_server_disconnected">🔴 Disconnected — check your internet connection</string>
+    <string name="settings_connection_failed">Server connection failed ❌</string>
+    <string name="settings_employee_placeholder">Name: -</string>
+    <string name="settings_device_placeholder">Device ID: -</string>
+    <string name="settings_company_placeholder">Company code: -</string>
+    <string name="settings_server_not_tested">⏳ Not tested</string>
+    <string name="settings_app_info">📱 AlMoraqeb Pro - Version %1$s</string>
+    <string name="dash_xml_title">Fingerprint &amp; Location</string>
+    <string name="dash_xml_welcome">Welcome</string>
+    <string name="dash_xml_employee">Employee: -</string>
+    <string name="dash_xml_company">Company: -</string>
+    <string name="dash_xml_fingerprint_status_label">Fingerprint status</string>
+    <string name="dash_xml_fingerprint_ready">Ready</string>
+    <string name="dash_xml_gps_ready">Enabled</string>
+    <string name="dash_xml_server_status_label">Server status</string>
+    <string name="dash_xml_server_checking">Checking</string>
+    <string name="dash_xml_last_location_label">Last location</string>
+    <string name="dash_xml_location_not_updated">Not updated</string>
+    <string name="dash_xml_accuracy_label">Accuracy</string>
+    <string name="dash_xml_ready_to_register">Ready to register</string>
+    <string name="dash_xml_fingerprint_hint">Tap fingerprint to verify</string>
+    <string name="dash_xml_send_location">📍 Send current location</string>
+    <string name="dash_xml_check_in">🫆 Check in</string>
+    <string name="dash_xml_check_out">🫆 Check out</string>
+    <string name="dash_xml_nav_settings">⚙\nSettings</string>
+    <string name="dash_xml_nav_services">🔲\nServices</string>
+    <string name="dash_xml_nav_biometric">🫆\nFingerprint &amp; Location</string>
+    <string name="dash_xml_nav_notifications">🔔\nNotifications</string>
+    <string name="dash_xml_nav_home">🏠\nHome</string>
+    <string name="notifications_title">🔔 Manager Notifications</string>
+    <string name="notifications_empty">There are no new notifications from management.</string>
+    <string name="simple_list_empty">There is no data to display.</string>
+    <string name="notif_fetch_failed">Unable to fetch notifications from the server</string>
+    <string name="notif_voice_message">🎙 Voice message</string>
+    <string name="notif_admin_message">📩 Message from management</string>
+    <string name="notif_urgent">🚨 Urgent — </string>
+    <string name="notif_play_audio">▶ Tap to play the attached audio</string>
+    <string name="notif_no_text">No text available</string>
+    <string name="notif_server_unreachable">Unable to connect to the server</string>
+    <string name="notif_read_failed">❌ Unable to read notifications: %1$s</string>
+    <string name="notif_unknown_error">Unknown error</string>
+    <string name="notif_audio_failed">Unable to play audio</string>
+    <string name="requests_title">📄 My Requests</string>
+    <string name="requests_fetch_failed">Unable to fetch requests from the server</string>
+    <string name="requests_empty">ℹ No requests have been sent yet. Send a loan or leave request from Services.</string>
+    <string name="requests_approved">✅ Approved</string>
+    <string name="requests_rejected">❌ Rejected</string>
+    <string name="requests_pending">⏳ Pending</string>
+    <string name="requests_loan">💰 Loan</string>
+    <string name="requests_leave">📅 Leave</string>
+    <string name="requests_server_unreachable">❌ Unable to connect to the server. Try again.</string>
+    <string name="requests_connection_toast">Unable to connect to the server</string>
+    <string name="requests_read_failed">❌ Unable to read request data: %1$s</string>
+    <string name="requests_unknown_error">Unknown error</string>
+    <string name="history_title">👋 Fingerprint &amp; Attendance History</string>
+    <string name="history_fetch_failed">Unable to fetch attendance history from the server</string>
+    <string name="history_empty">ℹ No attendance records yet. Check in from the home screen.</string>
+    <string name="history_attendance">🟢 Check in</string>
+    <string name="history_departure">🔴 Check out</string>
+    <string name="history_server_unreachable">❌ Unable to connect to the server. Try again.</string>
+    <string name="history_connection_toast">Unable to connect to the server</string>
+    <string name="sync_channel_name">Local data sync</string>
+    <string name="sync_message_both">Synced %1$d records; %2$d records were rejected by the server</string>
+    <string name="sync_message_synced">Successfully synced %1$d local operations</string>
+    <string name="sync_message_rejected">%1$d operations were rejected by the server</string>
+    <string name="sync_notification_title">AlMoraqeb Pro</string>
+
+    <string name="account_employee">👤 Employee: %1$s</string>
+    <string name="account_company">🏢 Company: %1$s</string>
+    <string name="account_device">📱 Device ID: %1$s</string>
+    <string name="account_gps">📍 GPS: %1$s</string>
+    <string name="account_gps_on">Enabled ✅</string>
+    <string name="account_gps_off">Off ❌</string>
+    <string name="account_server">🌐 Server: %1$s</string>
+    <string name="account_server_online">Connected ✅</string>
+    <string name="account_server_offline">Disconnected ❌</string>
+    <string name="biometric_failed">Fingerprint not recognized. Try again.</string>
+    <string name="biometric_title">Fingerprint verification</string>
+    <string name="biometric_subtitle">Use your fingerprint to record attendance</string>
+    <string name="biometric_cancel">Cancel</string>
+
+    <string-array name="first_aid_cases">
+        <item>🩸 Bleeding</item>
+        <item>🔥 Burns</item>
+        <item>🦴 Fractures</item>
+        <item>😮 Choking</item>
+        <item>❤ Cardiopulmonary resuscitation</item>
+        <item>😵 Fainting</item>
+        <item>☠ Poisoning</item>
+        <item>🌡 Heat stroke</item>
+        <item>⚡ Seizures</item>
+        <item>🩹 Wounds</item>
+    </string-array>
+
+    <string-array name="first_aid_summaries">
+        <item>Control external bleeding</item>
+        <item>First aid for thermal burns</item>
+        <item>Immobilize the injured limb</item>
+        <item>Heimlich maneuver</item>
+        <item>Adult CPR</item>
+        <item>First aid for loss of consciousness</item>
+        <item>Managing poisoning</item>
+        <item>Rapid cooling</item>
+        <item>Protect the person during a seizure</item>
+        <item>Clean and dress wounds</item>
+    </string-array>
+
+    <string-array name="first_aid_details">
+        <item>Apply direct pressure to the wound with a clean cloth, raise the injured limb when appropriate, do not remove an embedded object, keep firm pressure until bleeding stops, and call emergency services immediately if bleeding is severe.</item>
+        <item>Cool the burn under cool running water for 15-20 minutes. Do not use ice, toothpaste, or butter. Cover with a sterile non-stick dressing and do not burst blisters.</item>
+        <item>Do not move the injured person unless necessary. Immobilize the injured limb with a temporary splint, apply a cold compress to reduce swelling, and call emergency services.</item>
+        <item>Stand behind the person, place your fist above the navel, grasp it with the other hand, and give 5 firm inward-and-upward thrusts. Repeat until the obstruction is expelled.</item>
+        <item>Check responsiveness and breathing, call emergency services, begin 30 chest compressions at 100-120 per minute, then give 2 rescue breaths if trained, and continue until help arrives.</item>
+        <item>Lay the person on their back, raise the legs about 30 cm, loosen tight clothing, do not give anything by mouth, and seek emergency help if unconsciousness continues.</item>
+        <item>Do not induce vomiting unless directed by a poison center. Call emergency services immediately, keep the product container, and monitor breathing.</item>
+        <item>Move the person to a cool place, remove excess clothing, cool the body with wet towels, give fluids only if fully conscious, and call emergency services immediately.</item>
+        <item>Move the person away from furniture, place something soft under the head, do not put anything in the mouth, and after the seizure ends place the person on their side.</item>
+        <item>Wash the wound with clean water, disinfect it, cover it with a sterile dressing, and watch for signs of infection.</item>
+    </string-array>
+
+    <string name="first_aid_listen">🔊 Listen</string>
+    <string name="first_aid_close">Close</string>
+    <string name="first_aid_audio_unavailable">Audio is not available on this device</string>
+
+
+    <string name="support_title">Support Request</string>
+    <string name="support_subject_label">Request title</string>
+    <string name="support_subject_hint">Example: Attendance registration problem</string>
+    <string name="support_details_label">Problem details</string>
+    <string name="support_details_hint">Describe the problem or question...</string>
+    <string name="support_send">Send Support Request</string>
+    <string name="support_developer_info">Developer Information</string>
+    <string name="support_back">Back</string>
+    <string name="support_required">Please enter the request title and details</string>
+    <string name="support_message_body">Request title: %1$s
+
+%2$s</string>
+    <string name="support_success">Support request prepared successfully</string>
+    <string name="support_email_subject">Support Request - Almoraqeb Pro Service</string>
+    <string name="support_email_unavailable">No email application is available</string>
+    <string name="support_developer_dialog">Al-Arjwan Software Company
+
+WhatsApp: 0780807491
+Email: mohmmed1628@gmail.com
+Developer: Mohammed Al-Obaidi</string>
+    <string name="support_ok">OK</string>
+    <string name="support_whatsapp">WhatsApp</string>
+    <string name="support_whatsapp_unavailable">WhatsApp is not available on this device</string>
+
 </resources>

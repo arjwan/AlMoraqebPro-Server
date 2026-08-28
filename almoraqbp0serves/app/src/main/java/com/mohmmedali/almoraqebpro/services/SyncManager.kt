@@ -3,6 +3,7 @@ package com.mohmmedali.almoraqebpro.services
 import com.mohmmedali.almoraqebpro.data.ApiService
 import com.mohmmedali.almoraqebpro.data.AppDatabase
 import com.mohmmedali.almoraqebpro.data.AttendanceRequest
+import com.mohmmedali.almoraqebpro.data.ServiceRequest
 
 data class SyncResult(
     val syncedCount: Int,
@@ -14,6 +15,80 @@ class SyncManager(
     private val db: AppDatabase,
     private val api: ApiService
 ) {
+
+    suspend fun syncPendingServiceRequests(): SyncResult {
+
+        val pending =
+            db.serviceRequestDao().getUnsynced()
+
+        var syncedCount = 0
+        var rejectedCount = 0
+
+        for (record in pending) {
+
+            try {
+
+                val response =
+                    api.sendServiceRequest(
+                        ServiceRequest(
+                            employeeId = record.employeeId,
+                            deviceId = record.deviceId,
+                            companyId = record.companyId,
+                            type = record.type,
+                            amount = record.amount,
+                            reason = record.reason,
+                            requestedDate = record.requestedDate,
+                            fromDate = record.fromDate,
+                            toDate = record.toDate,
+                            leavePaymentType = record.leavePaymentType
+                        )
+                    )
+
+                if (
+                    response.isSuccessful &&
+                    response.body()?.success == true
+                ) {
+
+                    db.serviceRequestDao()
+                        .markSynced(record.id)
+
+                    syncedCount++
+
+                } else if (
+                    response.code() in 400..499
+                ) {
+
+                    db.serviceRequestDao()
+                        .markSynced(record.id)
+
+                    rejectedCount++
+
+                } else {
+
+                    return SyncResult(
+                        syncedCount,
+                        rejectedCount,
+                        true
+                    )
+                }
+
+            } catch (_: Exception) {
+
+                return SyncResult(
+                    syncedCount,
+                    rejectedCount,
+                    true
+                )
+            }
+        }
+
+        return SyncResult(
+            syncedCount,
+            rejectedCount,
+            false
+        )
+    }
+
 
     suspend fun syncPendingAttendance(): SyncResult {
 

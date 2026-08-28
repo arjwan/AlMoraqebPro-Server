@@ -35,7 +35,7 @@
             android:id="@+id/tvEmployeeNameInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="الاسم: -"
+            android:text="@string/settings_employee_placeholder"
             android:textColor="@color/text_secondary"
             android:textSize="15sp"
             android:paddingBottom="4dp" />
@@ -44,7 +44,7 @@
             android:id="@+id/tvDeviceIdInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Device ID: -"
+            android:text="@string/settings_device_placeholder"
             android:textColor="@color/text_secondary"
             android:textSize="15sp"
             android:paddingBottom="4dp" />
@@ -53,7 +53,7 @@
             android:id="@+id/tvCompanyIdInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="رمز الشركة: -"
+            android:text="@string/settings_company_placeholder"
             android:textColor="@color/text_secondary"
             android:textSize="15sp"
             android:paddingBottom="12dp" />
@@ -72,7 +72,7 @@
             android:id="@+id/tvServerStatusSettings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="⏳ غير مُختبر"
+            android:text="@string/settings_server_not_tested"
             android:textColor="#facc15"
             android:textSize="15sp"
             android:paddingBottom="6dp" />
@@ -138,6 +138,24 @@
                 android:text="@string/english"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp" />
+
+            <RadioButton
+                android:id="@+id/rbKurdish"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="@color/accent_color"
+                android:text="@string/kurdish"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp" />
+
+            <RadioButton
+                android:id="@+id/rbPersian"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="@color/accent_color"
+                android:text="@string/persian"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp" />
         </RadioGroup>
 
         <TextView
@@ -188,7 +206,7 @@
             android:id="@+id/tvAppInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="📱 المراقب برو - إصدار 4.0.1"
+            android:text="@string/settings_app_info"
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:layout_marginTop="16dp" />

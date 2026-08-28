@@ -16,7 +16,7 @@
             android:id="@+id/tvSupportTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="طلب دعم"
+            android:text="@string/support_title"
             android:textColor="#0F172A"
             android:textSize="26sp"
             android:textStyle="bold"
@@ -39,7 +39,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="عنوان الطلب"
+                    android:text="@string/support_subject_label"
                     android:textColor="#475569"
                     android:textSize="15sp"
                     android:layout_marginBottom="8dp" />
@@ -51,14 +51,14 @@
                     android:background="#FFFFFF"
                     android:textColor="#0F172A"
                     android:textColorHint="#94a3b8"
-                    android:hint="مثال: مشكلة في تسجيل الحضور"
+                    android:hint="@string/support_subject_hint"
                     android:padding="14dp"
                     android:layout_marginBottom="16dp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="تفاصيل المشكلة"
+                    android:text="@string/support_details_label"
                     android:textColor="#475569"
                     android:textSize="15sp"
                     android:layout_marginBottom="8dp" />
@@ -71,7 +71,7 @@
                     android:textColor="#0F172A"
                     android:textColorHint="#94a3b8"
                     android:gravity="top|start"
-                    android:hint="اكتب تفاصيل المشكلة أو السؤال..."
+                    android:hint="@string/support_details_hint"
                     android:padding="14dp"
                     android:layout_marginBottom="14dp" />
 
@@ -79,7 +79,7 @@
                     android:id="@+id/btnSendSupport"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="إرسال طلب الدعم"
+                    android:text="@string/support_send"
                     android:textColor="#ffffff"
                     android:textStyle="bold"
                     android:backgroundTint="#f59e0b"
@@ -99,7 +99,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:text="معلومات المطور"
+                android:text="@string/support_developer_info"
                 android:textColor="#ffffff"
                 android:backgroundTint="#0284c7"
                 android:padding="14dp" />
@@ -110,7 +110,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:text="عودة"
+                android:text="@string/support_back"
                 android:textColor="#ffffff"
                 android:backgroundTint="#475569"
                 android:padding="14dp" />

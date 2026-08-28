@@ -21,7 +21,7 @@ class RegisterEmployeeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register_employee)
-        setTitle("طلب انضمام موظف جديد")
+        setTitle(getString(R.string.register_screen_title))
 
         val companyId = findViewById<EditText>(R.id.etCompanyId)
         val companyName = findViewById<EditText>(R.id.etCompanyName)
@@ -44,15 +44,15 @@ class RegisterEmployeeActivity : AppCompatActivity() {
             val workHoursValue = workHours.text.toString().trim().toIntOrNull()
 
             if (companyId.text.toString().trim().isEmpty() || name.text.toString().trim().isEmpty()) {
-                Toast.makeText(this, "⚠️ أدخل رمز الشركة واسم الموظف", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.register_company_name_required), Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             if (salaryValue == null || salaryValue <= 0) {
-                Toast.makeText(this, "⚠️ أدخل راتباً صحيحاً أكبر من صفر", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.register_salary_invalid), Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             if (workHoursValue == null || workHoursValue <= 0) {
-                Toast.makeText(this, "⚠️ أدخل ساعات عمل صحيحة أكبر من صفر", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.register_hours_invalid), Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
 
@@ -60,7 +60,7 @@ class RegisterEmployeeActivity : AppCompatActivity() {
 
             isSubmitting = true
             submit.isEnabled = false
-            submit.text = "جارٍ الإرسال..."
+            submit.text = getString(R.string.register_sending)
 
             CoroutineScope(Dispatchers.IO).launch {
                 try {
@@ -84,26 +84,26 @@ class RegisterEmployeeActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         if (response.isSuccessful && response.body()?.success == true) {
                             Toast.makeText(this@RegisterEmployeeActivity,
-                                response.body()?.message ?: "✅ تم إرسال الطلب بنجاح",
+                                response.body()?.message ?: getString(R.string.register_success),
                                 Toast.LENGTH_LONG).show()
                             finish()
                         } else {
                             Toast.makeText(this@RegisterEmployeeActivity,
-                                response.body()?.message ?: "فشل إرسال الطلب (رمز ${response.code()})",
+                                response.body()?.message ?: getString(R.string.register_failed_code, response.code()),
                                 Toast.LENGTH_LONG).show()
                         }
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(this@RegisterEmployeeActivity,
-                        "تعذر الاتصال بالسيرفر. تحقق من الإنترنت وحاول مرة أخرى.",
+                        getString(R.string.register_connection_error),
                             Toast.LENGTH_LONG).show()
                     }
                 } finally {
                     isSubmitting = false
                     withContext(Dispatchers.Main) {
                         submit.isEnabled = true
-                        submit.text = "إرسال الطلب"
+                        submit.text = getString(R.string.register_send_button)
                     }
                 }
             }

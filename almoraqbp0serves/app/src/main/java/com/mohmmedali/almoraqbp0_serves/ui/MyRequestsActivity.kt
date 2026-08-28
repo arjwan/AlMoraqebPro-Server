@@ -20,7 +20,7 @@ class MyRequestsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_simple_list)
-        findViewById<TextView>(R.id.tvListTitle).text = "📄 حالة طلباتي"
+        findViewById<TextView>(R.id.tvListTitle).text = getString(R.string.requests_title)
         load()
     }
 
@@ -38,23 +38,23 @@ class MyRequestsActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     progress.visibility = View.GONE
                     if (!res.isSuccessful || res.body()?.success != true) {
-                        empty.text = "❌ " + (res.body()?.message ?: "تعذر جلب الطلبات من السيرفر")
+                        empty.text = "❌ " + (res.body()?.message ?: getString(R.string.requests_fetch_failed))
                         empty.visibility = View.VISIBLE
                         return@withContext
                     }
                     if (items.isEmpty()) {
-                        empty.text = "ℹ️ لا توجد طلبات مرسلة بعد. أرسل طلب سلفة أو إجازة من صفحة الخدمات."
+                        empty.text = getString(R.string.requests_empty)
                         empty.visibility = View.VISIBLE
                         return@withContext
                     }
                     empty.visibility = View.GONE
                     val rows = items.map { r ->
                         val badge = when (r.status) {
-                            "approved" -> "✅ مقبول"
-                            "rejected" -> "❌ مرفوض"
-                            else -> "⏳ قيد الانتظار"
+                            "approved" -> getString(R.string.requests_approved)
+                            "rejected" -> getString(R.string.requests_rejected)
+                            else -> getString(R.string.requests_pending)
                         }
-                        val type = when (r.type) { "loan" -> "💰 سلفة"; "leave" -> "📅 إجازة"; else -> r.type ?: "-" }
+                        val type = when (r.type) { "loan" -> getString(R.string.requests_loan); "leave" -> getString(R.string.requests_leave); else -> r.type ?: "-" }
                         "$type\n$badge\n${r.reason ?: ""}\n${formatServerDate(r.createdAt)}"
                     }
                     findViewById<ListView>(R.id.listData).adapter = ArrayAdapter(
@@ -63,14 +63,14 @@ class MyRequestsActivity : AppCompatActivity() {
             } catch (e: java.io.IOException) {
                 withContext(Dispatchers.Main) {
                     progress.visibility = View.GONE
-                    empty.text = "❌ تعذر الاتصال بالسيرفر، حاول مرة أخرى"
+                    empty.text = getString(R.string.requests_server_unreachable)
                     empty.visibility = View.VISIBLE
-                    Toast.makeText(this@MyRequestsActivity, "تعذر الاتصال بالسيرفر", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MyRequestsActivity, getString(R.string.requests_connection_toast), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     progress.visibility = View.GONE
-                    empty.text = "❌ تعذر قراءة بيانات الطلبات: ${e.message ?: "خطأ غير معروف"}"
+                    empty.text = getString(R.string.requests_read_failed, e.message ?: getString(R.string.requests_unknown_error))
                     empty.visibility = View.VISIBLE
                 }
             }

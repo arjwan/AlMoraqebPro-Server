@@ -1,5 +1,7 @@
 package com.mohmmedali.almoraqebpro.ui
 
+import com.mohmmedali.almoraqebpro.R
+
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
@@ -56,7 +58,7 @@ class LoginActivity : AppCompatActivity() {
             val password = binding.etPassword.text.toString()
 
             if (companyId.isEmpty() || username.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "يرجى ملء جميع الحقول", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.login_fill_all_fields), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -78,7 +80,7 @@ class LoginActivity : AppCompatActivity() {
                 startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
                     android.net.Uri.parse("https://wa.me/9647807807491")))
             } catch (e: Exception) {
-                Toast.makeText(this, "واتساب غير متوفر على هذا الجهاز", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.login_whatsapp_unavailable), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -87,7 +89,7 @@ class LoginActivity : AppCompatActivity() {
                 startActivity(android.content.Intent(android.content.Intent.ACTION_SENDTO,
                     android.net.Uri.parse("mailto:mohmmed1628@gmail.com")))
             } catch (e: Exception) {
-                Toast.makeText(this, "تطبيق البريد غير متوفر", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.login_email_unavailable), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -101,7 +103,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun checkServerStatus() {
-        binding.tvServerStatus.text = "⏳ جارٍ فحص الاتصال بالسيرفر..."
+        binding.tvServerStatus.text = getString(R.string.login_server_checking_full)
         binding.tvServerStatus.setTextColor(0xFFFACC15.toInt())
         CoroutineScope(Dispatchers.IO).launch {
             var connected = false
@@ -111,10 +113,10 @@ class LoginActivity : AppCompatActivity() {
             }
             withContext(Dispatchers.Main) {
                 if (connected) {
-                    binding.tvServerStatus.text = "🟢 السيرفر متصل"
+                    binding.tvServerStatus.text = getString(R.string.login_server_connected)
                     binding.tvServerStatus.setTextColor(0xFF22C55E.toInt())
                 } else {
-                    binding.tvServerStatus.text = "🔴 غير متصل بالسيرفر"
+                    binding.tvServerStatus.text = getString(R.string.login_server_disconnected)
                     binding.tvServerStatus.setTextColor(0xFFEF4444.toInt())
                 }
             }
@@ -123,30 +125,25 @@ class LoginActivity : AppCompatActivity() {
 
     private fun showDeveloperInfoDialog() {
         AlertDialog.Builder(this)
-            .setTitle("ℹ️ معلومات المطور")
-            .setMessage(
-                "🏢 شركة الارجوان للبرمجيات\n" +
-                "👨‍💻 المطور: محمد العبيدي\n" +
-                "📱 واتساب: 07807807491\n" +
-                "✉️ البريد: mohmmed1628@gmail.com"
-            )
-            .setPositiveButton("💬 واتساب") { _, _ ->
+            .setTitle(getString(R.string.login_developer_title))
+            .setMessage(getString(R.string.login_developer_info))
+            .setPositiveButton(getString(R.string.login_whatsapp_button)) { _, _ ->
                 try {
                     startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
                         android.net.Uri.parse("https://wa.me/9647807807491")))
                 } catch (e: Exception) {
-                    Toast.makeText(this, "واتساب غير متوفر على هذا الجهاز", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.login_whatsapp_unavailable), Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNeutralButton("✉️ بريد") { _, _ ->
+            .setNeutralButton(getString(R.string.login_email_button)) { _, _ ->
                 try {
                     startActivity(android.content.Intent(android.content.Intent.ACTION_SENDTO,
                         android.net.Uri.parse("mailto:mohmmed1628@gmail.com")))
                 } catch (e: Exception) {
-                    Toast.makeText(this, "تطبيق البريد غير متوفر", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.login_email_unavailable), Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("إغلاق", null)
+            .setNegativeButton(getString(R.string.login_close), null)
             .show()
     }
 
@@ -171,14 +168,14 @@ class LoginActivity : AppCompatActivity() {
                             .apply()
 
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(this@LoginActivity, "تم تسجيل الدخول بنجاح", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@LoginActivity, getString(R.string.login_success), Toast.LENGTH_SHORT).show()
                             startActivity(Intent(this@LoginActivity, DashboardActivity::class.java))
                             finish()
                         }
                     } else {
                         withContext(Dispatchers.Main) {
                             Toast.makeText(this@LoginActivity,
-                                response.body()?.message ?: "بيانات الدخول غير صحيحة",
+                                response.body()?.message ?: getString(R.string.login_invalid_credentials),
                                 Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -186,7 +183,7 @@ class LoginActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(
                             this@LoginActivity,
-                            response.body()?.message ?: ("فشل تسجيل الدخول (رمز " + response.code() + ")"),
+                            response.body()?.message ?: getString(R.string.login_failed_code, response.code()),
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -195,7 +192,7 @@ class LoginActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@LoginActivity,
-                        "تعذر الاتصال بالخادم، تحقق من الإنترنت",
+                        getString(R.string.login_connection_error),
                         Toast.LENGTH_SHORT
                     ).show()
                 }

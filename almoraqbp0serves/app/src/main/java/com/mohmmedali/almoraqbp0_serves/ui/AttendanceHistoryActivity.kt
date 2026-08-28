@@ -22,7 +22,7 @@ class AttendanceHistoryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_simple_list)
-        findViewById<TextView>(R.id.tvListTitle).text = "👋 سجل البصمات والحضور"
+        findViewById<TextView>(R.id.tvListTitle).text = getString(R.string.history_title)
         load()
     }
 
@@ -38,19 +38,19 @@ class AttendanceHistoryActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     progress.visibility = View.GONE
                     if (!res.isSuccessful || res.body()?.success != true) {
-                        empty.text = "❌ " + (res.body()?.message ?: "تعذر جلب السجل من السيرفر")
+                        empty.text = "❌ " + (res.body()?.message ?: getString(R.string.history_fetch_failed))
                         empty.visibility = View.VISIBLE
                         return@withContext
                     }
                     if (items.isEmpty()) {
-                        empty.text = "ℹ️ لا يوجد سجل حضور بعد. سجّل بصمة الحضور من الصفحة الرئيسية."
+                        empty.text = getString(R.string.history_empty)
                         empty.visibility = View.VISIBLE
                         return@withContext
                     }
                     empty.visibility = View.GONE
                     val df = SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault())
                     val rows = items.map { a ->
-                        val type = if (a.type == "attendance") "🟢 حضور" else "🔴 انصراف"
+                        val type = if (a.type == "attendance") getString(R.string.history_attendance) else getString(R.string.history_departure)
                         "$type\n${a.timestamp ?: ""}" +
                             (if (a.latitude != null && a.longitude != null)
                                 "\n📍 ${String.format(Locale.US, "%.5f", a.latitude)}, ${String.format(Locale.US, "%.5f", a.longitude)}" else "")
@@ -61,9 +61,9 @@ class AttendanceHistoryActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     progress.visibility = View.GONE
-                    empty.text = "❌ تعذر الاتصال بالسيرفر، حاول مرة أخرى"
+                    empty.text = getString(R.string.history_server_unreachable)
                     empty.visibility = View.VISIBLE
-                    Toast.makeText(this@AttendanceHistoryActivity, "تعذر الاتصال بالسيرفر", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@AttendanceHistoryActivity, getString(R.string.history_connection_toast), Toast.LENGTH_SHORT).show()
                 }
             }
         }

@@ -1,6 +1,7 @@
 package com.mohmmedali.almoraqebpro.services
 
 import androidx.biometric.BiometricPrompt
+import com.mohmmedali.almoraqebpro.R
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 
@@ -33,14 +34,14 @@ object BiometricManager {
 
             override fun onAuthenticationFailed() {
                 super.onAuthenticationFailed()
-                onError("البصمة غير صحيحة، حاول مرة أخرى")
+                onError(activity.getString(R.string.biometric_failed))
             }
         })
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("التحقق من البصمة")
-            .setSubtitle("استخدم بصمة إصبعك لتسجيل الحضور")
-            .setNegativeButtonText("إلغاء")
+            .setTitle(activity.getString(R.string.biometric_title))
+            .setSubtitle(activity.getString(R.string.biometric_subtitle))
+            .setNegativeButtonText(activity.getString(R.string.biometric_cancel))
             .build()
 
         prompt.authenticate(promptInfo)

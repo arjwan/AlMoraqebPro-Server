@@ -32,7 +32,7 @@ class NotificationActivity : AppCompatActivity() {
 
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts.language = Locale("ar", "SA")
+                tts.language = resources.configuration.locales[0]
                 tts.setPitch(1.12f); tts.setSpeechRate(0.9f)
             }
         }
@@ -53,7 +53,7 @@ class NotificationActivity : AppCompatActivity() {
                     val list = findViewById<ListView>(R.id.lvNotifications)
                     if (!response.isSuccessful || response.body()?.success != true) {
                         empty.visibility = View.VISIBLE
-                        empty.text = "❌ " + (response.body()?.message ?: "تعذر جلب الإشعارات من السيرفر")
+                        empty.text = "❌ " + (response.body()?.message ?: getString(R.string.notif_fetch_failed))
                         return@withContext
                     }
                     if (notifications.isEmpty()) {
@@ -65,10 +65,10 @@ class NotificationActivity : AppCompatActivity() {
                     list.visibility = View.VISIBLE
 
                     val rows = notifications.map { n ->
-                        val icon = if (n.type == "voice") "🎙️ رسالة صوتية" else "📩 رسالة من الإدارة"
-                        val urgent = if (n.priority == "urgent") "🚨 عاجل — " else ""
+                        val icon = if (n.type == "voice") getString(R.string.notif_voice_message) else getString(R.string.notif_admin_message)
+                        val urgent = if (n.priority == "urgent") getString(R.string.notif_urgent) else ""
                         "$urgent$icon\n${n.message ?: ""}\n${formatServerDate(n.createdAt)}" +
-                            (if (!n.audioUrl.isNullOrEmpty()) "\n▶️ اضغط لتشغيل الصوت المرفق" else "")
+                            (if (!n.audioUrl.isNullOrEmpty()) "\n" + getString(R.string.notif_play_audio) else "")
                     }
                     list.adapter = ArrayAdapter(this@NotificationActivity,
                         R.layout.item_readable_list, rows)
@@ -78,19 +78,19 @@ class NotificationActivity : AppCompatActivity() {
                         val n = notifications[pos]
                         when {
                             !n.audioUrl.isNullOrEmpty() -> playAudio(n.audioUrl!!)
-                            else -> speak(n.message ?: "لا يوجد نص")
+                            else -> speak(n.message ?: getString(R.string.notif_no_text))
                         }
                     }
                 }
             } catch (e: java.io.IOException) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@NotificationActivity, "تعذر الاتصال بالسيرفر", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@NotificationActivity, getString(R.string.notif_server_unreachable), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     val empty = findViewById<TextView>(R.id.tvEmptyNotifications)
                     empty.visibility = View.VISIBLE
-                    empty.text = "❌ تعذر قراءة الإشعارات: ${e.message ?: "خطأ غير معروف"}"
+                    empty.text = getString(R.string.notif_read_failed, e.message ?: getString(R.string.notif_unknown_error))
                 }
             }
         }
@@ -106,7 +106,7 @@ class NotificationActivity : AppCompatActivity() {
                 start()
             }
         } catch (e: Exception) {
-            Toast.makeText(this, "تعذر تشغيل الصوت", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.notif_audio_failed), Toast.LENGTH_SHORT).show()
         }
     }
 

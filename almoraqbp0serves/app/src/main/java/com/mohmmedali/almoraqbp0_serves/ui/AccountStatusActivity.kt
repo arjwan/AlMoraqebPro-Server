@@ -18,7 +18,7 @@ class AccountStatusActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_simple_list)
-        findViewById<TextView>(R.id.tvListTitle).text = "📊 حالة الحساب"
+        findViewById<TextView>(R.id.tvListTitle).text = getString(R.string.account_status_title)
         findViewById<ProgressBar>(R.id.progressList).visibility = View.GONE
         findViewById<View>(R.id.listData).visibility = View.GONE
 
@@ -31,16 +31,16 @@ class AccountStatusActivity : AppCompatActivity() {
 
         val info = findViewById<TextView>(R.id.tvEmptyState)
         info.visibility = View.VISIBLE
-        info.text = "👤 الموظف: ${prefs.getString("employeeName", "-")}\n" +
-                "🏢 الشركة: ${prefs.getString("companyId", "-")}\n" +
-                "📱 Device ID: $deviceId\n" +
-                "📍 GPS: ${if (gpsOn) "مفعّل ✅" else "مغلق ❌"}"
+        info.text = getString(R.string.account_employee, prefs.getString("employeeName", "-")) + "\n" +
+                getString(R.string.account_company, prefs.getString("companyId", "-")) + "\n" +
+                getString(R.string.account_device, deviceId) + "\n" +
+                getString(R.string.account_gps, if (gpsOn) getString(R.string.account_gps_on) else getString(R.string.account_gps_off))
 
         CoroutineScope(Dispatchers.IO).launch {
             var ok = false
             try { ok = RetrofitClient.apiService.ping().isSuccessful } catch (_: Exception) {}
             withContext(Dispatchers.Main) {
-                info.text = info.text.toString() + "\n🌐 السيرفر: ${if (ok) "متصل ✅" else "غير متصل ❌"}"
+                info.text = info.text.toString() + "\n" + getString(R.string.account_server, if (ok) getString(R.string.account_server_online) else getString(R.string.account_server_offline))
             }
         }
     }

@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.mohmmedali.almoraqebpro.R
 import com.mohmmedali.almoraqebpro.data.AppDatabase
 import com.mohmmedali.almoraqebpro.data.RetrofitClient
 
@@ -33,20 +34,34 @@ class SyncWorker(
                     RetrofitClient.apiService
                 )
 
-            val result =
+            val attendanceResult =
                 syncManager.syncPendingAttendance()
 
+            val serviceResult =
+                syncManager.syncPendingServiceRequests()
+
+            val synced =
+                attendanceResult.syncedCount +
+                serviceResult.syncedCount
+
+            val rejected =
+                attendanceResult.rejectedCount +
+                serviceResult.rejectedCount
+
             if (
-                result.syncedCount > 0 ||
-                result.rejectedCount > 0
+                synced > 0 ||
+                rejected > 0
             ) {
                 showSyncNotification(
-                    result.syncedCount,
-                    result.rejectedCount
+                    synced,
+                    rejected
                 )
             }
 
-            if (result.retryNeeded)
+            if (
+                attendanceResult.retryNeeded ||
+                serviceResult.retryNeeded
+            )
                 Result.retry()
             else
                 Result.success()
@@ -75,7 +90,7 @@ class SyncWorker(
             val channel =
                 NotificationChannel(
                     channelId,
-                    "مزامنة الحضور",
+                    applicationContext.getString(R.string.sync_channel_name),
                     NotificationManager.IMPORTANCE_DEFAULT
                 )
 
@@ -97,13 +112,13 @@ class SyncWorker(
         val message =
             when {
                 synced > 0 && rejected > 0 ->
-                    "تمت مزامنة $synced سجل، ورفض $rejected سجل بواسطة السيرفر"
+                    applicationContext.getString(R.string.sync_message_both, synced, rejected)
 
                 synced > 0 ->
-                    "تمت مزامنة $synced بصمة حضور/انصراف بنجاح"
+                    applicationContext.getString(R.string.sync_message_synced, synced)
 
                 else ->
-                    "تم رفض $rejected سجل حضور بواسطة السيرفر"
+                    applicationContext.getString(R.string.sync_message_rejected, rejected)
             }
 
         val notification =
@@ -115,7 +130,7 @@ class SyncWorker(
                     android.R.drawable.stat_notify_sync
                 )
                 .setContentTitle(
-                    "المراقب برو"
+                    applicationContext.getString(R.string.sync_notification_title)
                 )
                 .setContentText(message)
                 .setStyle(

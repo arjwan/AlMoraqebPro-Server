@@ -15,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:text="طلب انضمام موظف جديد"
+            android:text="@string/register_title"
             android:textAlignment="center"
             android:textSize="22sp"
             android:textColor="#1E293B"
@@ -26,118 +26,142 @@
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="رمز الشركة"
+            android:hint="@string/company_code"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etCompanyName"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="اسم الشركة"
+            android:hint="@string/company_name"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etName"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="اسم الموظف"
+            android:hint="@string/employee_name"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etPhoneNumber"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="رقم الهاتف"
+            android:hint="@string/phone_number"
             android:inputType="phone"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etJobTitle"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="المسمى الوظيفي"
+            android:hint="@string/job_title"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etWorkLocation"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="مكان العمل"
+            android:hint="@string/work_location"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etSalary"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="الراتب"
+            android:hint="@string/salary"
             android:inputType="numberDecimal"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etShift"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="الوردية"
+            android:hint="@string/shift"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etWorkHours"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="ساعات العمل"
+            android:hint="@string/work_hours"
             android:inputType="number"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etWageType"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="نوع الأجر"
+            android:hint="@string/wage_type"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etSocialSecurity"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="الضمان الاجتماعي"
+            android:hint="@string/social_security"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <EditText
             android:id="@+id/etLocation"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="16dp"
-            android:hint="الموقع"
+            android:hint="@string/location"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#64748B"/>
 
         <Button
             android:id="@+id/btnSubmitRequest"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:backgroundTint="#2563EB"
-            android:text="إرسال الطلب"
+            android:text="@string/send_request"
             android:textColor="#FFFFFF"
             android:textStyle="bold" />
 
