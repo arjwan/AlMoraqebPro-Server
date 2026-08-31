@@ -21,7 +21,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
 
 class LoginActivity : AppCompatActivity() {
 
@@ -39,6 +38,10 @@ class LoginActivity : AppCompatActivity() {
 
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // إبقاء هوية الحساب السابق جاهزة لتسجيل الدخول المحلي دون أخطاء كتابة.
+        binding.etCompanyId.setText(prefs.getString("companyId", ""))
+        binding.etUsername.setText(prefs.getString("username", ""))
 
         val selectedLanguageButton = when (language) {
             "en" -> R.id.rbLoginEnglish
@@ -173,7 +176,7 @@ class LoginActivity : AppCompatActivity() {
                         val prefs = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
                         OfflineAuthStore(this@LoginActivity).saveVerified(
                             employee = emp,
-                            companyId = emp.companyId ?: companyId,
+                            companyId = companyId,
                             username = username,
                             password = password,
                             deviceId = deviceId
@@ -210,15 +213,17 @@ class LoginActivity : AppCompatActivity() {
                         ).show()
                     }
                 }
-            } catch (e: IOException) {
-                val verified = OfflineAuthStore(this@LoginActivity).verify(
-                    companyId, username, password, deviceId
-                )
+            } catch (e: Exception) {
+                // بعض طبقات الشبكة لا ترمي IOException مباشرة؛ عند تعذر الوصول
+                // نحاول دائمًا التحقق من الاعتماد المحلي الموثق على هذا الجهاز.
+                val offlineAuth = OfflineAuthStore(this@LoginActivity)
+                val verified = runCatching {
+                    offlineAuth.verify(companyId, username, password, deviceId)
+                }.getOrDefault(false)
 
                 withContext(Dispatchers.Main) {
                     if (verified) {
-                        OfflineAuthStore(this@LoginActivity)
-                            .restoreVerifiedSession(this@LoginActivity)
+                        offlineAuth.restoreVerifiedSession(this@LoginActivity)
                         (application as AlmoraqebApp).sessionUnlocked = true
                         Toast.makeText(this@LoginActivity, getString(R.string.login_offline_success), Toast.LENGTH_SHORT).show()
                         startActivity(Intent(this@LoginActivity, DashboardActivity::class.java))
@@ -226,10 +231,6 @@ class LoginActivity : AppCompatActivity() {
                     } else {
                         Toast.makeText(this@LoginActivity, getString(R.string.login_offline_not_verified), Toast.LENGTH_LONG).show()
                     }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@LoginActivity, getString(R.string.login_connection_error), Toast.LENGTH_SHORT).show()
                 }
             }
         }

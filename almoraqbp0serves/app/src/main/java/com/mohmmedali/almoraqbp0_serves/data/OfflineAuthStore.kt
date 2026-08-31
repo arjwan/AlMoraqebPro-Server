@@ -29,8 +29,8 @@ class OfflineAuthStore(context: Context) {
     }
 
     fun verify(companyId: String, username: String, password: String, deviceId: String): Boolean {
-        if (companyId.trim() != prefs.getString("companyId", "") ||
-            username.trim() != prefs.getString("username", "") ||
+        if (!companyId.trim().equals(prefs.getString("companyId", "")?.trim(), ignoreCase = true) ||
+            !username.trim().equals(prefs.getString("username", "")?.trim(), ignoreCase = true) ||
             deviceId != prefs.getString("deviceId", "")) return false
 
         val salt = prefs.getString("salt", null)?.let { Base64.decode(it, Base64.NO_WRAP) } ?: return false
