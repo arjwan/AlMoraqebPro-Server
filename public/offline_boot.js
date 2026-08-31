@@ -1,6 +1,16 @@
 (function () {
 'use strict';
 
+/*
+ * إنشاء قاعدة المدير المحلية من أول تشغيل، حتى قبل أول مزامنة.
+ * فتح القاعدة ينشئ جميع المخازن المعرفة في offline_db.js بأمان.
+ */
+if (window.AlMoraqebOfflineDB) {
+    AlMoraqebOfflineDB.openDB()
+        .then(db => db.close())
+        .catch(err => console.warn('Offline DB initialization failed:', err));
+}
+
 if (!document.querySelector('script[data-almoraqeb-i18n]')) {
     const script = document.createElement('script');
     script.src = '/i18n.js';
