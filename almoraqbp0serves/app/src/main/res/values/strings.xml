@@ -351,4 +351,6 @@
     <string name="support_whatsapp">واتساب</string>
     <string name="support_whatsapp_unavailable">لا يوجد تطبيق واتساب متاح</string>
 
+    <string name="login_offline_success">تم التحقق محلياً — وضع Offline</string>
+    <string name="login_offline_not_verified">لا يمكن الدخول Offline: هذا الحساب لم يسبق التحقق منه Online على هذا الجهاز أو البيانات مختلفة</string>
 </resources>

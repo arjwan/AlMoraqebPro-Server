@@ -1,6 +1,7 @@
 package com.mohmmedali.almoraqebpro.ui
 
 import com.mohmmedali.almoraqebpro.R
+import com.mohmmedali.almoraqebpro.AlmoraqebApp
 
 import android.app.AlertDialog
 import android.content.Intent
@@ -12,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import com.mohmmedali.almoraqebpro.data.LoginRequest
+import com.mohmmedali.almoraqebpro.data.OfflineAuthStore
 import com.mohmmedali.almoraqebpro.data.RegisterEmployeeRequest
 import com.mohmmedali.almoraqebpro.data.RetrofitClient
 import com.mohmmedali.almoraqebpro.databinding.ActivityLoginBinding
@@ -19,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
 
 class LoginActivity : AppCompatActivity() {
 
@@ -57,18 +60,6 @@ class LoginActivity : AppCompatActivity() {
                     LocaleListCompat.forLanguageTags(selectedLanguage)
                 )
             }
-        }
-
-        // إذا سبق تسجيل الدخول بنجاح، افتح التطبيق من النسخة المحلية حتى دون إنترنت.
-        // لا نخزن كلمة المرور؛ نعتمد فقط الجلسة المحلية التي أنشأها تسجيل دخول ناجح سابقًا.
-        if (
-            prefs.getBoolean("authenticated", false) &&
-            !prefs.getString("employeeId", "").isNullOrBlank() &&
-            !prefs.getString("companyId", "").isNullOrBlank()
-        ) {
-            startActivity(Intent(this, DashboardActivity::class.java))
-            finish()
-            return
         }
 
         // إنشاء deviceId من ANDROID_ID
@@ -180,6 +171,13 @@ class LoginActivity : AppCompatActivity() {
                     val emp = response.body()?.employee
                     if (emp != null && emp.id != null) {
                         val prefs = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
+                        OfflineAuthStore(this@LoginActivity).saveVerified(
+                            employee = emp,
+                            companyId = emp.companyId ?: companyId,
+                            username = username,
+                            password = password,
+                            deviceId = deviceId
+                        )
                         prefs.edit()
                             .putString("employeeId", emp.id)
                             .putString("companyId", emp.companyId ?: companyId)
@@ -187,9 +185,11 @@ class LoginActivity : AppCompatActivity() {
                             .putString("deviceId", deviceId)
                             .putString("username", username)
                             .putBoolean("authenticated", true)
+                            .putBoolean("offlineSession", false)
                             .apply()
 
                         withContext(Dispatchers.Main) {
+                            (application as AlmoraqebApp).sessionUnlocked = true
                             Toast.makeText(this@LoginActivity, getString(R.string.login_success), Toast.LENGTH_SHORT).show()
                             startActivity(Intent(this@LoginActivity, DashboardActivity::class.java))
                             finish()
@@ -210,13 +210,26 @@ class LoginActivity : AppCompatActivity() {
                         ).show()
                     }
                 }
+            } catch (e: IOException) {
+                val verified = OfflineAuthStore(this@LoginActivity).verify(
+                    companyId, username, password, deviceId
+                )
+
+                withContext(Dispatchers.Main) {
+                    if (verified) {
+                        OfflineAuthStore(this@LoginActivity)
+                            .restoreVerifiedSession(this@LoginActivity)
+                        (application as AlmoraqebApp).sessionUnlocked = true
+                        Toast.makeText(this@LoginActivity, getString(R.string.login_offline_success), Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this@LoginActivity, DashboardActivity::class.java))
+                        finish()
+                    } else {
+                        Toast.makeText(this@LoginActivity, getString(R.string.login_offline_not_verified), Toast.LENGTH_LONG).show()
+                    }
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@LoginActivity,
-                        getString(R.string.login_connection_error),
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(this@LoginActivity, getString(R.string.login_connection_error), Toast.LENGTH_SHORT).show()
                 }
             }
         }

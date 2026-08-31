@@ -49,7 +49,7 @@ async function pullServerData(token){
         {store:'supportRequests',path:'/api/admin/support-requests',key:'requests'}
     ];
     const snapshots=await Promise.all(resources.map(async item=>{
-        const response=await fetch(item.path,{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+        const response=await fetch(item.path,{credentials:'include',headers:token?{Authorization:'Bearer '+token}:{},cache:'no-store'});
         const data=await response.json().catch(()=>({}));
         if(!response.ok||data.success===false) throw new Error(data.message||data.error||('HTTP '+response.status));
         return {...item,records:Array.isArray(data[item.key])?data[item.key]:[]};
@@ -119,8 +119,6 @@ async function syncPending(){
 
     const token=getToken();
 
-    if(!token) return;
-
     syncing=true;
 
     let successCount=0;
@@ -148,9 +146,10 @@ async function syncPending(){
             try{
                 const r=await fetch(row.path,{
                     method:row.method,
+                    credentials:'include',
                     headers:{
                         'Content-Type':'application/json',
-                        Authorization:'Bearer '+token,
+                        ...(token?{Authorization:'Bearer '+token}:{}),
                         'X-AlMoraqeb-Sync':'offline'
                     },
                     body:

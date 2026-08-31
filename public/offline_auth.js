@@ -340,11 +340,7 @@ async function authorizePage(options = {}) {
      * إذا رجع الإنترنت وكان لدينا Token حقيقي،
      * نتحقق من السيرفر.
      */
-    if (
-        token &&
-        token !==
-            'offline-local-session'
-    ) {
+    if (token !== 'offline-local-session') {
 
         try {
 
@@ -353,11 +349,10 @@ async function authorizePage(options = {}) {
                     location.origin +
                     '/api/admin/session',
                     {
-                        headers:{
-                            Authorization:
-                                'Bearer ' +
-                                token
-                        },
+                        credentials:'include',
+                        headers: token ? {
+                            Authorization: 'Bearer ' + token
+                        } : {},
                         cache:'no-store'
                     }
                 );

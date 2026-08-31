@@ -1,5 +1,6 @@
 package com.mohmmedali.almoraqebpro.ui
 import com.mohmmedali.almoraqebpro.R
+import com.mohmmedali.almoraqebpro.AlmoraqebApp
 
 import android.Manifest
 import android.app.AlertDialog
@@ -81,7 +82,8 @@ class DashboardActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)
         val actualDeviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
-        if (!prefs.getBoolean("authenticated", false) ||
+        if (!(application as AlmoraqebApp).sessionUnlocked ||
+            !prefs.getBoolean("authenticated", false) ||
             prefs.getString("employeeId", "").isNullOrBlank() ||
             prefs.getString("companyId", "").isNullOrBlank() ||
             prefs.getString("username", "").isNullOrBlank() ||

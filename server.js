@@ -17,6 +17,10 @@ dotenv.config({ quiet: true });
 
 const app = express();
 
+// Render terminates HTTPS at its proxy. This makes req.secure and secure
+// cookies reflect the original client connection.
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
 const DEVELOPER_PASSWORD = process.env.DEVELOPER_PASSWORD;
@@ -55,8 +59,8 @@ app.disable('x-powered-by');
  */
 app.use(cors(
     ALLOWED_ORIGINS.length
-        ? { origin: ALLOWED_ORIGINS, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] }
-        : { origin: true }
+        ? { origin: ALLOWED_ORIGINS, credentials: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] }
+        : { origin: true, credentials: true }
 ));
 
 /*
@@ -2055,6 +2059,49 @@ function developerTokenFromRequest(req) {
     return null;
 }
 
+function adminTokenFromRequest(req) {
+    const cookies = String(req.headers.cookie || '').split(';');
+    for (const cookie of cookies) {
+        const [name, ...value] = cookie.trim().split('=');
+        if (name === 'almoraqeb_admin_session') {
+            try {
+                return decodeURIComponent(value.join('='));
+            } catch {
+                return null;
+            }
+        }
+    }
+    return null;
+}
+
+function setAdminCookie(req, res, token) {
+    const secure = req.secure ||
+        String(req.headers['x-forwarded-proto'] || '').toLowerCase() === 'https';
+    const parts = [
+        'almoraqeb_admin_session=' + encodeURIComponent(token),
+        'HttpOnly',
+        'Path=/',
+        'SameSite=Lax',
+        'Max-Age=28800'
+    ];
+    if (secure) parts.push('Secure');
+    res.append('Set-Cookie', parts.join('; '));
+}
+
+function clearAdminCookie(req, res) {
+    const secure = req.secure ||
+        String(req.headers['x-forwarded-proto'] || '').toLowerCase() === 'https';
+    const parts = [
+        'almoraqeb_admin_session=',
+        'HttpOnly',
+        'Path=/',
+        'SameSite=Lax',
+        'Max-Age=0'
+    ];
+    if (secure) parts.push('Secure');
+    res.append('Set-Cookie', parts.join('; '));
+}
+
 
 function setDeveloperCookie(req, res, token) {
 
@@ -2172,14 +2219,10 @@ function requireAdmin(
     next
 ) {
 
-    const token =
-        readToken(
-            req.headers.authorization
-                ?.replace(
-                    /^Bearer\s+/i,
-                    ''
-                )
-        );
+    const bearer = req.headers.authorization
+        ?.replace(/^Bearer\s+/i, '')
+        ?.trim();
+    const token = readToken(bearer) || readToken(adminTokenFromRequest(req));
 
     if (
         !token ||
@@ -3528,6 +3571,10 @@ app.post(
 
             await company.save();
 
+            const token = createToken({ role: 'admin', companyId });
+
+            setAdminCookie(req, res, token);
+
             res.json({
 
                 success: true,
@@ -3537,15 +3584,7 @@ app.post(
                         company
                     ),
 
-                token:
-                    createToken({
-
-                        role:
-                            'admin',
-
-                        companyId
-
-                    })
+                token
 
             });
 
@@ -3564,6 +3603,11 @@ app.post(
 
     }
 );
+
+app.post('/api/admin/logout', (req, res) => {
+    clearAdminCookie(req, res);
+    res.json({ success: true });
+});
 
 
 /*

@@ -5,6 +5,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 
 class AlmoraqebApp : Application() {
+    /** Memory-only gate: resets whenever the application process is closed. */
+    var sessionUnlocked: Boolean = false
+
     override fun onCreate() {
         super.onCreate()
         val prefs = getSharedPreferences("almoraqeb_prefs", MODE_PRIVATE)

@@ -10,6 +10,7 @@
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { spawn } = require('child_process');
 const path = require('path');
+const crypto = require('crypto');
 
 const PORT = 8433;
 const BASE = 'http://localhost:' + PORT;
@@ -22,6 +23,15 @@ function check(name, cond) {
     else { fail++; console.log('  ✘ ' + name); }
 }
 function skip(name) { skipped++; console.log('  • مؤجل (لا قاعدة بيانات): ' + name); }
+
+function signedAdminToken(companyId) {
+    const body = Buffer.from(JSON.stringify({
+        role: 'admin', companyId, exp: Date.now() + 60000
+    })).toString('base64url');
+    const signature = crypto.createHmac('sha256', 'test-session')
+        .update(body).digest('base64url');
+    return body + '.' + signature;
+}
 
 async function waitForServer(url, retries, delay) {
     for (let i = 0; i < retries; i++) {
@@ -79,6 +89,13 @@ async function waitForServer(url, retries, delay) {
 
         check('/api/ping => 200', (await fetch(BASE + '/api/ping')).status === 200);
 
+        // Cookie authentication must pass requireAdmin even without a Bearer header.
+        // Without MongoDB the route may return 500, but it must never return auth 401.
+        const cookieOnlySession = await fetch(BASE + '/api/admin/session', {
+            headers: { Cookie: 'almoraqeb_admin_session=' + signedAdminToken('COOKIE-TEST') }
+        });
+        check('admin cookie passes requireAdmin without Bearer', cookieOnlySession.status !== 401);
+
         // تسجيل دخول المطور (لا يحتاج قاعدة بيانات)
         const login = await (await fetch(BASE + '/api/developer/login', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: DEV_PASSWORD })
@@ -103,10 +120,19 @@ async function waitForServer(url, retries, delay) {
             })).json();
             check('developer companies list', Array.isArray(list.companies) && list.companies.length >= 1);
 
-            const adminLogin = await (await fetch(BASE + '/api/admin/login', {
+            const adminLoginResponse = await fetch(BASE + '/api/admin/login', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyId, username: 'admin', password: 'admin123' })
-            })).json();
+            });
+            const adminCookie = adminLoginResponse.headers.get('set-cookie') || '';
+            const adminLogin = await adminLoginResponse.json();
             check('admin login => token', !!adminLogin.token);
+            check('admin login => HttpOnly secure session cookie',
+                /almoraqeb_admin_session=/.test(adminCookie) && /HttpOnly/i.test(adminCookie));
+            const cookieSession = await (await fetch(BASE + '/api/admin/session', {
+                headers: { Cookie: adminCookie.split(';')[0] }
+            })).json();
+            check('admin session persists with cookie without Bearer',
+                cookieSession.success === true && cookieSession.companyId === companyId);
 
             const requestBody = {
                 companyId,
@@ -472,7 +498,7 @@ async function waitForServer(url, retries, delay) {
             })).json();
             check('re-approve handled gracefully', reApprove.success === true);
         } else {
-            skip('company register'); skip('duplicate company'); skip('developer companies list'); skip('admin login'); skip('employee request saved in EmployeeRequest'); skip('pending request visible to admin'); skip('approve request creates employee'); skip('employees list includes approved employee');
+            skip('company register'); skip('duplicate company'); skip('developer companies list'); skip('admin login'); skip('admin cookie session'); skip('employee request saved in EmployeeRequest'); skip('pending request visible to admin'); skip('approve request creates employee'); skip('employees list includes approved employee');
         }
 
         check('no-auth endpoints => 401', (await fetch(BASE + '/api/developer/companies')).status === 401);

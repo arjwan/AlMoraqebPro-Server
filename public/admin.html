@@ -329,7 +329,7 @@ window.addEventListener(
 async function checkServer(button){const el=document.getElementById('status');markWorking(button,true);try{const r=await fetch(API+'/api/admin/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});el.textContent=r.ok?'✓ السيرفر متصل ويعمل بشكل طبيعي':'💾 جاري العمل محلياً';el.style.background=r.ok?'#10b981':'#f59e0b'}catch{el.textContent='💾 جاري العمل محلياً';el.style.background='#f59e0b'}finally{markWorking(button,false)}}
 
 function backupData(button){markWorking(button,true);setTimeout(()=>location.href='backup_system.html',150)}
-function logout(){sessionStorage.removeItem('almoraqeb_admin_token');location.href='admin_login.html'}
+async function logout(){try{await fetch(API+'/api/admin/logout',{method:'POST',credentials:'include'})}finally{sessionStorage.removeItem('almoraqeb_admin_token');sessionStorage.removeItem('almoraqeb_admin_offline');location.href='admin_login.html'}}
 
 document.querySelectorAll('.btn,.card').forEach(el=>el.addEventListener('click',ripple));
 document.querySelectorAll('.card').forEach(el=>el.addEventListener('keydown',e=>cardKey(e,el)));
