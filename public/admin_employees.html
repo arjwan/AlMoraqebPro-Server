@@ -398,6 +398,13 @@
                             >✏</button>
 
                             <button
+                                class="btn"
+                                style="padding:4px 10px;font-size:11px;background:#f59e0b;color:#fff;"
+                                title="إعادة تعيين الجهاز"
+                                onclick="resetEmployeeDevice('${e._id || e.id || e._offlineKey}', '${escapeHtml(e.name || '')}')"
+                            >📱 فك الجهاز</button>
+
+                            <button
                                 class="btn btn-red"
                                 style="padding:4px 10px;font-size:11px;"
                                 onclick="deleteEmployee('${e._id || e.id || e._offlineKey}')"
@@ -412,6 +419,46 @@
                 : '✅ تم تحميل ' + employees.length + ' موظف',
             offline ? 'warning' : ''
         );
+    }
+
+    async function resetEmployeeDevice(employeeId, employeeName) {
+        if (!navigator.onLine) {
+            showStatus('إعادة تعيين الجهاز تحتاج اتصالاً بالإنترنت', 'error');
+            return;
+        }
+
+        if (String(employeeId).startsWith('local-')) {
+            showStatus('يجب مزامنة الموظف أولاً قبل إعادة تعيين جهازه', 'error');
+            return;
+        }
+
+        if (!confirm('هل تريد فك ارتباط جهاز الموظف "' + employeeName + '"؟ سيتمكن من ربط هاتفه عند تسجيل الدخول التالي.')) return;
+
+        try {
+            const response = await fetch(
+                API + '/api/employees/' + encodeURIComponent(employeeId) + '/device/reset',
+                {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: token ? { Authorization: 'Bearer ' + token } : {}
+                }
+            );
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.success === false) {
+                throw new Error(data.message || data.error || 'تعذر إعادة تعيين الجهاز');
+            }
+
+            const employee = employeesCache.find(item => String(item._id || item.id) === String(employeeId));
+            if (employee) {
+                employee.deviceId = '';
+                employee.deviceBoundAt = null;
+                await saveLocalEmployee(employee);
+            }
+
+            showStatus('✅ تم فك ارتباط الجهاز. يمكن للموظف تسجيل الدخول من هاتفه الآن.');
+        } catch (error) {
+            showStatus(error.message, 'error');
+        }
     }
 
 
