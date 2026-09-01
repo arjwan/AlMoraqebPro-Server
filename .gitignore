@@ -4,6 +4,8 @@ node_modules/
 uploads/
 cloud_backup.json
 public/.idea/
+dist-desktop/
+release/
 
 # Android
 mobile/.gradle/

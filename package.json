@@ -12,7 +12,10 @@
     "build": "npm install",
     "test": "node test/smoke.js",
     "desktop": "electron .",
-    "desktop:build": "electron-builder --publish never"
+    "desktop:dev": "electron .",
+    "desktop:build": "electron-builder --publish never",
+    "desktop:build:linux": "electron-builder --linux AppImage deb --publish never",
+    "desktop:build:win": "electron-builder --win nsis --publish never"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -32,8 +35,8 @@
   },
   "build": {
     "appId": "com.almoraqebpro.desktop",
-    "productName": "AlMoraqeb Pro",
-    "asar": false,
+    "productName": "AlMoraqebPro",
+    "asar": true,
     "directories": { "output": "dist-desktop" },
     "files": ["desktop/**", "package.json"],
     "linux": { "target": ["AppImage", "deb"], "category": "Office", "icon": "desktop/assets/icon.png" },

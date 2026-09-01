@@ -1,10 +1,10 @@
 const { app, BrowserWindow, dialog, session, shell } = require('electron');
 const path = require('node:path');
 
-const appOrigin = new URL(
-    process.env.ALMORAQEB_APP_URL ||
-    'https://almoraqebpro-server-aymo.onrender.com/'
-).origin;
+const configuredAppUrl = process.env.ALMORAQEB_APP_URL ||
+    'https://almoraqebpro-server-aymo.onrender.com/admin_login.html';
+const appUrlObject = new URL(configuredAppUrl);
+const appOrigin = appUrlObject.origin;
 const appUrl = `${appOrigin}/admin_login.html`;
 
 async function createWindow() {
@@ -16,7 +16,7 @@ async function createWindow() {
         show: false,
         autoHideMenuBar: true,
         backgroundColor: '#0f172a',
-        title: 'AlMoraqeb Pro',
+        title: 'AlMoraqebPro - المراقب برو',
         icon: path.join(__dirname, 'assets', 'icon.png'),
         webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
     });
@@ -29,6 +29,24 @@ async function createWindow() {
         }
         shell.openExternal(url);
         return { action: 'deny' };
+    });
+    window.webContents.on('will-navigate', (event, url) => {
+        try {
+            if (new URL(url).origin !== appOrigin) {
+                event.preventDefault();
+                shell.openExternal(url);
+            }
+        } catch (_) {
+            event.preventDefault();
+        }
+    });
+    window.webContents.on('did-fail-load', (_event, errorCode, _errorDescription, validatedURL) => {
+        if (errorCode !== -3) {
+            dialog.showErrorBox(
+                'AlMoraqebPro',
+                `تعذر الاتصال بسيرفر المراقب برو.\n\n${validatedURL || appUrl}`
+            );
+        }
     });
     await window.loadURL(appUrl);
     window.once('ready-to-show', () => window.show());
