@@ -1,10 +1,15 @@
 const express = require('express');
+const crypto = require('crypto');
+
+if (!globalThis.crypto) {
+    globalThis.crypto = crypto.webcrypto;
+}
+
 const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
-const crypto = require('crypto');
 const dotenv = require('dotenv');
 
 /*
@@ -7663,6 +7668,40 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
         const locationName =
             String(location.name || '').trim();
 
+        /*
+         * POST may be replayed by the offline queue or submitted twice by the
+         * browser.  Treat an identical shift assignment as the same record so
+         * approving/saving an employee selection cannot create a duplicate.
+         */
+        const normalizedTimes = {
+            attendanceStart: String(attendanceStart || ''),
+            attendanceEnd: String(attendanceEnd || ''),
+            departureStart: String(departureStart || ''),
+            departureEnd: String(departureEnd || ''),
+            overtimeStart: String(overtimeStart || ''),
+            overtimeEnd: String(overtimeEnd || '')
+        };
+
+        const existingShift = await Shift.findOne({
+            companyId,
+            name,
+            locationId: String(location._id),
+            ...normalizedTimes,
+            employeeIds: {
+                $all: requestedEmployeeIds,
+                $size: requestedEmployeeIds.length
+            }
+        });
+
+        if (existingShift) {
+            return res.status(200).json({
+                success: true,
+                alreadyExists: true,
+                message: 'الشفت موجود مسبقاً وتم استخدام السجل نفسه',
+                shift: existingShift
+            });
+        }
+
         const shift = await new Shift({
             clientOfflineId,
 
@@ -7683,23 +7722,7 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
             employeeIds:
                 requestedEmployeeIds,
 
-            attendanceStart:
-                String(attendanceStart || ''),
-
-            attendanceEnd:
-                String(attendanceEnd || ''),
-
-            departureStart:
-                String(departureStart || ''),
-
-            departureEnd:
-                String(departureEnd || ''),
-
-            overtimeStart:
-                String(overtimeStart || ''),
-
-            overtimeEnd:
-                String(overtimeEnd || '')
+            ...normalizedTimes
         }).save();
 
         return res.status(201).json({

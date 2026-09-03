@@ -1,13 +1,17 @@
 (function () {
 'use strict';
 
+const languagePickerStyle = document.createElement('style');
+languagePickerStyle.textContent = '[data-i18n-language-picker]{top:12px!important;bottom:auto!important;}';
+document.head.appendChild(languagePickerStyle);
+
 /*
  * إنشاء قاعدة المدير المحلية من أول تشغيل، حتى قبل أول مزامنة.
  * فتح القاعدة ينشئ جميع المخازن المعرفة في offline_db.js بأمان.
  */
 if (window.AlMoraqebOfflineDB) {
     AlMoraqebOfflineDB.openDB()
-        .then(db => db.close())
+    .then(() => {})
         .catch(err => console.warn('Offline DB initialization failed:', err));
 }
 

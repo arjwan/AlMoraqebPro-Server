@@ -3,6 +3,11 @@
 
 const ITERATIONS = 210000;
 
+function credentialKey(companyId, username) {
+    return String(companyId || '').trim() + ':' +
+        String(username || '').trim().toLowerCase();
+}
+
 function bytesToBase64(bytes) {
     let binary = '';
     bytes.forEach(b => binary += String.fromCharCode(b));
@@ -81,6 +86,8 @@ async function saveCredential({
         tx.objectStore(
             AlMoraqebOfflineDB.STORES.auth
         ).put({
+            credentialKey:
+                credentialKey(companyId, username),
             companyId,
             username,
             role,
@@ -106,7 +113,7 @@ async function saveCredential({
     });
 }
 
-async function getCredential(companyId) {
+async function getCredential(companyId, username) {
 
     if (!window.AlMoraqebOfflineDB)
         return null;
@@ -122,13 +129,24 @@ async function getCredential(companyId) {
                 'readonly'
             );
 
-        const req =
-            tx.objectStore(
-                AlMoraqebOfflineDB.STORES.auth
-            ).get(String(companyId || '').trim());
+        const store = tx.objectStore(AlMoraqebOfflineDB.STORES.auth);
+        const key = username === undefined
+            ? null
+            : credentialKey(companyId, username);
+        const req = key
+            ? store.get(key)
+            : store.openCursor();
 
-        req.onsuccess = () =>
-            resolve(req.result || null);
+        req.onsuccess = () => {
+            if (key) {
+                resolve(req.result || null);
+                return;
+            }
+            const cursor = req.result;
+            resolve(cursor && String(cursor.value.companyId) === String(companyId || '').trim()
+                ? cursor.value
+                : null);
+        };
 
         req.onerror = () =>
             reject(req.error);
@@ -142,7 +160,7 @@ async function verifyCredential(
 ) {
 
     const record =
-        await getCredential(companyId);
+        await getCredential(companyId, username);
 
     if (
         !record ||
@@ -299,12 +317,16 @@ async function authorizePage(options = {}) {
      * إذا لا يوجد إنترنت نستخدم الجلسة
      * المحلية التي أنشئت بعد تحقق كلمة المرور.
      */
-    if (!navigator.onLine) {
+    if (token === 'offline-local-session' || !navigator.onLine) {
 
-        const credential =
-            await getCredential(
-                companyId
-            );
+        let credential = await getCredential(
+            companyId,
+            session.username
+        );
+
+        if (!credential) {
+            credential = await getCredential(companyId);
+        }
 
         if (
             credential &&
@@ -317,6 +339,17 @@ async function authorizePage(options = {}) {
                 )
             )
         ) {
+            localStorage.setItem(
+                'almoraqeb_admin_session',
+                JSON.stringify({
+                    ...session,
+                    companyId,
+                    username: credential.username,
+                    role: credential.role || session.role || 'admin',
+                    offlineMode: true
+                })
+            );
+
             return {
                 ok:true,
                 offline:true,
@@ -429,10 +462,7 @@ async function authorizePage(options = {}) {
      */
     if (hasOfflineSession()) {
 
-        const credential =
-            await getCredential(
-                companyId
-            );
+        const credential = await getCredential(companyId, session.username);
 
         if (credential) {
             return {

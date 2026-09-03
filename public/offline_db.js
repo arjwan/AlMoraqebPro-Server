@@ -2,11 +2,12 @@
 'use strict';
 
 const DB_NAME = 'almoraqebpro_offline';
-const DB_VERSION = 1;
+const DB_VERSION = 4;
 
 const STORES = {
     meta: 'meta',
-    auth: 'auth',
+    auth: 'authCredentials',
+    legacyAuth: 'auth',
     employees: 'employees',
     locations: 'locations',
     shifts: 'shifts',
@@ -19,12 +20,18 @@ const STORES = {
     syncQueue: 'syncQueue'
 };
 
+let databasePromise;
+
 function openDB() {
-    return new Promise((resolve, reject) => {
+    if (databasePromise) return databasePromise;
+
+    databasePromise = new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-        request.onerror = () =>
+        request.onerror = () => {
+            databasePromise = null;
             reject(request.error);
+        };
 
         request.onsuccess = () =>
             resolve(request.result);
@@ -37,7 +44,24 @@ function openDB() {
             }
 
             if (!db.objectStoreNames.contains(STORES.auth)) {
-                db.createObjectStore(STORES.auth, { keyPath: 'companyId' });
+                db.createObjectStore(STORES.auth, { keyPath: 'credentialKey' });
+            }
+
+            if (event.oldVersion < 2 && db.objectStoreNames.contains(STORES.legacyAuth)) {
+                const legacyStore = event.target.transaction.objectStore(STORES.legacyAuth);
+                const credentialStore = event.target.transaction.objectStore(STORES.auth);
+                legacyStore.openCursor().onsuccess = cursorEvent => {
+                    const cursor = cursorEvent.target.result;
+                    if (!cursor) return;
+                    const record = cursor.value;
+                    credentialStore.put({
+                        ...record,
+                        credentialKey:
+                            String(record.companyId || '').trim() + ':' +
+                            String(record.username || '').trim().toLowerCase()
+                    });
+                    cursor.continue();
+                };
             }
 
             [
@@ -88,6 +112,8 @@ function openDB() {
             }
         };
     });
+
+    return databasePromise;
 }
 
 async function tx(storeName, mode, callback) {
