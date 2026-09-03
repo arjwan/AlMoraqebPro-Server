@@ -31,7 +31,7 @@ jobs:
           set -euo pipefail
 
           APP_DIR="$HOME/AlMoraqebPro-Server"
-          REPO="https://github.com/arjwan307/AlMoraqebPro-Server.git"
+          REPO="https://github.com/arjwan/AlMoraqebPro-Server.git"
 
           if [ ! -d "$APP_DIR/.git" ]; then
             git clone "$REPO" "$APP_DIR"
