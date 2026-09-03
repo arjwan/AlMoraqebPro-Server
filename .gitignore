@@ -1,11 +1,23 @@
 node_modules/
+**/node_modules/
 .env
+!.env.example
 *.db
 uploads/
 cloud_backup.json
 public/.idea/
 dist-desktop/
+**/dist-desktop/
 release/
+cache/
+**/cache/
+logs/
+**/logs/
+**/build/
+**/.gradle/
+*.tmp
+*.bak
+*.old
 
 # Android
 mobile/.gradle/
@@ -15,6 +27,3 @@ mobile/local.properties
 mobile/app/build/
 mobile/build/
 **/*.log
-
-# Local Android dev copy (source lives in mobile/)
-almoraqbp0serves/
