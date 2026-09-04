@@ -2,6 +2,12 @@
 
 نظام **المراقب برو** لمراقبة حضور الموظفين وإدارتهم، مبنٍ على **Node.js + Express + MongoDB**.
 
+## الاستخدام والتنزيل
+
+- **نسخة الويب لجميع الأجهزة:** [فتح المراقب برو](https://almoraqebpro-server-aymo.onrender.com/)
+- **Android وLinux وWindows:** تتوفر ملفات التثبيت في [صفحة الإصدارات](https://github.com/arjwan/AlMoraqebPro-Server/releases/latest).
+- Linux متاح بصيغة AppImage لمعالجات Intel/AMD ذات 64 بت.
+
 هذه الواجهة الخلفية (Backend/API) مسؤولة عن:
 - إدارة الشركات والاشتراكات.
 - تسجيل الموظفين وطلباتهم.
