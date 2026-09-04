@@ -5040,10 +5040,10 @@ app.post(
                         request.socialSecurity || '',
 
                     specialty:
-                        request.jobTitle,
+                        String(req.body.specialty || request.jobTitle || '').trim(),
 
                     workplace:
-                        request.workLocation,
+                        String(req.body.workplace || request.workLocation || request.location || '').trim(),
 
                     username:
                         '',
@@ -5064,7 +5064,7 @@ app.post(
                             : undefined,
 
                     location:
-                        request.location,
+                        String(req.body.location || request.location || request.workLocation || '').trim(),
 
                     loans:
                         []
@@ -5076,10 +5076,11 @@ app.post(
              * تلقائياً عند اعتماد الطلب. عند وجود أكثر من شفت بالاسم
              * نفسه نعطي الأولوية للموقع المكتوب في طلب الموظف.
              */
+            const requestedShiftValue = String(req.body.shift || request.shift || '').trim();
             const requestedShiftName =
-                request.shift === 'طوارئ'
+                requestedShiftValue === 'طوارئ'
                     ? 'مرن'
-                    : String(request.shift || '').trim();
+                    : requestedShiftValue;
 
             if (requestedShiftName) {
                 const matchingShifts = await Shift.find({
@@ -5088,7 +5089,7 @@ app.post(
                 });
 
                 const requestedWorkplace =
-                    String(request.workLocation || '').trim();
+                    String(req.body.workplace || request.workLocation || request.location || '').trim();
 
                 const matchingShift =
                     matchingShifts.find(item =>
@@ -5675,6 +5676,29 @@ app.post(
                 loans: []
             }).save();
 
+            let assignedShift = null;
+            if (req.body.shiftId) {
+                assignedShift = await Shift.findOne({
+                    _id: req.body.shiftId,
+                    companyId
+                });
+                if (!assignedShift) {
+                    await Employee.deleteOne({ _id: employee._id });
+                    return res.status(400).json({
+                        success: false,
+                        message: 'الشفت المحدد غير تابع لهذه الشركة'
+                    });
+                }
+                await Shift.updateMany(
+                    { companyId },
+                    { $pull: { employeeIds: String(employee._id) } }
+                );
+                await Shift.updateOne(
+                    { _id: assignedShift._id },
+                    { $addToSet: { employeeIds: String(employee._id) } }
+                );
+            }
+
             // ✅ إنشاء سجل راتب تلقائياً عند إضافة الموظف
             await new SalaryRecord({
                 companyId,
@@ -5682,7 +5706,7 @@ app.post(
                 employeeName: employee.name,
                 specialty: employee.specialty || '',
                 workplace: employee.workplace || '',
-                shiftName: '',
+                shiftName: assignedShift?.name || req.body.shift || '',
                 socialSecurity: 'غير مسجل',
                 basicSalary: employee.salary || 0,
                 allowances: 0,
@@ -5865,12 +5889,41 @@ app.put(
                         : 'pending';
             }
 
+            let assignedShift = null;
+            if (req.body.shiftId !== undefined) {
+                if (req.body.shiftId) {
+                    assignedShift = await Shift.findOne({
+                        _id: req.body.shiftId,
+                        companyId: employee.companyId
+                    });
+                    if (!assignedShift) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'الشفت المحدد غير تابع لهذه الشركة'
+                        });
+                    }
+                }
+            }
+
             await employee.save();
+
+            if (req.body.shiftId !== undefined) {
+                await Shift.updateMany(
+                    { companyId: employee.companyId },
+                    { $pull: { employeeIds: String(employee._id) } }
+                );
+                if (assignedShift) {
+                    await Shift.updateOne(
+                        { _id: assignedShift._id },
+                        { $addToSet: { employeeIds: String(employee._id) } }
+                    );
+                }
+            }
 
             // تحديث سجل الراتب إذا وُجد
             await SalaryRecord.updateOne(
                 { companyId: employee.companyId, employeeId: String(employee._id) },
-                { $set: { employeeName: employee.name, specialty: employee.specialty || '', workplace: employee.workplace || '', basicSalary: employee.salary || 0 } }
+                { $set: { employeeName: employee.name, specialty: employee.specialty || '', workplace: employee.workplace || '', shiftName: assignedShift?.name || req.body.shift || '', basicSalary: employee.salary || 0 } }
             );
 
             return res.json({

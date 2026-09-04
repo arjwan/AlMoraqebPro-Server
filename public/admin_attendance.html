@@ -27,9 +27,18 @@ th{background:#1e293b;color:#fff;padding:11px}td{padding:10px;border-bottom:1px 
 .modal.show{display:flex}.box{background:#fff;width:min(760px,94%);border-radius:16px;padding:22px}
 .box.wide{width:min(1200px,96%);max-height:90vh;overflow:auto}
 .employee-row{cursor:pointer}.employee-row:hover{background:#f0f9ff}
+.employee-name-cell{display:flex;align-items:center;justify-content:center;gap:8px}.employee-name-cell small{color:#64748b}
+.day-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px;margin:14px 0}
+.day-card{border:1px solid #cbd5e1;border-radius:11px;padding:10px;background:#f8fafc;text-align:right;min-height:94px}
+.day-card.good{background:#ecfdf5;border-color:#34d399}.day-card.bad{background:#fef2f2;border-color:#f87171}.day-card.neutral{background:#fff7ed;border-color:#fb923c}
+.day-card b,.day-card small{display:block}.day-card small{margin-top:4px;color:#475569}.day-card .day-status{font-weight:900;margin-top:5px}
+.employee-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.employee-summary span{background:#f1f5f9;border-radius:9px;padding:9px;text-align:center;font-weight:800}
+.employee-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:11px;padding:11px;margin-top:10px}
+.tag{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:900}.tag-green{background:#dcfce7;color:#166534}.tag-red{background:#fee2e2;color:#991b1b}.tag-orange{background:#ffedd5;color:#9a3412}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.full{grid-column:1/-1}
 .field label{display:block;font-weight:800;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #94a3b8;border-radius:8px}
 .notice{margin-top:15px;padding:12px;border-radius:10px;text-align:center;background:#e0f2fe;color:#075985;font-weight:800}
+@media(max-width:800px){.employee-meta,.employee-summary{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -107,8 +116,11 @@ th{background:#1e293b;color:#fff;padding:11px}td{padding:10px;border-bottom:1px 
 <div class="modal" id="movementsModal"><div class="box wide">
 <div class="actions" style="justify-content:space-between;align-items:center">
 <h3 id="movementsTitle">حركات الموظف</h3>
-<div><button class="btn green" onclick="printSelectedEmployee()">🖨️ طباعة الحركات</button> <button class="btn red" onclick="closeMovements()">إغلاق</button></div>
+<div><button class="btn green" onclick="printSelectedEmployee()">🖨️ طباعة البطاقة</button> <button class="btn red" onclick="closeMovements()">إغلاق</button></div>
 </div>
+<div id="employeeMeta" class="employee-meta"></div>
+<div id="employeeDayGrid" class="day-grid"></div>
+<div id="employeeSummary" class="employee-summary"></div>
 <div class="table-wrap"><table><thead><tr><th>#</th><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>الشفت</th><th>الموقع</th><th>الحالة</th><th>GPS</th></tr></thead><tbody id="movementsBody"></tbody></table></div>
 </div></div>
 
@@ -727,15 +739,92 @@ function employeeMovements(employeeId){
         .sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
 }
 
+function dayKey(value){
+    const d=new Date(value);
+    return Number.isNaN(d.getTime())?'':new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+}
+
+function eachDay(from,to){
+    const result=[];
+    const start=new Date((from||to||dayKey(new Date()))+'T00:00:00+03:00');
+    const end=new Date((to||from||dayKey(new Date()))+'T00:00:00+03:00');
+    for(let d=start;d<=end;d.setDate(d.getDate()+1)) result.push(dayKey(d));
+    return result;
+}
+
+function requestCoversDay(request,key){
+    const from=dayKey(request.fromDate||request.requestedDate||request.createdAt);
+    const to=dayKey(request.toDate||request.fromDate||request.requestedDate||request.createdAt);
+    return request.status==='approved' && key>=from && key<=to;
+}
+
+function employeeShift(emp,id,records){
+    return shifts.find(s=>(s.employeeIds||[]).map(String).includes(String(id))) ||
+        shifts.find(s=>String(s.name||'')===String(records[0]?.shiftName||emp.shift||''));
+}
+
+function buildEmployeeDays(emp,records){
+    const id=String(emp._id||emp.id||emp._offlineKey||records[0]?.employeeId||'');
+    const grouped=new Map();
+    records.forEach(record=>{
+        const key=dayKey(record.timestamp);
+        if(!grouped.has(key)) grouped.set(key,[]);
+        grouped.get(key).push(record);
+    });
+    const approvedRequests=requests.filter(r=>String(r.employeeId)===id&&r.status==='approved');
+    let keys=eachDay(document.getElementById('fromDate').value,document.getElementById('toDate').value);
+    if(!document.getElementById('fromDate').value&&!document.getElementById('toDate').value){
+        keys=[...new Set([...grouped.keys(),...approvedRequests.flatMap(r=>eachDay(dayKey(r.fromDate||r.requestedDate),dayKey(r.toDate||r.fromDate||r.requestedDate)))])].sort();
+    }
+    const today=dayKey(new Date());
+    return keys.filter(key=>key<=today).map(key=>{
+        const dayRecords=(grouped.get(key)||[]).sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+        const checkIn=dayRecords.find(r=>r.type==='attendance');
+        const checkOut=[...dayRecords].reverse().find(r=>r.type!=='attendance');
+        const leave=approvedRequests.find(r=>r.type==='leave'&&requestCoversDay(r,key));
+        const delegated=dayRecords.some(r=>r.delegationApplied)||approvedRequests.some(r=>r.type==='delegation'&&requestCoversDay(r,key));
+        const rejected=dayRecords.find(r=>r.status==='rejected'||r.accepted===false||r.locationStatus==='rejected'||r.timeStatus==='rejected');
+        const earlyApproved=dayRecords.some(r=>r.timeStatus==='early-exit-approved');
+        let code='absence',label='غياب',tone='bad';
+        if(rejected){ code='rejected';label='بصمة مرفوضة'; }
+        else if(leave){ code=leave.leavePaymentType==='unpaid'?'unpaid-leave':'leave';label=leave.leavePaymentType==='unpaid'?'إجازة بدون راتب':'إجازة'; }
+        else if(delegated){ code='delegation';label='إيفاد';tone='good'; }
+        else if(checkIn&&checkOut){ code=earlyApproved?'early-approved':'present';label=earlyApproved?'خروج مبكر بموافقة المدير':'دخول وانصراف مقبولان';tone='good'; }
+        else if(checkIn||checkOut){ code='incomplete';label=checkIn?'دخول فقط':'انصراف فقط';tone='neutral'; }
+        return {key,records:dayRecords,checkIn,checkOut,code,label,tone,rejected};
+    });
+}
+
+function employeeDayCard(day){
+    const times=[day.checkIn&&`دخول ${fmtTime(day.checkIn.timestamp)}`,day.checkOut&&`انصراف ${fmtTime(day.checkOut.timestamp)}`].filter(Boolean).join(' — ');
+    const reason=day.rejected?.rejectionReason||day.rejected?.reason||'';
+    return `<div class="day-card ${day.tone}"><b>${fmtDate(day.key+'T00:00:00+03:00')}</b><span class="day-status">${day.tone==='bad'?'🔴':day.tone==='good'?'🟢':'🟠'} ${esc(day.label)}</span><small>${esc(times||reason||'لا توجد بصمة')}</small></div>`;
+}
+
+function summarizeDays(days){
+    return {
+        present:days.filter(d=>['present','early-approved','delegation'].includes(d.code)).length,
+        absence:days.filter(d=>d.code==='absence'||d.code==='rejected').length,
+        leave:days.filter(d=>d.code==='leave').length,
+        unpaid:days.filter(d=>d.code==='unpaid-leave').length
+    };
+}
+
 function openEmployeeMovements(employeeId){
     selectedMovementEmployeeId=String(employeeId||'');
     const emp=employees.find(x=>String(x._id||x.id||x._offlineKey||'')===selectedMovementEmployeeId);
     const rows=employeeMovements(selectedMovementEmployeeId);
+    const shift=employeeShift(emp||{},selectedMovementEmployeeId,rows);
+    const days=buildEmployeeDays(emp||{},rows);
+    const summary=summarizeDays(days);
     document.getElementById('movementsTitle').textContent='حركات الموظف: '+(emp?.name||rows[0]?.employeeName||selectedMovementEmployeeId);
+    document.getElementById('employeeMeta').innerHTML=`<span><b>الموقع:</b> ${esc(emp?.workplace||emp?.branch||rows[0]?.workplace||shift?.locationName||shift?.branch||'—')}</span><span><b>الاختصاص:</b> ${esc(emp?.specialty||emp?.jobTitle||'—')}</span><span><b>الشفت:</b> ${esc(shift?.name||rows[0]?.shiftName||emp?.shift||'—')}</span><span><b>الحالة:</b> ${emp?.delegation?.active?'إيفاد':emp?.employmentStatus==='inactive'?'غير فعال':'عادي'}</span>`;
+    document.getElementById('employeeDayGrid').innerHTML=days.length?days.map(employeeDayCard).join(''):'<div class="notice">لا توجد أيام ضمن الفترة المحددة</div>';
+    document.getElementById('employeeSummary').innerHTML=`<span>الحضور الصحيح: ${summary.present}</span><span>الغياب: ${summary.absence}</span><span>الإجازة: ${summary.leave}</span><span>بدون راتب: ${summary.unpaid}</span>`;
     document.getElementById('movementsBody').innerHTML=rows.length?rows.map((x,i)=>`<tr>
         <td>${i+1}</td><td>${x.type==='attendance'?'حضور':'انصراف'}</td><td>${fmtDate(x.timestamp)}</td><td>${fmtTime(x.timestamp)}</td>
         <td>${esc(x.shiftName||'—')}</td><td>${esc(x.workplace||x.delegationLocationName||'—')}</td>
-        <td>${x.delegationApplied?'إيفاد':'اعتيادي'}</td><td>${Number.isFinite(Number(x.latitude))&&Number.isFinite(Number(x.longitude))?Number(x.latitude).toFixed(5)+', '+Number(x.longitude).toFixed(5):'—'}</td>
+        <td>${x.timeStatus==='early-exit-approved'?'خروج مبكر بموافقة المدير':x.timeStatus==='early-exit-pending'?'خروج مبكر بانتظار الموافقة':x.delegationApplied?'إيفاد':'اعتيادي'}</td><td>${Number.isFinite(Number(x.latitude))&&Number.isFinite(Number(x.longitude))?Number(x.latitude).toFixed(5)+', '+Number(x.longitude).toFixed(5):'—'}</td>
     </tr>`).join(''):'<tr><td colspan="8">لا توجد حركات مطابقة</td></tr>';
     document.getElementById('movementsModal').classList.add('show');
 }
@@ -783,10 +872,21 @@ function printAttendanceReport(){
         <table><thead><tr><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>الشفت</th><th>الموقع</th><th>الحالة</th><th>GPS</th></tr></thead><tbody>${records.map(a=>`<tr><td>${a.type==='attendance'?'حضور':'انصراف'}</td><td>${fmtDate(a.timestamp)}</td><td>${fmtTime(a.timestamp)}</td><td>${esc(a.shiftName||'—')}</td><td>${esc(a.workplace||a.delegationLocationName||'—')}</td><td>${a.delegationApplied?'إيفاد':'اعتيادي'}</td><td>${Number.isFinite(Number(a.latitude))&&Number.isFinite(Number(a.longitude))?Number(a.latitude).toFixed(5)+', '+Number(a.longitude).toFixed(5):'—'}</td></tr>`).join('')||'<tr><td colspan="7">لا توجد سجلات</td></tr>'}</tbody></table></article>`;
     }).join('');
     if(!cards){ alert('لا توجد بيانات مطابقة للطباعة'); return; }
+    const generalRows=selectedEmployees.map((emp,index)=>{
+        const id=String(emp._id||emp.id||emp._offlineKey||'');
+        const records=attendance.filter(a=>String(a.employeeId)===id&&(!shiftName||a.shiftName===shiftName)&&(!locationName||a.workplace===locationName||a.delegationLocationName===locationName));
+        const days=buildEmployeeDays(emp,records);
+        const summary=summarizeDays(days);
+        const shift=employeeShift(emp,id,records);
+        const states=days.map(d=>`${fmtDate(d.key+'T00:00:00+03:00')}: ${d.label}`).join('، ')||'—';
+        return `<tr><td>${index+1}</td><td>${esc(emp.name||records[0]?.employeeName||id)}</td><td>${esc(emp.specialty||emp.jobTitle||'—')}</td><td>${esc(emp.workplace||emp.branch||shift?.locationName||shift?.branch||'—')}</td><td>${esc(shift?.name||records[0]?.shiftName||emp.shift||'—')}</td><td>${summary.present}</td><td>${summary.absence}</td><td>${summary.leave}</td><td>${summary.unpaid}</td><td class="states">${esc(states)}</td></tr>`;
+    }).join('');
+    const generalTable=`<table class="general"><thead><tr><th>#</th><th>الموظف</th><th>الاختصاص</th><th>الموقع</th><th>الشفت</th><th>حضور</th><th>غياب</th><th>إجازة</th><th>بدون راتب</th><th>حالات الأيام</th></tr></thead><tbody>${generalRows}</tbody></table>`;
+    const reportContent=employeeId?cards:generalTable;
     const title=employeeId?'كشف بصمة موظف':locationName?'كشف بصمة فرع/موقع':'كشف البصمة العام';
     const frame=document.createElement('iframe');
     frame.style.position='fixed'; frame.style.width='0'; frame.style.height='0'; frame.style.border='0';
-    frame.srcdoc=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Tahoma;padding:20px;color:#0f172a}header{text-align:center;margin-bottom:18px}article{border:1px solid #94a3b8;border-radius:12px;padding:14px;margin-bottom:18px;break-inside:avoid}h2{margin-top:0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.wide{grid-column:1/-1}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:7px;text-align:center}th{background:#e2e8f0}</style></head><body><header><h1>${title}</h1><p>الفترة: ${esc(from||'بداية السجلات')} — ${esc(to||'نهاية السجلات')}</p></header>${cards}</body></html>`;
+    frame.srcdoc=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>@page{size:landscape;margin:10mm}body{font-family:Tahoma;padding:12px;color:#0f172a}header{text-align:center;margin-bottom:18px}article{border:1px solid #94a3b8;border-radius:12px;padding:14px;margin-bottom:18px;break-inside:avoid}h2{margin-top:0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.wide{grid-column:1/-1}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #cbd5e1;padding:6px;text-align:center}th{background:#e2e8f0}.states{text-align:right;min-width:260px;line-height:1.7}.general{table-layout:auto}</style></head><body><header><h1>${title}</h1><p>الفترة: ${esc(from||'بداية السجلات')} — ${esc(to||'نهاية السجلات')}</p></header>${reportContent}</body></html>`;
     frame.onload=()=>{ try{ frame.contentWindow.focus(); frame.contentWindow.print(); }catch(e){ alert('تعذر تنفيذ الطباعة: '+e.message); } setTimeout(()=>frame.remove(),1000); };
     document.body.appendChild(frame);
 }

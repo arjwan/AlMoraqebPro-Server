@@ -6,7 +6,7 @@
     <title>إدارة الموظفين - نظام المراقب برو</title>
     <style>
         *{box-sizing:border-box}body{margin:0;background:#1e1b4b;color:#0f172a;font-family:'Segoe UI',Tahoma,sans-serif;padding:18px}.wrap{max-width:1500px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 12px 35px #0005}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #e2e8f0;border-radius:14px;padding:14px 18px;margin-bottom:16px}.brand{font-size:24px;font-weight:900}.badge{font-size:12px;background:#0284c7;color:#fff;padding:6px 10px;border-radius:8px;margin-right:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;gap:7px;align-items:center;transition:transform .18s ease,box-shadow .18s ease}.btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px #0f172a26}.btn:active{transform:translateY(0) scale(.98)}.btn-blue{background:#0284c7;color:#fff}.btn-green{background:#10b981;color:#fff}.btn-red{background:#ef4444;color:#fff}.btn-orange{background:#f59e0b;color:#fff}.btn-purple{background:#8b5cf6;color:#fff}.filter-bar{display:flex;gap:10px;margin-bottom:20px;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #cbd5e1;flex-wrap:wrap;align-items:center}.filter-bar input,.filter-bar select{padding:9px 12px;border:2px solid #94a3b8;border-radius:8px;font-size:14px;outline:none;background:#fff;font-weight:600;flex:1;min-width:180px}.filter-bar input:focus,.filter-bar select:focus{border-color:#0284c7}.table-container{width:100%;overflow-x:auto;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:20px}table{width:100%;border-collapse:collapse;text-align:center;background:#fff}th{background:#1e293b;color:#fff;padding:12px;font-size:14px;font-weight:800;text-align:center}td{padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#1e293b;font-weight:600;text-align:center}tr:hover{background:#f1f5f9}.status-badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:bold;display:inline-block}.status-active{background:#d1fae5;color:#065f46}.status-inactive{background:#f1f5f9;color:#64748b}.status-pending{background:#fef3c7;color:#92400e}.status-approved{background:#d1fae5;color:#065f46}.status-rejected{background:#fee2e2;color:#991b1b}.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:999}.modal.show{display:flex}.modal-box{background:#fff;border-radius:16px;padding:30px;max-width:550px;width:90%;max-height:90vh;overflow-y:auto}.modal-box h3{margin-bottom:15px}.modal-box .form-group{margin-bottom:12px}.modal-box .form-group label{display:block;font-weight:bold;margin-bottom:4px}.modal-box .form-group input,.modal-box .form-group select{width:100%;padding:9px 12px;border:2px solid #94a3b8;border-radius:8px;font-size:14px;outline:none}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}.status{margin-top:16px;background:#10b981;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:900}.status.error{background:#ef4444}.status.warning{background:#f59e0b}.loading-spinner{display:inline-block;width:24px;height:24px;border:3px solid #f3f3f3;border-top:3px solid #0284c7;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:700px){body{padding:8px}.wrap{padding:12px}.top{padding:12px}.brand{font-size:20px}}
-    .employee-name-button{border:0;background:transparent;color:#0369a1;font:inherit;font-weight:900;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+    .employee-name-button{border:0;background:transparent;color:#0369a1;font:inherit;font-weight:900;cursor:pointer;text-decoration:underline;text-underline-offset:3px}.employee-card-cell{text-align:right;min-width:190px}.employee-card-cell small{display:block;color:#64748b;margin-top:3px}.employee-data{white-space:nowrap}.modal-box.employee-form-box{max-width:850px}.employee-form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0 14px}.employee-form-grid .full{grid-column:1/-1}@media(max-width:700px){.employee-form-grid{grid-template-columns:1fr}}
     .operation-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.operation-section{display:none}.operation-section.show{display:block}.operation-note{background:#e0f2fe;color:#075985;padding:10px;border-radius:9px;font-weight:700;margin-bottom:12px}@media(max-width:600px){.operation-grid{grid-template-columns:1fr}}
     </style>
 </head>
@@ -42,16 +42,16 @@
     <div class="table-container">
         <table>
             <thead>
-                <tr><th>#</th><th>اسم الطلب</th><th>رمز الشركة</th><th>الموقع</th><th>الجهاز</th><th>تاريخ الطلب</th><th>الحالة</th><th>إجراء</th></tr>
+                <tr><th>#</th><th>اسم الطلب</th><th>الاختصاص</th><th>الموقع</th><th>الشفت</th><th>الجهاز</th><th>تاريخ الطلب</th><th>الحالة</th><th>إجراء</th></tr>
             </thead>
-            <tbody id="pendingRequestsTable"><tr><td colspan="8"><div class="loading-spinner"></div> جاري تحميل الطلبات...</td></tr></tbody>
+            <tbody id="pendingRequestsTable"><tr><td colspan="9"><div class="loading-spinner"></div> جاري تحميل الطلبات...</td></tr></tbody>
         </table>
     </div>
 
     <div class="table-container">
         <table>
             <thead>
-                <tr><th>#</th><th>رمز الشركة</th><th>الاسم</th><th>رقم الهاتف</th><th>البريد</th><th>الراتب</th><th>الاختصاص</th><th>الحالة</th><th>الإجراءات</th></tr>
+                <tr><th>#</th><th>الموظف</th><th>الاختصاص</th><th>الموقع/الفرع</th><th>الشفت</th><th>الهاتف</th><th>الراتب</th><th>الحالة</th><th>الإجراءات</th></tr>
             </thead>
             <tbody id="employeesTable"><tr><td colspan="9"><div class="loading-spinner"></div> جاري التحميل...</td></tr></tbody>
         </table>
@@ -62,9 +62,9 @@
 
 <!-- مودال إضافة/تعديل -->
 <div class="modal" id="employeeModal">
-    <div class="modal-box">
+    <div class="modal-box employee-form-box">
         <h3 id="modalTitle">➕ إضافة موظف جديد</h3>
-        <form id="employeeForm" onsubmit="saveEmployee(event)">
+        <form id="employeeForm" onsubmit="saveEmployee(event)"><div class="employee-form-grid">
             <input type="hidden" id="editId" value="">
             <div class="form-group"><label>رمز الشركة</label><input type="text" id="empCompanyId" required></div>
             <div class="form-group"><label>الاسم الكامل</label><input type="text" id="empName" required></div>
@@ -72,16 +72,17 @@
             <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="empEmail" required></div>
             <div class="form-group"><label>الراتب الأساسي</label><input type="number" id="empSalary" required></div>
             <div class="form-group"><label>الاختصاص</label><input type="text" id="empSpecialty" required></div>
-            <div class="form-group"><label>مكان العمل</label><input type="text" id="empLocation" required></div>
+            <div class="form-group"><label>الموقع/الفرع</label><select id="empLocation" required onchange="populateEmployeeReferences(this.value,'')"><option value="">اختر الموقع</option></select></div>
+            <div class="form-group"><label>الشفت</label><select id="empShift" required><option value="">اختر الشفت</option></select></div>
             <div class="form-group"><label>اسم المستخدم</label><input type="text" id="empUsername" required></div>
             <div class="form-group"><label>كلمة المرور</label><input type="password" id="empPassword" placeholder="اتركه فارغاً للتعديل"></div>
             <div class="form-group"><label>الحالة</label>
                 <select id="empStatus"><option value="active">نشط</option><option value="inactive">غير نشط</option></select>
             </div>
-            <div class="modal-actions">
+            <div class="modal-actions full">
                 <button type="button" class="btn btn-red" onclick="closeModal()">إلغاء</button>
                 <button type="submit" class="btn btn-green">💾 حفظ</button>
-            </div>
+            </div></div>
         </form>
     </div>
 </div>
@@ -114,7 +115,37 @@
 
 <script>
     const API = location.origin;
-    let token = '', companyId = '', employeesCache = [];
+    let token = '', companyId = '', employeesCache = [], shiftsCache = [], locationsCache = [], pendingEmployeeRequests = [];
+
+    function assignedShift(employeeId){
+        return shiftsCache.find(shift=>(shift.employeeIds||[]).map(String).includes(String(employeeId)));
+    }
+
+    function populateEmployeeReferences(locationValue='',shiftValue=''){
+        const locationSelect=document.getElementById('empLocation');
+        const shiftSelect=document.getElementById('empShift');
+        const locations=[...new Set(locationsCache.map(x=>x.name).concat(shiftsCache.map(x=>x.locationName||x.branch)).filter(Boolean))];
+        if(locationValue&&!locations.includes(locationValue)) locations.push(locationValue);
+        locationSelect.innerHTML='<option value="">اختر الموقع/الفرع</option>'+locations.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+        locationSelect.value=locationValue;
+        const matching=shiftsCache.filter(x=>!locationValue||String(x.locationName||x.branch||'')===String(locationValue));
+        shiftSelect.innerHTML='<option value="">اختر الشفت</option>'+matching.map(x=>`<option value="${escapeHtml(String(x._id||x.id||x.name))}" data-name="${escapeHtml(x.name||'')}">${escapeHtml(x.name||'—')} — ${escapeHtml(x.locationName||x.branch||'بدون موقع')}</option>`).join('');
+        const byId=matching.find(x=>String(x._id||x.id)===String(shiftValue));
+        const byName=matching.find(x=>String(x.name)===String(shiftValue));
+        shiftSelect.value=String(byId?._id||byId?.id||byName?._id||byName?.id||'');
+    }
+
+    async function loadEmployeeReferences(){
+        try{
+            const headers=token?{Authorization:'Bearer '+token}:{};
+            const [shiftResponse,locationResponse]=await Promise.all([fetch(API+'/api/admin/shifts',{headers,cache:'no-store'}),fetch(API+'/api/admin/locations',{headers,cache:'no-store'})]);
+            const shiftData=await shiftResponse.json();
+            const locationData=await locationResponse.json();
+            if(shiftResponse.ok) shiftsCache=shiftData.shifts||[];
+            if(locationResponse.ok) locationsCache=locationData.locations||[];
+        }catch(error){ console.warn('تعذر تحميل المواقع والشفتات',error); }
+        populateEmployeeReferences();
+    }
 
     function getSession() {
         try { return JSON.parse(localStorage.getItem('almoraqeb_admin_session') || '{}'); } 
@@ -263,7 +294,7 @@
 
     async function loadPendingRequests() {
         const tbody = document.getElementById('pendingRequestsTable');
-        tbody.innerHTML = `<tr><td colspan="8"><div class="loading-spinner"></div> جاري تحميل الطلبات...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9"><div class="loading-spinner"></div> جاري تحميل الطلبات...</td></tr>`;
         try {
             const r = await fetch(API + '/api/employee/requests/' + encodeURIComponent(companyId) + '/pending', {
                 headers: { 'Authorization': 'Bearer ' + token },
@@ -272,38 +303,41 @@
             const d = await r.json();
             if (r.ok && d.success) {
                 const requests = d.requests || [];
+                pendingEmployeeRequests = requests;
                 tbody.innerHTML = requests.length === 0 ?
-                    `<tr><td colspan="8" style="color:#64748b;">لا توجد طلبات معلقة</td></tr>` :
+                    `<tr><td colspan="9" style="color:#64748b;">لا توجد طلبات معلقة</td></tr>` :
                     requests.map((req, i) => `
                         <tr>
                             <td>${i + 1}</td>
                             <td><b>${req.name || '—'}</b></td>
-                            <td>${req.companyId || companyId}</td>
+                            <td>${escapeHtml(req.jobTitle || '—')}</td>
                             <td>${req.workLocation || req.location || '—'}</td>
+                            <td>${escapeHtml(req.shift || '—')}</td>
                             <td>${req.deviceId ? String(req.deviceId).slice(0, 18) : '—'}</td>
                             <td>${req.createdAt ? new Date(req.createdAt).toLocaleDateString('ar-EG') : '—'}</td>
                             <td><span class="status-badge status-pending">⏳ معلقة</span></td>
                             <td>
-                                <button class="btn btn-green" style="padding:4px 10px;font-size:11px;" onclick="approveRequest('${req._id}')">✅ اعتماد</button>
+                                <button class="btn btn-green" style="padding:4px 10px;font-size:11px;" onclick="approveRequest('${req._id}')">✅ اعتماد البيانات</button>
                             </td>
                         </tr>
                     `).join('');
                 showStatus('✅ تم تحميل ' + requests.length + ' طلب معلّق', '');
             } else {
-                tbody.innerHTML = `<tr><td colspan="8" style="color:#ef4444;">❌ فشل تحميل الطلبات</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;">❌ فشل تحميل الطلبات</td></tr>`;
             }
         } catch {
-            tbody.innerHTML = `<tr><td colspan="8" style="color:#ef4444;">❌ فشل الاتصال بالسيرفر</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;">❌ فشل الاتصال بالسيرفر</td></tr>`;
         }
     }
 
     async function approveRequest(requestId) {
-        if (!confirm('هل تريد اعتماد هذا الطلب؟')) return;
+        const request=pendingEmployeeRequests.find(item=>String(item._id)===String(requestId));
+        if (!request||!confirm(`اعتماد ${request.name||'الموظف'} بالموقع ${request.workLocation||request.location||'غير محدد'} والشفت ${request.shift||'غير محدد'}؟`)) return;
         try {
             const r = await fetch(API + '/api/employee/request/' + encodeURIComponent(requestId) + '/approve', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ email: '' })
+                body: JSON.stringify({ email: request.email||'', specialty:request.jobTitle||'', workplace:request.workLocation||request.location||'', location:request.location||request.workLocation||'', shift:request.shift||'' })
             });
             const d = await r.json();
             if (r.ok && d.success) {
@@ -379,12 +413,12 @@
                 : employees.map((e, i) => `
                     <tr data-status="${e.status || 'active'}">
                         <td>${i+1}</td>
-                        <td>${e.companyId || companyId || '—'}</td>
-                        <td><button class="employee-name-button" onclick="openEmployeeOperation('${e._id || e.id || e._offlineKey}')">${escapeHtml(e.name || '—')}</button></td>
-                        <td>${e.phoneNumber || '—'}</td>
-                        <td>${e.email || '—'}</td>
-                        <td>${e.salary ? Number(e.salary).toLocaleString() + ' د.ع' : '—'}</td>
-                        <td>${e.specialty || '—'}</td>
+                        <td class="employee-card-cell"><button class="employee-name-button" onclick="openEmployeeOperation('${e._id || e.id || e._offlineKey}')">${escapeHtml(e.name || '—')}</button><small>رمز الشركة: ${escapeHtml(e.companyId||companyId||'—')}</small><small>${escapeHtml(e.email||'بدون بريد')}</small></td>
+                        <td class="employee-data">${escapeHtml(e.specialty || '—')}</td>
+                        <td class="employee-data">${escapeHtml(e.workplace||e.location||e.branch||assignedShift(e._id||e.id)?.locationName||assignedShift(e._id||e.id)?.branch||'—')}</td>
+                        <td class="employee-data">${escapeHtml(assignedShift(e._id||e.id)?.name||e.shift||'—')}</td>
+                        <td class="employee-data">${escapeHtml(e.phoneNumber || '—')}</td>
+                        <td class="employee-data">${e.salary ? Number(e.salary).toLocaleString() + ' د.ع' : '—'}</td>
                         <td>
                             <span class="status-badge ${e.status === 'active' ? 'status-active' : 'status-inactive'}">
                                 ${e.status === 'active' ? '✅ نشط' : '⛔ غير نشط'}
@@ -665,6 +699,7 @@
         document.getElementById('empCompanyId').value = companyId;
         document.getElementById('empPassword').placeholder = 'أدخل كلمة المرور';
         document.getElementById('empStatus').value = 'active';
+        populateEmployeeReferences();
         document.getElementById('employeeModal').classList.add('show');
     }
 
@@ -733,8 +768,8 @@
         document.getElementById('empSpecialty').value =
             e.specialty || '';
 
-        document.getElementById('empLocation').value =
-            e.location || e.workplace || '';
+        const shift=assignedShift(id);
+        populateEmployeeReferences(e.workplace||e.location||e.branch||shift?.locationName||shift?.branch||'',shift?._id||e.shift||'');
 
         document.getElementById('empUsername').value =
             e.username || '';
@@ -855,6 +890,12 @@
 
             specialty:
                 document.getElementById('empSpecialty').value.trim(),
+
+            shiftId:
+                document.getElementById('empShift').value,
+
+            shift:
+                document.getElementById('empShift').selectedOptions[0]?.dataset.name || '',
 
             location:
                 document.getElementById('empLocation').value.trim(),
@@ -1239,6 +1280,7 @@
     // ============================================================
     (async () => {
         if (await auth()) {
+            await loadEmployeeReferences();
             await Promise.all([loadPendingRequests(), loadEmployees(), loadServiceRequests()]);
             setInterval(() => { loadPendingRequests(); loadServiceRequests(); }, 30000);
         }
