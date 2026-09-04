@@ -784,12 +784,15 @@ function buildEmployeeDays(emp,records){
         const leave=approvedRequests.find(r=>r.type==='leave'&&requestCoversDay(r,key));
         const delegated=dayRecords.some(r=>r.delegationApplied)||approvedRequests.some(r=>r.type==='delegation'&&requestCoversDay(r,key));
         const rejected=dayRecords.find(r=>r.status==='rejected'||r.accepted===false||r.locationStatus==='rejected'||r.timeStatus==='rejected');
+        const absentLate=dayRecords.find(r=>r.timeStatus==='absent-late');
+        const late=dayRecords.find(r=>r.timeStatus==='late');
         const earlyApproved=dayRecords.some(r=>r.timeStatus==='early-exit-approved');
         let code='absence',label='غياب',tone='bad';
         if(rejected){ code='rejected';label='بصمة مرفوضة'; }
+        else if(absentLate){ code='absent-late';label='غياب بسبب تجاوز مهلة التأخير'; }
         else if(leave){ code=leave.leavePaymentType==='unpaid'?'unpaid-leave':'leave';label=leave.leavePaymentType==='unpaid'?'إجازة بدون راتب':'إجازة'; }
         else if(delegated){ code='delegation';label='إيفاد';tone='good'; }
-        else if(checkIn&&checkOut){ code=earlyApproved?'early-approved':'present';label=earlyApproved?'خروج مبكر بموافقة المدير':'دخول وانصراف مقبولان';tone='good'; }
+        else if(checkIn&&checkOut){ code=earlyApproved?'early-approved':late?'late':'present';label=earlyApproved?'خروج مبكر بموافقة المدير':late?`حضور متأخر ${Number(late.lateMinutes)||0} دقيقة`:'دخول وانصراف مقبولان';tone=late?'neutral':'good'; }
         else if(checkIn||checkOut){ code='incomplete';label=checkIn?'دخول فقط':'انصراف فقط';tone='neutral'; }
         return {key,records:dayRecords,checkIn,checkOut,code,label,tone,rejected};
     });
@@ -804,7 +807,7 @@ function employeeDayCard(day){
 function summarizeDays(days){
     return {
         present:days.filter(d=>['present','early-approved','delegation'].includes(d.code)).length,
-        absence:days.filter(d=>d.code==='absence'||d.code==='rejected').length,
+        absence:days.filter(d=>['absence','rejected','absent-late'].includes(d.code)).length,
         leave:days.filter(d=>d.code==='leave').length,
         unpaid:days.filter(d=>d.code==='unpaid-leave').length
     };

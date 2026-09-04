@@ -918,12 +918,16 @@ const attendanceSchema = new mongoose.Schema({
         type: String,
         enum: [
             'within-shift',
+            'late',
+            'absent-late',
             'delegation',
             'early-exit-pending',
             'early-exit-approved'
         ],
         default: 'within-shift'
     },
+
+    lateMinutes: { type: Number, default: 0 },
 
     managerApprovalStatus: {
         type: String,
@@ -1189,6 +1193,8 @@ const shiftSchema = new mongoose.Schema({
     employeeIds: { type: [String], default: [] },
     attendanceStart: { type: String, default: '' },
     attendanceEnd: { type: String, default: '' },
+    lateFrom: { type: String, default: '' },
+    lateTo: { type: String, default: '' },
     departureStart: { type: String, default: '' },
     departureEnd: { type: String, default: '' },
     overtimeStart: { type: String, default: '' },
@@ -1216,6 +1222,8 @@ const salaryRecordSchema = new mongoose.Schema({
     specialty: { type: String, default: '' },
     workplace: { type: String, default: '' },
     shiftName: { type: String, default: '' },
+    lateFrom: { type: String, default: '' },
+    lateTo: { type: String, default: '' },
     socialSecurity: { type: String, default: 'غير مسجل' },
     employeeSerial: { type: String, default: '', index: true },
 
@@ -1240,6 +1248,8 @@ const salaryRecordSchema = new mongoose.Schema({
 
     replacementDeduction: { type: Number, default: 0 },
     absenceDeduction: { type: Number, default: 0 },
+    lateMinutes: { type: Number, default: 0 },
+    lateDeduction: { type: Number, default: 0 },
 
     socialSecurityStatus: {
         type: String,
@@ -1481,6 +1491,10 @@ const payrollBatchSchema = new mongoose.Schema({
             type: Number,
             default: 0
         },
+
+        absenceDeduction: { type: Number, default: 0 },
+        lateMinutes: { type: Number, default: 0 },
+        lateDeduction: { type: Number, default: 0 },
 
         securityDeduction: {
             type: Number,
@@ -5707,6 +5721,8 @@ app.post(
                 specialty: employee.specialty || '',
                 workplace: employee.workplace || '',
                 shiftName: assignedShift?.name || req.body.shift || '',
+                lateFrom: assignedShift?.lateFrom || '',
+                lateTo: assignedShift?.lateTo || '',
                 socialSecurity: 'غير مسجل',
                 basicSalary: employee.salary || 0,
                 allowances: 0,
@@ -5923,7 +5939,7 @@ app.put(
             // تحديث سجل الراتب إذا وُجد
             await SalaryRecord.updateOne(
                 { companyId: employee.companyId, employeeId: String(employee._id) },
-                { $set: { employeeName: employee.name, specialty: employee.specialty || '', workplace: employee.workplace || '', shiftName: assignedShift?.name || req.body.shift || '', basicSalary: employee.salary || 0 } }
+                { $set: { employeeName: employee.name, specialty: employee.specialty || '', workplace: employee.workplace || '', shiftName: assignedShift?.name || req.body.shift || '', lateFrom: assignedShift?.lateFrom || '', lateTo: assignedShift?.lateTo || '', basicSalary: employee.salary || 0 } }
             );
 
             return res.json({
@@ -7603,6 +7619,8 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
             employeeIds,
             attendanceStart,
             attendanceEnd,
+            lateFrom,
+            lateTo,
             departureStart,
             departureEnd,
             overtimeStart,
@@ -7711,6 +7729,8 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
         const normalizedTimes = {
             attendanceStart: String(attendanceStart || ''),
             attendanceEnd: String(attendanceEnd || ''),
+            lateFrom: String(lateFrom || clockPlusMinutes(attendanceEnd, 1)),
+            lateTo: String(lateTo || clockPlusMinutes(attendanceEnd, 120)),
             departureStart: String(departureStart || ''),
             departureEnd: String(departureEnd || ''),
             overtimeStart: String(overtimeStart || ''),
@@ -7800,6 +7820,8 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
             employeeIds,
             attendanceStart,
             attendanceEnd,
+            lateFrom,
+            lateTo,
             departureStart,
             departureEnd,
             overtimeStart,
@@ -7932,6 +7954,18 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
         if (attendanceEnd !== undefined)
             shift.attendanceEnd =
                 String(attendanceEnd || '');
+
+        if (attendanceEnd !== undefined && lateFrom === undefined)
+            shift.lateFrom = clockPlusMinutes(attendanceEnd, 1);
+
+        if (attendanceEnd !== undefined && lateTo === undefined)
+            shift.lateTo = clockPlusMinutes(attendanceEnd, 120);
+
+        if (lateFrom !== undefined)
+            shift.lateFrom = String(lateFrom || '');
+
+        if (lateTo !== undefined)
+            shift.lateTo = String(lateTo || '');
 
         if (departureStart !== undefined)
             shift.departureStart =
@@ -8909,6 +8943,8 @@ app.post('/api/admin/salaries/refresh-employees', requireAdmin, async (req, res)
                 specialty: employee.specialty || '',
                 workplace: String(employee.workplace || employee.branch || employee.location || '').trim(),
                 shiftName: shift?.name || employee.shift || '',
+                lateFrom: shift?.lateFrom || '',
+                lateTo: shift?.lateTo || '',
                 wageType: ['monthly', 'weekly', 'daily'].includes(employee.wageType) ? employee.wageType : 'monthly',
                 basicSalary: Number(employee.salary || 0),
                 loans: Number(outstandingByEmployee.get(employeeId) || 0)
@@ -8999,7 +9035,8 @@ app.put('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
                 { $set: { 'replacement.active': true, 'replacement.name': cleanReplacementName, 'replacement.from': replacementFromDate, 'replacement.to': replacementToDate, 'replacement.note': cleanReplacementNote } }
             );
         }
-        salary.totalDeductions = salary.loanDeduction + salary.securityDeduction + salary.otherDeductions;
+        salary.totalDeductions = salary.loanDeduction + salary.securityDeduction + salary.otherDeductions +
+            Number(salary.absenceDeduction || 0) + Number(salary.lateDeduction || 0);
         await salary.save();
         res.json({ success: true, salary });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -9033,11 +9070,31 @@ function payrollDateKeys(from, to) {
     return keys;
 }
 
+function payrollMonthPeriod(reference = new Date()) {
+    const year = reference.getFullYear();
+    const month = reference.getMonth();
+    return {
+        from: new Date(year, month, 1, 0, 0, 0, 0),
+        to: new Date(year, month, Math.min(30, new Date(year, month + 1, 0).getDate()), 23, 59, 59, 999)
+    };
+}
+
+function shiftWorkMinutes(shift, employee) {
+    const start = shiftTimeInMinutes(shift && shift.attendanceEnd);
+    const end = shiftTimeInMinutes(shift && shift.departureStart);
+    if (start !== null && end !== null) {
+        const minutes = end >= start ? end - start : (24 * 60 - start) + end;
+        if (minutes > 0) return minutes;
+    }
+    return Math.max(1, Number(employee && employee.workHours || 8) * 60);
+}
+
 app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
     try {
         const companyId = req.session.companyId;
-        const from = new Date(req.body.from);
-        const to = new Date(req.body.to);
+        const defaultPeriod = payrollMonthPeriod();
+        const from = req.body.from ? new Date(req.body.from) : defaultPeriod.from;
+        const to = req.body.to ? new Date(req.body.to) : defaultPeriod.to;
         if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) {
             return res.status(400).json({ success: false, message: 'فترة الرواتب غير صحيحة' });
         }
@@ -9059,20 +9116,24 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
         ]);
         const salaryByEmployee = new Map(salaries.map(item => [String(item.employeeId), item]));
         const attendanceByEmployee = new Map();
+        const lateMinutesByEmployee = new Map();
         attendance.forEach(item => {
             const id = String(item.employeeId);
             const day = payrollDayKey(item.timestamp);
             if (!attendanceByEmployee.has(id)) attendanceByEmployee.set(id, new Map());
             if (!attendanceByEmployee.get(id).has(day)) attendanceByEmployee.get(id).set(day, new Set());
             if (item.type === 'attendance') {
-                attendanceByEmployee.get(id).get(day).add('in');
+                attendanceByEmployee.get(id).get(day).add(item.timeStatus === 'absent-late' ? 'absent-late' : 'in');
+                if (item.timeStatus === 'late') {
+                    lateMinutesByEmployee.set(id, Number(lateMinutesByEmployee.get(id) || 0) + Math.max(0, Number(item.lateMinutes || 0)));
+                }
             } else if (item.timeStatus !== 'early-exit-pending' && item.managerApprovalStatus !== 'rejected') {
                 attendanceByEmployee.get(id).get(day).add('out');
             }
         });
         const validAttendanceDays = id => new Set(
             [...(attendanceByEmployee.get(id) || new Map()).entries()]
-                .filter(([, types]) => types.has('in') && types.has('out'))
+                .filter(([, types]) => types.has('in') && types.has('out') && !types.has('absent-late'))
                 .map(([day]) => day)
         );
         const leaveDays = (id, paymentType) => {
@@ -9137,12 +9198,20 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                     new Date(Math.min(to.getTime(), new Date(delegation.to).getTime()))
                 ).forEach(day => delegationDays.add(day));
             }
-            const payableDays = new Set([...attendanceDays, ...paidLeaveDays, ...delegationDays, ...replacementDays]);
-            unpaidLeaveDays.forEach(day => payableDays.delete(day));
+            const hireDateKey = employee.hireDate ? payrollDayKey(employee.hireDate) : '';
+            const eligiblePeriodKeys = periodKeys.filter(day => !hireDateKey || day >= hireDateKey);
+            const eligibleDays = new Set(eligiblePeriodKeys);
+            const eligibleUnpaidLeaveDays = new Set([...unpaidLeaveDays].filter(day => eligibleDays.has(day)));
+            const payableDays = new Set([...attendanceDays, ...paidLeaveDays, ...delegationDays, ...replacementDays].filter(day => eligibleDays.has(day)));
+            eligibleUnpaidLeaveDays.forEach(day => payableDays.delete(day));
             const wageType = ['daily', 'weekly', 'monthly'].includes(employee.wageType) ? employee.wageType : 'monthly';
-            const divisor = wageType === 'daily' ? 1 : wageType === 'weekly' ? 7 : new Date(from.getFullYear(), from.getMonth() + 1, 0).getDate();
+            const divisor = wageType === 'daily' ? 1 : wageType === 'weekly' ? 7 : 30;
             const dailyRate = wageType === 'daily' ? basicSalary : basicSalary / divisor;
-            const earnedFromDays = dailyRate * payableDays.size;
+            const absenceDays = Math.max(0, eligiblePeriodKeys.length - payableDays.size - eligibleUnpaidLeaveDays.size);
+            const absenceDeduction = wageType === 'daily' ? 0 : dailyRate * (absenceDays + eligibleUnpaidLeaveDays.size);
+            const lateMinutes = Number(lateMinutesByEmployee.get(id) || 0);
+            const lateDeduction = wageType === 'daily' ? 0 : (dailyRate / shiftWorkMinutes(shift, employee)) * lateMinutes;
+            const grossSalary = wageType === 'daily' ? dailyRate * payableDays.size : dailyRate * eligiblePeriodKeys.length;
             let salary = salaryByEmployee.get(id);
             if (!salary) salary = new SalaryRecord({ companyId, employeeId: id });
             const carriedBalance = salary.calculationKey === calculationKey
@@ -9155,26 +9224,26 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const legacyInstallment = (employee.loans || []).reduce((sum, loan) => sum + Math.min(Number(loan.monthlyInstallment || 0), Number(loan.remainingAmount || 0)), 0);
             const automaticInstallment = Math.min(outstandingLoans, recordInstallment || legacyInstallment);
             const loanDeduction = automaticInstallment || Math.min(outstandingLoans, Number(salary.loanDeduction || 0));
-            const totalDeductions = loanDeduction + replacementDeduction + Number(salary.securityDeduction || 0) + Number(salary.otherDeductions || 0);
-            const currentPeriodEarnings = Math.max(0, earnedFromDays + replacementAddition + Number(salary.allowances || 0) + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
+            const totalDeductions = loanDeduction + replacementDeduction + absenceDeduction + lateDeduction + Number(salary.securityDeduction || 0) + Number(salary.otherDeductions || 0);
+            const currentPeriodEarnings = Math.max(0, grossSalary + replacementAddition + Number(salary.allowances || 0) + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
             salary.set({
                 employeeName: employee.name || '', employeeSerial: employee.employeeSerial || '', specialty: employee.specialty || '', workplace,
-                shiftName: shift.name || '', wageType, basicSalary, dailyRate, weeklyRate: wageType === 'weekly' ? basicSalary : 0,
+                shiftName: shift.name || '', lateFrom: shift.lateFrom || '', lateTo: shift.lateTo || '', wageType, basicSalary, dailyRate, weeklyRate: wageType === 'weekly' ? basicSalary : 0,
                 payrollFrom: from, payrollTo: to, attendanceDays: payableDays.size, attendanceCount: attendanceDays.size,
-                paidLeaveDays: paidLeaveDays.size, unpaidLeaveDays: unpaidLeaveDays.size,
-                absenceDays: Math.max(0, periodKeys.length - payableDays.size - unpaidLeaveDays.size), replacementDays: replacementDays.size,
+                paidLeaveDays: paidLeaveDays.size, unpaidLeaveDays: eligibleUnpaidLeaveDays.size,
+                absenceDays, absenceDeduction, lateMinutes, lateDeduction, replacementDays: replacementDays.size,
                 replacementActive: Boolean(employee.replacement && employee.replacement.active),
                 replacementName: employee.replacement && employee.replacement.name || '',
                 replacementFrom: employee.replacement && employee.replacement.from || null,
                 replacementTo: employee.replacement && employee.replacement.to || null,
                 replacementNote: employee.replacement && employee.replacement.note || '',
                 loans: outstandingLoans, loanDeduction, replacementDeduction, totalDeductions,
-                grossSalary: earnedFromDays + replacementAddition, carriedBalance, currentPeriodEarnings,
+                grossSalary: grossSalary + replacementAddition, carriedBalance, currentPeriodEarnings,
                 netSalary: carriedBalance + currentPeriodEarnings, calculatedAt: new Date(), calculationKey,
                 payoutStatus: salary.pendingPayoutBatchId ? salary.payoutStatus : 'unpaid'
             });
             await salary.save();
-            calculated.push({ employeeId: id, employeeName: employee.name, payableDays: payableDays.size, netSalary: salary.netSalary, carriedBalance });
+            calculated.push({ employeeId: id, employeeName: employee.name, eligibleDays: eligiblePeriodKeys.length, payableDays: payableDays.size, lateMinutes, lateDeduction, netSalary: salary.netSalary, carriedBalance });
         }
         return res.json({ success: true, calculationKey, calculatedCount: calculated.length, invalidCount: invalid.length, calculated, invalid });
     } catch (err) {
@@ -9350,6 +9419,10 @@ function payrollBatchItemFromSalary(salary) {
                 salary.loanDeduction || 0
             ),
 
+        absenceDeduction: Number(salary.absenceDeduction || 0),
+        lateMinutes: Number(salary.lateMinutes || 0),
+        lateDeduction: Number(salary.lateDeduction || 0),
+
         securityDeduction:
             Number(
                 salary.securityDeduction || 0
@@ -9380,16 +9453,26 @@ function payrollBatchItemFromSalary(salary) {
     };
 }
 
-async function archiveAttendanceAfterPayroll({ companyId, retentionDays, archivedBy, payrollBatchId }) {
-    const days = [7, 15, 30].includes(Number(retentionDays)) ? Number(retentionDays) : 30;
-    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+async function archiveAttendanceAfterPayroll({ companyId, employeeIds, payrollFrom, payrollTo, archivedBy, payrollBatchId }) {
+    const from = payrollFrom ? new Date(payrollFrom) : null;
+    const to = payrollTo ? new Date(payrollTo) : null;
+    if (!from || !to || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+        return { archivedCount: 0, skipped: true, reason: 'فترة الراتب غير محددة' };
+    }
+    from.setHours(0, 0, 0, 0);
+    to.setHours(23, 59, 59, 999);
+    const paidEmployeeIds = [...new Set((employeeIds || []).map(String).filter(Boolean))];
+    if (!paidEmployeeIds.length) {
+        return { archivedCount: 0, skipped: true, reason: 'لا يوجد موظفون في الدفعة' };
+    }
     const attendance = await Attendance.find({
         companyId,
-        timestamp: { $lte: cutoff }
+        employeeId: { $in: paidEmployeeIds },
+        timestamp: { $gte: from, $lte: to }
     }).lean();
 
     if (!attendance.length) {
-        return { archivedCount: 0, retentionDays: days, cutoff };
+        return { archivedCount: 0, from, to };
     }
 
     const sourceIds = attendance.map(item => String(item._id));
@@ -9411,7 +9494,7 @@ async function archiveAttendanceAfterPayroll({ companyId, retentionDays, archive
             employeeId: String(item.employeeId || ''),
             employeeName: item.employeeName || '',
             title: `سجل بصمة - ${item.employeeName || item.employeeId || item._id}`,
-            note: `أُرشف تلقائيًا بعد احتساب الرواتب وفق مدة الاحتفاظ (${days} يومًا)`,
+            note: 'أُرشف بعد نجاح تأكيد دفع راتب الفترة',
             payload: item,
             archivedBy: archivedBy || 'admin'
         })));
@@ -9428,13 +9511,13 @@ async function archiveAttendanceAfterPayroll({ companyId, retentionDays, archive
         sourceType: 'AttendanceRetention',
         sourceId: String(payrollBatchId || ''),
         snapshotId: String(payrollBatchId || ''),
-        title: 'أرشفة سجلات البصمة بعد احتساب الرواتب',
-        note: `تم نقل ${attendance.length} سجل بصمة إلى الأرشيف بعد مرور ${days} يومًا`,
-        payload: { archivedCount: attendance.length, retentionDays: days, cutoff, payrollBatchId },
+        title: 'أرشفة سجلات البصمة بعد دفع الرواتب',
+        note: `تم نقل ${attendance.length} سجل بصمة إلى الأرشيف بعد نجاح تأكيد الدفع`,
+        payload: { archivedCount: attendance.length, from, to, payrollBatchId },
         archivedBy: archivedBy || 'admin'
     }).save();
 
-    return { archivedCount: attendance.length, retentionDays: days, cutoff };
+    return { archivedCount: attendance.length, from, to };
 }
 
 
@@ -9759,35 +9842,11 @@ app.post(
                 }
             );
 
-            const company = await Company.findOne({
-                companyId: req.session.companyId
-            }).select('attendanceRetentionDays').lean();
-
-            let attendanceArchive = {
-                archivedCount: 0,
-                retentionDays: Number(company?.attendanceRetentionDays || 30)
-            };
-            let archiveWarning = '';
-
-            try {
-                attendanceArchive = await archiveAttendanceAfterPayroll({
-                    companyId: req.session.companyId,
-                    retentionDays: company?.attendanceRetentionDays,
-                    archivedBy: req.session.username || 'admin',
-                    payrollBatchId: batch._id
-                });
-            } catch (archiveError) {
-                archiveWarning = 'تم احتساب الرواتب، لكن تعذرت أرشفة سجلات البصمة ولم يُحذف أي سجل غير مؤرشف';
-                console.error('[attendance-archive]', archiveError);
-            }
-
             return res.status(201).json({
                 success: true,
                 message:
                     'تم اعتماد واحتساب دفعة الرواتب',
-                batch,
-                attendanceArchive,
-                archiveWarning
+                batch
             });
 
         } catch (err) {
@@ -9959,6 +10018,8 @@ app.post(
                                     : Number(item.loans || 0),
                                 replacementDeduction: 0,
                                 absenceDeduction: 0,
+                                lateMinutes: 0,
+                                lateDeduction: 0,
                                 bonuses: 0,
                                 overtimeAmount: 0,
                                 paidLeaveDays: 0,
@@ -9984,6 +10045,22 @@ app.post(
                 await SalaryRecord.bulkWrite(salaryUpdates);
             }
 
+            let attendanceArchive = { archivedCount: 0 };
+            let archiveWarning = '';
+            try {
+                attendanceArchive = await archiveAttendanceAfterPayroll({
+                    companyId,
+                    employeeIds: batch.items.map(item => item.employeeId),
+                    payrollFrom: batch.payrollFrom,
+                    payrollTo: batch.payrollTo,
+                    archivedBy: req.session.username || 'admin',
+                    payrollBatchId: batch._id
+                });
+            } catch (archiveError) {
+                archiveWarning = 'تم تأكيد دفع الراتب، لكن تعذرت أرشفة سجلات البصمة';
+                console.error('[attendance-archive]', archiveError);
+            }
+
             const paymentMessage = `تم دفع راتب شهر ${paymentPeriod} بتاريخ ${paidAt.toLocaleDateString('ar-IQ', { timeZone: 'Asia/Baghdad' })}`;
             await new ArchiveRecord({
                 companyId,
@@ -10000,7 +10077,9 @@ app.post(
             return res.json({
                 success: true,
                 message: paymentMessage,
-                batch
+                batch,
+                attendanceArchive,
+                archiveWarning
             });
         } catch (err) {
             return res.status(500).json({
@@ -11236,6 +11315,13 @@ function shiftTimeInMinutes(value) {
     return match ? Number(match[1]) * 60 + Number(match[2]) : null;
 }
 
+function clockPlusMinutes(value, extraMinutes) {
+    const minutes = shiftTimeInMinutes(value);
+    if (minutes === null) return '';
+    const result = (minutes + Number(extraMinutes || 0) + 24 * 60) % (24 * 60);
+    return `${String(Math.floor(result / 60)).padStart(2, '0')}:${String(result % 60).padStart(2, '0')}`;
+}
+
 function isWithinShiftWindow(timestamp, start, end) {
     const startMinutes = shiftTimeInMinutes(start);
     const endMinutes = shiftTimeInMinutes(end);
@@ -11262,6 +11348,22 @@ function isBeforeShiftWindow(timestamp, start, end) {
     return startMinutes <= endMinutes
         ? minutes < startMinutes
         : minutes > endMinutes && minutes < startMinutes;
+}
+
+function attendanceClockMinutes(timestamp) {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Baghdad', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(timestamp);
+    return Number(parts.find(part => part.type === 'hour').value) * 60 +
+        Number(parts.find(part => part.type === 'minute').value);
+}
+
+function minutesAfterClock(timestamp, clock) {
+    const clockMinutes = shiftTimeInMinutes(clock);
+    if (clockMinutes === null) return 0;
+    let difference = attendanceClockMinutes(timestamp) - clockMinutes;
+    if (difference < -720) difference += 24 * 60;
+    return Math.max(0, difference);
 }
 
 async function attendanceRequirementForEmployee(employee, at = new Date()) {
@@ -11691,7 +11793,8 @@ app.post(
                 const end = type === 'attendance'
                     ? candidate.attendanceEnd
                     : candidate.departureEnd;
-                return isWithinShiftWindow(attendanceTime, start, end);
+                return isWithinShiftWindow(attendanceTime, start, end) ||
+                    (type === 'attendance' && isWithinShiftWindow(attendanceTime, candidate.lateFrom, candidate.lateTo));
             }) || shiftCandidates[0] || null;
 
             /*
@@ -11739,6 +11842,8 @@ app.post(
                     : '';
 
             let earlyExitPending = false;
+            let checkInTimeStatus = 'within-shift';
+            let lateMinutes = 0;
 
             if (!activeDelegation) {
 
@@ -11760,7 +11865,27 @@ app.post(
 
                 }
 
-                if (!isWithinShiftWindow(attendanceTime, shiftStart, shiftEnd)) {
+                if (isCheckIn && !isWithinShiftWindow(attendanceTime, shiftStart, shiftEnd)) {
+                    if (isBeforeShiftWindow(attendanceTime, shiftStart, shiftEnd)) {
+                        return res.status(403).json({ success: false, message: 'أنت خارج وقت الشفت.' });
+                    }
+                    const lateFrom = shift.lateFrom || '';
+                    const lateTo = shift.lateTo || '';
+                    if (!lateFrom || !lateTo) {
+                        return res.status(403).json({
+                            success: false,
+                            message: 'فترة التأخير غير محددة لهذا الشفت'
+                        });
+                    }
+                    lateMinutes = minutesAfterClock(attendanceTime, shiftEnd);
+                    if (isWithinShiftWindow(attendanceTime, lateFrom, lateTo)) {
+                        checkInTimeStatus = 'late';
+                    } else if (isWithinShiftWindow(attendanceTime, lateTo, shift.departureEnd)) {
+                        checkInTimeStatus = 'absent-late';
+                    } else {
+                        return res.status(403).json({ success: false, message: 'أنت خارج وقت الشفت.' });
+                    }
+                } else if (!isCheckIn && !isWithinShiftWindow(attendanceTime, shiftStart, shiftEnd)) {
 
                     if (!isCheckIn && isBeforeShiftWindow(attendanceTime, shiftStart, shiftEnd)) {
                         earlyExitPending = true;
@@ -11997,7 +12122,9 @@ app.post(
                             ? 'delegation'
                             : earlyExitPending
                                 ? 'early-exit-pending'
-                                : 'within-shift',
+                                : checkInTimeStatus,
+
+                    lateMinutes,
 
                     managerApprovalStatus:
                         earlyExitPending
@@ -12054,6 +12181,10 @@ app.post(
                 message:
                     earlyExitPending
                         ? 'تم تسجيل الخروج المبكر وهو بانتظار موافقة المدير'
+                        : checkInTimeStatus === 'absent-late'
+                            ? 'تم تسجيل البصمة، ويُحتسب اليوم غياباً لتجاوز مهلة التأخير'
+                            : checkInTimeStatus === 'late'
+                                ? `تم تسجيل الحضور متأخراً ${lateMinutes} دقيقة وسيُخصم التأخير من الراتب`
                         : 'تم تسجيل الحضور بالبصمة والجهاز والموقع وحفظه في MongoDB',
 
                 attendanceId:
@@ -12061,7 +12192,9 @@ app.post(
                 distanceMeters:
                     nearestDistance === null
                         ? null
-                        : Math.round(nearestDistance)
+                        : Math.round(nearestDistance),
+                timeStatus: attendance.timeStatus,
+                lateMinutes: attendance.lateMinutes
 
             });
 

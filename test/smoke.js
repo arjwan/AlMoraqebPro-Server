@@ -189,7 +189,7 @@ async function waitForServer(url, retries, delay) {
             // المدير يضيف رقم الهاتف للموظف المعتمد أولاً
             await fetch(BASE + '/api/employees/' + approvedEmployee._id, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
-                body: JSON.stringify({ phoneNumber: '07700000000' })
+                body: JSON.stringify({ phoneNumber: '07700000000', hireDate: '2026-08-26' })
             });
 
             // phoneNumber يربط موظفاً موجوداً بالجهاز دون إنشاء موظف جديد
@@ -293,9 +293,11 @@ async function waitForServer(url, retries, delay) {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
                 body: JSON.stringify({ name: 'صباحي', locationId: 'headquarters', employeeIds: [approvedEmployee._id],
-                    attendanceStart: '08:00', attendanceEnd: '09:00', departureStart: '16:00', departureEnd: '17:00' })
+                    attendanceStart: '08:00', attendanceEnd: '08:30', lateFrom: '08:31', lateTo: '10:30',
+                    departureStart: '16:00', departureEnd: '17:00' })
             })).json();
-            check('employee attendance shift updated', narrowedShift.success === true);
+            check('employee attendance shift updated with lateness window', narrowedShift.success === true &&
+                narrowedShift.shift.lateFrom === '08:31' && narrowedShift.shift.lateTo === '10:30');
             const invalidShiftLocation = await (await fetch(BASE + '/api/admin/shifts/' + shift.shift._id, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
@@ -305,8 +307,11 @@ async function waitForServer(url, retries, delay) {
                 invalidShiftLocation.success === false &&
                 String(invalidShiftLocation.message).includes('موقع الشفت'));
 
-            const outsideShift = await submitAttendance(31, 45, '2026-08-25T09:00:00.000Z');
-            check('attendance rejected outside assigned shift window', outsideShift.status === 403 && outsideShift.body.success === false);
+            const absentLate = await submitAttendance(33.3152, 44.3661, '2026-08-27T08:00:00.000Z');
+            check('check-in after two-hour grace is recorded as official absence', absentLate.status === 201 &&
+                absentLate.body.timeStatus === 'absent-late');
+            const absentLateDeparture = await submitAttendance(33.3152, 44.3661, '2026-08-27T13:30:00.000Z', 'departure');
+            check('official absence remains recorded even when employee checks out', absentLateDeparture.status === 201);
 
             const withinShift = await submitAttendance(33.3152, 44.3661, '2026-08-25T05:30:00.000Z');
             check('attendance at assigned headquarters site accepted within shift window',
@@ -315,6 +320,10 @@ async function waitForServer(url, retries, delay) {
 
             const withinDeparture = await submitAttendance(33.3152, 44.3661, '2026-08-25T13:30:00.000Z', 'departure');
             check('departure accepted within assigned shift window', withinDeparture.status === 201 && withinDeparture.body.success === true);
+
+            const lateAttendance = await submitAttendance(33.3152, 44.3661, '2026-08-26T06:00:00.000Z');
+            check('late attendance within two hours records actual minutes', lateAttendance.status === 201 &&
+                lateAttendance.body.timeStatus === 'late' && Number(lateAttendance.body.lateMinutes) === 30);
 
             const earlyDeparture = await submitAttendance(33.3152, 44.3661, '2026-08-26T12:00:00.000Z', 'departure');
             check('early departure waits for manager approval', earlyDeparture.status === 201 &&
@@ -359,9 +368,15 @@ async function waitForServer(url, retries, delay) {
             const payrollBatch = await (await fetch(BASE + '/api/admin/payroll-batches', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
-                body: JSON.stringify({ payoutType: 'cash', payrollFrom: '2026-09-01', payrollTo: '2026-09-30' })
+                body: JSON.stringify({ payoutType: 'cash', payrollFrom: '2026-08-25', payrollTo: '2026-08-25' })
             })).json();
             check('payroll batch approval does not reset salary', payrollBatch.success === true && !!payrollBatch.batch);
+
+            const attendanceBeforePayment = await (await fetch(BASE + '/api/admin/attendance', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('payroll calculation and batch creation do not archive attendance', attendanceBeforePayment.attendance.some(record =>
+                record._id === withinShift.body.attendanceId));
 
             const beforePaymentList = await (await fetch(BASE + '/api/admin/salaries', {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
@@ -384,6 +399,14 @@ async function waitForServer(url, retries, delay) {
             })).json();
             check('payment confirmation records month and date', confirmedPayment.success === true &&
                 confirmedPayment.message.includes('تم دفع راتب شهر') && confirmedPayment.message.includes('بتاريخ'));
+            check('paid payroll period attendance archived only after confirmation',
+                Number(confirmedPayment.attendanceArchive && confirmedPayment.attendanceArchive.archivedCount) >= 2);
+
+            const attendanceAfterPayment = await (await fetch(BASE + '/api/admin/attendance', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('paid-period attendance removed from active records after archival', !attendanceAfterPayment.attendance.some(record =>
+                record._id === withinShift.body.attendanceId));
 
             const afterPaymentList = await (await fetch(BASE + '/api/admin/salaries', {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
@@ -453,6 +476,8 @@ async function waitForServer(url, retries, delay) {
                 body: JSON.stringify({ from: '2026-08-26', to: '2026-08-29' })
             })).json();
             check('leave delegation replacement and loan payroll calculated', eventPayroll.success === true && eventPayroll.calculatedCount === 1);
+            check('new employee payroll starts at hireDate within the 1-30 cycle', eventPayroll.calculated.some(row =>
+                row.employeeId === approvedEmployee._id && Number(row.eligibleDays) === 4));
 
             const eventSalaryList = await (await fetch(BASE + '/api/admin/salaries', {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
@@ -466,9 +491,10 @@ async function waitForServer(url, retries, delay) {
             check('unpaid leave does not count as payable salary day', Number(eventSalary.unpaidLeaveDays) === 1);
             check('delegation counts automatically as payable salary day', Number(eventSalary.attendanceDays) === 3);
             check('replacement period does not become absence', Number(eventSalary.replacementDays) === 1 && Number(eventSalary.absenceDays) === 0);
-            check('replacement has no salary deduction', Number(eventSalary.replacementDeduction) === 0 && Number(eventSalary.netSalary) >= Number(eventSalary.grossSalary) - Number(eventSalary.loanDeduction));
+            check('replacement has no salary deduction', Number(eventSalary.replacementDeduction) === 0 && Number(eventSalary.netSalary) > 0);
+            check('actual late minutes and proportional deduction appear in payroll', Number(eventSalary.lateMinutes) === 30 && Number(eventSalary.lateDeduction) > 0);
             check('loan balance and installment remain separate from earnings', Number(eventSalary.loans) === 100 &&
-                Number(eventSalary.loanDeduction) === 20 && Number(eventSalary.grossSalary) === Number(eventSalary.basicSalary) / 31 * 3);
+                Number(eventSalary.loanDeduction) === 20 && Number(eventSalary.grossSalary) === Number(eventSalary.basicSalary) / 30 * 4);
 
             const eventBatch = await (await fetch(BASE + '/api/admin/payroll-batches', {
                 method: 'POST',

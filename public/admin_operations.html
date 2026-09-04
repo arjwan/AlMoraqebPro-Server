@@ -864,7 +864,7 @@ function renderSalaries() {
         card.className = 'salary-card';
         card.innerHTML = `
             <div class="salary-card-head">
-                <div><h4>${escapeHtml(salary.employeeName || 'موظف')}</h4><p>${escapeHtml(salary.specialty || 'بدون اختصاص')} · ${escapeHtml(salary.workplace || 'بدون موقع')}<br>${escapeHtml(salary.shiftName || 'بدون شفت')}</p></div>
+                <div><h4>${escapeHtml(salary.employeeName || 'موظف')}</h4><p>${escapeHtml(salary.specialty || 'بدون اختصاص')} · ${escapeHtml(salary.workplace || 'بدون موقع')}<br>${escapeHtml(salary.shiftName || 'بدون شفت')} · التأخير ${escapeHtml(salary.lateFrom || '—')}–${escapeHtml(salary.lateTo || '—')}</p></div>
                 <input class="salary-card-select" type="checkbox" value="${escapeHtml(id)}" aria-label="تحديد بطاقة ${escapeHtml(salary.employeeName || '')}">
             </div>
             <div class="salary-fields">
@@ -876,6 +876,9 @@ function renderSalaries() {
                 ${salaryNumberField('استقطاع الضمان', 'sec', id, salary.securityDeduction)}
                 ${salaryNumberField('الخصومات الأخرى', 'ded', id, salary.otherDeductions)}
                 ${salaryNumberField('المكافآت', 'bon', id, salary.bonuses)}
+                <div class="salary-field"><label>دقائق التأخير</label><input value="${Number(salary.lateMinutes) || 0}" readonly></div>
+                <div class="salary-field"><label>خصم التأخير</label><input id="lateDed-${id}" value="${Number(salary.lateDeduction) || 0}" readonly></div>
+                <div class="salary-field"><label>خصم الغياب</label><input id="absenceDed-${id}" value="${Number(salary.absenceDeduction) || 0}" readonly></div>
             </div>
             <div class="salary-summary">
                 <div class="salary-total"><small>مجموع الاستقطاعات</small><strong id="totalDed-${id}">${formatMoney(salary.totalDeductions)} د.ع</strong></div>
@@ -1016,6 +1019,8 @@ async function savePayoutSettings(id) {
 
 function recalcSalary(id) {
 
+    const salary = allSalaries.find(item => String(item._id || item.id || item._offlineKey) === String(id)) || {};
+
     const lded =
         Number(
             document.getElementById(
@@ -1038,7 +1043,7 @@ function recalcSalary(id) {
         ) || 0;
 
     const totalDed =
-        lded + sec + ded;
+        lded + sec + ded + Number(salary.absenceDeduction || 0) + Number(salary.lateDeduction || 0);
 
     document
         .getElementById(
@@ -1158,7 +1163,9 @@ async function saveSalary(id) {
     const totalDeductions =
         loanDeduction +
         securityDeduction +
-        otherDeductions;
+        otherDeductions +
+        Number(salary.absenceDeduction || 0) +
+        Number(salary.lateDeduction || 0);
 
     const netSalary =
         basicSalary +
@@ -1451,7 +1458,7 @@ function liveSalary(id) {
         payoutBankName: document.getElementById('pbank-' + id)?.value || '', payoutAccountName: document.getElementById('paccount-' + id)?.value || '',
         payoutReference: document.getElementById('preference-' + id)?.value || '', payoutLast4: document.getElementById('plast4-' + id)?.value || ''
     };
-    result.totalDeductions = result.loanDeduction + result.securityDeduction + result.otherDeductions;
+    result.totalDeductions = result.loanDeduction + result.securityDeduction + result.otherDeductions + Number(result.absenceDeduction || 0) + Number(result.lateDeduction || 0);
     result.additions = result.allowances + result.bonuses + Number(result.overtimeAmount || 0);
     result.netSalary = Number(result.carriedBalance || 0) + Math.max(0, Number(result.grossSalary || 0) + result.additions - result.totalDeductions);
     return result;
@@ -1486,7 +1493,7 @@ function printSelectedSalaryCards() {
 
 function salaryPrintCard(item) {
     const method = { cash:'نقدي', card:'بطاقة', bank:'مصرفي' }[item.payoutMethod] || '—';
-    const details = [['الاختصاص',item.specialty||'—'],['موقع العمل',item.workplace||'—'],['الشفت',item.shiftName||'—'],['الضمان',item.socialSecurity||'—'],['الراتب الأساسي',formatMoney(item.basicSalary)+' د.ع'],['المخصصات',formatMoney(item.allowances)+' د.ع'],['السلف',formatMoney(item.loans)+' د.ع'],['المكافآت',formatMoney(item.bonuses)+' د.ع'],['استقطاع السلفة',formatMoney(item.loanDeduction)+' د.ع'],['استقطاع الضمان',formatMoney(item.securityDeduction)+' د.ع'],['الخصومات الأخرى',formatMoney(item.otherDeductions)+' د.ع'],['مجموع الاستقطاعات',formatMoney(item.totalDeductions)+' د.ع'],['صافي الراتب',formatMoney(item.netSalary)+' د.ع'],['حالة الدفع',payoutStatusLabels[item.payoutStatus]||payoutStatusLabels.unpaid],['طريقة الصرف',method],['اسم المصرف',item.payoutBankName||'—'],['صاحب الحساب',item.payoutAccountName||'—'],['مرجع البطاقة/الحساب',item.payoutReference||'—'],['آخر 4 أرقام',item.payoutLast4||'—'],['تاريخ السجل',printDate(item.createdAt)]];
+    const details = [['الاختصاص',item.specialty||'—'],['موقع العمل',item.workplace||'—'],['الشفت',item.shiftName||'—'],['التأخير من–إلى',`${item.lateFrom||'—'} – ${item.lateTo||'—'}`],['فترة الراتب',`${dateInputValue(item.payrollFrom)||'—'} إلى ${dateInputValue(item.payrollTo)||'—'}`],['الضمان',item.socialSecurity||'—'],['الراتب الأساسي',formatMoney(item.basicSalary)+' د.ع'],['المخصصات',formatMoney(item.allowances)+' د.ع'],['السلف',formatMoney(item.loans)+' د.ع'],['المكافآت',formatMoney(item.bonuses)+' د.ع'],['دقائق التأخير',String(Number(item.lateMinutes)||0)],['خصم التأخير',formatMoney(item.lateDeduction)+' د.ع'],['خصم الغياب',formatMoney(item.absenceDeduction)+' د.ع'],['استقطاع السلفة',formatMoney(item.loanDeduction)+' د.ع'],['استقطاع الضمان',formatMoney(item.securityDeduction)+' د.ع'],['الخصومات الأخرى',formatMoney(item.otherDeductions)+' د.ع'],['مجموع الاستقطاعات',formatMoney(item.totalDeductions)+' د.ع'],['صافي الراتب',formatMoney(item.netSalary)+' د.ع'],['حالة الدفع',payoutStatusLabels[item.payoutStatus]||payoutStatusLabels.unpaid],['طريقة الصرف',method],['اسم المصرف',item.payoutBankName||'—'],['صاحب الحساب',item.payoutAccountName||'—'],['مرجع البطاقة/الحساب',item.payoutReference||'—'],['آخر 4 أرقام',item.payoutLast4||'—'],['تاريخ السجل',printDate(item.createdAt)]];
     return `<article class="print-card"><header><div><small>بطاقة راتب</small><h2>${escapeHtml(item.employeeName||'موظف')}</h2></div><strong>${formatMoney(item.netSalary)} د.ع</strong></header><div class="print-details">${details.map(([label,value])=>`<div><span>${label}</span><b>${escapeHtml(value)}</b></div>`).join('')}</div></article>`;
 }
 
@@ -2105,10 +2112,10 @@ async function deleteLoan(id) {
 (async function init() {
     try {
         const now = new Date();
-        const today = now.toISOString().slice(0, 10);
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth(), Math.min(30, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()));
         document.getElementById('payrollFrom').value = monthStart.toISOString().slice(0, 10);
-        document.getElementById('payrollTo').value = today;
+        document.getElementById('payrollTo').value = monthEnd.toISOString().slice(0, 10);
         await loadPayrollLocations();
         await loadSalaries();
         await loadLoans();

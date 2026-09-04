@@ -75,6 +75,8 @@ td{padding:11px;border-bottom:1px solid #e2e8f0;text-align:center;font-size:13px
     <th>الموظفون</th>
     <th>الحضور من</th>
     <th>الحضور إلى</th>
+    <th>التأخير من</th>
+    <th>التأخير إلى</th>
     <th>الانصراف من</th>
     <th>الانصراف إلى</th>
     <th>الإضافي من</th>
@@ -83,7 +85,7 @@ td{padding:11px;border-bottom:1px solid #e2e8f0;text-align:center;font-size:13px
 </tr>
 </thead>
 <tbody id="shiftsTable">
-<tr><td colspan="11">جاري التحميل...</td></tr>
+<tr><td colspan="13">جاري التحميل...</td></tr>
 </tbody>
 </table>
 </div>
@@ -122,6 +124,16 @@ td{padding:11px;border-bottom:1px solid #e2e8f0;text-align:center;font-size:13px
 <div class="group">
 <label>نهاية الحضور</label>
 <input id="attendanceEnd" type="time" required>
+</div>
+
+<div class="group">
+<label>احتساب التأخير من</label>
+<input id="lateFrom" type="time" required>
+</div>
+
+<div class="group">
+<label>السماح بالتأخير إلى</label>
+<input id="lateTo" type="time" required>
 </div>
 
 <div class="group">
@@ -741,6 +753,8 @@ function render(){
                 <td>${(s.employeeIds || []).length}</td>
                 <td>${escapeHtml(s.attendanceStart || '—')}</td>
                 <td>${escapeHtml(s.attendanceEnd || '—')}</td>
+                <td>${escapeHtml(s.lateFrom || '—')}</td>
+                <td>${escapeHtml(s.lateTo || '—')}</td>
                 <td>${escapeHtml(s.departureStart || '—')}</td>
                 <td>${escapeHtml(s.departureEnd || '—')}</td>
                 <td>${escapeHtml(s.overtimeStart || '—')}</td>
@@ -758,7 +772,7 @@ function render(){
                 </td>
             </tr>
         `).join('')
-        : '<tr><td colspan="11">لا توجد شفتات مطابقة</td></tr>';
+        : '<tr><td colspan="13">لا توجد شفتات مطابقة</td></tr>';
 }
 
 
@@ -803,6 +817,12 @@ function editShift(id){
     document.getElementById('attendanceEnd').value =
         s.attendanceEnd || '';
 
+    document.getElementById('lateFrom').value =
+        s.lateFrom || '';
+
+    document.getElementById('lateTo').value =
+        s.lateTo || '';
+
     document.getElementById('departureStart').value =
         s.departureStart || '';
 
@@ -834,6 +854,18 @@ function closeModal(){
         .getElementById('shiftModal')
         .classList.remove('show');
 }
+
+function timePlus(value, minutes){
+    const parts=String(value||'').split(':').map(Number);
+    if(parts.length!==2||parts.some(Number.isNaN)) return '';
+    const total=(parts[0]*60+parts[1]+minutes+1440)%1440;
+    return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+}
+
+document.getElementById('attendanceEnd').addEventListener('change',event=>{
+    document.getElementById('lateFrom').value=timePlus(event.target.value,1);
+    document.getElementById('lateTo').value=timePlus(event.target.value,120);
+});
 
 
 document
@@ -879,6 +911,12 @@ document
 
                 attendanceEnd:
                     document.getElementById('attendanceEnd').value,
+
+                lateFrom:
+                    document.getElementById('lateFrom').value,
+
+                lateTo:
+                    document.getElementById('lateTo').value,
 
                 departureStart:
                     document.getElementById('departureStart').value,
