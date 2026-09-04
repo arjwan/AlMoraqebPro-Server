@@ -146,6 +146,9 @@ async function waitForServer(url, retries, delay) {
                 wageType: 'شهري',
                 socialSecurity: 'مسجل',
                 location: '31.000,45.000',
+                latitude: 31,
+                longitude: 45,
+                locationAccuracy: 8,
                 deviceId: 'device-' + Date.now()
             };
             const requestResult = await (await fetch(BASE + '/api/employee/request', {
@@ -157,11 +160,16 @@ async function waitForServer(url, retries, delay) {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
             })).json();
             check('pending request visible to admin', Array.isArray(pending.requests) && pending.requests.length >= 1);
+            check('join request stores captured GPS coordinates', pending.requests.some(item =>
+                item._id === requestResult.requestId && Number(item.lastKnownLocation?.latitude) === 31 &&
+                Number(item.lastKnownLocation?.longitude) === 45 && Number(item.lastKnownLocation?.accuracyMeters) === 8));
 
             const approve = await (await fetch(BASE + '/api/employee/request/' + requestResult.requestId + '/approve', {
                 method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token }, body: JSON.stringify({ email: 'employee@example.com' })
             })).json();
             check('approve request creates employee', approve.success === true && !!approve.employee);
+            check('approved employee inherits join-request coordinates', Number(approve.employee?.lastKnownLocation?.latitude) === 31 &&
+                Number(approve.employee?.lastKnownLocation?.longitude) === 45);
 
             const employees = await (await fetch(BASE + '/api/employees?companyId=' + encodeURIComponent(companyId), {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }

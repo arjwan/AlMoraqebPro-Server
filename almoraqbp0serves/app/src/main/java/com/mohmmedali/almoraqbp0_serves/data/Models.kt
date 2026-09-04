@@ -174,6 +174,9 @@ data class EmployeeJoinRequest(
     val wageType: String = "",
     val socialSecurity: String = "",
     val location: String = "",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val locationAccuracy: Float? = null,
     val deviceId: String = ""
 )
 

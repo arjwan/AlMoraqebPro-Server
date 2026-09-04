@@ -311,7 +311,7 @@
                             <td>${i + 1}</td>
                             <td><b>${req.name || '—'}</b></td>
                             <td>${escapeHtml(req.jobTitle || '—')}</td>
-                            <td>${req.workLocation || req.location || '—'}</td>
+                            <td>${escapeHtml(req.workLocation || req.location || '—')}${req.lastKnownLocation&&Number.isFinite(Number(req.lastKnownLocation.latitude))?`<br><small>GPS: ${Number(req.lastKnownLocation.latitude).toFixed(6)}, ${Number(req.lastKnownLocation.longitude).toFixed(6)} · دقة ${Math.round(Number(req.lastKnownLocation.accuracyMeters||0))}م</small>`:''}</td>
                             <td>${escapeHtml(req.shift || '—')}</td>
                             <td>${req.deviceId ? String(req.deviceId).slice(0, 18) : '—'}</td>
                             <td>${req.createdAt ? new Date(req.createdAt).toLocaleDateString('ar-EG') : '—'}</td>

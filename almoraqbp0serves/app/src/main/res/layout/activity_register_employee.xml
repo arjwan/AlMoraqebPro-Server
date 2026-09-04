@@ -100,16 +100,13 @@
             android:textColor="#0F172A"
             android:textColorHint="#64748B"/>
 
-        <EditText
-            android:id="@+id/etShift"
+        <Spinner
+            android:id="@+id/spShift"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:layout_marginBottom="10dp"
-            android:hint="@string/shift"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:textColor="#0F172A"
-            android:textColorHint="#64748B"/>
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
 
         <EditText
             android:id="@+id/etWorkHours"
@@ -149,12 +146,24 @@
             android:id="@+id/etLocation"
             android:layout_width="match_parent"
             android:layout_height="55dp"
-            android:layout_marginBottom="16dp"
-            android:hint="@string/location"
+            android:layout_marginBottom="8dp"
+            android:clickable="false"
+            android:focusable="false"
+            android:hint="@string/register_location_not_captured"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:textColor="#0F172A"
             android:textColorHint="#64748B"/>
+
+        <Button
+            android:id="@+id/btnCaptureLocation"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#0284C7"
+            android:text="@string/register_capture_location"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnSubmitRequest"
