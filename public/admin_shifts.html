@@ -104,13 +104,14 @@ td{padding:11px;border-bottom:1px solid #e2e8f0;text-align:center;font-size:13px
 <option value="صباحي">صباحي</option>
 <option value="مسائي">مسائي</option>
 <option value="ليلي">ليلي</option>
-<option value="طارئ">طارئ</option>
+<option value="مرن">مرن</option>
 </select>
 </div>
 
 <div class="group">
 <label>الموقع / الفرع</label>
-<select id="shiftLocation" required></select>
+<select id="shiftLocation" required onchange="renderSelectedLocation()"></select>
+<small id="selectedLocationInfo">اختر موقعاً معتمداً</small>
 </div>
 
 <div class="group">
@@ -466,6 +467,15 @@ async function loadLocations(){
         o2.textContent = label;
         filter.appendChild(o2);
     });
+    renderSelectedLocation();
+}
+
+function renderSelectedLocation(){
+    const selected = locations.find(x => String(x.id || x._id || x._offlineKey) ===
+        String(document.getElementById('shiftLocation').value));
+    document.getElementById('selectedLocationInfo').textContent = selected
+        ? `${selected.name || 'موقع'} — النطاق المسموح: ${Number(selected.radiusMeters || 200)} م`
+        : 'اختر موقعاً معتمداً';
 }
 
 
@@ -727,7 +737,7 @@ function render(){
             <tr>
                 <td>${i+1}</td>
                 <td><b>${escapeHtml(s.name || '')}</b></td>
-                <td>${escapeHtml(s.locationName || s.branch || '—')}</td>
+                <td>${escapeHtml(s.locationName || s.branch || '—')}<br><small>${Number(s.radiusMeters || 200)} م</small></td>
                 <td>${(s.employeeIds || []).length}</td>
                 <td>${escapeHtml(s.attendanceStart || '—')}</td>
                 <td>${escapeHtml(s.attendanceEnd || '—')}</td>

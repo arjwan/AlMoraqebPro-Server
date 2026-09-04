@@ -239,6 +239,12 @@ async function waitForServer(url, retries, delay) {
                 body: JSON.stringify({ name: 'الفرع الثاني', type: 'worksite', latitude: 31, longitude: 45, radiusMeters: 250 })
             })).json();
             check('secondary authorized company location saved', secondaryLocation.success === true && !!secondaryLocation.location);
+            const nearbyOtherLocation = await (await fetch(BASE + '/api/admin/locations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ name: 'موقع آخر قريب', type: 'worksite', latitude: 31.135, longitude: 45, radiusMeters: 250 })
+            })).json();
+            check('second site for shift-isolation test saved', nearbyOtherLocation.success === true && !!nearbyOtherLocation.location);
 
             const shift = await (await fetch(BASE + '/api/admin/shifts', {
                 method: 'POST',
@@ -246,7 +252,11 @@ async function waitForServer(url, retries, delay) {
                 body: JSON.stringify({ name: 'صباحي', locationId: secondaryLocation.location._id, employeeIds: [approvedEmployee._id],
                     attendanceStart: '00:00', attendanceEnd: '23:59', departureStart: '00:00', departureEnd: '23:59' })
             })).json();
-            check('employee attendance shift created', shift.success === true && !!shift.shift);
+            check('employee attendance shift created with copied geofence',
+                shift.success === true && !!shift.shift &&
+                shift.shift.locationId === String(secondaryLocation.location._id) &&
+                shift.shift.latitude === 31 && shift.shift.longitude === 45 &&
+                shift.shift.radiusMeters === 250);
 
             async function submitAttendance(latitude, longitude, timestamp, type = 'attendance') {
                 const challenge = await (await fetch(BASE + '/api/attendance/challenge?employeeId=' +
@@ -261,10 +271,23 @@ async function waitForServer(url, retries, delay) {
             }
 
             const secondLocation = await submitAttendance(31, 45, new Date().toISOString());
-            check('attendance accepted at secondary authorized location', secondLocation.status === 201 && secondLocation.body.success === true);
+            check('employee a few meters from assigned shift site accepted',
+                secondLocation.status === 201 && secondLocation.body.success === true &&
+                Number(secondLocation.body.distanceMeters) <= 250);
+
+            const fifteenKmAway = await submitAttendance(31.135, 45, new Date(Date.now() + 120000).toISOString());
+            check('employee about 15 km from assigned shift site rejected with distance',
+                fifteenKmAway.status === 403 && fifteenKmAway.body.success === false &&
+                Number(fifteenKmAway.body.distanceMeters) >= 14000 &&
+                Number(fifteenKmAway.body.distanceMeters) <= 16000);
+
+            const nearOtherCompanySite = await submitAttendance(31.135, 45.001, new Date(Date.now() + 240000).toISOString());
+            check('near another company site but away from assigned shift site rejected',
+                nearOtherCompanySite.status === 403 && nearOtherCompanySite.body.success === false &&
+                Number(nearOtherCompanySite.body.distanceMeters) >= 14000);
 
             const invalidLocation = await submitAttendance(30, 46, new Date().toISOString());
-            check('attendance rejected outside every authorized location', invalidLocation.status === 403 && invalidLocation.body.success === false);
+            check('attendance rejected outside assigned shift location', invalidLocation.status === 403 && invalidLocation.body.success === false);
 
             const narrowedShift = await (await fetch(BASE + '/api/admin/shifts/' + shift.shift._id, {
                 method: 'PUT',
@@ -273,17 +296,27 @@ async function waitForServer(url, retries, delay) {
                     attendanceStart: '08:00', attendanceEnd: '09:00', departureStart: '16:00', departureEnd: '17:00' })
             })).json();
             check('employee attendance shift updated', narrowedShift.success === true);
+            const invalidShiftLocation = await (await fetch(BASE + '/api/admin/shifts/' + shift.shift._id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ locationId: 'missing-location' })
+            })).json();
+            check('invalid shift location is rejected explicitly',
+                invalidShiftLocation.success === false &&
+                String(invalidShiftLocation.message).includes('موقع الشفت'));
 
             const outsideShift = await submitAttendance(31, 45, '2026-08-25T09:00:00.000Z');
             check('attendance rejected outside assigned shift window', outsideShift.status === 403 && outsideShift.body.success === false);
 
-            const withinShift = await submitAttendance(31, 45, '2026-08-25T05:30:00.000Z');
-            check('attendance accepted within assigned shift window', withinShift.status === 201 && withinShift.body.success === true);
+            const withinShift = await submitAttendance(33.3152, 44.3661, '2026-08-25T05:30:00.000Z');
+            check('attendance at assigned headquarters site accepted within shift window',
+                withinShift.status === 201 && withinShift.body.success === true &&
+                Number(withinShift.body.distanceMeters) <= 1);
 
-            const withinDeparture = await submitAttendance(31, 45, '2026-08-25T13:30:00.000Z', 'departure');
+            const withinDeparture = await submitAttendance(33.3152, 44.3661, '2026-08-25T13:30:00.000Z', 'departure');
             check('departure accepted within assigned shift window', withinDeparture.status === 201 && withinDeparture.body.success === true);
 
-            const earlyDeparture = await submitAttendance(31, 45, '2026-08-26T12:00:00.000Z', 'departure');
+            const earlyDeparture = await submitAttendance(33.3152, 44.3661, '2026-08-26T12:00:00.000Z', 'departure');
             check('early departure waits for manager approval', earlyDeparture.status === 201 &&
                 String(earlyDeparture.body.message).includes('موافقة المدير'));
 

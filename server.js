@@ -1168,7 +1168,7 @@ const ArchiveRecord = mongoose.model('ArchiveRecord', archiveRecordSchema);
 */
 const shiftSchema = new mongoose.Schema({
     companyId: { type: String, required: true, index: true },
-    name: { type: String, enum: ['صباحي', 'مسائي', 'ليلي', 'طارئ'], required: true },
+    name: { type: String, enum: ['صباحي', 'مسائي', 'ليلي', 'مرن'], required: true },
     branch: { type: String, default: '' },
 
     locationId: {
@@ -1181,6 +1181,10 @@ const shiftSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+
+    latitude: { type: Number, default: null },
+    longitude: { type: Number, default: null },
+    radiusMeters: { type: Number, default: null },
 
     employeeIds: { type: [String], default: [] },
     attendanceStart: { type: String, default: '' },
@@ -5029,7 +5033,7 @@ app.post(
 
                     shift:
                         request.shift === 'طوارئ'
-                            ? 'طارئ'
+                            ? 'مرن'
                             : (request.shift || ''),
 
                     socialSecurity:
@@ -5074,7 +5078,7 @@ app.post(
              */
             const requestedShiftName =
                 request.shift === 'طوارئ'
-                    ? 'طارئ'
+                    ? 'مرن'
                     : String(request.shift || '').trim();
 
             if (requestedShiftName) {
@@ -7586,34 +7590,12 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
          * إذا كان locationId معرف Mongo نبحث بـ _id،
          * وإذا كان local-* نبحث بـ clientOfflineId.
          */
-        const isHeadquarters = String(locationId) === 'headquarters';
-        const location = isHeadquarters
-            ? (
-                Number.isFinite(Number(company.latitude)) &&
-                Number.isFinite(Number(company.longitude))
-                    ? { _id: 'headquarters', name: 'الفرع الرئيسي', active: true }
-                    : null
-            )
-            : (company.approvedLocations || []).find(
-                item =>
-                    String(item._id) === String(locationId) ||
-                    (
-                        item.clientOfflineId &&
-                        String(item.clientOfflineId) === String(locationId)
-                    )
-            );
+        const location = companyLocationById(company, locationId);
 
         if (!location) {
             return res.status(404).json({
                 success: false,
-                message: 'موقع العمل غير موجود ضمن مواقع الشركة'
-            });
-        }
-
-        if (location.active === false) {
-            return res.status(400).json({
-                success: false,
-                message: 'لا يمكن ربط الشفت بموقع موقوف'
+                message: 'موقع الشفت غير محدد أو لا يملك إحداثيات صالحة'
             });
         }
 
@@ -7718,6 +7700,9 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
                 String(location._id),
 
             locationName,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            radiusMeters: location.radiusMeters,
 
             employeeIds:
                 requestedEmployeeIds,
@@ -7774,14 +7759,11 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
          * 2- موجود
          * 3- غير موقوف
          */
-        if (locationId !== undefined) {
+        {
 
-            if (!locationId) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'يجب اختيار موقع العمل'
-                });
-            }
+            const selectedLocationId = locationId !== undefined
+                ? locationId
+                : shift.locationId;
 
             const company = await Company.findOne({
                 companyId
@@ -7794,34 +7776,15 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
                 });
             }
 
-            const isHeadquarters = String(locationId) === 'headquarters';
-            const location = isHeadquarters
-                ? (
-                    Number.isFinite(Number(company.latitude)) &&
-                    Number.isFinite(Number(company.longitude))
-                        ? { _id: 'headquarters', name: 'الفرع الرئيسي', active: true }
-                        : null
-                )
-                : (company.approvedLocations || []).find(
-                    item =>
-                        String(item._id) === String(locationId) ||
-                        (
-                            item.clientOfflineId &&
-                            String(item.clientOfflineId) === String(locationId)
-                        )
-                );
+            const location = companyLocationById(company, selectedLocationId) ||
+                (locationId === undefined
+                    ? resolveShiftLocation(company, shift)
+                    : null);
 
             if (!location) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'موقع العمل غير موجود ضمن مواقع الشركة'
-                });
-            }
-
-            if (location.active === false) {
                 return res.status(400).json({
                     success: false,
-                    message: 'لا يمكن ربط الشفت بموقع موقوف'
+                    message: 'موقع الشفت غير محدد أو لا يملك إحداثيات صالحة'
                 });
             }
 
@@ -7833,6 +7796,10 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
 
             shift.locationName =
                 locationName;
+
+            shift.latitude = location.latitude;
+            shift.longitude = location.longitude;
+            shift.radiusMeters = location.radiusMeters;
 
             // للتوافق مع النظام القديم
             shift.branch =
@@ -11096,6 +11063,73 @@ function haversineMeters(
 
 }
 
+function validGeoPoint(latitude, longitude) {
+    return Number.isFinite(Number(latitude)) &&
+        Number(latitude) >= -90 &&
+        Number(latitude) <= 90 &&
+        Number.isFinite(Number(longitude)) &&
+        Number(longitude) >= -180 &&
+        Number(longitude) <= 180 &&
+        !(Number(latitude) === 0 && Number(longitude) === 0);
+}
+
+function companyLocationById(company, locationId) {
+    const id = String(locationId || '').trim();
+    if (!id) return null;
+
+    if (id === 'headquarters') {
+        if (!validGeoPoint(company.latitude, company.longitude)) return null;
+        return {
+            _id: 'headquarters',
+            name: company.name || 'المقر الرئيسي',
+            branch: company.name || 'المقر الرئيسي',
+            latitude: Number(company.latitude),
+            longitude: Number(company.longitude),
+            radiusMeters: Number(company.geofenceRadiusMeters) > 0
+                ? Number(company.geofenceRadiusMeters)
+                : 200,
+            active: true
+        };
+    }
+
+    const location = (company.approvedLocations || []).find(item =>
+        String(item._id) === id ||
+        String(item.clientOfflineId || '') === id
+    );
+    if (!location || location.active === false ||
+        !validGeoPoint(location.latitude, location.longitude)) {
+        return null;
+    }
+
+    return {
+        _id: String(location._id),
+        name: String(location.name || '').trim(),
+        branch: String(location.name || '').trim(),
+        latitude: Number(location.latitude),
+        longitude: Number(location.longitude),
+        radiusMeters: Number(location.radiusMeters) > 0
+            ? Number(location.radiusMeters)
+            : 200,
+        active: true
+    };
+}
+
+function resolveShiftLocation(company, shift) {
+    const byId = companyLocationById(company, shift.locationId);
+    if (byId) return byId;
+
+    // Legacy shifts may be linked only by an exact, unique old name.
+    const legacyName = String(shift.locationName || shift.branch || '').trim();
+    if (!legacyName) return null;
+    const candidates = [];
+    if (String(company.name || '').trim() === legacyName) candidates.push('headquarters');
+    for (const location of company.approvedLocations || []) {
+        if (String(location.name || '').trim() === legacyName) candidates.push(String(location._id));
+    }
+    if (candidates.length !== 1) return null;
+    return companyLocationById(company, candidates[0]);
+}
+
 
 /*
 =========================================================
@@ -11592,11 +11626,20 @@ app.post(
             /*
              * تحديد الشفت المرتبط بالموظف.
              */
-            const shift =
-                await Shift.findOne({
+            const shiftCandidates =
+                await Shift.find({
                     companyId: employee.companyId,
                     employeeIds: String(employee._id)
-                }).lean();
+                }).sort({ createdAt: 1, _id: 1 }).lean();
+            const shift = shiftCandidates.find(candidate => {
+                const start = type === 'attendance'
+                    ? candidate.attendanceStart
+                    : candidate.departureStart;
+                const end = type === 'attendance'
+                    ? candidate.attendanceEnd
+                    : candidate.departureEnd;
+                return isWithinShiftWindow(attendanceTime, start, end);
+            }) || shiftCandidates[0] || null;
 
             /*
              * الموظف العادي يجب أن يمتلك شفتاً.
@@ -11695,8 +11738,6 @@ app.post(
              *   وإذا حدد المدير موقعاً جغرافياً للإيفاد
              *   فيجب أن يكون داخل نطاق ذلك الموقع.
              */
-            const allowedLocations = [];
-
             let matchedLocation = null;
             let nearestDistance = null;
 
@@ -11787,151 +11828,30 @@ app.post(
                 }
 
             } else {
-
-                /*
-                 * الموظف غير الموفد:
-                 * الموقع الرئيسي للشركة.
-                 */
-                if (
-                    Number.isFinite(company.latitude) &&
-                    Number.isFinite(company.longitude)
-                ) {
-
-                    allowedLocations.push({
-
-                        name:
-                            company.name ||
-                            'الموقع الرئيسي',
-
-                        latitude:
-                            Number(company.latitude),
-
-                        longitude:
-                            Number(company.longitude),
-
-                        radiusMeters:
-                            Number(company.geofenceRadiusMeters) > 0
-                                ? Number(company.geofenceRadiusMeters)
-                                : 200
-
-                    });
-
-                }
-
-                /*
-                 * المواقع والفروع الإضافية المعتمدة.
-                 */
-                if (
-                    Array.isArray(
-                        company.approvedLocations
-                    )
-                ) {
-
-                    for (
-                        const approved
-                        of company.approvedLocations
-                    ) {
-
-                        const approvedLat =
-                            Number(approved.latitude);
-
-                        const approvedLng =
-                            Number(approved.longitude);
-
-                        if (
-                            approved.active !== false &&
-                            Number.isFinite(approvedLat) &&
-                            Number.isFinite(approvedLng)
-                        ) {
-
-                            allowedLocations.push({
-
-                                name:
-                                    approved.name ||
-                                    'موقع معتمد',
-
-                                latitude:
-                                    approvedLat,
-
-                                longitude:
-                                    approvedLng,
-
-                                radiusMeters:
-                                    Number(approved.radiusMeters) > 0
-                                        ? Number(approved.radiusMeters)
-                                        : 200
-
-                            });
-
-                        }
-
-                    }
-
-                }
-
-                if (
-                    allowedLocations.length === 0
-                ) {
-
+                const shiftLocation = resolveShiftLocation(company, shift);
+                if (!shiftLocation) {
                     return res.status(403).json({
-
                         success: false,
-
-                        message:
-                            'لا توجد مواقع معتمدة للشركة لتسجيل البصمة'
-
+                        message: 'فشل تسجيل البصمة: موقع الشفت غير محدد أو لا يملك إحداثيات صالحة'
                     });
-
                 }
 
-                for (
-                    const allowed
-                    of allowedLocations
-                ) {
+                nearestDistance = haversineMeters(
+                    latitude,
+                    longitude,
+                    shiftLocation.latitude,
+                    shiftLocation.longitude
+                );
 
-                    const distance =
-                        haversineMeters(
-                            latitude,
-                            longitude,
-                            allowed.latitude,
-                            allowed.longitude
-                        );
-
-                    if (
-                        nearestDistance === null ||
-                        distance < nearestDistance
-                    ) {
-                        nearestDistance =
-                            distance;
-                    }
-
-                    if (
-                        distance <=
-                        allowed.radiusMeters
-                    ) {
-
-                        matchedLocation =
-                            allowed;
-
-                        break;
-
-                    }
-
-                }
-
-                if (!matchedLocation) {
-
+                if (nearestDistance > shiftLocation.radiusMeters) {
                     return res.status(403).json({
-
                         success: false,
-
-                        message:
-                            'فشل تسجيل البصمة: أنت خارج نطاق موقع الشركة.'
-
+                        distanceMeters: Math.round(nearestDistance),
+                        message: `فشل تسجيل البصمة: أنت خارج نطاق موقع الشفت (${Math.round(nearestDistance)}م)`
                     });
-
                 }
 
+                matchedLocation = shiftLocation;
             }
 
             /*
@@ -12084,7 +12004,11 @@ app.post(
                         : 'تم تسجيل الحضور بالبصمة والجهاز والموقع وحفظه في MongoDB',
 
                 attendanceId:
-                    attendance._id
+                    attendance._id,
+                distanceMeters:
+                    nearestDistance === null
+                        ? null
+                        : Math.round(nearestDistance)
 
             });
 
