@@ -331,12 +331,11 @@ async function authorizePage(options = {}) {
         if (
             credential &&
             credential.enabled !== false &&
+            String(session.companyId || companyId) === String(companyId) &&
             (
-                hasOfflineSession() ||
-                (
-                    token &&
-                    token !== 'offline-local-session'
-                )
+                !session.username ||
+                String(session.username).toLowerCase() ===
+                String(credential.username || '').toLowerCase()
             )
         ) {
             localStorage.setItem(
@@ -433,12 +432,12 @@ async function authorizePage(options = {}) {
 
             if (
                 credential &&
+                credential.enabled !== false &&
+                String(session.companyId || companyId) === String(companyId) &&
                 (
-                    hasOfflineSession() ||
-                    (
-                        token &&
-                        token !== 'offline-local-session'
-                    )
+                    !session.username ||
+                    String(session.username).toLowerCase() ===
+                    String(credential.username || '').toLowerCase()
                 )
             ) {
                 return {
