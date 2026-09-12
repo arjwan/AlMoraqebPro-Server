@@ -120,7 +120,12 @@ jobs:
             fi
             sleep 2
           done
-          grep -q '"database":"connected"' /tmp/almoraqebpro-health.json
+          if ! grep -q '"database":"connected"' /tmp/almoraqebpro-health.json; then
+            cat /tmp/almoraqebpro-health.json || true
+            sudo systemctl --no-pager --full status "$SERVICE_NAME" || true
+            sudo journalctl --no-pager -u "$SERVICE_NAME" -n 100 || true
+            exit 1
+          fi
 
           sudo tee "/etc/nginx/conf.d/${SERVICE_NAME}.conf" >/dev/null <<NGINX
           server {
