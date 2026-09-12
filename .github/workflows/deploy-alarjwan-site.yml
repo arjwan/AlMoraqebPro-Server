@@ -35,33 +35,66 @@ jobs:
           WEBROOT="/usr/share/nginx/html/alarjwan"
           DOMAIN="alarjwan.duckdns.org"
           REPO="https://github.com/arjwan/AlMoraqebPro-Website.git"
+          CERT="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
+          KEY="/etc/letsencrypt/live/${DOMAIN}/privkey.pem"
+
           if [ ! -d "$SRC/.git" ]; then
             git clone --branch alarjwan-website --single-branch "$REPO" "$SRC"
           else
             git -C "$SRC" fetch origin alarjwan-website
             git -C "$SRC" reset --hard origin/alarjwan-website
           fi
+
           test -f "$SRC/alarjwan-site/index.html"
           test -f "$SRC/alarjwan-site/sitemap.xml"
           test -f "$SRC/alarjwan-site/robots.txt"
           test -f "$SRC/alarjwan-site/products/ittisal.html"
+
           sudo mkdir -p "$WEBROOT"
           sudo rsync -a --delete "$SRC/alarjwan-site/" "$WEBROOT/"
           sudo find "$WEBROOT" -type d -exec chmod 755 {} +
           sudo find "$WEBROOT" -type f -exec chmod 644 {} +
           sudo restorecon -RF "$WEBROOT" 2>/dev/null || true
+
+          if sudo test -f "$CERT" && sudo test -f "$KEY"; then
+            sudo tee /etc/nginx/conf.d/alarjwan.conf >/dev/null <<NGINX
+          server {
+              listen 80;
+              server_name ${DOMAIN};
+              return 301 https://\$host\$request_uri;
+          }
+          server {
+              listen 443 ssl;
+              server_name ${DOMAIN};
+              root ${WEBROOT};
+              index index.html;
+              ssl_certificate ${CERT};
+              ssl_certificate_key ${KEY};
+              include /etc/letsencrypt/options-ssl-nginx.conf;
+              ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+              location = / { try_files /index.html =404; }
+              location / { try_files \$uri =404; }
+          }
+          NGINX
+          else
+            sudo tee /etc/nginx/conf.d/alarjwan.conf >/dev/null <<NGINX
+          server {
+              listen 80;
+              server_name ${DOMAIN};
+              root ${WEBROOT};
+              index index.html;
+              location = / { try_files /index.html =404; }
+              location / { try_files \$uri =404; }
+          }
+          NGINX
+          fi
+
           sudo nginx -t
           sudo systemctl reload nginx
-          echo '=== LOCAL STATIC FILES ==='
           grep -q 'الأرجوان للبرمجيات' "$WEBROOT/index.html"
           grep -q 'شنو منو اتصال' "$WEBROOT/products/ittisal.html"
-          echo 'static files verified'
-          echo '=== APP SERVICES REMAIN RUNNING ==='
           sudo systemctl is-active --quiet shno-mano-tech.service
-          echo 'shno-mano-tech.service active'
           sudo systemctl is-active --quiet almoraqebpro.service
-          echo 'almoraqebpro.service active'
-          echo '=== PUBLIC HTTPS ==='
           curl --fail --location --silent --show-error "https://${DOMAIN}/" | grep -q 'الأرجوان للبرمجيات'
           curl --fail --location --silent --show-error "https://${DOMAIN}/products/ittisal.html" | grep -q 'شنو منو اتصال'
           curl --fail --location --silent --show-error "https://${DOMAIN}/robots.txt" >/dev/null
