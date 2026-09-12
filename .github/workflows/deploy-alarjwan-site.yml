@@ -50,12 +50,15 @@ jobs:
           test -f "$SRC/alarjwan-site/index.html"
           test -f "$SRC/alarjwan-site/sitemap.xml"
           test -f "$SRC/alarjwan-site/robots.txt"
+          test -f "$SRC/alarjwan-site/products/ittisal.html"
 
           sudo mkdir -p "$WEBROOT"
           sudo rsync -a --delete "$SRC/alarjwan-site/" "$WEBROOT/"
           sudo find "$WEBROOT" -type d -exec chmod 755 {} +
           sudo find "$WEBROOT" -type f -exec chmod 644 {} +
           sudo restorecon -RF "$WEBROOT" 2>/dev/null || true
+          sudo test -f "$WEBROOT/index.html"
+          sudo test -f "$WEBROOT/products/ittisal.html"
 
           sudo tee /etc/nginx/conf.d/alarjwan.conf >/dev/null <<NGINX
           server {
@@ -64,27 +67,34 @@ jobs:
               root ${WEBROOT};
               index index.html;
 
-              location / {
-                  try_files \$uri \$uri/ =404;
+              location = / {
+                  try_files /index.html =404;
               }
 
-              location = /robots.txt { try_files \$uri =404; }
-              location = /sitemap.xml { try_files \$uri =404; }
+              location / {
+                  try_files \$uri =404;
+              }
           }
           NGINX
 
           sudo nginx -t
           sudo systemctl reload nginx
 
-          # Local host-header test proves this vhost works without touching the API services.
-          curl --fail --silent --show-error -H "Host: ${DOMAIN}" http://127.0.0.1/ | grep -q 'الأرجوان للبرمجيات'
-          curl --fail --silent --show-error -H "Host: ${DOMAIN}" http://127.0.0.1/products/ittisal.html | grep -q 'شنو منو اتصال'
+          HOME_CODE="$(curl --silent --show-error -o /tmp/alarjwan-home.html -w '%{http_code}' -H "Host: ${DOMAIN}" http://127.0.0.1/)"
+          ITTISAL_CODE="$(curl --silent --show-error -o /tmp/alarjwan-ittisal.html -w '%{http_code}' -H "Host: ${DOMAIN}" http://127.0.0.1/products/ittisal.html)"
+          echo "Local home HTTP: $HOME_CODE"
+          echo "Local Ittisal HTTP: $ITTISAL_CODE"
+          test "$HOME_CODE" = "200"
+          test "$ITTISAL_CODE" = "200"
+          grep -q 'الأرجوان للبرمجيات' /tmp/alarjwan-home.html
+          grep -q 'شنو منو اتصال' /tmp/alarjwan-ittisal.html
 
           echo '=== APP SERVICES REMAIN RUNNING ==='
-          sudo systemctl is-active --quiet shno-mano-tech.service && echo 'shno-mano-tech.service active'
-          sudo systemctl is-active --quiet almoraqebpro.service && echo 'almoraqebpro.service active'
+          sudo systemctl is-active --quiet shno-mano-tech.service
+          echo 'shno-mano-tech.service active'
+          sudo systemctl is-active --quiet almoraqebpro.service
+          echo 'almoraqebpro.service active'
 
-          # Enable HTTPS only when DuckDNS already resolves to this Oracle host.
           RESOLVED="$(getent ahostsv4 "$DOMAIN" | awk 'NR==1{print $1}' || true)"
           PUBLIC_IP="$(curl -4 --fail --silent --show-error https://api.ipify.org || true)"
           echo "Domain resolves to: ${RESOLVED:-none}"
@@ -98,7 +108,7 @@ jobs:
             echo 'ALARJWAN_HTTPS_READY=1'
           else
             echo 'ALARJWAN_HTTPS_READY=0'
-            echo 'Static site is installed and Nginx is ready; DuckDNS must point alarjwan.duckdns.org to this Oracle public IP before Certbot can finish.'
+            echo 'Static site and Nginx are ready. Point alarjwan.duckdns.org to the Oracle public IP, then rerun this workflow to issue HTTPS.'
           fi
           REMOTE
 
