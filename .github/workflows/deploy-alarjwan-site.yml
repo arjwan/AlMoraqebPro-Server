@@ -15,7 +15,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy Arjwan and public Shno SEO pages safely
+      - name: Deploy Arjwan and harden public Shno pages safely
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
@@ -39,6 +39,7 @@ jobs:
           ARJ_REPO="https://github.com/arjwan/AlMoraqebPro-Website.git"
           SHNO_ROOT="/usr/share/nginx/html/shno-mano"
           SHNO_DOMAIN="shino-mino-tak-tak.duckdns.org"
+          SHNO_RAW="https://raw.githubusercontent.com/arjwan/shenoo-menoo-tak-tak/main"
 
           if [ ! -d "$ARJ_SRC/.git" ]; then
             git clone --branch alarjwan-website --single-branch "$ARJ_REPO" "$ARJ_SRC"
@@ -58,20 +59,42 @@ jobs:
           sudo rsync -a --delete --exclude 'downloads/' "$ARJ_SRC/alarjwan-site/" "$ARJ_ROOT/"
           sudo restorecon -RF "$ARJ_ROOT" 2>/dev/null || true
 
-          # Downloads were published and verified in the previous release; preserve them on every site sync.
           for f in AlMoraqebPro-4.0.3.apk Shno-Mano-TakTak-2.0.0.apk Shno-Mano-Ittisal-1.3.0.apk; do
             sudo test -s "$ARJ_ROOT/downloads/$f"
           done
 
-          # Publish only public crawl/download files for Shno Mano; do not touch app pages or Bing verification.
-          curl --fail --silent --show-error https://raw.githubusercontent.com/arjwan/shenoo-menoo-tak-tak/main/download.html -o /tmp/shno-download.html
-          curl --fail --silent --show-error https://raw.githubusercontent.com/arjwan/shenoo-menoo-tak-tak/main/sitemap.xml -o /tmp/shno-sitemap.xml
-          curl --fail --silent --show-error https://raw.githubusercontent.com/arjwan/shenoo-menoo-tak-tak/main/robots.txt -o /tmp/shno-robots.txt
+          # Refresh public discovery files plus the two first-party auth pages.
+          for f in download.html sitemap.xml robots.txt signin.html signup.html; do
+            curl --fail --silent --show-error "$SHNO_RAW/$f" -o "/tmp/shno-$f"
+          done
+
+          # Login and signup are required application pages, not search landing pages.
+          # Add explicit noindex metadata and first-party ownership/canonical signals without changing auth logic.
+          python3 - <<'PY'
+          from pathlib import Path
+          domain = 'https://shino-mino-tak-tak.duckdns.org'
+          for name in ('signin.html', 'signup.html'):
+              p = Path('/tmp/shno-' + name)
+              s = p.read_text(encoding='utf-8')
+              if 'name="robots" content="noindex,nofollow,noarchive"' not in s:
+                  s = s.replace('<meta name="viewport"', '<meta name="robots" content="noindex,nofollow,noarchive">\n  <link rel="canonical" href="%s/%s">\n  <meta name="viewport"' % (domain, name), 1)
+              marker = '<h2>تسجيل الدخول</h2>' if name == 'signin.html' else '<h2>إنشاء حساب</h2>'
+              trust = marker + '\n      <p style="margin:6px 0 14px;color:#a9adc1;font-size:13px;line-height:1.7">هذه الصفحة الرسمية لحسابات شنو منو تك تك على النطاق shino-mino-tak-tak.duckdns.org، ولا نطلب بيانات دخول تخص أي خدمة أو موقع آخر.</p>'
+              if 'هذه الصفحة الرسمية لحسابات شنو منو تك تك' not in s:
+                  s = s.replace(marker, trust, 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+
           sudo test -d "$SHNO_ROOT"
           sudo install -m 0644 /tmp/shno-download.html "$SHNO_ROOT/download.html"
           sudo install -m 0644 /tmp/shno-sitemap.xml "$SHNO_ROOT/sitemap.xml"
           sudo install -m 0644 /tmp/shno-robots.txt "$SHNO_ROOT/robots.txt"
-          sudo restorecon -F "$SHNO_ROOT/download.html" "$SHNO_ROOT/sitemap.xml" "$SHNO_ROOT/robots.txt" 2>/dev/null || true
+          sudo install -m 0644 /tmp/shno-signin.html "$SHNO_ROOT/signin.html"
+          sudo install -m 0644 /tmp/shno-signup.html "$SHNO_ROOT/signup.html"
+
+          # Do not expose obsolete prototypes/backups from the public static root.
+          sudo rm -rf "$SHNO_ROOT/backups" "$SHNO_ROOT/legacy-prototype"
+          sudo restorecon -RF "$SHNO_ROOT" 2>/dev/null || true
 
           sudo nginx -t
           sudo systemctl reload nginx
@@ -82,19 +105,24 @@ jobs:
           curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/products/almoraqebpro.html" | grep -q 'تحميل APK مباشر'
           curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/products/shenoo-menoo.html" | grep -q 'Shno-Mano-TakTak-2.0.0.apk'
           curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/products/ittisal.html" | grep -q 'Shno-Mano-Ittisal-1.3.0.apk'
-          curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/robots.txt" >/dev/null
-          curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/sitemap.xml" >/dev/null
           for f in AlMoraqebPro-4.0.3.apk Shno-Mano-TakTak-2.0.0.apk Shno-Mano-Ittisal-1.3.0.apk; do
             curl --fail --location --silent --show-error --range 0-15 "https://${ARJ_DOMAIN}/downloads/$f" >/dev/null
           done
 
           curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/download.html" | grep -q 'تحميل APK مباشر'
-          curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/robots.txt" >/dev/null
-          curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/sitemap.xml" | grep -q 'download.html'
+          curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/robots.txt" | grep -q 'Disallow: /signin.html'
+          ! curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/sitemap.xml" | grep -q '/signin.html'
+          ! curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/sitemap.xml" | grep -q '/signup.html'
+          curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/signin.html" | grep -q 'noindex,nofollow,noarchive'
+          curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/signup.html" | grep -q 'noindex,nofollow,noarchive'
+          curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/signin.html" | grep -q 'هذه الصفحة الرسمية لحسابات شنو منو تك تك'
+          test ! -e "$SHNO_ROOT/backups"
+          test ! -e "$SHNO_ROOT/legacy-prototype"
 
           echo 'ARJWAN_SITE_READY=1'
           echo 'ALL_DIRECT_APKS_READY=1'
-          echo 'SHNO_SEO_DOWNLOAD_READY=1'
+          echo 'SHNO_AUTH_SEARCH_HARDENED=1'
+          echo 'SHNO_LEGACY_PUBLIC_CONTENT_REMOVED=1'
           REMOTE
 
           rm -f ~/.ssh/oracle_key
