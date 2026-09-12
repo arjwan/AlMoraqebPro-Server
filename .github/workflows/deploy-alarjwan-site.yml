@@ -18,12 +18,14 @@ jobs:
       actions: read
       contents: read
     steps:
-      - name: Publish site and AlMoraqebPro APK without touching app services
+      - name: Publish site and APK downloads without touching app services
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
           ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
           GH_TOKEN: ${{ github.token }}
+          TAKTAK_ZIP_URL: "https://sdmntprukwest.oaiusercontent.com/files/00000000-23c8-8243-a303-0a6a15e68fd4/raw?se=2026-09-12T21%3A31%3A51Z&sp=r&sv=2026-02-06&sr=b&scid=059a281c-937a-5a12-a7a8-4b8a958c6c55&skoid=e5e3659d-4463-4dbf-b2ce-ee32bc0a0a8d&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-12T05%3A21%3A09Z&ske=2026-09-13T05%3A21%3A09Z&sks=b&skv=2026-02-06&sig=4g9EgSUXmilcmhttpORVtQDtoQexmPdhJMsd%2FNV1Kdg%3D"
+          ITTISAL_ZIP_URL: "https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-b688-8210-a055-fca146322971/raw?se=2026-09-12T21%3A31%3A56Z&sp=r&sv=2026-02-06&sr=b&scid=571c7304-166b-5e16-b23e-8618e27f086e&skoid=e5e3659d-4463-4dbf-b2ce-ee32bc0a0a8d&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-12T06%3A21%3A09Z&ske=2026-09-13T06%3A21%3A09Z&sks=b&skv=2026-02-06&sig=u%2FRworZLzY%2ByNRWr4CCoXdKumSJkb6Ej%2BHjj1%2BqceX4%3D"
         run: |
           set -euo pipefail
           : "${ORACLE_HOST:?Missing ORACLE_HOST secret}"
@@ -31,21 +33,26 @@ jobs:
           : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY secret}"
 
           ALM_ARTIFACT_ID=10303564415
-          curl --fail --location --silent --show-error \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/arjwan/AlMoraqebPro-Server/actions/artifacts/${ALM_ARTIFACT_ID}/zip" \
-            -o /tmp/almoraqebpro.zip
-          mkdir -p /tmp/almoraqebpro
+          curl --fail --location --silent --show-error -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/arjwan/AlMoraqebPro-Server/actions/artifacts/${ALM_ARTIFACT_ID}/zip" -o /tmp/almoraqebpro.zip
+          rm -rf /tmp/almoraqebpro /tmp/taktak /tmp/ittisal
+          mkdir -p /tmp/almoraqebpro /tmp/taktak /tmp/ittisal
           unzip -q /tmp/almoraqebpro.zip -d /tmp/almoraqebpro
+          curl --fail --location --silent --show-error "$TAKTAK_ZIP_URL" -o /tmp/taktak.zip
+          curl --fail --location --silent --show-error "$ITTISAL_ZIP_URL" -o /tmp/ittisal.zip
+          unzip -q /tmp/taktak.zip -d /tmp/taktak
+          unzip -q /tmp/ittisal.zip -d /tmp/ittisal
           ALM_APK="$(find /tmp/almoraqebpro -type f -name '*.apk' | head -n1)"
-          test -n "$ALM_APK" && test -s "$ALM_APK"
+          TAKTAK_APK="$(find /tmp/taktak -type f -name '*.apk' | head -n1)"
+          ITTISAL_APK="$(find /tmp/ittisal -type f -name '*.apk' | head -n1)"
+          test -s "$ALM_APK"; test -s "$TAKTAK_APK"; test -s "$ITTISAL_APK"
 
           mkdir -p ~/.ssh
           printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
           chmod 600 ~/.ssh/oracle_key
           ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
           scp -i ~/.ssh/oracle_key "$ALM_APK" "$ORACLE_USER@$ORACLE_HOST:/tmp/AlMoraqebPro-4.0.3.apk"
+          scp -i ~/.ssh/oracle_key "$TAKTAK_APK" "$ORACLE_USER@$ORACLE_HOST:/tmp/Shno-Mano-TakTak-2.0.0.apk"
+          scp -i ~/.ssh/oracle_key "$ITTISAL_APK" "$ORACLE_USER@$ORACLE_HOST:/tmp/Shno-Mano-Ittisal-1.3.0.apk"
 
           ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
@@ -55,73 +62,21 @@ jobs:
           REPO="https://github.com/arjwan/AlMoraqebPro-Website.git"
           CERT="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
           KEY="/etc/letsencrypt/live/${DOMAIN}/privkey.pem"
-
-          if [ ! -d "$SRC/.git" ]; then
-            git clone --branch alarjwan-website --single-branch "$REPO" "$SRC"
-          else
-            git -C "$SRC" fetch origin alarjwan-website
-            git -C "$SRC" reset --hard origin/alarjwan-website
-          fi
-
-          test -f "$SRC/alarjwan-site/index.html"
-          test -f "$SRC/alarjwan-site/sitemap.xml"
-          test -f "$SRC/alarjwan-site/robots.txt"
-          test -f "$SRC/alarjwan-site/products/ittisal.html"
-
-          sudo mkdir -p "$WEBROOT"
-          sudo rsync -a --delete "$SRC/alarjwan-site/" "$WEBROOT/"
+          if [ ! -d "$SRC/.git" ]; then git clone --branch alarjwan-website --single-branch "$REPO" "$SRC"; else git -C "$SRC" fetch origin alarjwan-website; git -C "$SRC" reset --hard origin/alarjwan-website; fi
+          test -f "$SRC/alarjwan-site/index.html"; test -f "$SRC/alarjwan-site/sitemap.xml"; test -f "$SRC/alarjwan-site/robots.txt"; test -f "$SRC/alarjwan-site/products/ittisal.html"
           sudo mkdir -p "$WEBROOT/downloads"
+          sudo rsync -a --delete --exclude 'downloads/' "$SRC/alarjwan-site/" "$WEBROOT/"
           sudo install -m 0644 /tmp/AlMoraqebPro-4.0.3.apk "$WEBROOT/downloads/AlMoraqebPro-4.0.3.apk"
-          sudo find "$WEBROOT" -type d -exec chmod 755 {} +
-          sudo find "$WEBROOT" -type f -exec chmod 644 {} +
+          sudo install -m 0644 /tmp/Shno-Mano-TakTak-2.0.0.apk "$WEBROOT/downloads/Shno-Mano-TakTak-2.0.0.apk"
+          sudo install -m 0644 /tmp/Shno-Mano-Ittisal-1.3.0.apk "$WEBROOT/downloads/Shno-Mano-Ittisal-1.3.0.apk"
           sudo restorecon -RF "$WEBROOT" 2>/dev/null || true
-          test "$(sudo stat -c%s "$WEBROOT/downloads/AlMoraqebPro-4.0.3.apk")" -gt 1000000
-
-          if sudo test -f "$CERT" && sudo test -f "$KEY"; then
-            sudo tee /etc/nginx/conf.d/alarjwan.conf >/dev/null <<NGINX
-          server {
-              listen 80;
-              server_name ${DOMAIN};
-              return 301 https://\$host\$request_uri;
-          }
-          server {
-              listen 443 ssl;
-              server_name ${DOMAIN};
-              root ${WEBROOT};
-              index index.html;
-              ssl_certificate ${CERT};
-              ssl_certificate_key ${KEY};
-              include /etc/letsencrypt/options-ssl-nginx.conf;
-              ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-              location = / { try_files /index.html =404; }
-              location / { try_files \$uri =404; }
-          }
-          NGINX
-          else
-            sudo tee /etc/nginx/conf.d/alarjwan.conf >/dev/null <<NGINX
-          server {
-              listen 80;
-              server_name ${DOMAIN};
-              root ${WEBROOT};
-              index index.html;
-              location = / { try_files /index.html =404; }
-              location / { try_files \$uri =404; }
-          }
-          NGINX
-          fi
-
           sudo nginx -t
           sudo systemctl reload nginx
-          grep -q 'الأرجوان للبرمجيات' "$WEBROOT/index.html"
-          grep -q 'شنو منو اتصال' "$WEBROOT/products/ittisal.html"
           sudo systemctl is-active --quiet shno-mano-tech.service
           sudo systemctl is-active --quiet almoraqebpro.service
+          for f in AlMoraqebPro-4.0.3.apk Shno-Mano-TakTak-2.0.0.apk Shno-Mano-Ittisal-1.3.0.apk; do test "$(sudo stat -c%s "$WEBROOT/downloads/$f")" -gt 500000; curl --fail --location --silent --show-error --range 0-15 "https://${DOMAIN}/downloads/$f" >/dev/null; done
           curl --fail --location --silent --show-error "https://${DOMAIN}/" | grep -q 'الأرجوان للبرمجيات'
-          curl --fail --location --silent --show-error "https://${DOMAIN}/products/ittisal.html" | grep -q 'شنو منو اتصال'
-          curl --fail --location --silent --show-error "https://${DOMAIN}/robots.txt" >/dev/null
           curl --fail --location --silent --show-error "https://${DOMAIN}/sitemap.xml" >/dev/null
-          curl --fail --location --silent --show-error --range 0-15 "https://${DOMAIN}/downloads/AlMoraqebPro-4.0.3.apk" >/dev/null
-          echo 'ALARJWAN_HTTPS_READY=1'
-          echo 'ALMORAQEBPRO_APK_READY=1'
+          echo 'ALL_DIRECT_APKS_READY=1'
           REMOTE
-          rm -f ~/.ssh/oracle_key /tmp/almoraqebpro.zip
+          rm -f ~/.ssh/oracle_key /tmp/*.zip
