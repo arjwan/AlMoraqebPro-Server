@@ -1,0 +1,44 @@
+name: Build AlMoraqebPro Android APK
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'almoraqbp0serves/**'
+      - '.github/workflows/android-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Make Gradle executable
+        working-directory: almoraqbp0serves
+        run: chmod +x ./gradlew
+
+      - name: Build installable test APK
+        working-directory: almoraqbp0serves
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Rename APK
+        run: cp almoraqbp0serves/app/build/outputs/apk/debug/app-debug.apk AlMoraqebPro-4.0.3-test.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlMoraqebPro-4.0.3-test
+          path: AlMoraqebPro-4.0.3-test.apk
+          if-no-files-found: error
+          retention-days: 14
