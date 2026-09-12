@@ -2,8 +2,7 @@ name: Deploy Alarjwan Static Site
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
     paths:
       - '.github/workflows/deploy-alarjwan-site.yml'
   workflow_dispatch:
@@ -26,90 +25,47 @@ jobs:
           : "${ORACLE_HOST:?Missing ORACLE_HOST secret}"
           : "${ORACLE_USER:?Missing ORACLE_USER secret}"
           : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY secret}"
-
           mkdir -p ~/.ssh
           printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
           chmod 600 ~/.ssh/oracle_key
           ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
-
           ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-
           SRC="$HOME/Alarjwan-Website-source"
           WEBROOT="/usr/share/nginx/html/alarjwan"
           DOMAIN="alarjwan.duckdns.org"
           REPO="https://github.com/arjwan/AlMoraqebPro-Website.git"
-
           if [ ! -d "$SRC/.git" ]; then
             git clone --branch alarjwan-website --single-branch "$REPO" "$SRC"
           else
             git -C "$SRC" fetch origin alarjwan-website
             git -C "$SRC" reset --hard origin/alarjwan-website
           fi
-
           test -f "$SRC/alarjwan-site/index.html"
           test -f "$SRC/alarjwan-site/sitemap.xml"
           test -f "$SRC/alarjwan-site/robots.txt"
           test -f "$SRC/alarjwan-site/products/ittisal.html"
-
           sudo mkdir -p "$WEBROOT"
           sudo rsync -a --delete "$SRC/alarjwan-site/" "$WEBROOT/"
           sudo find "$WEBROOT" -type d -exec chmod 755 {} +
           sudo find "$WEBROOT" -type f -exec chmod 644 {} +
           sudo restorecon -RF "$WEBROOT" 2>/dev/null || true
-          sudo test -f "$WEBROOT/index.html"
-          sudo test -f "$WEBROOT/products/ittisal.html"
-
-          sudo tee /etc/nginx/conf.d/alarjwan.conf >/dev/null <<NGINX
-          server {
-              listen 80;
-              server_name ${DOMAIN};
-              root ${WEBROOT};
-              index index.html;
-
-              location = / {
-                  try_files /index.html =404;
-              }
-
-              location / {
-                  try_files \$uri =404;
-              }
-          }
-          NGINX
-
           sudo nginx -t
           sudo systemctl reload nginx
-
-          HOME_CODE="$(curl --silent --show-error -o /tmp/alarjwan-home.html -w '%{http_code}' -H "Host: ${DOMAIN}" http://127.0.0.1/)"
-          ITTISAL_CODE="$(curl --silent --show-error -o /tmp/alarjwan-ittisal.html -w '%{http_code}' -H "Host: ${DOMAIN}" http://127.0.0.1/products/ittisal.html)"
-          echo "Local home HTTP: $HOME_CODE"
-          echo "Local Ittisal HTTP: $ITTISAL_CODE"
-          test "$HOME_CODE" = "200"
-          test "$ITTISAL_CODE" = "200"
-          grep -q 'الأرجوان للبرمجيات' /tmp/alarjwan-home.html
-          grep -q 'شنو منو اتصال' /tmp/alarjwan-ittisal.html
-
+          echo '=== LOCAL STATIC FILES ==='
+          grep -q 'الأرجوان للبرمجيات' "$WEBROOT/index.html"
+          grep -q 'شنو منو اتصال' "$WEBROOT/products/ittisal.html"
+          echo 'static files verified'
           echo '=== APP SERVICES REMAIN RUNNING ==='
           sudo systemctl is-active --quiet shno-mano-tech.service
           echo 'shno-mano-tech.service active'
           sudo systemctl is-active --quiet almoraqebpro.service
           echo 'almoraqebpro.service active'
-
-          RESOLVED="$(getent ahostsv4 "$DOMAIN" | awk 'NR==1{print $1}' || true)"
-          PUBLIC_IP="$(curl -4 --fail --silent --show-error https://api.ipify.org || true)"
-          echo "Domain resolves to: ${RESOLVED:-none}"
-          echo "Oracle public IP: ${PUBLIC_IP:-unknown}"
-
-          if [ -n "$RESOLVED" ] && [ -n "$PUBLIC_IP" ] && [ "$RESOLVED" = "$PUBLIC_IP" ]; then
-            command -v certbot >/dev/null 2>&1
-            sudo certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect
-            curl --fail --silent --show-error "https://${DOMAIN}/" | grep -q 'الأرجوان للبرمجيات'
-            curl --fail --silent --show-error "https://${DOMAIN}/products/ittisal.html" | grep -q 'شنو منو اتصال'
-            echo 'ALARJWAN_HTTPS_READY=1'
-          else
-            echo 'ALARJWAN_HTTPS_READY=0'
-            echo 'Static site and Nginx are ready. Point alarjwan.duckdns.org to the Oracle public IP, then rerun this workflow to issue HTTPS.'
-          fi
+          echo '=== PUBLIC HTTPS ==='
+          curl --fail --location --silent --show-error "https://${DOMAIN}/" | grep -q 'الأرجوان للبرمجيات'
+          curl --fail --location --silent --show-error "https://${DOMAIN}/products/ittisal.html" | grep -q 'شنو منو اتصال'
+          curl --fail --location --silent --show-error "https://${DOMAIN}/robots.txt" >/dev/null
+          curl --fail --location --silent --show-error "https://${DOMAIN}/sitemap.xml" >/dev/null
+          echo 'ALARJWAN_HTTPS_READY=1'
           REMOTE
-
           rm -f ~/.ssh/oracle_key
