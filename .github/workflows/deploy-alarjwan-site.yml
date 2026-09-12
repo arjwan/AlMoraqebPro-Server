@@ -14,21 +14,39 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
     steps:
-      - name: Deploy Alarjwan static site without touching app services
+      - name: Publish site and AlMoraqebPro APK without touching app services
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
           ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           : "${ORACLE_HOST:?Missing ORACLE_HOST secret}"
           : "${ORACLE_USER:?Missing ORACLE_USER secret}"
           : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY secret}"
+
+          ALM_ARTIFACT_ID=10303564415
+          curl --fail --location --silent --show-error \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/arjwan/AlMoraqebPro-Server/actions/artifacts/${ALM_ARTIFACT_ID}/zip" \
+            -o /tmp/almoraqebpro.zip
+          mkdir -p /tmp/almoraqebpro
+          unzip -q /tmp/almoraqebpro.zip -d /tmp/almoraqebpro
+          ALM_APK="$(find /tmp/almoraqebpro -type f -name '*.apk' | head -n1)"
+          test -n "$ALM_APK" && test -s "$ALM_APK"
+
           mkdir -p ~/.ssh
           printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
           chmod 600 ~/.ssh/oracle_key
           ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
+          scp -i ~/.ssh/oracle_key "$ALM_APK" "$ORACLE_USER@$ORACLE_HOST:/tmp/AlMoraqebPro-4.0.3.apk"
+
           ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
           SRC="$HOME/Alarjwan-Website-source"
@@ -52,9 +70,12 @@ jobs:
 
           sudo mkdir -p "$WEBROOT"
           sudo rsync -a --delete "$SRC/alarjwan-site/" "$WEBROOT/"
+          sudo mkdir -p "$WEBROOT/downloads"
+          sudo install -m 0644 /tmp/AlMoraqebPro-4.0.3.apk "$WEBROOT/downloads/AlMoraqebPro-4.0.3.apk"
           sudo find "$WEBROOT" -type d -exec chmod 755 {} +
           sudo find "$WEBROOT" -type f -exec chmod 644 {} +
           sudo restorecon -RF "$WEBROOT" 2>/dev/null || true
+          test "$(sudo stat -c%s "$WEBROOT/downloads/AlMoraqebPro-4.0.3.apk")" -gt 1000000
 
           if sudo test -f "$CERT" && sudo test -f "$KEY"; then
             sudo tee /etc/nginx/conf.d/alarjwan.conf >/dev/null <<NGINX
@@ -99,6 +120,8 @@ jobs:
           curl --fail --location --silent --show-error "https://${DOMAIN}/products/ittisal.html" | grep -q 'شنو منو اتصال'
           curl --fail --location --silent --show-error "https://${DOMAIN}/robots.txt" >/dev/null
           curl --fail --location --silent --show-error "https://${DOMAIN}/sitemap.xml" >/dev/null
+          curl --fail --location --silent --show-error --range 0-15 "https://${DOMAIN}/downloads/AlMoraqebPro-4.0.3.apk" >/dev/null
           echo 'ALARJWAN_HTTPS_READY=1'
+          echo 'ALMORAQEBPRO_APK_READY=1'
           REMOTE
-          rm -f ~/.ssh/oracle_key
+          rm -f ~/.ssh/oracle_key /tmp/almoraqebpro.zip
