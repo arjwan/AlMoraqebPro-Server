@@ -103,8 +103,12 @@ jobs:
           UNIT
 
           sudo systemctl daemon-reload
-          sudo systemctl enable --now "$SERVICE_NAME"
-          sudo systemctl restart "$SERVICE_NAME"
+          sudo systemctl enable "$SERVICE_NAME"
+          if ! sudo systemctl restart "$SERVICE_NAME"; then
+            sudo systemctl --no-pager --full status "$SERVICE_NAME" || true
+            sudo journalctl --no-pager -u "$SERVICE_NAME" -n 100 || true
+            exit 1
+          fi
 
           for attempt in $(seq 1 30); do
             if curl --fail --silent --show-error http://127.0.0.1:3100/health >/tmp/almoraqebpro-health.json; then
