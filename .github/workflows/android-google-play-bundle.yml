@@ -1,0 +1,50 @@
+name: Build AlMoraqebPro Google Play Bundle
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/android-google-play-bundle.yml'
+      - 'almoraqbp0serves/**'
+
+jobs:
+  build-bundle:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Make Gradle executable
+        working-directory: almoraqbp0serves
+        run: chmod +x gradlew
+
+      - name: Build release app bundle
+        working-directory: almoraqbp0serves
+        run: ./gradlew bundleRelease --stacktrace
+
+      - name: Prepare Google Play bundle
+        run: |
+          set -e
+          src="almoraqbp0serves/app/build/outputs/bundle/release/app-release.aab"
+          test -f "$src"
+          mkdir -p google-play-output
+          cp "$src" google-play-output/AlMoraqebPro-4.0.3-v28-release-unsigned.aab
+          sha256sum google-play-output/AlMoraqebPro-4.0.3-v28-release-unsigned.aab > google-play-output/SHA256SUMS.txt
+
+      - name: Upload Google Play bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlMoraqebPro-4.0.3-v28-google-play-bundle
+          path: google-play-output/*
+          if-no-files-found: error
+          retention-days: 30
