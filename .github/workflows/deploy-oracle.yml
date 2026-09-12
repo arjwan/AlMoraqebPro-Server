@@ -73,6 +73,10 @@ jobs:
           npm ci
           npm test
 
+          sudo systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+          sudo install -o root -g root -m 600 .env "/etc/${SERVICE_NAME}.env"
+          sudo restorecon -F "/etc/${SERVICE_NAME}.env" 2>/dev/null || true
+
           NODE_BIN="$(command -v node)"
           APP_USER="$(id -un)"
           APP_GROUP="$(id -gn)"
@@ -88,7 +92,7 @@ jobs:
           User=${APP_USER}
           Group=${APP_GROUP}
           WorkingDirectory=${APP_DIR}
-          EnvironmentFile=${APP_DIR}/.env
+          EnvironmentFile=/etc/${SERVICE_NAME}.env
           Environment=NODE_ENV=production
           Environment=HOST=127.0.0.1
           Environment=PORT=3100
