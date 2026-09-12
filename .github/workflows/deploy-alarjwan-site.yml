@@ -14,69 +14,87 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
     steps:
-      - name: Publish site and APK downloads without touching app services
+      - name: Deploy Arjwan and public Shno SEO pages safely
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
           ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
-          GH_TOKEN: ${{ github.token }}
-          TAKTAK_ZIP_URL: "https://sdmntprukwest.oaiusercontent.com/files/00000000-23c8-8243-a303-0a6a15e68fd4/raw?se=2026-09-12T21%3A31%3A51Z&sp=r&sv=2026-02-06&sr=b&scid=059a281c-937a-5a12-a7a8-4b8a958c6c55&skoid=e5e3659d-4463-4dbf-b2ce-ee32bc0a0a8d&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-12T05%3A21%3A09Z&ske=2026-09-13T05%3A21%3A09Z&sks=b&skv=2026-02-06&sig=4g9EgSUXmilcmhttpORVtQDtoQexmPdhJMsd%2FNV1Kdg%3D"
-          ITTISAL_ZIP_URL: "https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-b688-8210-a055-fca146322971/raw?se=2026-09-12T21%3A31%3A56Z&sp=r&sv=2026-02-06&sr=b&scid=571c7304-166b-5e16-b23e-8618e27f086e&skoid=e5e3659d-4463-4dbf-b2ce-ee32bc0a0a8d&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-12T06%3A21%3A09Z&ske=2026-09-13T06%3A21%3A09Z&sks=b&skv=2026-02-06&sig=u%2FRworZLzY%2ByNRWr4CCoXdKumSJkb6Ej%2BHjj1%2BqceX4%3D"
         run: |
           set -euo pipefail
           : "${ORACLE_HOST:?Missing ORACLE_HOST secret}"
           : "${ORACLE_USER:?Missing ORACLE_USER secret}"
           : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY secret}"
 
-          ALM_ARTIFACT_ID=10303564415
-          curl --fail --location --silent --show-error -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/arjwan/AlMoraqebPro-Server/actions/artifacts/${ALM_ARTIFACT_ID}/zip" -o /tmp/almoraqebpro.zip
-          rm -rf /tmp/almoraqebpro /tmp/taktak /tmp/ittisal
-          mkdir -p /tmp/almoraqebpro /tmp/taktak /tmp/ittisal
-          unzip -q /tmp/almoraqebpro.zip -d /tmp/almoraqebpro
-          curl --fail --location --silent --show-error "$TAKTAK_ZIP_URL" -o /tmp/taktak.zip
-          curl --fail --location --silent --show-error "$ITTISAL_ZIP_URL" -o /tmp/ittisal.zip
-          unzip -q /tmp/taktak.zip -d /tmp/taktak
-          unzip -q /tmp/ittisal.zip -d /tmp/ittisal
-          ALM_APK="$(find /tmp/almoraqebpro -type f -name '*.apk' | head -n1)"
-          TAKTAK_APK="$(find /tmp/taktak -type f -name '*.apk' | head -n1)"
-          ITTISAL_APK="$(find /tmp/ittisal -type f -name '*.apk' | head -n1)"
-          test -s "$ALM_APK"; test -s "$TAKTAK_APK"; test -s "$ITTISAL_APK"
-
           mkdir -p ~/.ssh
           printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
           chmod 600 ~/.ssh/oracle_key
           ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
-          scp -i ~/.ssh/oracle_key "$ALM_APK" "$ORACLE_USER@$ORACLE_HOST:/tmp/AlMoraqebPro-4.0.3.apk"
-          scp -i ~/.ssh/oracle_key "$TAKTAK_APK" "$ORACLE_USER@$ORACLE_HOST:/tmp/Shno-Mano-TakTak-2.0.0.apk"
-          scp -i ~/.ssh/oracle_key "$ITTISAL_APK" "$ORACLE_USER@$ORACLE_HOST:/tmp/Shno-Mano-Ittisal-1.3.0.apk"
 
           ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          SRC="$HOME/Alarjwan-Website-source"
-          WEBROOT="/usr/share/nginx/html/alarjwan"
-          DOMAIN="alarjwan.duckdns.org"
-          REPO="https://github.com/arjwan/AlMoraqebPro-Website.git"
-          CERT="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
-          KEY="/etc/letsencrypt/live/${DOMAIN}/privkey.pem"
-          if [ ! -d "$SRC/.git" ]; then git clone --branch alarjwan-website --single-branch "$REPO" "$SRC"; else git -C "$SRC" fetch origin alarjwan-website; git -C "$SRC" reset --hard origin/alarjwan-website; fi
-          test -f "$SRC/alarjwan-site/index.html"; test -f "$SRC/alarjwan-site/sitemap.xml"; test -f "$SRC/alarjwan-site/robots.txt"; test -f "$SRC/alarjwan-site/products/ittisal.html"
-          sudo mkdir -p "$WEBROOT/downloads"
-          sudo rsync -a --delete --exclude 'downloads/' "$SRC/alarjwan-site/" "$WEBROOT/"
-          sudo install -m 0644 /tmp/AlMoraqebPro-4.0.3.apk "$WEBROOT/downloads/AlMoraqebPro-4.0.3.apk"
-          sudo install -m 0644 /tmp/Shno-Mano-TakTak-2.0.0.apk "$WEBROOT/downloads/Shno-Mano-TakTak-2.0.0.apk"
-          sudo install -m 0644 /tmp/Shno-Mano-Ittisal-1.3.0.apk "$WEBROOT/downloads/Shno-Mano-Ittisal-1.3.0.apk"
-          sudo restorecon -RF "$WEBROOT" 2>/dev/null || true
+          ARJ_SRC="$HOME/Alarjwan-Website-source"
+          ARJ_ROOT="/usr/share/nginx/html/alarjwan"
+          ARJ_DOMAIN="alarjwan.duckdns.org"
+          ARJ_REPO="https://github.com/arjwan/AlMoraqebPro-Website.git"
+          SHNO_ROOT="/usr/share/nginx/html/shno-mano"
+          SHNO_DOMAIN="shino-mino-tak-tak.duckdns.org"
+
+          if [ ! -d "$ARJ_SRC/.git" ]; then
+            git clone --branch alarjwan-website --single-branch "$ARJ_REPO" "$ARJ_SRC"
+          else
+            git -C "$ARJ_SRC" fetch origin alarjwan-website
+            git -C "$ARJ_SRC" reset --hard origin/alarjwan-website
+          fi
+
+          test -f "$ARJ_SRC/alarjwan-site/index.html"
+          test -f "$ARJ_SRC/alarjwan-site/robots.txt"
+          test -f "$ARJ_SRC/alarjwan-site/sitemap.xml"
+          test -f "$ARJ_SRC/alarjwan-site/products/almoraqebpro.html"
+          test -f "$ARJ_SRC/alarjwan-site/products/shenoo-menoo.html"
+          test -f "$ARJ_SRC/alarjwan-site/products/ittisal.html"
+
+          sudo mkdir -p "$ARJ_ROOT/downloads"
+          sudo rsync -a --delete --exclude 'downloads/' "$ARJ_SRC/alarjwan-site/" "$ARJ_ROOT/"
+          sudo restorecon -RF "$ARJ_ROOT" 2>/dev/null || true
+
+          # Downloads were published and verified in the previous release; preserve them on every site sync.
+          for f in AlMoraqebPro-4.0.3.apk Shno-Mano-TakTak-2.0.0.apk Shno-Mano-Ittisal-1.3.0.apk; do
+            sudo test -s "$ARJ_ROOT/downloads/$f"
+          done
+
+          # Publish only public crawl/download files for Shno Mano; do not touch app pages or Bing verification.
+          curl --fail --silent --show-error https://raw.githubusercontent.com/arjwan/shenoo-menoo-tak-tak/main/download.html -o /tmp/shno-download.html
+          curl --fail --silent --show-error https://raw.githubusercontent.com/arjwan/shenoo-menoo-tak-tak/main/sitemap.xml -o /tmp/shno-sitemap.xml
+          curl --fail --silent --show-error https://raw.githubusercontent.com/arjwan/shenoo-menoo-tak-tak/main/robots.txt -o /tmp/shno-robots.txt
+          sudo test -d "$SHNO_ROOT"
+          sudo install -m 0644 /tmp/shno-download.html "$SHNO_ROOT/download.html"
+          sudo install -m 0644 /tmp/shno-sitemap.xml "$SHNO_ROOT/sitemap.xml"
+          sudo install -m 0644 /tmp/shno-robots.txt "$SHNO_ROOT/robots.txt"
+          sudo restorecon -F "$SHNO_ROOT/download.html" "$SHNO_ROOT/sitemap.xml" "$SHNO_ROOT/robots.txt" 2>/dev/null || true
+
           sudo nginx -t
           sudo systemctl reload nginx
           sudo systemctl is-active --quiet shno-mano-tech.service
           sudo systemctl is-active --quiet almoraqebpro.service
-          for f in AlMoraqebPro-4.0.3.apk Shno-Mano-TakTak-2.0.0.apk Shno-Mano-Ittisal-1.3.0.apk; do test "$(sudo stat -c%s "$WEBROOT/downloads/$f")" -gt 500000; curl --fail --location --silent --show-error --range 0-15 "https://${DOMAIN}/downloads/$f" >/dev/null; done
-          curl --fail --location --silent --show-error "https://${DOMAIN}/" | grep -q 'الأرجوان للبرمجيات'
-          curl --fail --location --silent --show-error "https://${DOMAIN}/sitemap.xml" >/dev/null
+
+          curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/" | grep -q 'الأرجوان للبرمجيات'
+          curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/products/almoraqebpro.html" | grep -q 'تحميل APK مباشر'
+          curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/products/shenoo-menoo.html" | grep -q 'Shno-Mano-TakTak-2.0.0.apk'
+          curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/products/ittisal.html" | grep -q 'Shno-Mano-Ittisal-1.3.0.apk'
+          curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/robots.txt" >/dev/null
+          curl --fail --location --silent --show-error "https://${ARJ_DOMAIN}/sitemap.xml" >/dev/null
+          for f in AlMoraqebPro-4.0.3.apk Shno-Mano-TakTak-2.0.0.apk Shno-Mano-Ittisal-1.3.0.apk; do
+            curl --fail --location --silent --show-error --range 0-15 "https://${ARJ_DOMAIN}/downloads/$f" >/dev/null
+          done
+
+          curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/download.html" | grep -q 'تحميل APK مباشر'
+          curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/robots.txt" >/dev/null
+          curl --fail --location --silent --show-error "https://${SHNO_DOMAIN}/sitemap.xml" | grep -q 'download.html'
+
+          echo 'ARJWAN_SITE_READY=1'
           echo 'ALL_DIRECT_APKS_READY=1'
+          echo 'SHNO_SEO_DOWNLOAD_READY=1'
           REMOTE
-          rm -f ~/.ssh/oracle_key /tmp/*.zip
+
+          rm -f ~/.ssh/oracle_key
