@@ -4556,6 +4556,33 @@ app.post(
                 }
             }
 
+            let lastKnownLocation;
+            if (
+                req.body.latitude !== undefined ||
+                req.body.longitude !== undefined
+            ) {
+                const latitude = Number(req.body.latitude);
+                const longitude = Number(req.body.longitude);
+                const accuracyMeters = Number(req.body.locationAccuracy);
+
+                if (!validGeoPoint(latitude, longitude)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'إحداثيات GPS غير صحيحة'
+                    });
+                }
+
+                lastKnownLocation = {
+                    latitude,
+                    longitude,
+                    accuracyMeters:
+                        Number.isFinite(accuracyMeters) && accuracyMeters >= 0
+                            ? accuracyMeters
+                            : undefined,
+                    timestamp: new Date()
+                };
+            }
+
             /*
              * إذا وصل طلب من هاتف يحمل رقم موظف موجود مسبقاً
              * داخل نفس الشركة، نربط الجهاز بالموظف الحالي
@@ -4579,6 +4606,10 @@ app.post(
                     ) {
                         update.deviceId = deviceId;
                         update.deviceBoundAt = new Date();
+                    }
+
+                    if (lastKnownLocation) {
+                        update.lastKnownLocation = lastKnownLocation;
                     }
 
                     if (Object.keys(update).length) {
@@ -4606,6 +4637,8 @@ app.post(
                             name,
 
                             phoneNumber,
+
+                            lastKnownLocation,
 
                             deviceId,
 
@@ -4677,6 +4710,8 @@ app.post(
                     salary,
 
                     workHours,
+
+                    lastKnownLocation,
 
                     deviceId,
 
@@ -5088,6 +5123,10 @@ app.post(
 
                     location:
                         String(req.body.location || request.location || request.workLocation || '').trim(),
+
+                    lastKnownLocation:
+                        request.lastKnownLocation ||
+                        undefined,
 
                     loans:
                         []
