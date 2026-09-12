@@ -1,4 +1,4 @@
-name: Deploy AlMoraqebPro Server to Oracle
+name: Deploy AlMoraqebPro to Oracle
 
 on:
   push:
@@ -32,6 +32,8 @@ jobs:
 
           APP_DIR="$HOME/AlMoraqebPro-Server"
           REPO="https://github.com/arjwan/AlMoraqebPro-Server.git"
+          SERVICE_NAME="almoraqebpro"
+          DOMAIN="almoraqebpro.duckdns.org"
 
           if [ ! -d "$APP_DIR/.git" ]; then
             git clone "$REPO" "$APP_DIR"
@@ -41,17 +43,83 @@ jobs:
           fi
 
           cd "$APP_DIR"
-          npm ci --omit=dev
+          test -s .env || { echo 'Missing production .env in application directory'; exit 1; }
+          npm ci
+          npm test
 
-          if command -v pm2 >/dev/null 2>&1; then
-            pm2 describe almoraqibpro-server >/dev/null 2>&1 \
-              && pm2 restart almoraqibpro-server --update-env \
-              || pm2 start server.js --name almoraqibpro-server
-            pm2 save
+          NODE_BIN="$(command -v node)"
+          APP_USER="$(id -un)"
+          APP_GROUP="$(id -gn)"
+
+          sudo tee "/etc/systemd/system/${SERVICE_NAME}.service" >/dev/null <<UNIT
+          [Unit]
+          Description=AlMoraqebPro API
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=simple
+          User=${APP_USER}
+          Group=${APP_GROUP}
+          WorkingDirectory=${APP_DIR}
+          EnvironmentFile=${APP_DIR}/.env
+          Environment=NODE_ENV=production
+          Environment=HOST=127.0.0.1
+          Environment=PORT=3100
+          ExecStart=${NODE_BIN} -r ./server-preload.js -r ./admin-pages-preload.js server.js
+          Restart=always
+          RestartSec=5
+          NoNewPrivileges=true
+          PrivateTmp=true
+
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+
+          sudo systemctl daemon-reload
+          sudo systemctl enable --now "$SERVICE_NAME"
+          sudo systemctl restart "$SERVICE_NAME"
+
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:3100/health >/tmp/almoraqebpro-health.json; then
+              break
+            fi
+            sleep 2
+          done
+          grep -q '"database":"connected"' /tmp/almoraqebpro-health.json
+
+          sudo tee "/etc/nginx/conf.d/${SERVICE_NAME}.conf" >/dev/null <<NGINX
+          server {
+              listen 80;
+              server_name ${DOMAIN};
+
+              client_max_body_size 25m;
+
+              location / {
+                  proxy_pass http://127.0.0.1:3100;
+                  proxy_http_version 1.1;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+              }
+          }
+          NGINX
+
+          sudo nginx -t
+          sudo systemctl reload nginx
+
+          if command -v certbot >/dev/null 2>&1; then
+            sudo certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos \
+              --register-unsafely-without-email --redirect
           else
-            echo 'PM2 is not installed on Oracle. Install/configure PM2 once before production deployment.'
+            echo 'certbot is not installed on Oracle'
             exit 1
           fi
+
+          curl --fail --silent --show-error "https://${DOMAIN}/health" | grep -q '"database":"connected"'
+          curl --fail --silent --show-error "https://${DOMAIN}/api/ping" >/dev/null
+          sudo systemctl --no-pager --full status "$SERVICE_NAME"
           REMOTE
 
           rm -f ~/.ssh/oracle_key
