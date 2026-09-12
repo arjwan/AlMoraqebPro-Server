@@ -19,8 +19,19 @@ jobs:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
           ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          DEVELOPER_PASSWORD: ${{ secrets.DEVELOPER_PASSWORD }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
         run: |
           set -euo pipefail
+
+          : "${ORACLE_HOST:?Missing ORACLE_HOST secret}"
+          : "${ORACLE_USER:?Missing ORACLE_USER secret}"
+          : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY secret}"
+          : "${MONGO_URI:?Missing MONGO_URI secret}"
+          : "${DEVELOPER_PASSWORD:?Missing DEVELOPER_PASSWORD secret}"
+          : "${SESSION_SECRET:?Missing SESSION_SECRET secret}"
 
           mkdir -p ~/.ssh
           printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
@@ -32,8 +43,6 @@ jobs:
 
           APP_DIR="$HOME/AlMoraqebPro-Server"
           REPO="https://github.com/arjwan/AlMoraqebPro-Server.git"
-          SERVICE_NAME="almoraqebpro"
-          DOMAIN="almoraqebpro.duckdns.org"
 
           if [ ! -d "$APP_DIR/.git" ]; then
             git clone "$REPO" "$APP_DIR"
@@ -41,9 +50,26 @@ jobs:
             git -C "$APP_DIR" fetch origin main
             git -C "$APP_DIR" reset --hard origin/main
           fi
+          REMOTE
+
+          {
+            printf 'MONGO_URI=%s\n' "$MONGO_URI"
+            printf 'DEVELOPER_PASSWORD=%s\n' "$DEVELOPER_PASSWORD"
+            printf 'SESSION_SECRET=%s\n' "$SESSION_SECRET"
+            printf 'ALLOWED_ORIGINS=%s\n' "$ALLOWED_ORIGINS"
+            printf 'HOST=127.0.0.1\nPORT=3100\n'
+          } | ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" \
+            'umask 077; cat > "$HOME/AlMoraqebPro-Server/.env"'
+
+          ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+
+          APP_DIR="$HOME/AlMoraqebPro-Server"
+          SERVICE_NAME="almoraqebpro"
+          DOMAIN="almoraqebpro.duckdns.org"
 
           cd "$APP_DIR"
-          test -s .env || { echo 'Missing production .env in application directory'; exit 1; }
+          test -s .env
           npm ci
           npm test
 
