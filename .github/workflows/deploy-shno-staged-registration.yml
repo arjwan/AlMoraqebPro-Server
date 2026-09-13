@@ -58,15 +58,33 @@ jobs:
           sudo restorecon -F /usr/share/nginx/html/shno-mano/signup.html /usr/share/nginx/html/shno-mano/signin.html || true
 
           sudo systemctl restart shno-mano-tech.service
+          local_config=""
+          for attempt in $(seq 1 30); do
+            if local_config="$(curl --fail --silent --show-error http://127.0.0.1:3000/api/auth/registration-config 2>/dev/null)"; then
+              break
+            fi
+            sleep 2
+          done
+          if [ -z "$local_config" ]; then
+            sudo systemctl --no-pager --full status shno-mano-tech.service || true
+            sudo journalctl --no-pager -u shno-mano-tech.service -n 100 || true
+            exit 1
+          fi
           sudo systemctl is-active --quiet shno-mano-tech.service
-          local_config="$(curl --fail --silent --show-error http://127.0.0.1:3000/api/auth/registration-config)"
           printf '%s' "$local_config" | grep -q '"otpRequired":false'
           printf '%s' "$local_config" | grep -q '"phoneRequired":true'
           echo "deployed_head=$(git rev-parse --short HEAD)"
           echo "local_registration_config=$local_config"
           REMOTE
 
-          public_config="$(curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/auth/registration-config)"
+          public_config=""
+          for attempt in $(seq 1 15); do
+            if public_config="$(curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/auth/registration-config 2>/dev/null)"; then
+              break
+            fi
+            sleep 2
+          done
+          test -n "$public_config"
           printf '%s' "$public_config" | grep -q '"otpRequired":false'
           printf '%s' "$public_config" | grep -q '"phoneRequired":true'
           curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/signup.html | grep -q 'verificationRequired'
