@@ -106,7 +106,7 @@ jobs:
           grep -q '/api/friends/qr/request' <<<"$invite_page"
           grep -q 'id="qrStatus"' <<<"$qr_page"
           grep -q 'مسح QR بالكاميرا' <<<"$qr_page"
-          grep -q 'qr-status success' <<<"$qr_page"
+          grep -q 'جارٍ التحقق من الرمز' <<<"$qr_page"
           grep -q 'ShnoManoNative.scanFriendQr' <<<"$invite_page"
           grep -q 'method: "PATCH"' <<<"$friends_script"
           home_page="$(curl --fail --silent --show-error -H 'Cache-Control: no-cache' "https://shino-mino-tak-tak.duckdns.org/taktak.html?deploy=$(date +%s)")"
