@@ -1,0 +1,49 @@
+name: Inspect Shno Mano Oracle OTP readiness
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/inspect-shno-mano-otp.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect Oracle without exposing values
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          : "${ORACLE_HOST:?Missing ORACLE_HOST secret}"
+          : "${ORACLE_USER:?Missing ORACLE_USER secret}"
+          : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY secret}"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          project="$HOME/shenoo-menoo-tak-tak"
+          echo "service=$(systemctl is-active shno-mano-tech.service 2>/dev/null || true)"
+          test -d "$project/.git"
+          echo "head=$(git -C "$project" rev-parse --short HEAD)"
+          env_file="$project/.env"
+          test -f "$env_file"
+          for key in JWT_SECRET MONGODB_URI OTP_DELIVERY_MODE OTP_PEPPER RESEND_API_KEY OTP_FROM_EMAIL TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_FROM_NUMBER; do
+            if grep -q "^$key=." "$env_file"; then
+              echo "$key=configured"
+            else
+              echo "$key=missing"
+            fi
+          done
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/health
+          REMOTE
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/health
+          rm -f ~/.ssh/oracle_key
