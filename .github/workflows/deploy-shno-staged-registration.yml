@@ -1,0 +1,74 @@
+name: Deploy Shno Mano staged registration
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/deploy-shno-staged-registration.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shno-mano-oracle-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy staged registration through authorized Oracle SSH
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          : "${ORACLE_HOST:?Missing ORACLE_HOST secret}"
+          : "${ORACLE_USER:?Missing ORACLE_USER secret}"
+          : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY secret}"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          project="$HOME/shenoo-menoo-tak-tak"
+          test -d "$project/.git"
+          cd "$project"
+          git fetch origin main
+          git pull --ff-only origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          npm ci
+          npm test
+
+          umask 077
+          test -f .env
+          cp .env ".env.backup-$(date -u +%Y%m%dT%H%M%SZ)"
+          filtered="$(mktemp)"
+          grep -Ev '^REGISTRATION_OTP_REQUIRED=' .env > "$filtered" || true
+          printf 'REGISTRATION_OTP_REQUIRED=false\n' >> "$filtered"
+          mv "$filtered" .env
+          chmod 600 .env
+
+          sudo install -m 0644 signup.html /usr/share/nginx/html/shno-mano/signup.html
+          sudo install -m 0644 signin.html /usr/share/nginx/html/shno-mano/signin.html
+          sudo restorecon -F /usr/share/nginx/html/shno-mano/signup.html /usr/share/nginx/html/shno-mano/signin.html || true
+
+          sudo systemctl restart shno-mano-tech.service
+          sudo systemctl is-active --quiet shno-mano-tech.service
+          local_config="$(curl --fail --silent --show-error http://127.0.0.1:3000/api/auth/registration-config)"
+          printf '%s' "$local_config" | grep -q '"otpRequired":false'
+          printf '%s' "$local_config" | grep -q '"phoneRequired":true'
+          echo "deployed_head=$(git rev-parse --short HEAD)"
+          echo "local_registration_config=$local_config"
+          REMOTE
+
+          public_config="$(curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/api/auth/registration-config)"
+          printf '%s' "$public_config" | grep -q '"otpRequired":false'
+          printf '%s' "$public_config" | grep -q '"phoneRequired":true'
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/signup.html | grep -q 'verificationRequired'
+          echo "public_registration_config=$public_config"
+          rm -f ~/.ssh/oracle_key
