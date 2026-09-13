@@ -62,6 +62,11 @@ jobs:
           sudo install -m 0644 taktak.html /usr/share/nginx/html/shno-mano/taktak.html
           sudo install -m 0644 friends.js /usr/share/nginx/html/shno-mano/friends.js
           sudo install -m 0644 social-api.js /usr/share/nginx/html/shno-mano/social-api.js
+          sudo install -m 0644 profile.html /usr/share/nginx/html/shno-mano/profile.html
+          sudo install -m 0644 profile.js /usr/share/nginx/html/shno-mano/profile.js
+          sudo install -m 0644 profile-media-editor.css /usr/share/nginx/html/shno-mano/profile-media-editor.css
+          sudo install -m 0644 profile-posts.js /usr/share/nginx/html/shno-mano/profile-posts.js
+          sudo install -m 0644 profile-posts.css /usr/share/nginx/html/shno-mano/profile-posts.css
           sudo restorecon -F /usr/share/nginx/html/shno-mano/signup.html /usr/share/nginx/html/shno-mano/signin.html /usr/share/nginx/html/shno-mano/developer.html || true
 
           sudo systemctl restart shno-mano-tech.service
@@ -113,5 +118,12 @@ jobs:
           friends_page="$(curl --fail --silent --show-error -H 'Cache-Control: no-cache' "https://shino-mino-tak-tak.duckdns.org/friends.html?deploy=$(date +%s)")"
           grep -q 'friend-qr.html?v=20260913-1' <<<"$home_page"
           grep -q '>▦ QR</a>' <<<"$friends_page"
+          profile_page="$(curl --fail --silent --show-error -H 'Cache-Control: no-cache' "https://shino-mino-tak-tak.duckdns.org/profile.html?deploy=$(date +%s)")"
+          profile_script="$(curl --fail --silent --show-error -H 'Cache-Control: no-cache' "https://shino-mino-tak-tak.duckdns.org/profile.js?deploy=$(date +%s)")"
+          profile_css="$(curl --fail --silent --show-error -H 'Cache-Control: no-cache' "https://shino-mino-tak-tak.duckdns.org/profile-media-editor.css?deploy=$(date +%s)")"
+          grep -q 'name="governorate"' <<<"$profile_page"
+          grep -q 'profile-posts.js?v=20260913-2' <<<"$profile_page"
+          grep -q 'function safeWebsite' <<<"$profile_script"
+          grep -q '.profile-form-grid' <<<"$profile_css"
           echo "public_registration_config=$public_config"
           rm -f ~/.ssh/oracle_key
