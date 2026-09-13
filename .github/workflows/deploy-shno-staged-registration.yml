@@ -57,6 +57,8 @@ jobs:
           sudo install -m 0644 signin.html /usr/share/nginx/html/shno-mano/signin.html
           sudo install -m 0644 developer.html /usr/share/nginx/html/shno-mano/developer.html
           sudo install -m 0644 invite-friends.html /usr/share/nginx/html/shno-mano/invite-friends.html
+          sudo install -m 0644 friends.html /usr/share/nginx/html/shno-mano/friends.html
+          sudo install -m 0644 taktak.html /usr/share/nginx/html/shno-mano/taktak.html
           sudo install -m 0644 friends.js /usr/share/nginx/html/shno-mano/friends.js
           sudo install -m 0644 social-api.js /usr/share/nginx/html/shno-mano/social-api.js
           sudo restorecon -F /usr/share/nginx/html/shno-mano/signup.html /usr/share/nginx/html/shno-mano/signin.html /usr/share/nginx/html/shno-mano/developer.html || true
@@ -102,5 +104,9 @@ jobs:
           grep -q '/api/friends/qr/request' <<<"$invite_page"
           grep -q 'ShnoManoNative.scanFriendQr' <<<"$invite_page"
           grep -q 'method: "PATCH"' <<<"$friends_script"
+          home_page="$(curl --fail --silent --show-error -H 'Cache-Control: no-cache' "https://shino-mino-tak-tak.duckdns.org/taktak.html?deploy=$(date +%s)")"
+          friends_page="$(curl --fail --silent --show-error -H 'Cache-Control: no-cache' "https://shino-mino-tak-tak.duckdns.org/friends.html?deploy=$(date +%s)")"
+          grep -q 'title="إضافة عبر QR"' <<<"$home_page"
+          grep -q '>▦ QR</a>' <<<"$friends_page"
           echo "public_registration_config=$public_config"
           rm -f ~/.ssh/oracle_key
