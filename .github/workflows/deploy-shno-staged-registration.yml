@@ -55,7 +55,8 @@ jobs:
 
           sudo install -m 0644 signup.html /usr/share/nginx/html/shno-mano/signup.html
           sudo install -m 0644 signin.html /usr/share/nginx/html/shno-mano/signin.html
-          sudo restorecon -F /usr/share/nginx/html/shno-mano/signup.html /usr/share/nginx/html/shno-mano/signin.html || true
+          sudo install -m 0644 developer.html /usr/share/nginx/html/shno-mano/developer.html
+          sudo restorecon -F /usr/share/nginx/html/shno-mano/signup.html /usr/share/nginx/html/shno-mano/signin.html /usr/share/nginx/html/shno-mano/developer.html || true
 
           sudo systemctl restart shno-mano-tech.service
           local_config=""
@@ -88,5 +89,7 @@ jobs:
           printf '%s' "$public_config" | grep -q '"otpRequired":false'
           printf '%s' "$public_config" | grep -q '"phoneRequired":true'
           curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/signup.html | grep -q 'verificationRequired'
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/developer.html | grep -q 'createUserForm'
+          curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/developer.html | grep -q 'إنشاء حساب مستخدم'
           echo "public_registration_config=$public_config"
           rm -f ~/.ssh/oracle_key
