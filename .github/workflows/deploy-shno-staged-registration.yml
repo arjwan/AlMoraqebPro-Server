@@ -89,9 +89,10 @@ jobs:
           printf '%s' "$public_config" | grep -q '"otpRequired":false'
           printf '%s' "$public_config" | grep -q '"phoneRequired":true'
           signup_page="$(curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/signup.html)"
-          developer_page="$(curl --fail --silent --show-error https://shino-mino-tak-tak.duckdns.org/developer.html)"
+          developer_page="$(curl --fail --silent --show-error -H 'Cache-Control: no-cache' "https://shino-mino-tak-tak.duckdns.org/developer.html?deploy=$(date +%s)")"
           grep -q 'verificationRequired' <<<"$signup_page"
           grep -q 'createUserForm' <<<"$developer_page"
+          grep -q 'href="#create-user"' <<<"$developer_page"
           grep -q 'إنشاء حساب مستخدم' <<<"$developer_page"
           echo "public_registration_config=$public_config"
           rm -f ~/.ssh/oracle_key
