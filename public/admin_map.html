@@ -394,19 +394,28 @@ async function loadLocations() {
 
         for (const tracked of selected) {
             const last = tracked.lastLocation;
-            if (!tracked.trackingAllowed || !last) {
+            if (!last) {
                 areas.push({
                     name: tracked.name || 'موظف',
-                    area: tracked.unavailableReason || 'الموقع غير متاح'
+                    area: tracked.unavailableReason || 'لم يتم تسجيل موقع للموظف بعد'
                 });
                 continue;
             }
 
             const lat = Number(last.latitude);
             const lon = Number(last.longitude);
-            const mode = tracked.trackingMode === 'delegation'
-                ? 'تكليف فعّال'
-                : 'ضمن وقت الدوام';
+            if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                areas.push({
+                    name: tracked.name || 'موظف',
+                    area: 'إحداثيات الموقع غير صالحة'
+                });
+                continue;
+            }
+            const mode = tracked.trackingAllowed
+                ? tracked.trackingMode === 'delegation'
+                    ? 'تكليف فعّال'
+                    : 'ضمن وقت الدوام'
+                : 'آخر موقع مسجل';
             L.marker([lat, lon]).addTo(map)
                 .bindPopup(`<b>${escapeHtml(tracked.name || 'موظف')}</b><br>${mode}<br>${new Date(last.timestamp).toLocaleString('ar-IQ')}`);
             bounds.push([lat, lon]);
