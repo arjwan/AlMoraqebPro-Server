@@ -7066,7 +7066,7 @@ app.get(
                         }
                     })
                     .select(
-                        '_id name specialty workplace delegation'
+                        '_id name specialty workplace delegation lastKnownLocation location'
                     )
                     .lean();
 
@@ -7180,24 +7180,27 @@ app.get(
                     unavailableReason,
 
                     lastLocation:
-                        trackingAllowed &&
-                        lastAttendance &&
-                        Number.isFinite(Number(lastAttendance.latitude)) &&
-                        Number.isFinite(Number(lastAttendance.longitude))
-                            ? {
-                                latitude:
-                                    lastAttendance.latitude,
-
-                                longitude:
-                                    lastAttendance.longitude,
-
-                                type:
-                                    lastAttendance.type,
-
-                                timestamp:
-                                    lastAttendance.timestamp
-                            }
-                            : null
+                        (() => {
+                            const source =
+                                lastAttendance &&
+                                Number.isFinite(Number(lastAttendance.latitude)) &&
+                                Number.isFinite(Number(lastAttendance.longitude))
+                                    ? lastAttendance
+                                    : emp.lastKnownLocation &&
+                                      Number.isFinite(Number(emp.lastKnownLocation.latitude)) &&
+                                      Number.isFinite(Number(emp.lastKnownLocation.longitude))
+                                        ? emp.lastKnownLocation
+                                        : null;
+                            return source
+                                ? {
+                                    latitude: Number(source.latitude),
+                                    longitude: Number(source.longitude),
+                                    accuracyMeters: Number(source.accuracyMeters || 0),
+                                    type: source.type || 'last-known',
+                                    timestamp: source.timestamp || null
+                                }
+                                : null;
+                        })()
 
                 });
 
