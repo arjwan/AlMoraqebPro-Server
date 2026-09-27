@@ -9423,11 +9423,16 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const wageType = ['daily', 'weekly', 'monthly'].includes(employee.wageType) ? employee.wageType : 'monthly';
             const divisor = wageType === 'daily' ? 1 : wageType === 'weekly' ? 7 : 30;
             const dailyRate = wageType === 'daily' ? basicSalary : basicSalary / divisor;
-            const absenceDays = Math.max(0, eligiblePeriodKeys.length - payableDays.size - eligibleUnpaidLeaveDays.size);
+            const explicitAbsentDays = new Set(
+                [...(attendanceByEmployee.get(id) || new Map()).entries()]
+                    .filter(([, types]) => types.has('absent-late'))
+                    .map(([day]) => day)
+            );
+            const absenceDays = explicitAbsentDays.size;
             const absenceDeduction = wageType === 'daily' ? 0 : dailyRate * (absenceDays + eligibleUnpaidLeaveDays.size);
             const lateMinutes = Number(lateMinutesByEmployee.get(id) || 0);
             const lateDeduction = wageType === 'daily' ? 0 : (dailyRate / shiftWorkMinutes(shift, employee)) * lateMinutes;
-            const grossSalary = wageType === 'daily' ? dailyRate * payableDays.size : dailyRate * eligiblePeriodKeys.length;
+            const grossSalary = dailyRate * payableDays.size;
             let salary = salaryByEmployee.get(id);
             if (!salary) salary = new SalaryRecord({ companyId, employeeId: id });
             const carriedBalance = salary.calculationKey === calculationKey
