@@ -668,6 +668,30 @@ async function loadSalaries() {
         allSalaries =
             data.salaries || [];
 
+        // Attendance changes the earned amount; keep salary cards current automatically.
+        // This calculates entitlement only. It never creates or confirms a payout.
+        const todayKey = new Date().toISOString().slice(0, 10);
+        const needsTodayCalculation = allSalaries.some(salary => {
+            const calculatedKey = String(salary.calculationKey || '');
+            return !calculatedKey || !calculatedKey.endsWith(':' + todayKey);
+        });
+        if (navigator.onLine && needsTodayCalculation && !window.__autoPayrollCalculating) {
+            window.__autoPayrollCalculating = true;
+            try {
+                const from = document.getElementById('payrollFrom')?.value ||
+                    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+                const to = document.getElementById('payrollTo')?.value || todayKey;
+                await api('/api/admin/payroll/calculate', {
+                    method: 'POST',
+                    body: JSON.stringify({ from, to })
+                });
+                const refreshed = await api('/api/admin/salaries');
+                allSalaries = refreshed.salaries || [];
+            } finally {
+                window.__autoPayrollCalculating = false;
+            }
+        }
+
         await saveLocalSalaries();
 
         updatePayrollBranches();
