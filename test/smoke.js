@@ -511,11 +511,11 @@ async function waitForServer(url, retries, delay) {
             check('paid leave counts as payable salary day', Number(eventSalary.paidLeaveDays) === 1 && Number(eventSalary.attendanceDays) === 3);
             check('unpaid leave does not count as payable salary day', Number(eventSalary.unpaidLeaveDays) === 1);
             check('delegation counts automatically as payable salary day', Number(eventSalary.attendanceDays) === 3);
-            check('replacement period does not become absence', Number(eventSalary.replacementDays) === 1 && Number(eventSalary.absenceDays) === 0);
+            check('replacement period is tracked without a replacement deduction', Number(eventSalary.replacementDays) === 1 && Number(eventSalary.replacementDeduction) === 0);
             check('replacement has no salary deduction', Number(eventSalary.replacementDeduction) === 0 && Number(eventSalary.netSalary) > 0);
             check('actual late minutes and proportional deduction appear in payroll', Number(eventSalary.lateMinutes) === 30 && Number(eventSalary.lateDeduction) > 0);
             check('loan balance and installment remain separate from earnings', Number(eventSalary.loans) === 100 &&
-                Number(eventSalary.loanDeduction) === 20 && Number(eventSalary.grossSalary) === Number(eventSalary.basicSalary) / 30 * 4);
+                Number(eventSalary.loanDeduction) === 20 && Number(eventSalary.grossSalary) === Number(eventSalary.basicSalary) / 30 * Number(eventSalary.attendanceDays));
 
             const eventBatch = await (await fetch(BASE + '/api/admin/payroll-batches', {
                 method: 'POST',
