@@ -9236,6 +9236,64 @@ function shiftWorkMinutes(shift, employee) {
     return Math.max(1, Number(employee && employee.workHours || 8) * 60);
 }
 
+async function recalculateCompanyPayroll(companyId, reference = new Date()) {
+    const period = payrollMonthPeriod(reference);
+    const from = period.from;
+    const to = new Date(reference);
+    to.setHours(23, 59, 59, 999);
+    const periodKeys = payrollDateKeys(from, to);
+    const calculationKey = `${periodKeys[0]}:${periodKeys[periodKeys.length - 1]}`;
+    const [employees, shifts, attendance, leaves, salaries] = await Promise.all([
+        Employee.find({ companyId, employmentStatus: { $ne: 'inactive' } }).lean(),
+        Shift.find({ companyId }).lean(),
+        Attendance.find({ companyId, timestamp: { $gte: from, $lte: to } }).lean(),
+        ServiceRequest.find({ companyId, type: 'leave', status: 'approved', fromDate: { $lte: to }, toDate: { $gte: from } }).lean(),
+        SalaryRecord.find({ companyId })
+    ]);
+    const salaryByEmployee = new Map(salaries.map(row => [String(row.employeeId), row]));
+    for (const employee of employees) {
+        const id = String(employee._id);
+        const shift = shifts.find(row => (row.employeeIds || []).map(String).includes(id));
+        const basicSalary = Number(employee.salary || 0);
+        if (!shift || !(basicSalary > 0)) continue;
+        const wageType = ['daily','weekly','monthly'].includes(employee.wageType) ? employee.wageType : 'monthly';
+        const dailyRate = wageType === 'daily' ? basicSalary : basicSalary / (wageType === 'weekly' ? 7 : 30);
+        const days = new Map();
+        let lateMinutes = 0;
+        attendance.filter(row => String(row.employeeId) === id).forEach(row => {
+            const key = payrollDayKey(row.timestamp);
+            if (!days.has(key)) days.set(key, new Set());
+            if (row.type === 'attendance') {
+                days.get(key).add(row.timeStatus === 'absent-late' ? 'absent' : 'in');
+                if (row.timeStatus === 'late') lateMinutes += Math.max(0, Number(row.lateMinutes || 0));
+            } else if (row.timeStatus !== 'early-exit-pending' && row.managerApprovalStatus !== 'rejected') {
+                days.get(key).add('out');
+            }
+        });
+        const validDays = new Set([...days].filter(([,v]) => v.has('in') && v.has('out') && !v.has('absent')).map(([k]) => k));
+        const unpaid = new Set();
+        leaves.filter(row => String(row.employeeId) === id && row.leavePaymentType === 'unpaid').forEach(row => {
+            payrollDateKeys(new Date(Math.max(from, new Date(row.fromDate || row.requestedDate))), new Date(Math.min(to, new Date(row.toDate || row.fromDate || row.requestedDate)))).forEach(k => unpaid.add(k));
+        });
+        const eligible = periodKeys.filter(k => !employee.hireDate || k >= payrollDayKey(employee.hireDate));
+        const absenceDays = Math.max(0, eligible.length - validDays.size - unpaid.size);
+        const absenceDeduction = wageType === 'daily' ? 0 : dailyRate * (absenceDays + unpaid.size);
+        const lateDeduction = wageType === 'daily' ? 0 : (dailyRate / shiftWorkMinutes(shift, employee)) * lateMinutes;
+        const grossSalary = wageType === 'daily' ? dailyRate * validDays.size : dailyRate * eligible.length;
+        let salary = salaryByEmployee.get(id) || new SalaryRecord({ companyId, employeeId: id });
+        const totalDeductions = Number(salary.loanDeduction || 0) + Number(salary.securityDeduction || 0) + Number(salary.otherDeductions || 0) + absenceDeduction + lateDeduction;
+        const earnings = Math.max(0, grossSalary + Number(salary.allowances || 0) + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
+        salary.set({ employeeName: employee.name || '', employeeSerial: employee.employeeSerial || '', specialty: employee.specialty || '',
+            workplace: employee.workplace || employee.branch || '', shiftName: shift.name || '', wageType, basicSalary, dailyRate,
+            payrollFrom: from, payrollTo: to, attendanceDays: validDays.size, attendanceCount: validDays.size,
+            unpaidLeaveDays: unpaid.size, absenceDays, absenceDeduction, lateMinutes, lateDeduction, totalDeductions,
+            grossSalary, currentPeriodEarnings: earnings, netSalary: earnings, calculatedAt: new Date(), calculationKey,
+            lastAttendanceAt: attendance.filter(row => String(row.employeeId) === id).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0]?.timestamp || salary.lastAttendanceAt,
+            payoutStatus: salary.pendingPayoutBatchId ? salary.payoutStatus : 'unpaid' });
+        await salary.save();
+    }
+}
+
 app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
     try {
         const companyId = req.session.companyId;
