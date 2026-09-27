@@ -88,6 +88,15 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
     timestamp:at,type:'attendance',employeeName:doc.name,attendanceStatus:'normal',locationStatus:'approved',
     timeStatus:late?'late':'within-shift',lateMinutes:late?18:0,managerApprovalStatus:'not-required',demoData:true,demoBatch:BATCH});
    attendance++;
+   // For the daytime interview demo, complete a valid workday with a matching departure.
+   // This remains explicitly demoData and exercises the real payroll in+out rule.
+   if(sh.key==='M'){
+    const out=new Date(today); out.setHours(16,(i*2)%15,0,0);
+    await Attendance.create({employeeId:String(doc._id),companyId,deviceId:`DEMO-DEVICE-${i+1}`,verificationMethod:'device-biometric',
+     shiftName:sh.name,workplace:loc.name,latitude:loc.latitude+(i%3)*0.0001,longitude:loc.longitude+(i%2)*0.0001,
+     timestamp:out,type:'departure',employeeName:doc.name,attendanceStatus:'normal',locationStatus:'approved',
+     timeStatus:'within-shift',lateMinutes:0,managerApprovalStatus:'not-required',demoData:true,demoBatch:BATCH});
+   }
   }
   console.log(JSON.stringify({ok:true,batch:BATCH,company:companyId,companyName,companyRecordUntouched:true,locationsUsed:locations.length,shifts:shifts.length,employees:employees.length,attendanceToday:attendance},null,2));
  }finally{await mongoose.disconnect()}
