@@ -187,6 +187,8 @@ let map = null;
 let selectedEmployees = []; // قائمة معرفات الموظفين المختارين
 let employees = []; // كل الموظفين
 let currentUserMarker = null;
+let trackedMarkers = L ? L.layerGroup() : null;
+const reverseGeoCache = new Map();
 
 function getMapLocation(){
     const button=document.getElementById('getMapLocationBtn');
@@ -362,18 +364,19 @@ async function loadLocations() {
         return;
     }
 
-    // مسح الطبقات السابقة
-    if (map) {
-        map.remove();
+    // أبقِ خريطة Leaflet وطبقة البلاطات محمّلتين؛ حدّث علامات الموظفين فقط.
+    if (!map) {
+        map = L.map('map').setView([33.3128, 44.3615], 6);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19,
+            crossOrigin: true,
+            updateWhenIdle: true,
+            keepBuffer: 2
+        }).addTo(map);
     }
-
-    // إنشاء الخريطة
-    map = L.map('map').setView([33.3128, 44.3615], 6); // العراق كافتراضي
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-        crossOrigin: true
-    }).addTo(map);
+    if (!trackedMarkers) trackedMarkers = L.layerGroup().addTo(map);
+    trackedMarkers.clearLayers();
 
     const areas = [];
     const bounds = [];
@@ -418,19 +421,24 @@ async function loadLocations() {
                     ? 'تكليف فعّال'
                     : 'ضمن وقت الدوام'
                 : 'آخر موقع مسجل';
-            L.marker([lat, lon]).addTo(map)
+            L.marker([lat, lon]).addTo(trackedMarkers)
                 .bindPopup(`<b>${escapeHtml(tracked.name || 'موظف')}</b><br>${mode}<br>${new Date(last.timestamp).toLocaleString('ar-IQ')}`);
             bounds.push([lat, lon]);
 
-            try {
-                const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1&accept-language=ar`);
-                const geoData = await geoRes.json();
-                const address = geoData.address || {};
-                const areaName = address.suburb || address.neighbourhood || address.city || address.town || address.village || address.county || address.state || 'غير محدد';
-                areas.push({ name: tracked.name || 'موظف', area: areaName + ' — ' + mode });
-            } catch {
-                areas.push({ name: tracked.name || 'موظف', area: 'غير محدد — ' + mode });
+            const geoKey = lat.toFixed(4) + ',' + lon.toFixed(4);
+            let areaName = reverseGeoCache.get(geoKey);
+            if (!areaName) {
+                try {
+                    const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1&accept-language=ar`);
+                    const geoData = await geoRes.json();
+                    const address = geoData.address || {};
+                    areaName = address.suburb || address.neighbourhood || address.city || address.town || address.village || address.county || address.state || 'غير محدد';
+                    reverseGeoCache.set(geoKey, areaName);
+                } catch {
+                    areaName = 'غير محدد';
+                }
             }
+            areas.push({ name: tracked.name || 'موظف', area: areaName + ' — ' + mode });
         }
     } catch (error) {
         alert(error.message || 'تعذر جلب مواقع الموظفين');
@@ -476,7 +484,10 @@ function escapeHtml(value) {
             map = L.map('map').setView([33.3128, 44.3615], 6);
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
-        crossOrigin: true }).addTo(map);
+        crossOrigin: true,
+        updateWhenIdle: true,
+        keepBuffer: 2 }).addTo(map);
+            trackedMarkers = L.layerGroup().addTo(map);
         }
     }
 })();
