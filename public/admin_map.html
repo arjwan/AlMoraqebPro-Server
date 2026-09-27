@@ -367,9 +367,10 @@ async function loadLocations() {
     // أبقِ خريطة Leaflet وطبقة البلاطات محمّلتين؛ حدّث علامات الموظفين فقط.
     if (!map) {
         map = L.map('map').setView([33.3128, 44.3615], 6);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19,
+        L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            maxZoom: 20,
+            subdomains: 'abcd',
             crossOrigin: true,
             updateWhenIdle: true,
             keepBuffer: 2
@@ -482,8 +483,9 @@ function escapeHtml(value) {
             alert('تعذر تحميل مكتبة الخريطة');
         } else {
             map = L.map('map').setView([33.3128, 44.3615], 6);
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
+            L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        maxZoom: 20,
+            subdomains: 'abcd',
         crossOrigin: true,
         updateWhenIdle: true,
         keepBuffer: 2 }).addTo(map);
