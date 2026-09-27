@@ -23,7 +23,8 @@
     "express": "^4.19.2",
     "mongodb": "^7.5.0",
     "mongoose": "^9.9.1",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "@simplewebauthn/server": "^13.2.2"
   },
   "engines": {
     "node": "18.x"
@@ -37,10 +38,35 @@
     "appId": "com.almoraqebpro.desktop",
     "productName": "AlMoraqebPro",
     "asar": true,
-    "directories": { "output": "dist-desktop" },
-    "files": ["desktop/**", "public/**", "developer/**", "package.json"],
-    "linux": { "target": ["AppImage", "deb"], "category": "Office", "icon": "desktop/assets/icon.png" },
-    "win": { "target": ["nsis"], "icon": "desktop/assets/icon.ico" },
-    "mac": { "target": ["dmg"], "category": "public.app-category.business", "icon": "desktop/assets/icon.icns" }
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "files": [
+      "desktop/**",
+      "public/**",
+      "developer/**",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office",
+      "icon": "desktop/assets/icon.png"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "desktop/assets/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.business",
+      "icon": "desktop/assets/icon.icns"
+    }
   }
 }
