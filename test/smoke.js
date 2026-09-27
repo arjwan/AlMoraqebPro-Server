@@ -12,8 +12,8 @@ const { spawn } = require('child_process');
 const path = require('path');
 const crypto = require('crypto');
 
-const PORT = 8433;
-const BASE = 'http://localhost:' + PORT;
+const PORT = Number(process.env.TEST_PORT || (18000 + (process.pid % 20000)));
+const BASE = 'http://127.0.0.1:' + PORT;
 const DEV_PASSWORD = 'test-dev-password';
 
 let pass = 0, fail = 0, skipped = 0;
