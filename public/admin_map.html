@@ -369,8 +369,10 @@ async function loadLocations() {
 
     // إنشاء الخريطة
     map = L.map('map').setView([33.3128, 44.3615], 6); // العراق كافتراضي
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+        crossOrigin: true
     }).addTo(map);
 
     const areas = [];
@@ -472,7 +474,9 @@ function escapeHtml(value) {
             alert('تعذر تحميل مكتبة الخريطة');
         } else {
             map = L.map('map').setView([33.3128, 44.3615], 6);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+        crossOrigin: true }).addTo(map);
         }
     }
 })();
