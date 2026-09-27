@@ -188,6 +188,7 @@ let selectedEmployees = []; // قائمة معرفات الموظفين المخ
 let employees = []; // كل الموظفين
 let currentUserMarker = null;
 let trackedMarkers = L ? L.layerGroup() : null;
+const trackedLocations = new Map();
 const reverseGeoCache = new Map();
 
 function getMapLocation(){
@@ -341,7 +342,24 @@ function addEmployee() {
 
 function removeEmployee(id) {
     selectedEmployees = selectedEmployees.filter(e => e !== id);
+    trackedLocations.delete(String(id));
     updateSelectedList();
+}
+
+function focusEmployee(id) {
+    const point = trackedLocations.get(String(id));
+    if (!point || !map) {
+        loadLocations().then(() => {
+            const refreshed = trackedLocations.get(String(id));
+            if (refreshed && map) {
+                map.setView([refreshed.lat, refreshed.lon], 17, { animate: true });
+                if (refreshed.marker) refreshed.marker.openPopup();
+            }
+        }).catch(() => {});
+        return;
+    }
+    map.setView([point.lat, point.lon], 17, { animate: true });
+    if (point.marker) point.marker.openPopup();
 }
 
 function updateSelectedList() {
@@ -352,7 +370,7 @@ function updateSelectedList() {
         if (emp) {
             const chip = document.createElement('span');
             chip.className = 'selected-chip';
-            chip.innerHTML = `${emp.name} <i class="fas fa-times" onclick="removeEmployee('${id}')"></i>`;
+            chip.innerHTML = `<button type="button" onclick="focusEmployee('${id}')" title="الانتقال إلى موقع الموظف" style="all:unset;cursor:pointer">${escapeHtml(emp.name)}</button> <i class="fas fa-times" title="إغلاق" onclick="event.stopPropagation();removeEmployee('${id}')"></i>`;
             container.appendChild(chip);
         }
     });
@@ -378,6 +396,7 @@ async function loadLocations() {
     }
     if (!trackedMarkers) trackedMarkers = L.layerGroup().addTo(map);
     trackedMarkers.clearLayers();
+    trackedLocations.clear();
 
     const areas = [];
     const bounds = [];
@@ -422,8 +441,9 @@ async function loadLocations() {
                     ? 'تكليف فعّال'
                     : 'ضمن وقت الدوام'
                 : 'آخر موقع مسجل';
-            L.marker([lat, lon]).addTo(trackedMarkers)
+            const marker = L.marker([lat, lon]).addTo(trackedMarkers)
                 .bindPopup(`<b>${escapeHtml(tracked.name || 'موظف')}</b><br>${mode}<br>${new Date(last.timestamp).toLocaleString('ar-IQ')}`);
+            trackedLocations.set(String(tracked.employeeId), { lat, lon, marker });
             bounds.push([lat, lon]);
 
             const geoKey = lat.toFixed(4) + ',' + lon.toFixed(4);
