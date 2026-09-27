@@ -84,6 +84,14 @@ jobs:
             touch .interview-demo-b3214.seeded
           fi
 
+          # One-time refresh: add valid departure pairs for the daytime demo employees.
+          if [ ! -f .interview-demo-b3214-daytime-pairs.seeded ]; then
+            DEMO_COMPANY_ID=B-3214 DEMO_EMPLOYEE_COUNT=30 node scripts/seed-interview-demo.js | tee /tmp/almoraqebpro-demo-daytime.json
+            grep -q '"ok": true' /tmp/almoraqebpro-demo-daytime.json
+            grep -q '"company": "B-3214"' /tmp/almoraqebpro-demo-daytime.json
+            touch .interview-demo-b3214-daytime-pairs.seeded
+          fi
+
           sudo systemctl stop "$SERVICE_NAME" 2>/dev/null || true
           sudo install -o root -g root -m 600 .env "/etc/${SERVICE_NAME}.env"
           sudo restorecon -F "/etc/${SERVICE_NAME}.env" 2>/dev/null || true
