@@ -7,9 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" />
-    <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
-    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body {
@@ -388,8 +385,12 @@ async function loadLocations() {
     // أبقِ خريطة Leaflet وطبقة البلاطات محمّلتين؛ حدّث علامات الموظفين فقط.
     if (!map) {
         map = L.map('map').setView([33.3128, 44.3615], 6);
-        L.maplibreGL({
-            style: 'https://tiles.openfreemap.org/styles/liberty'
+        L.tileLayer('https://tiles.openfreemap.org/styles/liberty/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; OpenFreeMap',
+            maxZoom: 19,
+            crossOrigin: true,
+            updateWhenIdle: true,
+            keepBuffer: 2
         }).addTo(map);
     }
     if (!trackedMarkers) trackedMarkers = L.layerGroup().addTo(map);
