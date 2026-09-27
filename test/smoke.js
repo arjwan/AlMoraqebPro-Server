@@ -33,6 +33,15 @@ function signedAdminToken(companyId) {
     return body + '.' + signature;
 }
 
+function signedDeveloperToken() {
+    const body = Buffer.from(JSON.stringify({
+        role: 'developer', mfa: 'fido2', exp: Date.now() + 60000
+    })).toString('base64url');
+    const signature = crypto.createHmac('sha256', 'test-session')
+        .update(body).digest('base64url');
+    return body + '.' + signature;
+}
+
 async function waitForServer(url, retries, delay) {
     for (let i = 0; i < retries; i++) {
         try { const r = await fetch(url); if (r.status < 500) return; } catch (_) { /* retry */ }
@@ -96,14 +105,18 @@ async function waitForServer(url, retries, delay) {
         });
         check('admin cookie passes requireAdmin without Bearer', cookieOnlySession.status !== 401);
 
-        // تسجيل دخول المطور (لا يحتاج قاعدة بيانات)
-        const login = await (await fetch(BASE + '/api/developer/login', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: DEV_PASSWORD })
+        // FIDO2 developer bootstrap: password is only the first factor; protected API tests use
+        // a locally signed FIDO2-marked token so CI never weakens production authentication.
+        const firstFactor = await (await fetch(BASE + '/api/developer/webauthn/password', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: 'developer', password: DEV_PASSWORD })
         })).json();
-        check('developer login => token', !!login.token);
-        check('developer wrong password => 401', (await fetch(BASE + '/api/developer/login', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: 'wrong' })
+        check('developer FIDO2 password stage => ticket', firstFactor.success === true && !!firstFactor.ticket);
+        check('developer FIDO2 wrong password => 401', (await fetch(BASE + '/api/developer/webauthn/password', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: 'developer', password: 'wrong' })
         })).status === 401);
+        const login = { token: signedDeveloperToken() };
 
         // مطلوب قاعدة بيانات
         if (dbUp) {
