@@ -34,53 +34,40 @@
         <div class="message" id="message" role="alert" aria-live="polite"></div>
     </form>
     <a class="back" href="/admin_login.html">العودة إلى دخول المدير</a>
-    <div class="security">🔒 جلسة محمية ومخصصة للمطور</div>
+    <div class="security">🔐 كلمة المرور + FIDO2 / WebAuthn</div>
 </main>
 <script>
 (function(){
-    'use strict';
-    const form=document.getElementById('developerLogin');
-    const username=document.getElementById('username');
-    const password=document.getElementById('password');
-    const otp=document.getElementById('otp');
-    const button=document.getElementById('submitButton');
-    const message=document.getElementById('message');
-    const next=new URLSearchParams(location.search).get('next');
-    const destination=next&&next.startsWith('/developer/')&&!next.startsWith('//')?next:'/developer/create-company';
-
-    document.getElementById('togglePassword').addEventListener('click',function(){
-        const visible=password.type==='text';
-        password.type=visible?'password':'text';
-        this.textContent=visible?'👁️':'🙈';
-        this.setAttribute('aria-label',visible?'إظهار كلمة المرور':'إخفاء كلمة المرور');
-    });
-
-    form.addEventListener('submit',async function(event){
-        event.preventDefault();
-        message.className='message info';
-        message.textContent='جارٍ التحقق...';
-        button.disabled=true;
-        try{
-            const response=await fetch('/api/developer/login',{
-                method:'POST',
-                credentials:'same-origin',
-                headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({username:username.value.trim(),password:password.value,otp:otp.value.trim()})
-            });
-            const data=await response.json().catch(function(){return {};});
-            if(!response.ok||!data.success){
-                throw new Error(data.message||'تعذر تسجيل الدخول إلى بوابة المطور');
-            }
-            message.textContent='تم التحقق، جارٍ فتح خيارات المطور...';
-            location.replace(destination);
-        }catch(error){
-            message.className='message error';
-            message.textContent='❌ '+(error.message||'تعذر الاتصال بالخادم');
-            button.disabled=false;
-            password.focus();
-            password.select();
-        }
-    });
+'use strict';
+const form=document.getElementById('developerLogin'), username=document.getElementById('username'), password=document.getElementById('password'), button=document.getElementById('submitButton'), message=document.getElementById('message');
+const next=new URLSearchParams(location.search).get('next');
+const destination=next&&next.startsWith('/developer/')&&!next.startsWith('//')?next:'/developer/create-company';
+const b64ToBytes=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(s.length/4)*4,'=')),c=>c.charCodeAt(0));
+const bytesToB64=b=>{let s='';new Uint8Array(b).forEach(x=>s+=String.fromCharCode(x));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+function prepCreate(o){o.challenge=b64ToBytes(o.challenge);o.user.id=b64ToBytes(o.user.id);(o.excludeCredentials||[]).forEach(x=>x.id=b64ToBytes(x.id));return o}
+function prepGet(o){o.challenge=b64ToBytes(o.challenge);(o.allowCredentials||[]).forEach(x=>x.id=b64ToBytes(x.id));return o}
+function credentialJSON(c){const r={id:c.id,rawId:bytesToB64(c.rawId),type:c.type,response:{clientDataJSON:bytesToB64(c.response.clientDataJSON)}};if(c.response.attestationObject)r.response.attestationObject=bytesToB64(c.response.attestationObject);if(c.response.authenticatorData)r.response.authenticatorData=bytesToB64(c.response.authenticatorData);if(c.response.signature)r.response.signature=bytesToB64(c.response.signature);if(c.response.userHandle)r.response.userHandle=bytesToB64(c.response.userHandle);if(c.response.getTransports)r.response.transports=c.response.getTransports();return r}
+async function post(url,body){const r=await fetch(url,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(!r.ok||!d.success)throw Error(d.message||'تعذر التحقق');return d}
+document.getElementById('togglePassword').onclick=function(){const v=password.type==='text';password.type=v?'password':'text';this.textContent=v?'👁️':'🙈'};
+form.addEventListener('submit',async e=>{
+ e.preventDefault();button.disabled=true;message.className='message info';message.textContent='المرحلة الأولى: التحقق من بيانات المطور...';
+ try{
+  if(!window.PublicKeyCredential)throw Error('هذا المتصفح لا يدعم FIDO2 / WebAuthn');
+  const first=await post('/api/developer/webauthn/password',{username:username.value.trim(),password:password.value});
+  if(first.registered){
+   message.textContent='استخدم مفتاح الأمان أو بصمة/قفل الجهاز...';
+   const o=await post('/api/developer/webauthn/auth/options',{ticket:first.ticket});
+   const cred=await navigator.credentials.get({publicKey:prepGet(o.options)});
+   await post('/api/developer/webauthn/auth/verify',{ticket:first.ticket,response:credentialJSON(cred)});
+  }else{
+   message.textContent='الإعداد الأول: سجّل مفتاح FIDO2 أو بصمة/قفل هذا الجهاز...';
+   const o=await post('/api/developer/webauthn/register/options',{ticket:first.ticket});
+   const cred=await navigator.credentials.create({publicKey:prepCreate(o.options)});
+   await post('/api/developer/webauthn/register/verify',{ticket:first.ticket,response:credentialJSON(cred)});
+  }
+  message.textContent='تم التحقق بـ FIDO2، جارٍ فتح لوحة المطور...';location.replace(destination);
+ }catch(err){message.className='message error';message.textContent='❌ '+(err.message||'فشل التحقق');button.disabled=false}
+});
 }());
 </script>
 </body>
