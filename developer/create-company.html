@@ -1691,6 +1691,8 @@ tbody tr:hover{
    إعدادات الجلسة
 ========================================================= */
 
+// FIDO2 establishes an HttpOnly developer session cookie.
+// Do not require a JavaScript token that the FIDO2 login intentionally never exposes.
 let developerToken =
     sessionStorage.getItem(
         "almoraqeb_developer_token"
@@ -1711,73 +1713,36 @@ let editingCompanyIndex = null;
 
 async function developerRequest(url, options = {}) {
 
-    if (!developerToken) {
-
-        developerVerified = false;
-
-        throw new Error(
-            "جلسة المطور غير موجودة."
-        );
-    }
-
     const headers = {
-
-        "Content-Type":
-            "application/json",
-
-        ...(options.headers || {}),
-
-        "Authorization":
-            `Bearer ${developerToken}`
+        "Content-Type": "application/json",
+        ...(options.headers || {})
     };
 
+    // Keep compatibility with an existing bearer token, but the normal FIDO2
+    // path authenticates with the secure HttpOnly cookie.
+    if (developerToken) {
+        headers["Authorization"] = `Bearer ${developerToken}`;
+    }
 
-    const response =
-        await fetch(url, {
-            ...options,
-            headers
-        });
+    const response = await fetch(url, {
+        ...options,
+        headers,
+        credentials:"same-origin"
+    });
 
+    const data = await response.json().catch(() => ({}));
 
-    const data =
-        await response
-            .json()
-            .catch(() => ({}));
-
-
-    if (
-        response.status === 401 ||
-        response.status === 403
-    ) {
-
+    if (response.status === 401 || response.status === 403) {
         developerToken = "";
-
         developerVerified = false;
-
-        sessionStorage.removeItem(
-            "almoraqeb_developer_token"
-        );
-
+        sessionStorage.removeItem("almoraqeb_developer_token");
         updateSecurityUI(false);
-
-        throw new Error(
-            "تم رفض صلاحيات المطور. سجل الدخول من جديد."
-        );
+        throw new Error("تم رفض صلاحيات المطور. سجل الدخول من جديد.");
     }
 
-
-    if (
-        !response.ok ||
-        data.success === false
-    ) {
-
-        throw new Error(
-            data.message ||
-            data.error ||
-            "تعذر تنفيذ العملية."
-        );
+    if (!response.ok || data.success === false) {
+        throw new Error(data.message || data.error || "تعذر تنفيذ العملية.");
     }
-
 
     return data;
 }
@@ -1789,21 +1754,18 @@ async function developerRequest(url, options = {}) {
 
 async function authenticateDeveloper() {
 
-    if (developerToken) {
-        try {
-            await developerRequest("/api/developer/companies", { method:"GET" });
-            developerVerified = true;
-            updateSecurityUI(true);
-            return true;
-        } catch {
-            developerToken = "";
-            sessionStorage.removeItem("almoraqeb_developer_token");
-            developerVerified = false;
-        }
+    try {
+        // First try the FIDO2 HttpOnly session cookie (or an older bearer token).
+        await developerRequest("/api/developer/companies", { method:"GET" });
+        developerVerified = true;
+        updateSecurityUI(true);
+        return true;
+    } catch {
+        developerToken = "";
+        sessionStorage.removeItem("almoraqeb_developer_token");
+        developerVerified = false;
     }
 
-    // Developer authentication is performed only by the central FIDO2/WebAuthn login.
-    // Never ask for the developer password again inside a protected page.
     const returnTo = location.pathname + location.search + location.hash;
     location.replace("/developer_login.html?next=" + encodeURIComponent(returnTo));
     return false;
