@@ -6,6 +6,7 @@
  * Idempotent: safe to run repeatedly; records use DEMO identifiers.
  *
  * Deployment refresh: developer credential secret sync.
+ * Deployment refresh: map performance sync.
  * Usage: DEMO_COMPANY_ID=B-3214 DEMO_EMPLOYEE_COUNT=30 node scripts/seed-interview-demo.js
  */
 require('dotenv').config();
