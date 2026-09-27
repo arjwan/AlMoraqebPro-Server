@@ -2,7 +2,7 @@
 
 /**
  * AlMoraqebPro interview demo seed.
- * One isolated demo company with branches, worksites, employees, shifts and attendance.
+ * Adds isolated demo employees, shifts and attendance to an EXISTING interview company.
  * Idempotent: safe to run repeatedly; records use DEMO identifiers.
  *
  * Usage: node scripts/seed-interview-demo.js
@@ -19,7 +19,7 @@ const Employee=mongoose.model('InterviewDemoEmployee',schema('employees'));
 const Shift=mongoose.model('InterviewDemoShift',schema('shifts'));
 const Attendance=mongoose.model('InterviewDemoAttendance',schema('attendances'));
 
-const companyId='DEMO-ALRAFIDAIN-001';
+const companyId=String(process.env.DEMO_COMPANY_ID||'B-3214').trim();
 const locations=[
  {id:'HQ',name:'المقر الرئيسي - بغداد',type:'headquarters',province:'بغداد',fullAddress:'بغداد - الكرادة',latitude:33.3024,longitude:44.4001,radiusMeters:220},
  {id:'B1',name:'فرع المنصور',type:'branch',province:'بغداد',fullAddress:'بغداد - المنصور',latitude:33.3158,longitude:44.3367,radiusMeters:200},
@@ -42,23 +42,19 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
  if(!mongo)throw Error('MONGODB_URI/MONGO_URI is required');
  await mongoose.connect(mongo);
  try{
-  await Company.updateOne({companyId},{$set:{
-   companyId,developerCode:'DEMO',name:'شركة الرافدين للخدمات — عرض المقابلة',
-   email:'demo@almoraqeb.invalid',managerName:'مدير النظام التجريبي',adminUsername:'demo_admin',
-   subscription:'annual',systemState:'active',subscriptionStartDate:new Date(),subscriptionEndDate:new Date(Date.now()+365*86400000),
-   latitude:locations[0].latitude,longitude:locations[0].longitude,geofenceRadiusMeters:220,uiLanguage:'ar',uiTheme:'light',
-   approvedLocations:locations.map(x=>({...x,parentLocationId:x.id==='HQ'?'':companyId+'-HQ',active:true,clientOfflineId:companyId+'-'+x.id})),
-   demoData:true,demoBatch:BATCH,lastSeenAt:new Date()
-  }},{upsert:true});
+  const company=await Company.findOne({companyId}).lean();
+  if(!company)throw Error('Target company not found: '+companyId);
+  const companyName=String(company.name||'شركة الارجوان للبرمجيات');
+
 
   const employees=[];
   for(let i=0;i<EMPLOYEES;i++){
    const loc=locations[i%locations.length],sh=shifts[i%shifts.length],serial=`DEMO-${String(i+1).padStart(4,'0')}`;
    const name=`${first[i%first.length]} ${family[(i*3)%family.length]}`;
-   const doc={companyId,companyName:'شركة الرافدين للخدمات — عرض المقابلة',name,email:`employee${i+1}@demo.invalid`,
+   const doc={companyId,companyName,name,email:`employee${i+1}@demo.invalid`,
     phoneNumber:'',salary:650000+(i%7)*75000,wageType:'monthly',shift:sh.name,socialSecurity:i%4===0?'غير مسجل':'مسجل',
-    employeeSerial:serial,clientOfflineId:`${BATCH}-${serial}`,workHours:8,specialty:jobs[i%jobs.length],workplace:loc.name,
-    username:`demo_emp_${String(i+1).padStart(3,'0')}`,password:hash(BATCH+serial),credentialsStatus:'active',
+    employeeSerial:serial,clientOfflineId:`${BATCH}-${companyId}-${serial}`,workHours:8,specialty:jobs[i%jobs.length],workplace:loc.name,
+    username:`demo_${companyId.toLowerCase().replace(/[^a-z0-9]+/g,'_')}_${String(i+1).padStart(3,'0')}`,password:hash(BATCH+serial),credentialsStatus:'active',
     employmentStatus:'active',location:loc.name,province:loc.province,city:'بغداد',branch:loc.name,
     hireDate:new Date(Date.now()-(90+i*13)*86400000),demoData:true,demoBatch:BATCH,
     lastKnownLocation:{latitude:loc.latitude+(i%3)*0.00015,longitude:loc.longitude+(i%4)*0.00012,accuracyMeters:8+(i%12),timestamp:new Date()}};
@@ -69,10 +65,10 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
   for(const sh of shifts){
    const assigned=employees.filter((_,i)=>shifts[i%shifts.length].key===sh.key);
    const loc=locations[sh.key==='M'?0:sh.key==='E'?1:sh.key==='N'?4:3];
-   await Shift.updateOne({companyId,clientOfflineId:`${BATCH}-SHIFT-${sh.key}`},{$set:{
-    companyId,name:sh.name,branch:loc.name,locationId:companyId+'-'+loc.id,locationName:loc.name,
+   await Shift.updateOne({companyId,clientOfflineId:`${BATCH}-${companyId}-SHIFT-${sh.key}`},{$set:{
+    companyId,name:sh.name,branch:loc.name,locationId:loc.id,locationName:loc.name,
     latitude:loc.latitude,longitude:loc.longitude,radiusMeters:loc.radiusMeters,
-    employeeIds:assigned.map(x=>String(x.doc._id)),...sh,clientOfflineId:`${BATCH}-SHIFT-${sh.key}`,demoData:true,demoBatch:BATCH
+    employeeIds:assigned.map(x=>String(x.doc._id)),...sh,clientOfflineId:`${BATCH}-${companyId}-SHIFT-${sh.key}`,demoData:true,demoBatch:BATCH
    }},{upsert:true});
   }
 
@@ -90,6 +86,6 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
     timeStatus:late?'late':'within-shift',lateMinutes:late?18:0,managerApprovalStatus:'not-required',demoData:true,demoBatch:BATCH});
    attendance++;
   }
-  console.log(JSON.stringify({ok:true,batch:BATCH,company:companyId,locations:locations.length,shifts:shifts.length,employees:employees.length,attendanceToday:attendance},null,2));
+  console.log(JSON.stringify({ok:true,batch:BATCH,company:companyId,companyName,companyRecordUntouched:true,locationsUsed:locations.length,shifts:shifts.length,employees:employees.length,attendanceToday:attendance},null,2));
  }finally{await mongoose.disconnect()}
 })().catch(e=>{console.error(e);process.exit(1)});
