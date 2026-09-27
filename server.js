@@ -7109,6 +7109,10 @@ app.patch(
 
             await request.save();
 
+            if (request.type === 'leave' && status === 'approved') {
+                await recalculateCompanyPayroll(request.companyId, request.processedAt || new Date());
+            }
+
             res.json({
 
                 success: true,
@@ -12378,6 +12382,8 @@ app.post(
                 new Date();
 
             await company.save();
+
+            await recalculateCompanyPayroll(employee.companyId, attendanceTime);
 
             // A completed, approved workday earns its daily wage immediately.
             // This updates accrued payroll only; it does not mark anything as paid.
