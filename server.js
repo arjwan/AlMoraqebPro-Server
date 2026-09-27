@@ -10,6 +10,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+const { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } = require('@simplewebauthn/server');
 const dotenv = require('dotenv');
 
 /*
@@ -32,6 +33,8 @@ const MONGO_URI = process.env.MONGO_URI;
 const DEVELOPER_PASSWORD = process.env.DEVELOPER_PASSWORD;
 const DEVELOPER_USERNAME = String(process.env.DEVELOPER_USERNAME || 'developer').trim();
 const DEVELOPER_TOTP_SECRET = String(process.env.DEVELOPER_TOTP_SECRET || '').replace(/\s+/g,'').toUpperCase();
+const WEBAUTHN_RP_NAME = String(process.env.WEBAUTHN_RP_NAME || 'AlMoraqebPro').trim();
+const WEBAUTHN_RP_ID = String(process.env.WEBAUTHN_RP_ID || '').trim();
 const SESSION_SECRET = process.env.SESSION_SECRET || DEVELOPER_PASSWORD;
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
     .split(',')
@@ -2672,6 +2675,111 @@ app.get(
 
     }
 );
+
+/*
+=========================================================
+  DEVELOPER FIDO2 / WEBAUTHN
+=========================================================
+*/
+const developerWebAuthnSchema = new mongoose.Schema({
+    username: { type:String, required:true, unique:true, index:true },
+    credentialID: { type:String, required:true, unique:true },
+    publicKey: { type:Buffer, required:true },
+    counter: { type:Number, default:0 },
+    transports: { type:[String], default:[] },
+    deviceType: { type:String, default:'' },
+    backedUp: { type:Boolean, default:false },
+    createdAt: { type:Date, default:Date.now }
+});
+const DeveloperWebAuthn = mongoose.model('DeveloperWebAuthn', developerWebAuthnSchema);
+const developerWebAuthnChallenges = new Map();
+const developerPasswordTickets = new Map();
+
+function webAuthnContext(req) {
+    const forwarded = String(req.headers['x-forwarded-host'] || '').split(',')[0].trim();
+    const host = forwarded || String(req.headers.host || '').split(':')[0];
+    const rpID = WEBAUTHN_RP_ID || host;
+    const proto = req.secure || String(req.headers['x-forwarded-proto'] || '').toLowerCase()==='https' ? 'https' : 'http';
+    return { rpID, origin: proto + '://' + (forwarded || req.headers.host) };
+}
+function issueDeveloperTicket() {
+    const ticket=crypto.randomBytes(32).toString('base64url');
+    developerPasswordTickets.set(ticket,Date.now()+5*60*1000);
+    return ticket;
+}
+function consumeDeveloperTicket(ticket) {
+    const exp=developerPasswordTickets.get(String(ticket||''));
+    developerPasswordTickets.delete(String(ticket||''));
+    return Boolean(exp && exp>Date.now());
+}
+function validDeveloperPassword(username,password) {
+    const a=Buffer.from(String(username||'')), b=Buffer.from(DEVELOPER_USERNAME);
+    const userOk=a.length===b.length && crypto.timingSafeEqual(a,b);
+    const p=Buffer.from(String(password||'')), q=Buffer.from(String(DEVELOPER_PASSWORD||''));
+    const passOk=p.length===q.length && crypto.timingSafeEqual(p,q);
+    return userOk && passOk;
+}
+
+app.post('/api/developer/webauthn/password', async (req,res)=>{
+    if(!validDeveloperPassword(req.body.username,req.body.password)) return res.status(401).json({success:false,message:'بيانات المطور غير صحيحة'});
+    const credential=await DeveloperWebAuthn.findOne({username:DEVELOPER_USERNAME}).lean();
+    res.json({success:true,ticket:issueDeveloperTicket(),registered:Boolean(credential)});
+});
+
+app.post('/api/developer/webauthn/register/options', async (req,res)=>{
+    const ticket=String(req.body.ticket||'');
+    const exp=developerPasswordTickets.get(ticket);
+    if(!exp||exp<=Date.now()) return res.status(401).json({success:false,message:'انتهت صلاحية التحقق الأولي'});
+    const existing=await DeveloperWebAuthn.findOne({username:DEVELOPER_USERNAME}).lean();
+    if(existing) return res.status(409).json({success:false,message:'FIDO2 مسجل مسبقاً'});
+    const {rpID}=webAuthnContext(req);
+    const options=await generateRegistrationOptions({rpName:WEBAUTHN_RP_NAME,rpID,userName:DEVELOPER_USERNAME,userDisplayName:'AlMoraqebPro Developer',attestationType:'none',authenticatorSelection:{residentKey:'preferred',userVerification:'required'},supportedAlgorithmIDs:[-7,-257]});
+    developerWebAuthnChallenges.set(ticket,{challenge:options.challenge,type:'register',expires:Date.now()+5*60*1000});
+    res.json({success:true,options});
+});
+
+app.post('/api/developer/webauthn/register/verify', async (req,res)=>{
+    const ticket=String(req.body.ticket||''), pending=developerWebAuthnChallenges.get(ticket);
+    if(!pending||pending.type!=='register'||pending.expires<=Date.now()) return res.status(401).json({success:false,message:'طلب FIDO2 منتهي'});
+    const {rpID,origin}=webAuthnContext(req);
+    try{
+        const verification=await verifyRegistrationResponse({response:req.body.response,expectedChallenge:pending.challenge,expectedOrigin:origin,expectedRPID:rpID,requireUserVerification:true});
+        if(!verification.verified||!verification.registrationInfo) throw Error('تعذر التحقق من المفتاح');
+        const info=verification.registrationInfo, cred=info.credential;
+        await DeveloperWebAuthn.create({username:DEVELOPER_USERNAME,credentialID:cred.id,publicKey:Buffer.from(cred.publicKey),counter:cred.counter,transports:req.body.response?.response?.transports||[],deviceType:info.credentialDeviceType||'',backedUp:Boolean(info.credentialBackedUp)});
+        developerWebAuthnChallenges.delete(ticket); developerPasswordTickets.delete(ticket);
+        const token=createToken({role:'developer',mfa:'fido2'}); setDeveloperCookie(req,res,token);
+        res.json({success:true});
+    }catch(e){res.status(400).json({success:false,message:e.message||'فشل تسجيل FIDO2'});}
+});
+
+app.post('/api/developer/webauthn/auth/options', async (req,res)=>{
+    const ticket=String(req.body.ticket||'');
+    const exp=developerPasswordTickets.get(ticket);
+    if(!exp||exp<=Date.now()) return res.status(401).json({success:false,message:'انتهت صلاحية التحقق الأولي'});
+    const credential=await DeveloperWebAuthn.findOne({username:DEVELOPER_USERNAME}).lean();
+    if(!credential) return res.status(404).json({success:false,message:'لم يسجل مفتاح FIDO2 بعد'});
+    const {rpID}=webAuthnContext(req);
+    const options=await generateAuthenticationOptions({rpID,userVerification:'required',allowCredentials:[{id:credential.credentialID,transports:credential.transports||[]}]});
+    developerWebAuthnChallenges.set(ticket,{challenge:options.challenge,type:'auth',expires:Date.now()+5*60*1000});
+    res.json({success:true,options});
+});
+
+app.post('/api/developer/webauthn/auth/verify', async (req,res)=>{
+    const ticket=String(req.body.ticket||''), pending=developerWebAuthnChallenges.get(ticket);
+    if(!pending||pending.type!=='auth'||pending.expires<=Date.now()) return res.status(401).json({success:false,message:'طلب FIDO2 منتهي'});
+    const credential=await DeveloperWebAuthn.findOne({username:DEVELOPER_USERNAME});
+    if(!credential) return res.status(404).json({success:false,message:'مفتاح FIDO2 غير موجود'});
+    const {rpID,origin}=webAuthnContext(req);
+    try{
+        const verification=await verifyAuthenticationResponse({response:req.body.response,expectedChallenge:pending.challenge,expectedOrigin:origin,expectedRPID:rpID,credential:{id:credential.credentialID,publicKey:new Uint8Array(credential.publicKey),counter:credential.counter,transports:credential.transports||[]},requireUserVerification:true});
+        if(!verification.verified) throw Error('فشل التحقق');
+        credential.counter=verification.authenticationInfo.newCounter; await credential.save();
+        developerWebAuthnChallenges.delete(ticket); developerPasswordTickets.delete(ticket);
+        const token=createToken({role:'developer',mfa:'fido2'}); setDeveloperCookie(req,res,token);
+        res.json({success:true});
+    }catch(e){res.status(401).json({success:false,message:e.message||'فشل تحقق FIDO2'});}
+});
 
 /*
 =========================================================
