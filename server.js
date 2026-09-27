@@ -12321,6 +12321,68 @@ app.post(
 
             await company.save();
 
+            // A completed, approved workday earns its daily wage immediately.
+            // This updates accrued payroll only; it does not mark anything as paid.
+            if (
+                type !== 'attendance' &&
+                attendance.timeStatus !== 'early-exit-pending' &&
+                attendance.managerApprovalStatus !== 'rejected'
+            ) {
+                const dayKey = payrollDayKey(attendance.timestamp);
+                const dayRecords = await Attendance.find({
+                    companyId: employee.companyId,
+                    employeeId: String(employee._id)
+                }).lean();
+                const hasValidCheckIn = dayRecords.some(item =>
+                    payrollDayKey(item.timestamp) === dayKey &&
+                    item.type === 'attendance' &&
+                    item.timeStatus !== 'absent-late' &&
+                    item.managerApprovalStatus !== 'rejected'
+                );
+                if (hasValidCheckIn) {
+                    const salary = await SalaryRecord.findOne({
+                        companyId: employee.companyId,
+                        employeeId: String(employee._id)
+                    });
+                    const basicSalary = Number(employee.salary || salary?.basicSalary || 0);
+                    const wageType = ['daily', 'weekly', 'monthly'].includes(employee.wageType)
+                        ? employee.wageType
+                        : (salary?.wageType || 'monthly');
+                    const dailyRate = wageType === 'daily'
+                        ? basicSalary
+                        : basicSalary / (wageType === 'weekly' ? 7 : 30);
+                    if (dailyRate > 0) {
+                        const alreadyCounted = String(salary?.lastAttendanceAt || '') &&
+                            payrollDayKey(salary.lastAttendanceAt) === dayKey;
+                        if (!alreadyCounted) {
+                            await SalaryRecord.findOneAndUpdate(
+                                { companyId: employee.companyId, employeeId: String(employee._id) },
+                                {
+                                    $set: {
+                                        employeeName: employee.name || '',
+                                        employeeSerial: employee.employeeSerial || '',
+                                        specialty: employee.specialty || '',
+                                        workplace: employee.workplace || employee.branch || '',
+                                        wageType,
+                                        basicSalary,
+                                        dailyRate,
+                                        lastAttendanceAt: attendance.timestamp,
+                                        payoutStatus: 'unpaid'
+                                    },
+                                    $inc: {
+                                        attendanceDays: 1,
+                                        attendanceCount: 1,
+                                        currentPeriodEarnings: dailyRate,
+                                        netSalary: dailyRate
+                                    }
+                                },
+                                { upsert: true, new: true }
+                            );
+                        }
+                    }
+                }
+            }
+
             res.status(201).json({
 
                 success: true,
