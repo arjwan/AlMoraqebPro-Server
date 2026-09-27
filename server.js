@@ -30,6 +30,8 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const MONGO_URI = process.env.MONGO_URI;
 const DEVELOPER_PASSWORD = process.env.DEVELOPER_PASSWORD;
+const DEVELOPER_USERNAME = String(process.env.DEVELOPER_USERNAME || 'developer').trim();
+const DEVELOPER_TOTP_SECRET = String(process.env.DEVELOPER_TOTP_SECRET || '').replace(/\s+/g,'').toUpperCase();
 const SESSION_SECRET = process.env.SESSION_SECRET || DEVELOPER_PASSWORD;
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
     .split(',')
@@ -2677,70 +2679,56 @@ app.get(
 =========================================================
 */
 
-app.post(
-    '/api/developer/login',
-    (req, res) => {
-
-        if (
-            !DEVELOPER_PASSWORD ||
-            !SESSION_SECRET
-        ) {
-
-            return res.status(503).json({
-
-                success: false,
-
-                message:
-                    'لم تُضبط حماية لوحة المطور'
-
-            });
-
-        }
-
-        const password =
-            String(
-                req.body.password || ''
-            );
-
-        if (
-            password !==
-            DEVELOPER_PASSWORD
-        ) {
-
-            return res.status(401).json({
-
-                success: false,
-
-                message:
-                    'كلمة مرور المطور غير صحيحة'
-
-            });
-
-        }
-
-        const token =
-            createToken({
-                role:
-                    'developer'
-            });
-
-        setDeveloperCookie(
-            req,
-            res,
-            token
-        );
-
-        res.json({
-
-            success: true,
-
-            token
-
-        });
-
+function base32Decode(value) {
+    const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let bits='',out=[];
+    for (const ch of String(value||'').replace(/=+$/,'')) {
+        const n=alphabet.indexOf(ch);
+        if(n<0) return Buffer.alloc(0);
+        bits+=n.toString(2).padStart(5,'0');
     }
-);
+    for(let i=0;i+8<=bits.length;i+=8) out.push(parseInt(bits.slice(i,i+8),2));
+    return Buffer.from(out);
+}
+function developerTotpAt(counter) {
+    const key=base32Decode(DEVELOPER_TOTP_SECRET);
+    if(!key.length) return '';
+    const b=Buffer.alloc(8); b.writeBigUInt64BE(BigInt(counter));
+    const h=crypto.createHmac('sha1',key).update(b).digest();
+    const off=h[h.length-1]&15;
+    const n=(h.readUInt32BE(off)&0x7fffffff)%1000000;
+    return String(n).padStart(6,'0');
+}
+function verifyDeveloperTotp(code) {
+    if(!DEVELOPER_TOTP_SECRET) return false;
+    const clean=String(code||'').replace(/\D/g,'');
+    if(clean.length!==6) return false;
+    const counter=Math.floor(Date.now()/1000/30);
+    return [-1,0,1].some(d=>{
+        const expected=developerTotpAt(counter+d);
+        return expected.length===clean.length && crypto.timingSafeEqual(Buffer.from(clean),Buffer.from(expected));
+    });
+}
 
+app.post('/api/developer/login',(req,res)=>{
+    if(!DEVELOPER_PASSWORD||!SESSION_SECRET||!DEVELOPER_TOTP_SECRET){
+        return res.status(503).json({success:false,message:'حماية لوحة المطور أو المصادقة الثنائية غير مهيأة'});
+    }
+    const username=String(req.body.username||'').trim();
+    const password=String(req.body.password||'');
+    const otp=String(req.body.otp||'');
+    const userOk=username===DEVELOPER_USERNAME;
+    const passOk=password===DEVELOPER_PASSWORD;
+    if(!userOk||!passOk){
+        return res.status(401).json({success:false,message:'بيانات المطور غير صحيحة'});
+    }
+    if(!verifyDeveloperTotp(otp)){
+        return res.status(401).json({success:false,message:'رمز المصادقة غير صحيح أو منتهي'});
+    }
+    const token=createToken({role:'developer',mfa:true});
+    setDeveloperCookie(req,res,token);
+    res.json({success:true,token});
+});
 
 
 /*
