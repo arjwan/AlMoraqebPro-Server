@@ -19,6 +19,7 @@ const Employee=mongoose.model('InterviewDemoEmployee',schema('employees'));
 const Shift=mongoose.model('InterviewDemoShift',schema('shifts'));
 const Attendance=mongoose.model('InterviewDemoAttendance',schema('attendances'));
 
+// Default interview target: B-3214 (شركة الارجوان للبرمجيات). Override only when explicitly requested.
 const companyId=String(process.env.DEMO_COMPANY_ID||'B-3214').trim();
 const locations=[
  {id:'HQ',name:'المقر الرئيسي - بغداد',type:'headquarters',province:'بغداد',fullAddress:'بغداد - الكرادة',latitude:33.3024,longitude:44.4001,radiusMeters:220},
