@@ -49,15 +49,22 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
   const company=await Company.findOne({companyId}).lean();
   if(!company)throw Error('Target company not found: '+companyId);
   const companyName=String(company.name||'شركة الارجوان للبرمجيات');
-
+  const registeredLocations=(company.approvedLocations||[])
+   .filter(x=>x && x.active!==false && Number.isFinite(Number(x.latitude)) && Number.isFinite(Number(x.longitude)))
+   .map((x,index)=>({
+    id:String(x._id||x.id||('COMPANY-'+index)),name:String(x.name||('موقع '+(index+1))),
+    type:String(x.type||'worksite'),province:String(x.province||'بغداد'),fullAddress:String(x.fullAddress||''),
+    latitude:Number(x.latitude),longitude:Number(x.longitude),radiusMeters:Number(x.radiusMeters||250)
+   }));
+  const activeLocations=registeredLocations.length?registeredLocations:locations;
 
   const employees=[];
   for(let i=0;i<EMPLOYEES;i++){
-   const loc=locations[i%locations.length],sh=shifts[i%shifts.length],serial=`DEMO-${String(i+1).padStart(4,'0')}`;
+   const sh=shifts[i%shifts.length],loc=activeLocations[shifts.indexOf(sh)%activeLocations.length],serial=`DEMO-${String(i+1).padStart(4,'0')}`;
    const name=`${first[i%first.length]} ${family[(i*3)%family.length]}`;
    const doc={companyId,companyName,name,email:`employee${i+1}@demo.invalid`,
     phoneNumber:'',salary:650000+(i%7)*75000,wageType:'monthly',shift:sh.name,socialSecurity:i%4===0?'غير مسجل':'مسجل',
-    employeeSerial:serial,clientOfflineId:`${BATCH}-${companyId}-${serial}`,workHours:8,specialty:jobs[i%jobs.length],workplace:loc.name,
+    employeeSerial:serial,clientOfflineId:`${BATCH}-${companyId}-${serial}`,workHours:8,specialty:(i<4?'سائق':jobs[i%jobs.length]),workplace:loc.name,
     username:`demo_${companyId.toLowerCase().replace(/[^a-z0-9]+/g,'_')}_${String(i+1).padStart(3,'0')}`,password:hash(BATCH+serial),credentialsStatus:'active',
     employmentStatus:'active',location:loc.name,province:loc.province,city:'بغداد',branch:loc.name,
     hireDate:new Date(Date.now()-(90+i*13)*86400000),demoData:true,demoBatch:BATCH,
@@ -68,12 +75,29 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
 
   for(const sh of shifts){
    const assigned=employees.filter((_,i)=>shifts[i%shifts.length].key===sh.key);
-   const loc=locations[sh.key==='M'?0:sh.key==='E'?1:sh.key==='N'?4:3];
+   const loc=activeLocations[shifts.indexOf(sh)%activeLocations.length];
    await Shift.updateOne({companyId,clientOfflineId:`${BATCH}-${companyId}-SHIFT-${sh.key}`},{$set:{
     companyId,name:sh.name,branch:loc.name,locationId:loc.id,locationName:loc.name,
     latitude:loc.latitude,longitude:loc.longitude,radiusMeters:loc.radiusMeters,
     employeeIds:assigned.map(x=>String(x.doc._id)),...sh,clientOfflineId:`${BATCH}-${companyId}-SHIFT-${sh.key}`,demoData:true,demoBatch:BATCH
    }},{upsert:true});
+  }
+
+  // Simulated mobile drivers: their latest position is deliberately >250m from the assigned worksite.
+  // This is demo-only movement and must never be treated as real employee telemetry.
+  for(let i=0;i<Math.min(4,employees.length);i++){
+   const {doc,loc}=employees[i];
+   const movedAt=new Date();
+   await Employee.updateOne({_id:doc._id,companyId,demoData:true,demoBatch:BATCH},{$set:{
+    specialty:'سائق',
+    lastKnownLocation:{
+     latitude:loc.latitude+0.0045+(i*0.0004),
+     longitude:loc.longitude+0.0040+(i*0.0003),
+     accuracyMeters:9+i,
+     timestamp:movedAt,
+     demoSimulation:true
+    }
+   }});
   }
 
   const today=new Date(); today.setHours(0,0,0,0);
@@ -99,6 +123,6 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
      timeStatus:'within-shift',lateMinutes:0,managerApprovalStatus:'not-required',demoData:true,demoBatch:BATCH});
    }
   }
-  console.log(JSON.stringify({ok:true,batch:BATCH,company:companyId,companyName,companyRecordUntouched:true,locationsUsed:locations.length,shifts:shifts.length,employees:employees.length,attendanceToday:attendance},null,2));
+  console.log(JSON.stringify({ok:true,batch:BATCH,company:companyId,companyName,companyRecordUntouched:true,locationsUsed:activeLocations.length,registeredCompanyLocationsUsed:registeredLocations.length>0,simulatedDrivers:Math.min(4,employees.length),shifts:shifts.length,employees:employees.length,attendanceToday:attendance},null,2));
  }finally{await mongoose.disconnect()}
 })().catch(e=>{console.error(e);process.exit(1)});
