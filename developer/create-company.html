@@ -1787,136 +1787,26 @@ async function developerRequest(url, options = {}) {
    تسجيل دخول المطور
 ========================================================= */
 
-async function authenticateDeveloper(forceLogin = false) {
+async function authenticateDeveloper() {
 
-    if (
-        developerToken &&
-        !forceLogin
-    ) {
-
+    if (developerToken) {
         try {
-
-            await developerRequest(
-                "/api/developer/companies",
-                {
-                    method:"GET"
-                }
-            );
-
+            await developerRequest("/api/developer/companies", { method:"GET" });
             developerVerified = true;
-
             updateSecurityUI(true);
-
             return true;
-
         } catch {
-
             developerToken = "";
-
-            sessionStorage.removeItem(
-                "almoraqeb_developer_token"
-            );
-
+            sessionStorage.removeItem("almoraqeb_developer_token");
             developerVerified = false;
         }
     }
 
-
-    const password =
-        prompt(
-            "🔒 أدخل كلمة مرور المطور:"
-        );
-
-
-    if (!password) {
-
-        updateSecurityUI(false);
-
-        return false;
-    }
-
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/developer/login",
-                {
-                    method:"POST",
-
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:JSON.stringify({
-                        password
-                    })
-                }
-            );
-
-
-        const result =
-            await response
-                .json()
-                .catch(() => ({}));
-
-
-        if (
-            !response.ok ||
-            !result.success ||
-            !result.token
-        ) {
-
-            throw new Error(
-                result.message ||
-                "تم رفض دخول المطور."
-            );
-        }
-
-
-        developerToken =
-            result.token;
-
-
-        sessionStorage.setItem(
-            "almoraqeb_developer_token",
-            developerToken
-        );
-
-
-        await developerRequest(
-            "/api/developer/companies",
-            {
-                method:"GET"
-            }
-        );
-
-
-        developerVerified = true;
-
-        updateSecurityUI(true);
-
-        return true;
-
-    } catch(error) {
-
-        developerToken = "";
-
-        developerVerified = false;
-
-        sessionStorage.removeItem(
-            "almoraqeb_developer_token"
-        );
-
-        updateSecurityUI(false);
-
-        alert(
-            "❌ " + error.message
-        );
-
-        return false;
-    }
+    // Developer authentication is performed only by the central FIDO2/WebAuthn login.
+    // Never ask for the developer password again inside a protected page.
+    const returnTo = location.pathname + location.search + location.hash;
+    location.replace("/developer_login.html?next=" + encodeURIComponent(returnTo));
+    return false;
 }
 
 
@@ -1989,7 +1879,7 @@ async function verifyDeveloperAuth(
 ) {
 
     const verified =
-        await authenticateDeveloper(true);
+        await authenticateDeveloper();
 
 
     if (verified) {
@@ -2021,7 +1911,7 @@ window.addEventListener(
         updateSecurityUI(false);
 
         const verified =
-            await authenticateDeveloper(false);
+            await authenticateDeveloper();
 
 
         if (!verified) {
