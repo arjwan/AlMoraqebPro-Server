@@ -9435,12 +9435,11 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const grossSalary = dailyRate * payableDays.size;
             let salary = salaryByEmployee.get(id);
             if (!salary) salary = new SalaryRecord({ companyId, employeeId: id });
-            // Recalculating the same live payroll period must replace its provisional accrual,
-            // not carry that provisional amount forward as if it belonged to a previous period.
-            // Only preserve an already-established carried balance while the same period is recalculated.
+            // Recalculating the same live period replaces its provisional accrual.
+            // A genuinely different prior payroll period remains unpaid balance and carries forward.
             const carriedBalance = salary.calculationKey === calculationKey
                 ? Number(salary.carriedBalance || 0)
-                : 0;
+                : (salary.calculationKey ? Number(salary.netSalary || 0) : 0);
             const replacementAddition = 0;
             const replacementDeduction = 0;
             const outstandingLoans = Number(loansByEmployee.get(id) || 0);
