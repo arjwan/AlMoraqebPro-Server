@@ -5,7 +5,7 @@
  * Adds isolated demo employees, shifts and attendance to an EXISTING interview company.
  * Idempotent: safe to run repeatedly; records use DEMO identifiers.
  *
- * Usage: node scripts/seed-interview-demo.js
+ * Usage: DEMO_COMPANY_ID=B-3214 DEMO_EMPLOYEE_COUNT=30 node scripts/seed-interview-demo.js
  */
 require('dotenv').config();
 const mongoose=require('mongoose');
