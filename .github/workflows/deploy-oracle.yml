@@ -72,7 +72,7 @@ jobs:
 
           cd "$APP_DIR"
           test -s .env
-          npm ci
+          npm install --no-audit --no-fund
           npm test
 
           sudo systemctl stop "$SERVICE_NAME" 2>/dev/null || true
