@@ -9279,11 +9279,18 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         leaves.filter(row => String(row.employeeId) === id && row.leavePaymentType === 'unpaid').forEach(row => {
             payrollDateKeys(new Date(Math.max(from, new Date(row.fromDate || row.requestedDate))), new Date(Math.min(to, new Date(row.toDate || row.fromDate || row.requestedDate)))).forEach(k => unpaid.add(k));
         });
+        // Accrual mode: payroll grows only from completed workdays.
+        // Never pre-charge the employee for earlier calendar days just because no punch exists.
         const eligible = periodKeys.filter(k => !employee.hireDate || k >= payrollDayKey(employee.hireDate));
-        const absenceDays = Math.max(0, eligible.length - validDays.size - unpaid.size);
+        const explicitAbsentDays = new Set(
+            [...days].filter(([,v]) => v.has('absent')).map(([k]) => k)
+        );
+        const absenceDays = explicitAbsentDays.size;
         const absenceDeduction = wageType === 'daily' ? 0 : dailyRate * (absenceDays + unpaid.size);
         const lateDeduction = wageType === 'daily' ? 0 : (dailyRate / shiftWorkMinutes(shift, employee)) * lateMinutes;
-        const grossSalary = wageType === 'daily' ? dailyRate * validDays.size : dailyRate * eligible.length;
+        // For the live/current period, earned payroll is attendance-based for every wage type.
+        // Monthly/weekly describe the rate source, not permission to credit unworked future days.
+        const grossSalary = dailyRate * validDays.size;
         let salary = salaryByEmployee.get(id) || new SalaryRecord({ companyId, employeeId: id });
         const totalDeductions = Number(salary.loanDeduction || 0) + Number(salary.securityDeduction || 0) + Number(salary.otherDeductions || 0) + absenceDeduction + lateDeduction;
         const earnings = Math.max(0, grossSalary + Number(salary.allowances || 0) + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
