@@ -6,7 +6,10 @@
     <title>متابعة الموظف على الخريطة - المراقب برو</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/vendor/maplibre/maplibre-gl.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/vendor/maplibre/maplibre-gl.js"></script>
+    <script src="/vendor/maplibre/leaflet-maplibre-gl.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body {
@@ -512,12 +515,12 @@ function escapeHtml(value) {
 }
 
 function addBaseMap(target) {
-    return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
-        maxZoom: 19,
-        crossOrigin: true,
-        updateWhenIdle: true,
-        keepBuffer: 2
+    target.attributionControl.addAttribution(
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> | OpenFreeMap'
+    );
+    return L.maplibreGL({
+        style: 'https://tiles.openfreemap.org/styles/liberty',
+        interactive: false
     }).addTo(target);
 }
 

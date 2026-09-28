@@ -59,9 +59,15 @@ async function waitForServer(url, retries, delay) {
         } else {
             console.log('• بدء قاعدة بيانات MongoDB داخل الذاكرة...');
             try {
-                mongo = await MongoMemoryServer.create(); uri = mongo.getUri(); dbUp = true;
+                mongo = await MongoMemoryServer.create({
+                    instance: {
+                        launchTimeout: 90000,
+                        args: ['--nounixsocket', '--setParameter', 'diagnosticDataCollectionEnabled=false']
+                    }
+                }); uri = mongo.getUri(); dbUp = true;
                 console.log('• mongodb-memory-server يعمل.');
             } catch (e) {
+                if (process.env.REQUIRE_TEST_DB === '1') throw e;
                 console.log('  ⚠️ تعذّر تشغيل mongodb-memory-server هنا (' + e.message + ').');
                 console.log('  سيُجرى اختبار الإقلاع/الأمان فقط (بدون قاعدة بيانات).');
                 uri = 'mongodb://127.0.0.1:1/unreachable';
@@ -615,6 +621,15 @@ async function waitForServer(url, retries, delay) {
 
         const root = await fetch(BASE + '/');
         check('root serves index.html', root.status === 200 && (root.headers.get('content-type') || '').includes('text/html'));
+        const mapPage = await (await fetch(BASE + '/admin_map.html')).text();
+        const vectorLibrary = await fetch(BASE + '/vendor/maplibre/maplibre-gl.js');
+        check('map serves the vector renderer and no blocked raster tile host',
+            mapPage.includes('L.maplibreGL') &&
+            mapPage.includes('https://tiles.openfreemap.org/styles/liberty') &&
+            !mapPage.includes('tile.openstreetmap.org/{z}') &&
+            !mapPage.includes('cartocdn.com') &&
+            vectorLibrary.status === 200 &&
+            (vectorLibrary.headers.get('content-type') || '').includes('javascript'));
 
         const reportsPage = await (await fetch(BASE + '/admin_reports.html')).text();
         check('manager reports page contains a complete attendance dashboard',

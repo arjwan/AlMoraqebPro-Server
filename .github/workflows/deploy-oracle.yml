@@ -13,7 +13,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Full Mongo-backed smoke suite
+        env:
+          REQUIRE_TEST_DB: '1'
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm test
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Deploy through SSH
@@ -87,7 +103,7 @@ jobs:
           cd "$APP_DIR"
           test -s .env
           npm install --no-audit --no-fund
-          npm test
+          node --check server.js
 
           # One-time interview demo seed for the existing B-3214 company.
           # The marker stays outside git tracking, so later deploys do not duplicate/reseed it.
