@@ -50,10 +50,19 @@ jobs:
             git clone "$REPO" "$APP_DIR"
           else
             git -C "$APP_DIR" fetch origin main
-            if [ -n "$(git -C "$APP_DIR" status --porcelain)" ]; then
-              echo 'Oracle checkout has local changes; preserve them and stop deployment.' >&2
-              git -C "$APP_DIR" status --short >&2
+            status="$(git -C "$APP_DIR" status --porcelain)"
+            unexpected="$(printf '%s\n' "$status" | grep -Ev '^( M package-lock\.json|\?\? \.interview-demo-b3214(-daytime-pairs)?\.seeded)$' || true)"
+            if [ -n "$unexpected" ]; then
+              echo 'Oracle checkout has unexpected local changes; stop deployment.' >&2
+              printf '%s\n' "$unexpected" >&2
               exit 1
+            fi
+            if ! git -C "$APP_DIR" diff --quiet -- package-lock.json; then
+              BACKUP_DIR="$HOME/almoraqebpro-deploy-backups/$(date -u +%Y%m%dT%H%M%SZ)"
+              mkdir -p "$BACKUP_DIR"
+              cp -p "$APP_DIR/package-lock.json" "$BACKUP_DIR/package-lock.json"
+              echo "Saved Oracle package-lock.json to $BACKUP_DIR"
+              git -C "$APP_DIR" show HEAD:package-lock.json > "$APP_DIR/package-lock.json"
             fi
             git -C "$APP_DIR" merge --ff-only origin/main
           fi

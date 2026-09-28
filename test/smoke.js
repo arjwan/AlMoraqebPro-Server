@@ -387,6 +387,12 @@ async function waitForServer(url, retries, delay) {
             })).json();
             check('payroll calculated from complete attendance day', calculateAugust.success === true &&
                 calculateAugust.calculated.some(row => row.employeeId === approvedEmployee._id && row.payableDays === 1 && row.netSalary > 0));
+            const invalidPayrollPeriod = await fetch(BASE + '/api/admin/payroll/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ from: '2026-13-01', to: '2026-13-02' })
+            });
+            check('invalid payroll dates return 400 without changing salaries', invalidPayrollPeriod.status === 400);
 
             const firstSalaryList = await (await fetch(BASE + '/api/admin/salaries', {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
