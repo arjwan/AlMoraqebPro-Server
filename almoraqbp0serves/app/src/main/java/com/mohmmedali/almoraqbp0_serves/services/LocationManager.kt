@@ -65,24 +65,47 @@ class LocationManager(private val context: Context) {
         val request = com.google.android.gms.location.LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
             1000L
-        ).setMaxUpdates(1).setWaitForAccurateLocation(true).build()
+        ).setMinUpdateIntervalMillis(500L)
+            .setMaxUpdates(8)
+            .setWaitForAccurateLocation(true)
+            .build()
+
         val completed = java.util.concurrent.atomic.AtomicBoolean(false)
+        var bestLocation: Location? = null
+
+        fun finish(location: Location?) {
+            if (completed.compareAndSet(false, true)) callback(location)
+        }
+
         val locationCallback = object : com.google.android.gms.location.LocationCallback() {
             override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
-                if (completed.compareAndSet(false, true)) {
+                result.locations
+                    .filter { it.hasValidCoordinates() && it.hasAccuracy() }
+                    .forEach { candidate ->
+                        if (bestLocation == null || candidate.accuracy < bestLocation!!.accuracy) {
+                            bestLocation = candidate
+                        }
+                    }
+
+                // A fix at or below 50 m is good enough for an explicit send/check-in.
+                if ((bestLocation?.accuracy ?: Float.MAX_VALUE) <= 50f && !completed.get()) {
                     fusedClient.removeLocationUpdates(this)
-                    callback(result.lastLocation?.takeIf { it.hasValidCoordinates() })
+                    finish(bestLocation)
                 }
             }
         }
+
         fusedClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper())
             .addOnFailureListener {
-                if (completed.compareAndSet(false, true)) callback(null)
-            }
-        Handler(Looper.getMainLooper()).postDelayed({
-            if (completed.compareAndSet(false, true)) {
                 fusedClient.removeLocationUpdates(locationCallback)
-                callback(null)
+                finish(bestLocation)
+            }
+
+        // Do not hang indefinitely in poor reception. Return the best valid sample collected.
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!completed.get()) {
+                fusedClient.removeLocationUpdates(locationCallback)
+                finish(bestLocation)
             }
         }, 10000L)
     }
