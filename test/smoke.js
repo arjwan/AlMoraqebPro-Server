@@ -284,6 +284,10 @@ async function waitForServer(url, retries, delay) {
                 shift.shift.locationId === String(secondaryLocation.location._id) &&
                 shift.shift.latitude === 31 && shift.shift.longitude === 45 &&
                 shift.shift.radiusMeters === 250);
+            const beforeClockIn = await (await fetch(BASE + '/api/employee/tracking-status?employeeId=' +
+                encodeURIComponent(approvedEmployee._id) + '&deviceId=' + encodeURIComponent(linkedDeviceId))).json();
+            check('tracking does not start before employee clocks in',
+                beforeClockIn.success === true && beforeClockIn.trackingRequired === false);
 
             async function submitAttendance(latitude, longitude, timestamp, type = 'attendance') {
                 const challenge = await (await fetch(BASE + '/api/attendance/challenge?employeeId=' +
