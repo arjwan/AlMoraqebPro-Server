@@ -50,7 +50,12 @@ jobs:
             git clone "$REPO" "$APP_DIR"
           else
             git -C "$APP_DIR" fetch origin main
-            git -C "$APP_DIR" reset --hard origin/main
+            if [ -n "$(git -C "$APP_DIR" status --porcelain)" ]; then
+              echo 'Oracle checkout has local changes; preserve them and stop deployment.' >&2
+              git -C "$APP_DIR" status --short >&2
+              exit 1
+            fi
+            git -C "$APP_DIR" merge --ff-only origin/main
           fi
           REMOTE
 

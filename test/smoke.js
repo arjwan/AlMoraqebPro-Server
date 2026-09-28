@@ -210,7 +210,7 @@ async function waitForServer(url, retries, delay) {
             // المدير يضيف رقم الهاتف للموظف المعتمد أولاً
             await fetch(BASE + '/api/employees/' + approvedEmployee._id, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
-                body: JSON.stringify({ phoneNumber: '07700000000', hireDate: '2026-08-26' })
+                body: JSON.stringify({ phoneNumber: '07700000000', hireDate: '2026-08-25' })
             });
 
             // phoneNumber يربط موظفاً موجوداً بالجهاز دون إنشاء موظف جديد
@@ -295,6 +295,23 @@ async function waitForServer(url, retries, delay) {
             check('employee a few meters from assigned shift site accepted',
                 secondLocation.status === 201 && secondLocation.body.success === true &&
                 Number(secondLocation.body.distanceMeters) <= 250);
+
+            const newerGps = await (await fetch(BASE + '/api/employee/location', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employeeId: approvedEmployee._id, companyId,
+                    deviceId: linkedDeviceId, latitude: 31.001, longitude: 45,
+                    timestamp: new Date(Date.now() + 30000).toISOString() })
+            })).json();
+            const mapLocations = await (await fetch(BASE + '/api/admin/employee-locations', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const mappedEmployee = mapLocations.employees?.find(row =>
+                String(row.employeeId) === String(approvedEmployee._id));
+            check('map uses newer GPS instead of older attendance and approved company site',
+                newerGps.success === true && mappedEmployee &&
+                mappedEmployee.lastLocation.latitude === 31.001 &&
+                mappedEmployee.workLocation.id === String(secondaryLocation.location._id) &&
+                mappedEmployee.distanceMeters >= 100 && mappedEmployee.distanceMeters <= 120);
 
             const fifteenKmAway = await submitAttendance(31.135, 45, new Date(Date.now() + 120000).toISOString());
             check('employee about 15 km from assigned shift site rejected with distance',
@@ -453,7 +470,7 @@ async function waitForServer(url, retries, delay) {
             const delegation = await (await fetch(BASE + '/api/admin/employees/' + approvedEmployee._id + '/delegation', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
-                body: JSON.stringify({ active: true, from: '2026-08-28T00:00:00.000Z', to: '2026-08-28T23:59:59.999Z',
+                body: JSON.stringify({ active: true, from: '2026-08-27T21:00:00.000Z', to: '2026-08-28T20:59:59.999Z',
                     province: 'بغداد', locationName: 'موقع الإيفاد', allowProvinceWide: true, reason: 'إيفاد اختبار' })
             })).json();
             check('delegation approved from employee management', delegation.success === true && delegation.delegation.active === true);

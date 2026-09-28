@@ -7157,6 +7157,10 @@ app.get(
             const companyId =
                 req.session.companyId;
 
+            const company = await Company.findOne({ companyId })
+                .select('name approvedLocations')
+                .lean();
+
             const employees =
                 await Employee
                     .find({
@@ -7174,7 +7178,7 @@ app.get(
                 await Shift
                     .find({ companyId })
                     .select(
-                        'name attendanceStart departureEnd employeeIds'
+                        'name attendanceStart departureEnd employeeIds locationId locationName branch'
                     )
                     .lean();
 
@@ -7217,18 +7221,17 @@ app.get(
                     now >= delegationFrom &&
                     now <= delegationTo;
 
-                const shift = shifts.find(item =>
+                const assignedShifts = shifts.filter(item =>
                     (item.employeeIds || [])
                         .map(String)
                         .includes(String(emp._id))
                 );
+                const activeShift = assignedShifts.find(item =>
+                    isWithinShiftWindow(now, item.attendanceStart, item.departureEnd)
+                );
+                const shift = activeShift || assignedShifts[0];
                 const withinShift = Boolean(
-                    shift &&
-                    isWithinShiftWindow(
-                        now,
-                        shift.attendanceStart,
-                        shift.departureEnd
-                    )
+                    activeShift
                 );
                 const isClockedIn = Boolean(
                     lastAttendance &&
@@ -7237,6 +7240,34 @@ app.get(
                 const trackingAllowed =
                     isClockedIn &&
                     (withinShift || hasActiveDelegation);
+
+                const validLocation = source => source &&
+                    validGeoPoint(source.latitude, source.longitude);
+                const attendanceLocation = validLocation(lastAttendance)
+                    ? lastAttendance : null;
+                const gpsLocation = validLocation(emp.lastKnownLocation)
+                    ? emp.lastKnownLocation : null;
+                const locationTime = source => {
+                    const time = new Date(source?.timestamp || 0).getTime();
+                    return Number.isFinite(time) ? time : 0;
+                };
+                const latestLocation = attendanceLocation && gpsLocation
+                    ? locationTime(gpsLocation) > locationTime(attendanceLocation)
+                        ? gpsLocation : attendanceLocation
+                    : gpsLocation || attendanceLocation;
+                // Map locations come exclusively from the company's approved sites.
+                // Legacy coordinates copied onto a shift are deliberately ignored.
+                const workplace = company && shift
+                    ? (company.approvedLocations || []).find(site =>
+                        site.active !== false &&
+                        String(site._id) === String(shift.locationId) &&
+                        validGeoPoint(site.latitude, site.longitude)
+                    ) : null;
+                const distanceMeters = workplace && latestLocation
+                    ? Math.round(haversineMeters(
+                        Number(latestLocation.latitude), Number(latestLocation.longitude),
+                        workplace.latitude, workplace.longitude
+                    )) : null;
 
                 let unavailableReason = '';
                 if (!lastAttendance) {
@@ -7277,20 +7308,21 @@ app.get(
                             ? shift.name || ''
                             : '',
 
+                    workLocation: workplace ? {
+                        id: String(workplace._id),
+                        name: workplace.name,
+                        latitude: workplace.latitude,
+                        longitude: workplace.longitude
+                    } : null,
+                    distanceMeters,
+                    locationStatus: distanceMeters === null ? 'unknown'
+                        : distanceMeters <= 250 ? 'inside' : 'outside',
+
                     unavailableReason,
 
                     lastLocation:
                         (() => {
-                            const source =
-                                lastAttendance &&
-                                Number.isFinite(Number(lastAttendance.latitude)) &&
-                                Number.isFinite(Number(lastAttendance.longitude))
-                                    ? lastAttendance
-                                    : emp.lastKnownLocation &&
-                                      Number.isFinite(Number(emp.lastKnownLocation.latitude)) &&
-                                      Number.isFinite(Number(emp.lastKnownLocation.longitude))
-                                        ? emp.lastKnownLocation
-                                        : null;
+                            const source = latestLocation;
                             return source
                                 ? {
                                     latitude: Number(source.latitude),
@@ -8190,16 +8222,14 @@ app.post(
                 });
             }
 
-            const fromDate = new Date(req.body.fromDate);
-            const toDate = new Date(req.body.toDate);
+            const fromDate = baghdadPayrollBoundary(req.body.fromDate);
+            const toDate = baghdadPayrollBoundary(req.body.toDate, true);
             if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
                 return res.status(400).json({
                     success: false,
                     message: 'حدد تاريخ بداية ونهاية الإجازة'
                 });
             }
-            fromDate.setHours(0, 0, 0, 0);
-            toDate.setHours(23, 59, 59, 999);
             if (toDate < fromDate) {
                 return res.status(400).json({
                     success: false,
@@ -8219,8 +8249,6 @@ app.post(
                 const start = new Date(item.fromDate || item.requestedDate);
                 const end = new Date(item.toDate || item.fromDate || item.requestedDate);
                 if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
-                start.setHours(0, 0, 0, 0);
-                end.setHours(23, 59, 59, 999);
                 return fromDate <= end && toDate >= start;
             });
             if (overlaps) {
@@ -9208,15 +9236,26 @@ function payrollDayKey(value) {
     }).format(new Date(value));
 }
 
+function baghdadPayrollBoundary(value, end = false) {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return new Date(NaN);
+    const key = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+        ? value : payrollDayKey(parsed);
+    const [year, month, day] = key.split('-').map(Number);
+    if (new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10) !== key) {
+        return new Date(NaN);
+    }
+    return new Date(Date.UTC(year, month - 1, day,
+        end ? 20 : -3, end ? 59 : 0, end ? 59 : 0, end ? 999 : 0));
+}
+
 function payrollDateKeys(from, to) {
     const keys = [];
-    const cursor = new Date(from);
-    cursor.setHours(12, 0, 0, 0);
-    const end = new Date(to);
-    end.setHours(12, 0, 0, 0);
+    const cursor = new Date(`${payrollDayKey(from)}T12:00:00Z`);
+    const end = new Date(`${payrollDayKey(to)}T12:00:00Z`);
     while (cursor <= end && keys.length < 370) {
-        keys.push(payrollDayKey(cursor));
-        cursor.setDate(cursor.getDate() + 1);
+        keys.push(cursor.toISOString().slice(0, 10));
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
     return keys;
 }
@@ -9309,13 +9348,11 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
     try {
         const companyId = req.session.companyId;
         const defaultPeriod = payrollMonthPeriod();
-        const from = req.body.from ? new Date(req.body.from) : defaultPeriod.from;
-        const to = req.body.to ? new Date(req.body.to) : defaultPeriod.to;
+        const from = baghdadPayrollBoundary(req.body.from || defaultPeriod.from);
+        const to = baghdadPayrollBoundary(req.body.to || defaultPeriod.to, true);
         if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) {
             return res.status(400).json({ success: false, message: 'فترة الرواتب غير صحيحة' });
         }
-        from.setHours(0, 0, 0, 0);
-        to.setHours(23, 59, 59, 999);
         const periodKeys = payrollDateKeys(from, to);
         if (!periodKeys.length || periodKeys.length > 366) {
             return res.status(400).json({ success: false, message: 'فترة الرواتب يجب ألا تتجاوز سنة' });
@@ -9425,7 +9462,9 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const dailyRate = wageType === 'daily' ? basicSalary : basicSalary / divisor;
             const explicitAbsentDays = new Set(
                 [...(attendanceByEmployee.get(id) || new Map()).entries()]
-                    .filter(([, types]) => types.has('absent-late'))
+                    .filter(([day, types]) => types.has('absent-late') &&
+                        !paidLeaveDays.has(day) && !unpaidLeaveDays.has(day) &&
+                        !delegationDays.has(day))
                     .map(([day]) => day)
             );
             const absenceDays = explicitAbsentDays.size;
@@ -9677,13 +9716,11 @@ function payrollBatchItemFromSalary(salary) {
 }
 
 async function archiveAttendanceAfterPayroll({ companyId, employeeIds, payrollFrom, payrollTo, archivedBy, payrollBatchId }) {
-    const from = payrollFrom ? new Date(payrollFrom) : null;
-    const to = payrollTo ? new Date(payrollTo) : null;
+    const from = payrollFrom ? baghdadPayrollBoundary(payrollFrom) : null;
+    const to = payrollTo ? baghdadPayrollBoundary(payrollTo, true) : null;
     if (!from || !to || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
         return { archivedCount: 0, skipped: true, reason: 'فترة الراتب غير محددة' };
     }
-    from.setHours(0, 0, 0, 0);
-    to.setHours(23, 59, 59, 999);
     const paidEmployeeIds = [...new Set((employeeIds || []).map(String).filter(Boolean))];
     if (!paidEmployeeIds.length) {
         return { archivedCount: 0, skipped: true, reason: 'لا يوجد موظفون في الدفعة' };
@@ -10008,16 +10045,12 @@ app.post(
 
                     payrollFrom:
                         req.body.payrollFrom
-                            ? new Date(
-                                req.body.payrollFrom
-                            )
+                            ? baghdadPayrollBoundary(req.body.payrollFrom)
                             : undefined,
 
                     payrollTo:
                         req.body.payrollTo
-                            ? new Date(
-                                req.body.payrollTo
-                            )
+                            ? baghdadPayrollBoundary(req.body.payrollTo, true)
                             : undefined,
 
                     status:

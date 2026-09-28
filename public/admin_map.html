@@ -187,7 +187,7 @@ let map = null;
 let selectedEmployees = []; // قائمة معرفات الموظفين المختارين
 let employees = []; // كل الموظفين
 let currentUserMarker = null;
-let trackedMarkers = L ? L.layerGroup() : null;
+let trackedMarkers = null;
 const trackedLocations = new Map();
 const reverseGeoCache = new Map();
 
@@ -343,6 +343,11 @@ function addEmployee() {
 function removeEmployee(id) {
     selectedEmployees = selectedEmployees.filter(e => e !== id);
     trackedLocations.delete(String(id));
+    if (trackedMarkers) {
+        trackedMarkers.eachLayer(layer => {
+            if (String(layer.employeeId || '') === String(id)) trackedMarkers.removeLayer(layer);
+        });
+    }
     updateSelectedList();
 }
 
@@ -385,13 +390,7 @@ async function loadLocations() {
     // أبقِ خريطة Leaflet وطبقة البلاطات محمّلتين؛ حدّث علامات الموظفين فقط.
     if (!map) {
         map = L.map('map').setView([33.3128, 44.3615], 6);
-        L.tileLayer('https://tiles.openfreemap.org/styles/liberty/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors &copy; OpenFreeMap',
-            maxZoom: 19,
-            crossOrigin: true,
-            updateWhenIdle: true,
-            keepBuffer: 2
-        }).addTo(map);
+        addBaseMap(map);
     }
     if (!trackedMarkers) trackedMarkers = L.layerGroup().addTo(map);
     trackedMarkers.clearLayers();
@@ -440,10 +439,29 @@ async function loadLocations() {
                     ? 'تكليف فعّال'
                     : 'ضمن وقت الدوام'
                 : 'آخر موقع مسجل';
+            const updatedAt = last.timestamp
+                ? new Date(last.timestamp).toLocaleString('ar-IQ') : 'غير معروف';
+            const site = tracked.workLocation;
+            const distance = Number.isFinite(tracked.distanceMeters)
+                ? `${tracked.distanceMeters} م` : 'غير معروف';
+            const status = tracked.locationStatus === 'inside' ? 'داخل الموقع'
+                : tracked.locationStatus === 'outside' ? 'خارج الموقع' : 'غير محدد';
             const marker = L.marker([lat, lon]).addTo(trackedMarkers)
-                .bindPopup(`<b>${escapeHtml(tracked.name || 'موظف')}</b><br>${mode}<br>${new Date(last.timestamp).toLocaleString('ar-IQ')}`);
+                .bindPopup(`<b>${escapeHtml(tracked.name || 'موظف')}</b><br>${mode}<br>آخر تحديث: ${updatedAt}<br>${status} — ${distance}`);
+            marker.employeeId = String(tracked.employeeId);
             trackedLocations.set(String(tracked.employeeId), { lat, lon, marker });
             bounds.push([lat, lon]);
+            if (site && Number.isFinite(Number(site.latitude)) && Number.isFinite(Number(site.longitude))) {
+                const sitePoint = [Number(site.latitude), Number(site.longitude)];
+                const siteMarker = L.circleMarker(sitePoint, {
+                    radius: 8, color: '#f59e0b', fillColor: '#fbbf24', fillOpacity: 0.9
+                }).addTo(trackedMarkers).bindPopup(`موقع العمل: ${escapeHtml(site.name || '')}<br>${status} — ${distance}`);
+                siteMarker.employeeId = String(tracked.employeeId);
+                const line = L.polyline([[lat, lon], sitePoint], { color: '#38bdf8', weight: 3, dashArray: '6 5' })
+                    .addTo(trackedMarkers);
+                line.employeeId = String(tracked.employeeId);
+                bounds.push(sitePoint);
+            }
 
             const geoKey = lat.toFixed(4) + ',' + lon.toFixed(4);
             let areaName = reverseGeoCache.get(geoKey);
@@ -458,7 +476,7 @@ async function loadLocations() {
                     areaName = 'غير محدد';
                 }
             }
-            areas.push({ name: tracked.name || 'موظف', area: areaName + ' — ' + mode });
+            areas.push({ name: tracked.name || 'موظف', area: `${areaName} — ${mode} — ${status} — ${distance} — ${updatedAt}` });
         }
     } catch (error) {
         alert(error.message || 'تعذر جلب مواقع الموظفين');
@@ -493,21 +511,26 @@ function escapeHtml(value) {
         .replaceAll("'", '&#039;');
 }
 
+function addBaseMap(target) {
+    return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+        maxZoom: 19,
+        crossOrigin: true,
+        updateWhenIdle: true,
+        keepBuffer: 2
+    }).addTo(target);
+}
+
 // تهيئة الصفحة
 (async function init() {
     if (await auth()) {
         await loadEmployees();
         // تهيئة الخريطة بعد تحميل المكتبة
-        if (!L) {
+        if (typeof L === 'undefined') {
             alert('تعذر تحميل مكتبة الخريطة');
         } else {
             map = L.map('map').setView([33.3128, 44.3615], 6);
-            L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-        maxZoom: 20,
-            subdomains: 'abcd',
-        crossOrigin: true,
-        updateWhenIdle: true,
-        keepBuffer: 2 }).addTo(map);
+            addBaseMap(map);
             trackedMarkers = L.layerGroup().addTo(map);
         }
     }
