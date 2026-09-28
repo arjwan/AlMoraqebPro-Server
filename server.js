@@ -1104,11 +1104,12 @@ const notificationSchema = new mongoose.Schema({
 
     targetType: {
         type: String,
-        enum: ['employee', 'branch', 'all'],
+        enum: ['employee', 'branch', 'all', 'manager'],
         default: 'employee'
     },
 
     targetLabel: { type: String, default: '' },
+    trackingIncidentId: { type: String, default: '', index: true },
     campaignId: { type: String, default: '', index: true },
     scheduledAt: { type: Date, default: null, index: true },
     readAt: { type: Date, default: null },
@@ -1194,6 +1195,7 @@ const shiftSchema = new mongoose.Schema({
         default: '',
         index: true
     },
+    trackingMode: { type: String, enum: ['fixed', 'mobile'], default: 'fixed' },
 
     locationName: {
         type: String,
@@ -1223,6 +1225,51 @@ const shiftSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 const Shift = mongoose.model('Shift', shiftSchema);
+
+const trackingCycleSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true },
+    employeeId: { type: String, required: true, index: true },
+    shiftId: { type: String, required: true },
+    shiftStartedAt: { type: Date, required: true },
+    mode: { type: String, enum: ['fixed', 'mobile'], required: true },
+    startedAt: { type: Date, default: Date.now },
+    endedAt: Date,
+    lastSeenAt: Date,
+    lastLocation: { latitude: Number, longitude: Number },
+    distanceMeters: { type: Number, default: 0 },
+    batteryPercent: Number
+});
+trackingCycleSchema.index({ companyId: 1, employeeId: 1, shiftId: 1, shiftStartedAt: 1 }, { unique: true });
+const TrackingCycle = mongoose.model('TrackingCycle', trackingCycleSchema);
+
+const trackingPointSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true },
+    employeeId: { type: String, required: true, index: true },
+    cycleId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+    latitude: Number, longitude: Number, timestamp: Date,
+    batteryPercent: Number
+});
+trackingPointSchema.index({ cycleId: 1, timestamp: 1 });
+const TrackingPoint = mongoose.model('TrackingPoint', trackingPointSchema);
+
+const trackingIncidentSchema = new mongoose.Schema({
+    companyId: { type: String, required: true, index: true },
+    employeeId: { type: String, required: true, index: true },
+    cycleId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+    kind: { type: String, enum: ['offsite', 'gps-interruption'], required: true },
+    status: { type: String, enum: ['open', 'closed'], default: 'open' },
+    startedAt: { type: Date, required: true },
+    endedAt: Date,
+    durationSeconds: Number,
+    maxDistanceMeters: Number,
+    lastKnownLocation: { latitude: Number, longitude: Number, timestamp: Date },
+    batteryPercent: Number,
+    managerDecision: { type: String, enum: ['pending', 'allowed', 'warning', 'absence', 'authorized'], default: 'pending' },
+    absenceFrom: Date, absenceTo: Date,
+    decidedAt: Date
+});
+trackingIncidentSchema.index({ companyId: 1, employeeId: 1, cycleId: 1, kind: 1, status: 1 });
+const TrackingIncident = mongoose.model('TrackingIncident', trackingIncidentSchema);
 
 /*
 =========================================================
@@ -6957,6 +7004,7 @@ app.get(
                 await ServiceRequest
                     .find({
                         employeeId,
+                        targetType: { $ne: 'manager' },
                         companyId: employee.companyId
                     })
                     .sort({ createdAt: -1 })
@@ -7800,6 +7848,7 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
             name,
             locationId,
             employeeIds,
+            trackingMode,
             attendanceStart,
             attendanceEnd,
             lateFrom,
@@ -7815,6 +7864,10 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
                 success: false,
                 message: 'اسم الشفت مطلوب'
             });
+        }
+
+        if (trackingMode !== undefined && !['fixed', 'mobile'].includes(trackingMode)) {
+            return res.status(400).json({ success: false, message: 'نوع تتبع الشفت غير صحيح' });
         }
 
         if (!locationId) {
@@ -7963,6 +8016,8 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
             employeeIds:
                 requestedEmployeeIds,
 
+            trackingMode: trackingMode || 'fixed',
+
             ...normalizedTimes
         }).save();
 
@@ -8001,6 +8056,7 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
             name,
             locationId,
             employeeIds,
+            trackingMode,
             attendanceStart,
             attendanceEnd,
             lateFrom,
@@ -8010,6 +8066,11 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
             overtimeStart,
             overtimeEnd
         } = req.body;
+
+        if (trackingMode !== undefined && !['fixed', 'mobile'].includes(trackingMode)) {
+            return res.status(400).json({ success: false, message: 'نوع تتبع الشفت غير صحيح' });
+        }
+        if (trackingMode !== undefined) shift.trackingMode = trackingMode;
 
         /*
          * عند تغيير الموقع نتحقق أنه:
@@ -11220,6 +11281,9 @@ app.put('/api/admin/notifications/:id', requireAdmin, async (req, res) => {
         if (!notification) {
             return res.status(404).json({ success: false, message: 'الإشعار غير موجود' });
         }
+        if (notification.targetType === 'manager') {
+            return res.status(403).json({ success: false, message: 'تنبيه التتبع سجل نظامي؛ استخدم إجراء المدير' });
+        }
         if (req.body.message !== undefined) {
             notification.message = String(req.body.message || '').trim();
         }
@@ -11245,7 +11309,8 @@ app.delete('/api/admin/notifications/:id', requireAdmin, async (req, res) => {
     try {
         const notification = await Notification.findOneAndDelete({
             _id: req.params.id,
-            companyId: req.session.companyId
+            companyId: req.session.companyId,
+            targetType: { $ne: 'manager' }
         });
         if (!notification) {
             return res.status(404).json({ success: false, message: 'الإشعار غير موجود' });
@@ -11271,7 +11336,7 @@ app.put('/api/employee/notifications/:id/status', async (req, res) => {
             update.listenedAt = new Date();
         }
         const notification = await Notification.findOneAndUpdate(
-            { _id: req.params.id, employeeId },
+            { _id: req.params.id, employeeId, targetType: { $ne: 'manager' } },
             { $set: update },
             { new: true }
         );
@@ -11346,6 +11411,7 @@ app.get(
                 await Notification
                     .find({
                         employeeId,
+                        targetType: { $ne: 'manager' },
                         $or: [
                             { scheduledAt: null },
                             { scheduledAt: { $exists: false } },
@@ -11694,6 +11760,104 @@ app.get('/api/employee/attendance-requirement', async (req, res) => {
     }
 });
 
+function trackingShiftStart(now, shift) {
+    const startMinutes = shiftTimeInMinutes(shift.attendanceStart);
+    if (startMinutes === null) return null;
+    const start = baghdadPayrollBoundary(payrollDayKey(now));
+    start.setUTCMinutes(start.getUTCMinutes() + startMinutes);
+    const endMinutes = shiftTimeInMinutes(shift.departureEnd);
+    if (endMinutes !== null && startMinutes > endMinutes &&
+        attendanceClockMinutes(now) <= endMinutes) {
+        start.setUTCDate(start.getUTCDate() - 1);
+    }
+    return start;
+}
+
+async function activeTrackingContext(employee, now = new Date()) {
+    const shifts = await Shift.find({ companyId: employee.companyId, employeeIds: String(employee._id) }).lean();
+    const shift = shifts.find(item => isWithinShiftWindow(now, item.attendanceStart, item.departureEnd));
+    if (!shift) return null;
+    const shiftStartedAt = trackingShiftStart(now, shift);
+    const lastAttendance = await Attendance.findOne({ companyId: employee.companyId,
+        employeeId: String(employee._id), timestamp: { $gte: shiftStartedAt, $lte: now } })
+        .sort({ timestamp: -1 }).lean();
+    if (!lastAttendance || lastAttendance.type !== 'attendance') return null;
+    const delegation = employee.delegation || {};
+    const onDelegation = delegation.active === true && delegation.from && delegation.to &&
+        now >= new Date(delegation.from) && now <= new Date(delegation.to);
+    const mode = shift.trackingMode === 'mobile' || onDelegation ||
+        /سائق|مندوب|driver/i.test(String(employee.specialty || '')) ? 'mobile' : 'fixed';
+    const company = await Company.findOne({ companyId: employee.companyId })
+        .select('approvedLocations').lean();
+    const workplace = (company?.approvedLocations || []).find(site =>
+        site.active !== false && String(site._id) === String(shift.locationId) &&
+        validGeoPoint(site.latitude, site.longitude)) || null;
+    return { shift, shiftStartedAt, mode, workplace };
+}
+
+async function managerTrackingNotice(employee, incident, message) {
+    await Notification.create({
+        companyId: employee.companyId, employeeId: String(employee._id),
+        type: 'text', priority: 'urgent', targetType: 'manager',
+        targetLabel: 'مدير الشركة', trackingIncidentId: String(incident._id),
+        message: `${employee.name || 'موظف'}: ${message}`
+    });
+}
+
+async function employeeTrackingNotice(employee, message) {
+    await Notification.create({ companyId: employee.companyId,
+        employeeId: String(employee._id), type: 'text', priority: 'urgent',
+        targetType: 'employee', targetLabel: employee.name || 'الموظف', message });
+}
+
+async function finishTrackingIncident(incident, at, employee, message) {
+    incident.status = 'closed';
+    incident.endedAt = at;
+    incident.durationSeconds = Math.max(0, Math.round((at - incident.startedAt) / 1000));
+    await incident.save();
+    await managerTrackingNotice(employee, incident, message);
+}
+
+async function scanInterruptedTracking() {
+    if (mongoose.connection.readyState !== 1) return;
+    const now = new Date();
+    const staleBefore = new Date(now.getTime() - 3 * 60000);
+    const cycles = await TrackingCycle.find({ endedAt: null,
+        lastSeenAt: { $lt: staleBefore } }).limit(100);
+    for (const cycle of cycles) {
+        const employee = await Employee.findOne({ _id: cycle.employeeId,
+            companyId: cycle.companyId });
+        const context = employee ? await activeTrackingContext(employee, now) : null;
+        if (!context || String(context.shift._id) !== cycle.shiftId ||
+            context.shiftStartedAt.getTime() !== cycle.shiftStartedAt.getTime()) {
+            cycle.endedAt = now;
+            await cycle.save();
+            continue;
+        }
+        const existing = await TrackingIncident.findOne({ companyId: cycle.companyId,
+            employeeId: cycle.employeeId, cycleId: cycle._id,
+            kind: 'gps-interruption', status: 'open' });
+        if (existing) continue;
+        const incident = await TrackingIncident.create({ companyId: cycle.companyId,
+            employeeId: cycle.employeeId, cycleId: cycle._id,
+            kind: 'gps-interruption', startedAt: cycle.lastSeenAt,
+            lastKnownLocation: cycle.lastLocation ? {
+                latitude: cycle.lastLocation.latitude,
+                longitude: cycle.lastLocation.longitude,
+                timestamp: cycle.lastSeenAt
+            } : undefined,
+            batteryPercent: cycle.batteryPercent });
+        await managerTrackingNotice(employee, incident,
+            `توقف إرسال الموقع أثناء الشفت؛ آخر بطارية ${incident.batteryPercent ?? 'غير معروفة'}%؛ بانتظار عودة الموقع`);
+        await employeeTrackingNotice(employee,
+            'أنت الآن ضمن فترة العمل. يرجى تشغيل الموقع للاستمرار في تسجيل الدوام.');
+    }
+}
+const trackingScanTimer = setInterval(() => {
+    scanInterruptedTracking().catch(error => console.error('[tracking-scan]', error));
+}, 60000);
+trackingScanTimer.unref();
+
 app.post('/api/employee/location', async (req, res) => {
     try {
         const employeeId = String(req.body.employeeId || '').trim();
@@ -11702,11 +11866,15 @@ app.post('/api/employee/location', async (req, res) => {
         const latitude = Number(req.body.latitude);
         const longitude = Number(req.body.longitude);
         const timestamp = req.body.timestamp ? new Date(req.body.timestamp) : new Date();
+        const batteryPercent = req.body.batteryPercent === undefined || req.body.batteryPercent === null
+            ? null : Number(req.body.batteryPercent);
 
         if (!employeeId || !companyId || !deviceId ||
             !Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
             !Number.isFinite(longitude) || longitude < -180 || longitude > 180 ||
-            (latitude === 0 && longitude === 0) || Number.isNaN(timestamp.getTime())) {
+            (latitude === 0 && longitude === 0) || Number.isNaN(timestamp.getTime()) ||
+            timestamp.getTime() > Date.now() + 5 * 60000 ||
+            (batteryPercent !== null && (!Number.isFinite(batteryPercent) || batteryPercent < 0 || batteryPercent > 100))) {
             return res.status(400).json({ success: false, message: 'بيانات الموقع غير صحيحة' });
         }
 
@@ -11715,9 +11883,199 @@ app.post('/api/employee/location', async (req, res) => {
             return res.status(403).json({ success: false, message: 'هذا الجهاز غير مرتبط بالموظف' });
         }
 
-        employee.lastKnownLocation = { latitude, longitude, timestamp };
-        await employee.save();
-        return res.json({ success: true, message: 'تم حفظ الموقع الحالي' });
+        const previousTimestamp = new Date(employee.lastKnownLocation?.timestamp || 0).getTime();
+        if (timestamp.getTime() > previousTimestamp) {
+            employee.lastKnownLocation = { latitude, longitude, timestamp };
+            await employee.save();
+        }
+
+        const now = new Date();
+        const context = Math.abs(now - timestamp) <= 5 * 60000
+            ? await activeTrackingContext(employee, now) : null;
+        if (!context) {
+            return res.json({ success: true, trackingRequired: false, message: 'تم حفظ الموقع الحالي' });
+        }
+
+        const cycle = await TrackingCycle.findOneAndUpdate({
+            companyId, employeeId, shiftId: String(context.shift._id),
+            shiftStartedAt: context.shiftStartedAt
+        }, { $setOnInsert: { mode: context.mode, startedAt: now } },
+        { upsert: true, returnDocument: 'after' });
+        const previous = cycle.lastLocation;
+        const increment = previous && validGeoPoint(previous.latitude, previous.longitude)
+            ? haversineMeters(previous.latitude, previous.longitude, latitude, longitude) : 0;
+        // Ignore implausible GPS jumps when accumulating driving distance.
+        if (increment > 0 && increment < 10000) cycle.distanceMeters += increment;
+        cycle.lastLocation = { latitude, longitude };
+        cycle.lastSeenAt = now;
+        if (batteryPercent !== null) cycle.batteryPercent = batteryPercent;
+        await cycle.save();
+        await TrackingPoint.create({ companyId, employeeId, cycleId: cycle._id,
+            latitude, longitude, timestamp: now,
+            ...(batteryPercent !== null ? { batteryPercent } : {}) });
+
+        const interruption = await TrackingIncident.findOne({
+            companyId, employeeId, cycleId: cycle._id,
+            kind: 'gps-interruption', status: 'open'
+        });
+        if (interruption) {
+            await finishTrackingIncident(interruption, now, employee,
+                `عاد تتبع الموقع بعد ${interruption.durationSeconds || Math.round((now - interruption.startedAt) / 1000)} ثانية`);
+            await employeeTrackingNotice(employee, 'عاد تتبع موقعك بنجاح. يمكنك متابعة العمليات التي تتطلب الموقع.');
+        }
+
+        let distanceMeters = null;
+        if (context.mode === 'fixed' && context.workplace) {
+            distanceMeters = Math.round(haversineMeters(latitude, longitude,
+                Number(context.workplace.latitude), Number(context.workplace.longitude)));
+            let offsite = await TrackingIncident.findOne({ companyId, employeeId,
+                cycleId: cycle._id, kind: 'offsite', status: 'open' });
+            if (distanceMeters > 250) {
+                if (!offsite) {
+                    offsite = await TrackingIncident.create({ companyId, employeeId,
+                        cycleId: cycle._id, kind: 'offsite', startedAt: now,
+                        maxDistanceMeters: distanceMeters,
+                        lastKnownLocation: { latitude, longitude, timestamp: now },
+                        ...(batteryPercent !== null ? { batteryPercent } : {}) });
+                    await managerTrackingNotice(employee, offsite,
+                        `ابتعد ${distanceMeters} مترًا عن ${context.workplace.name || 'موقع العمل'}؛ بانتظار إجراء المدير`);
+                    await employeeTrackingNotice(employee,
+                        `أنت الآن على بعد ${distanceMeters} مترًا من موقع عملك. يرجى العودة إلى الموقع أو إبلاغ المدير إذا كنت في مهمة عمل.`);
+                } else {
+                    offsite.maxDistanceMeters = Math.max(offsite.maxDistanceMeters || 0, distanceMeters);
+                    await offsite.save();
+                }
+            } else if (offsite) {
+                await finishTrackingIncident(offsite, now, employee,
+                    `عاد إلى موقع العمل بعد ${Math.round((now - offsite.startedAt) / 1000)} ثانية؛ أقصى ابتعاد ${offsite.maxDistanceMeters} متر`);
+                await employeeTrackingNotice(employee, 'تم تسجيل عودتك إلى موقع العمل.');
+            }
+        }
+        return res.json({ success: true, trackingRequired: true,
+            cycleId: String(cycle._id), trackingMode: context.mode,
+            distanceMeters, message: 'تم حفظ الموقع الحالي' });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/employee/tracking-status', async (req, res) => {
+    try {
+        const employeeId = String(req.body.employeeId || '').trim();
+        const companyId = String(req.body.companyId || '').trim();
+        const deviceId = String(req.body.deviceId || '').trim();
+        const batteryPercent = req.body.batteryPercent === undefined || req.body.batteryPercent === null
+            ? null : Number(req.body.batteryPercent);
+        if (batteryPercent !== null && (!Number.isFinite(batteryPercent) || batteryPercent < 0 || batteryPercent > 100)) {
+            return res.status(400).json({ success: false, message: 'نسبة البطارية غير صحيحة' });
+        }
+        const employee = await Employee.findOne({ _id: employeeId, companyId, deviceId });
+        if (!employee || !deviceId) {
+            return res.status(403).json({ success: false, message: 'هذا الجهاز غير مرتبط بالموظف' });
+        }
+        const now = new Date();
+        const context = await activeTrackingContext(employee, now);
+        if (!context) return res.json({ success: true, trackingRequired: false });
+        const cycle = await TrackingCycle.findOneAndUpdate({ companyId, employeeId,
+            shiftId: String(context.shift._id), shiftStartedAt: context.shiftStartedAt },
+        { $setOnInsert: { mode: context.mode, startedAt: now } },
+        { upsert: true, returnDocument: 'after' });
+        if (batteryPercent !== null) {
+            cycle.batteryPercent = batteryPercent;
+            await cycle.save();
+        }
+        let incident = await TrackingIncident.findOne({ companyId, employeeId,
+            cycleId: cycle._id, kind: 'gps-interruption', status: 'open' });
+        if (!incident) {
+            const last = employee.lastKnownLocation || {};
+            incident = await TrackingIncident.create({ companyId, employeeId,
+                cycleId: cycle._id, kind: 'gps-interruption', startedAt: now,
+                lastKnownLocation: validGeoPoint(last.latitude, last.longitude)
+                    ? { latitude: last.latitude, longitude: last.longitude, timestamp: last.timestamp }
+                    : undefined,
+                batteryPercent: batteryPercent ?? cycle.batteryPercent });
+            await managerTrackingNotice(employee, incident,
+                `انقطع تتبع الموقع أثناء الشفت؛ آخر بطارية ${incident.batteryPercent ?? 'غير معروفة'}%؛ بانتظار عودة الموقع`);
+            await employeeTrackingNotice(employee,
+                'أنت الآن ضمن فترة العمل. يرجى تشغيل الموقع للاستمرار في تسجيل الدوام.');
+        }
+        return res.json({ success: true, trackingRequired: true, incidentId: String(incident._id),
+            message: 'أنت الآن ضمن فترة العمل. يرجى تشغيل الموقع للاستمرار في تسجيل الدوام.' });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.get('/api/admin/tracking-incidents', requireAdmin, async (req, res) => {
+    try {
+        const companyId = req.session.companyId;
+        const incidents = await TrackingIncident.find({ companyId })
+            .sort({ startedAt: -1 }).limit(300).lean();
+        const employees = await Employee.find({ companyId,
+            _id: { $in: [...new Set(incidents.map(item => item.employeeId))] } })
+            .select('name specialty').lean();
+        const names = new Map(employees.map(item => [String(item._id), item.name]));
+        return res.json({ success: true, incidents: incidents.map(item => ({
+            ...item, employeeName: names.get(item.employeeId) || ''
+        })) });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.patch('/api/admin/tracking-incidents/:id/action', requireAdmin, async (req, res) => {
+    try {
+        const decision = String(req.body.decision || '').trim();
+        if (!['allowed', 'warning', 'absence', 'authorized'].includes(decision)) {
+            return res.status(400).json({ success: false, message: 'الإجراء غير صحيح' });
+        }
+        const incident = await TrackingIncident.findOne({ _id: req.params.id,
+            companyId: req.session.companyId });
+        if (!incident) return res.status(404).json({ success: false, message: 'الحدث غير موجود' });
+        let absenceFrom = null, absenceTo = null;
+        if (decision === 'absence') {
+            absenceFrom = new Date(req.body.from);
+            absenceTo = new Date(req.body.to);
+            if (Number.isNaN(absenceFrom.getTime()) || Number.isNaN(absenceTo.getTime()) ||
+                absenceTo <= absenceFrom || absenceFrom < incident.startedAt ||
+                absenceTo > (incident.endedAt || new Date())) {
+                return res.status(400).json({ success: false, message: 'حدد فترة غياب صحيحة ضمن الحدث' });
+            }
+        }
+        incident.managerDecision = decision;
+        incident.absenceFrom = absenceFrom;
+        incident.absenceTo = absenceTo;
+        incident.decidedAt = new Date();
+        await incident.save();
+        return res.json({ success: true, incident });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.get('/api/admin/tracking-cycles', requireAdmin, async (req, res) => {
+    try {
+        const employeeId = String(req.query.employeeId || '').trim();
+        if (!employeeId) return res.status(400).json({ success: false, message: 'employeeId مطلوب' });
+        const cycles = await TrackingCycle.find({ companyId: req.session.companyId, employeeId })
+            .sort({ shiftStartedAt: -1 }).limit(30).lean();
+        return res.json({ success: true, cycles });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.get('/api/admin/tracking-cycles/:id/route', requireAdmin, async (req, res) => {
+    try {
+        const companyId = req.session.companyId;
+        const cycle = await TrackingCycle.findOne({ _id: req.params.id, companyId }).lean();
+        if (!cycle) return res.status(404).json({ success: false, message: 'المسار غير موجود' });
+        const points = await TrackingPoint.find({ cycleId: cycle._id, companyId })
+            .sort({ timestamp: 1 }).select('latitude longitude timestamp batteryPercent').lean();
+        if (req.query.download === '1') {
+            res.setHeader('Content-Disposition', `attachment; filename="route-${cycle._id}.json"`);
+        }
+        return res.json({ success: true, cycle, points });
     } catch (err) {
         return res.status(500).json({ success: false, error: err.message });
     }

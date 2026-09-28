@@ -67,6 +67,7 @@ body.dark-mode .employee-pro-toolbar,body.dark-mode .employee-pro-stat,body.dark
         <p>تشغيل البث المباشر وإدارة القنوات المفضلة</p>
     </div>
     <div class="card" onclick="go('admin_notifications.html')"><span class="bigicon">🔔</span><h3>إشعارات الموظفين</h3><p>إرسال رسائل نصية وصوتية للموظفين ومراجعة السجل</p></div>
+    <div class="card" role="link" tabindex="0" onclick="go('admin_notifications.html','tracking')" onkeydown="cardKey(event,this)"><span class="bigicon">🚨</span><h3>تنبيهات حركة الموظفين <span id="trackingBadge" class="badge" style="background:#ef4444">0</span></h3><p>الخروج والعودة وانقطاع GPS وقرارات المدير</p></div>
 </div>
 
 <div id="status" class="status">✓ جاري التحقق من اتصال السيرفر...</div>
@@ -238,6 +239,7 @@ async function auth(){
 
 async function loadStats(){try{const r=await fetch(API+'/api/employees?companyId='+encodeURIComponent(companyId),{headers:{Authorization:'Bearer '+token},cache:'no-store'});const d=await r.json();if(r.ok&&d.success)document.getElementById('employees').textContent=(d.employees||[]).length}catch{}}
 async function loadPending(){try{const headers={Authorization:'Bearer '+token};const responses=await Promise.all([fetch(API+'/api/employee/requests/'+encodeURIComponent(companyId)+'/pending',{headers,cache:'no-store'}),fetch(API+'/api/admin/service-requests',{headers,cache:'no-store'})]);const registration=await responses[0].json();const services=await responses[1].json();const registrationCount=responses[0].ok&&registration.success?(registration.requests||[]).length:0;const serviceCount=responses[1].ok&&services.success?(services.requests||[]).filter(request=>request.status==='pending').length:0;document.getElementById('pending').textContent=registrationCount+serviceCount;document.getElementById('reqBadge').textContent=registrationCount+serviceCount}catch{}}
+async function loadTrackingBadge(){try{const r=await fetch(API+'/api/admin/tracking-incidents',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const d=await r.json();if(r.ok&&d.success)document.getElementById('trackingBadge').textContent=(d.incidents||[]).filter(item=>item.managerDecision==='pending').length}catch{}}
 
 
 async function refreshSyncStatus(){
@@ -337,10 +339,10 @@ document.querySelectorAll('.card').forEach(el=>el.addEventListener('keydown',e=>
 
 (async()=>{
     if(await auth()){
-        await Promise.all([loadStats(),loadPending()]);
+        await Promise.all([loadStats(),loadPending(),loadTrackingBadge()]);
         await checkServer();
         await refreshSyncStatus();
-        setInterval(()=>{loadStats();loadPending()},30000);
+        setInterval(()=>{loadStats();loadPending();loadTrackingBadge()},30000);
     }
 })();
 </script>

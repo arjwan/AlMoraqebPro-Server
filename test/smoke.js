@@ -319,6 +319,93 @@ async function waitForServer(url, retries, delay) {
                 mappedEmployee.workLocation.id === String(secondaryLocation.location._id) &&
                 mappedEmployee.distanceMeters >= 100 && mappedEmployee.distanceMeters <= 120);
 
+            async function reportGps(latitude, longitude, batteryPercent = 63) {
+                const response = await fetch(BASE + '/api/employee/location', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employeeId: approvedEmployee._id, companyId,
+                        deviceId: linkedDeviceId, latitude, longitude, batteryPercent })
+                });
+                return { status: response.status, body: await response.json() };
+            }
+            const outsideReport = await reportGps(31.004, 45);
+            const openIncidents = await (await fetch(BASE + '/api/admin/tracking-incidents', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const outsideIncident = openIncidents.incidents?.find(item => item.kind === 'offsite');
+            check('fixed employee over 250m creates pending event without absence',
+                outsideReport.status === 200 && outsideReport.body.trackingMode === 'fixed' &&
+                outsideReport.body.distanceMeters > 250 && outsideIncident?.status === 'open' &&
+                outsideIncident.managerDecision === 'pending');
+            const returnReport = await reportGps(31.001, 45);
+            const closedIncidents = await (await fetch(BASE + '/api/admin/tracking-incidents', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const returnedIncident = closedIncidents.incidents?.find(item => String(item._id) === String(outsideIncident?._id));
+            check('return closes event and preserves maximum distance and duration',
+                returnReport.body.trackingRequired === true && returnedIncident?.status === 'closed' &&
+                returnedIncident.maxDistanceMeters > 250 && returnedIncident.durationSeconds >= 0 &&
+                returnedIncident.managerDecision === 'pending');
+            const managerAction = await (await fetch(BASE + '/api/admin/tracking-incidents/' + outsideIncident._id + '/action', {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ decision: 'allowed' })
+            })).json();
+            check('only manager decision resolves offsite case', managerAction.incident?.managerDecision === 'allowed');
+            const gpsGap = await (await fetch(BASE + '/api/employee/tracking-status', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employeeId: approvedEmployee._id, companyId, deviceId: linkedDeviceId,
+                    batteryPercent: 3 })
+            })).json();
+            await reportGps(31.001, 45, 3);
+            const gaps = await (await fetch(BASE + '/api/admin/tracking-incidents', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            const gap = gaps.incidents?.find(item => String(item._id) === String(gpsGap.incidentId));
+            check('GPS interruption and return record battery without automatic absence',
+                gpsGap.message === 'أنت الآن ضمن فترة العمل. يرجى تشغيل الموقع للاستمرار في تسجيل الدوام.' &&
+                gap?.status === 'closed' && gap.batteryPercent === 3 && gap.managerDecision === 'pending');
+            const employeeNotices = await (await fetch(BASE + '/api/employee/notifications?employeeId=' +
+                encodeURIComponent(approvedEmployee._id) + '&deviceId=' + encodeURIComponent(linkedDeviceId))).json();
+            const managerNotices = await (await fetch(BASE + '/api/admin/notifications', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('employee sees location, GPS, and return alerts but not manager-only alerts',
+                employeeNotices.success === true &&
+                employeeNotices.notifications.some(n => n.message.includes('على بعد')) &&
+                employeeNotices.notifications.some(n => n.message.includes('تشغيل الموقع')) &&
+                employeeNotices.notifications.some(n => n.message.includes('عودتك إلى موقع العمل')) &&
+                employeeNotices.notifications.some(n => n.message.includes('عاد تتبع موقعك')) &&
+                employeeNotices.notifications.every(n => n.targetType !== 'manager'));
+            check('manager receives linked movement and GPS alerts',
+                managerNotices.success === true && managerNotices.notifications.some(n =>
+                    n.targetType === 'manager' && String(n.trackingIncidentId) === String(outsideIncident._id)) &&
+                managerNotices.notifications.some(n => n.targetType === 'manager' &&
+                    String(n.trackingIncidentId) === String(gpsGap.incidentId)));
+            const route = await (await fetch(BASE + '/api/admin/tracking-cycles/' + outsideReport.body.cycleId + '/route', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('shift route can be saved with timed GPS points', route.success === true && route.points.length >= 3);
+            const cycleList = await (await fetch(BASE + '/api/admin/tracking-cycles?employeeId=' +
+                encodeURIComponent(approvedEmployee._id), {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('manager sees employee shift route summary', cycleList.success === true &&
+                cycleList.cycles.some(item => String(item._id) === String(outsideReport.body.cycleId)));
+            const mobileShift = await (await fetch(BASE + '/api/admin/shifts/' + shift.shift._id, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ trackingMode: 'mobile' })
+            })).json();
+            const mobileReport = await reportGps(31.02, 45);
+            const mobileIncidents = await (await fetch(BASE + '/api/admin/tracking-incidents', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('approved mobile shift tracks movement without offsite alert', mobileShift.success === true &&
+                mobileReport.body.trackingMode === 'mobile' &&
+                mobileIncidents.incidents.filter(item => item.kind === 'offsite').length === 1);
+            await fetch(BASE + '/api/admin/shifts/' + shift.shift._id, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ trackingMode: 'fixed' })
+            });
+
             const fifteenKmAway = await submitAttendance(31.135, 45, new Date(Date.now() + 120000).toISOString());
             check('employee about 15 km from assigned shift site rejected with distance',
                 fifteenKmAway.status === 403 && fifteenKmAway.body.success === false &&
@@ -622,6 +709,14 @@ async function waitForServer(url, retries, delay) {
         const root = await fetch(BASE + '/');
         check('root serves index.html', root.status === 200 && (root.headers.get('content-type') || '').includes('text/html'));
         const mapPage = await (await fetch(BASE + '/admin_map.html')).text();
+        const adminHome = await (await fetch(BASE + '/admin.html')).text();
+        const notificationsPage = await (await fetch(BASE + '/admin_notifications.html')).text();
+        check('manager movement card links into existing notifications and actions',
+            adminHome.includes('تنبيهات حركة الموظفين') &&
+            adminHome.includes("go('admin_notifications.html','tracking')") &&
+            notificationsPage.includes('id="tracking"') &&
+            notificationsPage.includes('/admin_tracking.js') &&
+            (await fetch(BASE + '/admin_tracking.js')).status === 200);
         const vectorLibrary = await fetch(BASE + '/vendor/maplibre/maplibre-gl.js');
         check('map serves the vector renderer and no blocked raster tile host',
             mapPage.includes('L.maplibreGL') &&

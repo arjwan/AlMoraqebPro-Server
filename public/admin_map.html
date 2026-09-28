@@ -156,6 +156,7 @@
 <div class="container">
     <div class="header">
         <h1><i class="fas fa-map-marker-alt"></i> متابعة الموظف على الخريطة</h1>
+        <button class="btn" onclick="location.href='admin_notifications.html?company='+encodeURIComponent(getCompanyId())+'&tab=tracking'"><i class="fas fa-bell"></i> تنبيهات حركة الموظفين</button>
         <button class="btn btn-outline" onclick="history.back()">⬅ رجوع للوحة</button>
     </div>
 
@@ -454,6 +455,33 @@ async function loadLocations() {
             marker.employeeId = String(tracked.employeeId);
             trackedLocations.set(String(tracked.employeeId), { lat, lon, marker });
             bounds.push([lat, lon]);
+            if (tracked.trackingAllowed) {
+                try {
+                    const cycleRes = await fetch(API + '/api/admin/tracking-cycles?employeeId=' + encodeURIComponent(tracked.employeeId), {
+                        credentials: 'include', headers: getToken() ? { Authorization: 'Bearer ' + getToken() } : {}
+                    });
+                    const cycleData = await cycleRes.json();
+                    const cycle = cycleData.cycles?.[0];
+                    if (cycle && cycle.mode === 'mobile') {
+                        const routeRes = await fetch(API + '/api/admin/tracking-cycles/' + encodeURIComponent(cycle._id) + '/route', {
+                            credentials: 'include', headers: getToken() ? { Authorization: 'Bearer ' + getToken() } : {}
+                        });
+                        const routeData = await routeRes.json();
+                        const routePoints = (routeData.points || []).map(p => [Number(p.latitude), Number(p.longitude)])
+                            .filter(p => p.every(Number.isFinite));
+                        if (routePoints.length > 1) {
+                            const routeLine = L.polyline(routePoints, { color: '#ef4444', weight: 4 }).addTo(trackedMarkers);
+                            routeLine.employeeId = String(tracked.employeeId);
+                        }
+                        const elapsed = Math.max(0, Math.round((Date.now() - new Date(cycle.startedAt)) / 60000));
+                        const routeInfo = `مسار اليوم: ${Math.round(Number(cycle.distanceMeters || 0))} م · البداية: ${new Date(cycle.startedAt).toLocaleString('ar-IQ')} · ${elapsed} دقيقة`;
+                        const downloadUrl = '/api/admin/tracking-cycles/' + encodeURIComponent(cycle._id) + '/route?download=1';
+                        marker.setPopupContent(marker.getPopup().getContent() + '<br>' + escapeHtml(routeInfo) +
+                            '<br><a href="' + downloadUrl + '" download>حفظ مسار اليوم</a>');
+                        areas.push({ name: tracked.name || 'موظف', area: routeInfo });
+                    }
+                } catch (error) { console.warn('تعذر تحميل مسار الموظف', error); }
+            }
             if (site && Number.isFinite(Number(site.latitude)) && Number.isFinite(Number(site.longitude))) {
                 const sitePoint = [Number(site.latitude), Number(site.longitude)];
                 const siteMarker = L.circleMarker(sitePoint, {
