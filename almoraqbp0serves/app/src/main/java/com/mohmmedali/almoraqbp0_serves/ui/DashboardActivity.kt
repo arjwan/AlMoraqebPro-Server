@@ -32,6 +32,7 @@ import com.mohmmedali.almoraqebpro.databinding.ActivityDashboardBinding
 import com.mohmmedali.almoraqebpro.services.BiometricManager
 import com.mohmmedali.almoraqebpro.services.LocationManager
 import com.mohmmedali.almoraqebpro.services.SyncWorker
+import com.mohmmedali.almoraqebpro.services.ShiftTrackingService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,6 +41,7 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 class DashboardActivity : AppCompatActivity() {
 
@@ -55,6 +57,7 @@ class DashboardActivity : AppCompatActivity() {
         if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
             Toast.makeText(this, getString(R.string.dash_location_permission_granted), Toast.LENGTH_SHORT).show()
+            startShiftTracking()
             if (permissionRequestedForAttendance) {
                 permissionRequestedForAttendance = false
                 startAttendance(pendingType)
@@ -122,6 +125,9 @@ class DashboardActivity : AppCompatActivity() {
         // شريط التنقل السفلي
         binding.navServices.setOnClickListener { startActivity(Intent(this, ServicesActivity::class.java)) }
         binding.navNotif.setOnClickListener { startActivity(Intent(this, NotificationActivity::class.java)) }
+        binding.btnMovementAlerts.setOnClickListener {
+            startActivity(Intent(this, NotificationActivity::class.java).putExtra("tracking_only", true))
+        }
         binding.navSettings.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         binding.navHome.setOnClickListener {
             Toast.makeText(this, getString(R.string.dash_home_hint), Toast.LENGTH_SHORT).show()
@@ -157,6 +163,15 @@ class DashboardActivity : AppCompatActivity() {
         refreshAttendanceRequirement()
         updateGpsTile()
         refreshSyncStatus()
+        startShiftTracking()
+    }
+
+    private fun startShiftTracking() {
+        if (locationManager.hasPermission()) {
+            try {
+                ContextCompat.startForegroundService(this, Intent(this, ShiftTrackingService::class.java))
+            } catch (_: SecurityException) { /* تعاد المحاولة بعد عودة الصلاحية */ }
+        }
     }
 
     private fun checkServerStatus() {
@@ -406,7 +421,8 @@ class DashboardActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                val timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date())
+                val timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                    .apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date())
                 try {
                     val response = RetrofitClient.apiService.sendLocation(
                         LocationUpdateRequest(

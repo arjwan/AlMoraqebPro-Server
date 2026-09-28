@@ -367,4 +367,6 @@
 
     <string name="login_offline_success">تم التحقق محلياً — وضع Offline</string>
     <string name="login_offline_not_verified">لا يمكن الدخول Offline: هذا الحساب لم يسبق التحقق منه Online على هذا الجهاز أو البيانات مختلفة</string>
+    <string name="dash_movement_alerts">📍 تنبيهات حركة الموقع</string>
+    <string name="movement_alerts_empty">لا توجد تنبيهات حركة حتى الآن.</string>
 </resources>

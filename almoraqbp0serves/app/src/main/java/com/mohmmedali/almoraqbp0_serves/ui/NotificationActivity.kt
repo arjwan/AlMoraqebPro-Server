@@ -47,10 +47,14 @@ class NotificationActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = RetrofitClient.apiService.getNotifications(employeeId, deviceId)
-                val notifications = response.body()?.notifications ?: emptyList()
+                val trackingOnly = intent.getBooleanExtra("tracking_only", false)
+                val notifications = (response.body()?.notifications ?: emptyList())
+                    .filter { !trackingOnly || it.category == "tracking" }
                 withContext(Dispatchers.Main) {
                     val empty = findViewById<TextView>(R.id.tvEmptyNotifications)
                     val list = findViewById<ListView>(R.id.lvNotifications)
+                    if (trackingOnly) findViewById<TextView>(R.id.tvNotifTitle).text =
+                        getString(R.string.dash_movement_alerts)
                     if (!response.isSuccessful || response.body()?.success != true) {
                         empty.visibility = View.VISIBLE
                         empty.text = "❌ " + (response.body()?.message ?: getString(R.string.notif_fetch_failed))
@@ -58,6 +62,7 @@ class NotificationActivity : AppCompatActivity() {
                     }
                     if (notifications.isEmpty()) {
                         empty.visibility = View.VISIBLE
+                        if (trackingOnly) empty.text = getString(R.string.movement_alerts_empty)
                         list.visibility = View.GONE
                         return@withContext
                     }
@@ -65,7 +70,11 @@ class NotificationActivity : AppCompatActivity() {
                     list.visibility = View.VISIBLE
 
                     val rows = notifications.map { n ->
-                        val icon = if (n.type == "voice") getString(R.string.notif_voice_message) else getString(R.string.notif_admin_message)
+                        val icon = when {
+                            n.category == "tracking" -> getString(R.string.dash_movement_alerts)
+                            n.type == "voice" -> getString(R.string.notif_voice_message)
+                            else -> getString(R.string.notif_admin_message)
+                        }
                         val urgent = if (n.priority == "urgent") getString(R.string.notif_urgent) else ""
                         "$urgent$icon\n${n.message ?: ""}\n${formatServerDate(n.createdAt)}" +
                             (if (!n.audioUrl.isNullOrEmpty()) "\n" + getString(R.string.notif_play_audio) else "")

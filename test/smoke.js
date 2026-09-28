@@ -328,6 +328,10 @@ async function waitForServer(url, retries, delay) {
                 return { status: response.status, body: await response.json() };
             }
             const outsideReport = await reportGps(31.004, 45);
+            const shiftTrackingStatus = await (await fetch(BASE + '/api/employee/tracking-status?employeeId=' +
+                encodeURIComponent(approvedEmployee._id) + '&deviceId=' + encodeURIComponent(linkedDeviceId))).json();
+            check('Android shift tracking status starts only while clocked in',
+                shiftTrackingStatus.success === true && shiftTrackingStatus.trackingRequired === true);
             const openIncidents = await (await fetch(BASE + '/api/admin/tracking-incidents', {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
             })).json();
@@ -374,6 +378,7 @@ async function waitForServer(url, retries, delay) {
                 employeeNotices.notifications.some(n => n.message.includes('تشغيل الموقع')) &&
                 employeeNotices.notifications.some(n => n.message.includes('عودتك إلى موقع العمل')) &&
                 employeeNotices.notifications.some(n => n.message.includes('عاد تتبع موقعك')) &&
+                employeeNotices.notifications.filter(n => n.category === 'tracking').length >= 4 &&
                 employeeNotices.notifications.every(n => n.targetType !== 'manager'));
             check('manager receives linked movement and GPS alerts',
                 managerNotices.success === true && managerNotices.notifications.some(n =>

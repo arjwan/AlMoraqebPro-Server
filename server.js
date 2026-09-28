@@ -1109,6 +1109,7 @@ const notificationSchema = new mongoose.Schema({
     },
 
     targetLabel: { type: String, default: '' },
+    category: { type: String, enum: ['message', 'tracking'], default: 'message' },
     trackingIncidentId: { type: String, default: '', index: true },
     campaignId: { type: String, default: '', index: true },
     scheduledAt: { type: Date, default: null, index: true },
@@ -11807,7 +11808,8 @@ async function managerTrackingNotice(employee, incident, message) {
 async function employeeTrackingNotice(employee, message) {
     await Notification.create({ companyId: employee.companyId,
         employeeId: String(employee._id), type: 'text', priority: 'urgent',
-        targetType: 'employee', targetLabel: employee.name || 'الموظف', message });
+        targetType: 'employee', category: 'tracking',
+        targetLabel: employee.name || 'الموظف', message });
 }
 
 async function finishTrackingIncident(incident, at, employee, message) {
@@ -11954,6 +11956,21 @@ app.post('/api/employee/location', async (req, res) => {
         return res.json({ success: true, trackingRequired: true,
             cycleId: String(cycle._id), trackingMode: context.mode,
             distanceMeters, message: 'تم حفظ الموقع الحالي' });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.get('/api/employee/tracking-status', async (req, res) => {
+    try {
+        const { employeeId, deviceId } = req.query;
+        const employee = await Employee.findOne({ _id: String(employeeId || ''),
+            deviceId: String(deviceId || '') });
+        if (!employee || !deviceId) return res.status(403).json({ success: false,
+            message: 'هذا الجهاز غير مرتبط بالموظف' });
+        const context = await activeTrackingContext(employee, new Date());
+        return res.json({ success: true, trackingRequired: Boolean(context),
+            trackingMode: context?.mode || null });
     } catch (err) {
         return res.status(500).json({ success: false, error: err.message });
     }

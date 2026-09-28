@@ -65,4 +65,13 @@ interface ApiService {
     // إرسال الموقع الحالي للموظف
     @POST("api/employee/location")
     suspend fun sendLocation(@Body body: LocationUpdateRequest): Response<LocationUpdateResponse>
+
+    @GET("api/employee/tracking-status")
+    suspend fun getTrackingStatus(
+        @Query("employeeId") employeeId: String,
+        @Query("deviceId") deviceId: String
+    ): Response<TrackingStatusResponse>
+
+    @POST("api/employee/tracking-status")
+    suspend fun reportTrackingInterruption(@Body body: TrackingInterruptionRequest): Response<TrackingStatusResponse>
 }

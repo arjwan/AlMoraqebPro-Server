@@ -89,6 +89,7 @@ data class Notification(
     val message: String?,
     val audioUrl: String?,
     val priority: String?,
+    val category: String?,
     val readAt: String?,
     val listenedAt: String?,
     val createdAt: String?
@@ -152,7 +153,22 @@ data class LocationUpdateRequest(
     val deviceId: String,
     val latitude: Double,
     val longitude: Double,
-    val timestamp: String
+    val timestamp: String,
+    val batteryPercent: Int? = null
+)
+
+data class TrackingInterruptionRequest(
+    val employeeId: String,
+    val companyId: String,
+    val deviceId: String,
+    val batteryPercent: Int? = null
+)
+
+data class TrackingStatusResponse(
+    val success: Boolean,
+    val trackingRequired: Boolean?,
+    val trackingMode: String?,
+    val message: String?
 )
 
 data class LocationUpdateResponse(
