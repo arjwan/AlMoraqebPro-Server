@@ -720,9 +720,11 @@ async function waitForServer(url, retries, delay) {
         const mapPage = await (await fetch(BASE + '/admin_map.html')).text();
         const adminHome = await (await fetch(BASE + '/admin.html')).text();
         const notificationsPage = await (await fetch(BASE + '/admin_notifications.html')).text();
-        check('manager movement card links into existing notifications and actions',
-            adminHome.includes('تنبيهات حركة الموظفين') &&
-            adminHome.includes("go('admin_notifications.html','tracking')") &&
+        check('manager notifications card includes movement alerts and actions',
+            adminHome.includes('إشعارات الموظفين') &&
+            adminHome.includes('الرسائل الإدارية وتنبيهات الحركة والموقع وGPS وقرارات المدير في مكان واحد') &&
+            adminHome.includes('id="trackingBadge"') &&
+            !adminHome.includes('تنبيهات حركة الموظفين') &&
             notificationsPage.includes('id="tracking"') &&
             notificationsPage.includes('/admin_tracking.js') &&
             (await fetch(BASE + '/admin_tracking.js')).status === 200);
