@@ -309,7 +309,7 @@
                     requests.map((req, i) => `
                         <tr>
                             <td>${i + 1}</td>
-                            <td><b>${req.name || '—'}</b></td>
+                            <td><b>${escapeHtml(req.name || '—')}</b>${req.username ? `<br><small>اسم الدخول: ${escapeHtml(req.username)}</small>` : ''}</td>
                             <td>${escapeHtml(req.jobTitle || '—')}</td>
                             <td>${escapeHtml(req.workLocation || req.location || '—')}${req.lastKnownLocation&&Number.isFinite(Number(req.lastKnownLocation.latitude))?`<br><small>GPS: ${Number(req.lastKnownLocation.latitude).toFixed(6)}, ${Number(req.lastKnownLocation.longitude).toFixed(6)} · دقة ${Math.round(Number(req.lastKnownLocation.accuracyMeters||0))}م</small>`:''}</td>
                             <td>${escapeHtml(req.shift || '—')}</td>
@@ -332,7 +332,7 @@
 
     async function approveRequest(requestId) {
         const request=pendingEmployeeRequests.find(item=>String(item._id)===String(requestId));
-        if (!request||!confirm(`اعتماد ${request.name||'الموظف'} بالموقع ${request.workLocation||request.location||'غير محدد'} والشفت ${request.shift||'غير محدد'}؟`)) return;
+        if (!request||!confirm(`اعتماد ${request.name||'الموظف'}${request.username?' وتفعيل اسم الدخول '+request.username:''} بالموقع ${request.workLocation||request.location||'غير محدد'} والشفت ${request.shift||'غير محدد'}؟`)) return;
         try {
             const r = await fetch(API + '/api/employee/request/' + encodeURIComponent(requestId) + '/approve', {
                 method: 'POST',
