@@ -1,0 +1,79 @@
+name: Repair AlMoraqebPro HTTPS routing
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/repair-almoraqebpro-https.yml']
+  workflow_dispatch:
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore dedicated HTTPS virtual host
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          : "${ORACLE_HOST:?Missing ORACLE_HOST}"
+          : "${ORACLE_USER:?Missing ORACLE_USER}"
+          : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          for attempt in $(seq 1 12); do
+            if ssh-keyscan -T 5 -H "$ORACLE_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then break; fi
+            sleep 10
+          done
+          test -s ~/.ssh/known_hosts
+          ssh -o BatchMode=yes -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          domain=almoraqebpro.duckdns.org
+          config=/etc/nginx/conf.d/almoraqebpro.conf
+          certificate=/etc/letsencrypt/live/$domain/fullchain.pem
+          private_key=/etc/letsencrypt/live/$domain/privkey.pem
+          sudo test -s "$certificate"
+          sudo test -s "$private_key"
+          curl --fail --silent --show-error --max-time 8 http://127.0.0.1:3100/health >/dev/null
+          backup="/etc/nginx/conf.d/almoraqebpro.conf.backup-$(date -u +%Y%m%dT%H%M%SZ)"
+          sudo cp -p "$config" "$backup"
+          echo "Backup: $backup"
+          sudo tee "$config" >/dev/null <<'NGINX'
+          server {
+              listen 80;
+              server_name almoraqebpro.duckdns.org;
+              return 301 https://$host$request_uri;
+          }
+          server {
+              listen 443 ssl;
+              server_name almoraqebpro.duckdns.org;
+              ssl_certificate /etc/letsencrypt/live/almoraqebpro.duckdns.org/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/almoraqebpro.duckdns.org/privkey.pem;
+              client_max_body_size 25m;
+              location / {
+                  proxy_pass http://127.0.0.1:3100;
+                  proxy_http_version 1.1;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+          NGINX
+          if ! sudo nginx -t; then
+            sudo cp -p "$backup" "$config"
+            exit 1
+          fi
+          sudo systemctl reload nginx
+          for attempt in 1 2 3; do
+            for path in /health /admin.html /admin_map.html /api/ping; do
+              code="$(curl --silent --show-error --max-time 12 --resolve "$domain:443:127.0.0.1" -o /dev/null -w '%{http_code}' "https://$domain$path")"
+              echo "$attempt $path $code"
+              test "$code" = 200
+            done
+          done
+          curl --fail --silent --show-error --max-time 15 "https://$domain/health" | grep -q '"database":"connected"'
+          echo ALMORAQEBPRO_HTTPS_READY=1
+          REMOTE
