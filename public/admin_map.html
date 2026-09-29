@@ -545,19 +545,8 @@ async function loadLocations() {
                 bounds.push(sitePoint);
             }
 
-            const geoKey = lat.toFixed(4) + ',' + lon.toFixed(4);
-            let areaName = reverseGeoCache.get(geoKey);
-            if (!areaName) {
-                try {
-                    const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1&accept-language=ar`);
-                    const geoData = await geoRes.json();
-                    const address = geoData.address || {};
-                    areaName = address.suburb || address.neighbourhood || address.city || address.town || address.village || address.county || address.state || 'غير محدد';
-                    reverseGeoCache.set(geoKey, areaName);
-                } catch {
-                    areaName = 'غير محدد';
-                }
-            }
+            // Reverse geocoding is an external service and must not hold up the map.
+            const areaName = site?.name || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
             areas.push({ name: tracked.name || 'موظف', area: `${areaName} — ${mode} — ${status} — ${distance} — ${updatedAt}` });
         }
     } catch (error) {
@@ -633,7 +622,6 @@ function addBaseMap(target) {
 // تهيئة الصفحة
 (async function init() {
     if (await auth()) {
-        await loadEmployees();
         // تهيئة الخريطة بعد تحميل المكتبة
         if (typeof L === 'undefined') {
             alert('تعذر تحميل مكتبة الخريطة');
@@ -641,7 +629,8 @@ function addBaseMap(target) {
             map = L.map('map').setView([33.3128, 44.3615], 6);
             addBaseMap(map);
             trackedMarkers = L.layerGroup().addTo(map);
-            await loadLocations();
+            // Company sites can appear without waiting for the employee list.
+            await Promise.allSettled([loadLocations(), loadEmployees()]);
         }
     }
 })();
