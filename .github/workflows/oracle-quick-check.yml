@@ -22,6 +22,9 @@ jobs:
           dig +short A "$domain"
           dig +short AAAA "$domain"
           dig +short A alarjwan.duckdns.org
+          dig +short A shino-mino-tak-tak.duckdns.org
+          echo "SHNO_MATCHES_DEPLOY_HOST=$([ "$(dig +short A shino-mino-tak-tak.duckdns.org | head -1)" = "$ORACLE_HOST" ] && echo yes || echo no)"
+          curl --noproxy '*' -4 -sS --connect-timeout 5 --max-time 10 -o /tmp/shno -w 'SHNO_HTTP=%{http_code}\n' https://shino-mino-tak-tak.duckdns.org/ || true
           echo "A_MATCHES_DEPLOY_HOST=$([ "$(dig +short A "$domain" | head -1)" = "$ORACLE_HOST" ] && echo yes || echo no)"
           echo '=== HTTP ROUTES ==='
           for family in -4 -6; do
