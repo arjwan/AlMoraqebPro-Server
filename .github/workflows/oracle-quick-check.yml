@@ -1,4 +1,4 @@
-name: Oracle quick resource and routing check
+name: Oracle public DNS and HTTPS check
 
 on:
   push:
@@ -10,43 +10,34 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Check active host
+      - name: Check DNS and public routes
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
-          ORACLE_USER: ${{ secrets.ORACLE_USER }}
-          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
         run: |
-          set -euo pipefail
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
-          chmod 600 ~/.ssh/oracle_key
-          for n in $(seq 1 8); do
-            if ssh-keyscan -T 5 -H "$ORACLE_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then break; fi
-            sleep 7
-          done
-          test -s ~/.ssh/known_hosts
-          for n in $(seq 1 8); do
-            if ssh -o BatchMode=yes -o ConnectTimeout=8 -o ServerAliveInterval=8 -o ServerAliveCountMax=2 -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -s' <<'REMOTE'
           set -u
-          echo '=== HOST RESOURCES ==='
-          uptime
-          free -m
-          df -h /
-          echo '=== PROCESSES ==='
-          ps -eo pid,comm,%cpu,%mem,rss --sort=-rss | head -15
-          echo '=== SERVICES ==='
-          sudo systemctl --no-pager is-active nginx almoraqebpro.service shno-mano-tech.service || true
-          echo '=== LISTENERS ==='
-          sudo ss -lntp | grep -E ':(22|80|443|3000|3100) ' || true
-          echo '=== LOCAL NGINX CONTENT ==='
-          for host in almoraqebpro.duckdns.org alarjwan.duckdns.org; do
-            curl --noproxy '*' --silent --show-error --max-time 8 --resolve "$host:443:127.0.0.1" "https://$host/" | grep -oi '<title[^>]*>[^<]*' | head -1 || true
+          domain=almoraqebpro.duckdns.org
+          dns_ip=$(getent ahostsv4 "$domain" | awk 'NR==1 {print $1}')
+          echo "DNS_RESOLVED=$([ -n "$dns_ip" ] && echo yes || echo no)"
+          echo "DNS_MATCHES_DEPLOY_HOST=$([ "$dns_ip" = "$ORACLE_HOST" ] && echo yes || echo no)"
+          python3 - <<'PY'
+          import os, socket
+          for label, address in [('dns', socket.gethostbyname('almoraqebpro.duckdns.org')), ('deploy', os.getenv('ORACLE_HOST', ''))]:
+              if not address:
+                  continue
+              for port in (22, 80, 443):
+                  try:
+                      with socket.create_connection((address, port), timeout=4):
+                          print(f'{label.upper()}_PORT_{port}=open')
+                  except OSError as exc:
+                      print(f'{label.upper()}_PORT_{port}={type(exc).__name__}')
+          PY
+          for route in dns deploy; do
+            if [ "$route" = dns ]; then ip="$dns_ip"; else ip="$ORACLE_HOST"; fi
+            [ -n "$ip" ] || continue
+            for path in / /admin_login.html /health; do
+              echo "ROUTE=$route PATH=$path"
+              curl --noproxy '*' -k -sS --connect-timeout 4 --max-time 9 --resolve "$domain:443:$ip" -o /tmp/body -w 'HTTP=%{http_code} TIME=%{time_total}\n' "https://$domain$path" || true
+              grep -oi '<title[^>]*>[^<]*' /tmp/body | head -1 || true
+              rm -f /tmp/body
+            done
           done
-          echo '=== PUBLIC ADDRESS ==='
-          getent ahostsv4 almoraqebpro.duckdns.org | head -1 | awk '{print "A:", $1}'
-          REMOTE
-            then exit 0; fi
-            echo "SSH attempt $n failed"
-            sleep 7
-          done
-          exit 1
