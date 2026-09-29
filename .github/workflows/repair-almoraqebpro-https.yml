@@ -67,13 +67,14 @@ jobs:
             exit 1
           fi
           sudo systemctl reload nginx
+          sleep 2
           for attempt in 1 2 3; do
             for path in /health /admin.html /admin_map.html /api/ping; do
-              code="$(curl --silent --show-error --max-time 12 --resolve "$domain:443:127.0.0.1" -o /dev/null -w '%{http_code}' "https://$domain$path")"
+              code="$(curl --noproxy "*" --silent --show-error --max-time 12 --resolve "$domain:443:127.0.0.1" -o /dev/null -w '%{http_code}' "https://$domain$path")"
               echo "$attempt $path $code"
               test "$code" = 200
             done
           done
-          curl --fail --silent --show-error --max-time 15 "https://$domain/health" | grep -q '"database":"connected"'
+          curl --noproxy "*" --fail --silent --show-error --max-time 15 "https://$domain/health" | grep -q '"database":"connected"'
           echo ALMORAQEBPRO_HTTPS_READY=1
           REMOTE
