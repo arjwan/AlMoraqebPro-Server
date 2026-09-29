@@ -191,6 +191,7 @@ let map = null;
 let selectedEmployees = []; // قائمة معرفات الموظفين المختارين
 let employees = []; // كل الموظفين
 let trackedMarkers = null;
+let siteMarkers = null;
 const trackedLocations = new Map();
 const reverseGeoCache = new Map();
 
@@ -387,22 +388,42 @@ function updateSelectedList() {
 }
 
 async function loadLocations() {
-    if (selectedEmployees.length === 0) {
-        alert('اختر موظفاً واحداً على الأقل');
-        return;
-    }
-
     // أبقِ خريطة Leaflet وطبقة البلاطات محمّلتين؛ حدّث علامات الموظفين فقط.
     if (!map) {
         map = L.map('map').setView([33.3128, 44.3615], 6);
         addBaseMap(map);
     }
     if (!trackedMarkers) trackedMarkers = L.layerGroup().addTo(map);
+    if (!siteMarkers) siteMarkers = L.layerGroup().addTo(map);
     trackedMarkers.clearLayers();
+    siteMarkers.clearLayers();
     trackedLocations.clear();
 
     const areas = [];
     const bounds = [];
+
+    try {
+        const sitesResponse = await fetch(API + '/api/admin/locations', {
+            credentials: 'include', headers: getToken() ? { Authorization: 'Bearer ' + getToken() } : {}
+        });
+        const sitesData = await sitesResponse.json();
+        if (sitesResponse.ok && sitesData.success) {
+            for (const site of sitesData.locations || []) {
+                const lat = Number(site.latitude), lon = Number(site.longitude);
+                if (site.active === false || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+                const color = site.demoData ? '#a855f7' : '#16a34a';
+                L.circle([lat, lon], { radius: Number(site.radiusMeters) || 200,
+                    color, fillColor: color, fillOpacity: 0.12, weight: 2 })
+                    .addTo(siteMarkers).bindPopup(`${site.demoData ? 'موقع تجريبي: ' : 'موقع الشركة: '}${escapeHtml(site.name)}<br>نطاق البصمة: ${Math.round(Number(site.radiusMeters) || 200)}م`);
+                bounds.push([lat, lon]);
+            }
+        }
+    } catch (error) { console.warn('تعذر تحميل مواقع الشركة', error); }
+    if (selectedEmployees.length === 0) {
+        if (bounds.length) map.fitBounds(bounds);
+        renderAreas([]);
+        return;
+    }
 
     try {
         const res = await fetch(API + '/api/admin/employee-locations', {
@@ -450,9 +471,16 @@ async function loadLocations() {
             const distance = Number.isFinite(tracked.distanceMeters)
                 ? `${tracked.distanceMeters} م` : 'غير معروف';
             const status = tracked.locationStatus === 'inside' ? 'داخل الموقع'
-                : tracked.locationStatus === 'outside' ? 'خارج الموقع' : 'غير محدد';
+                : tracked.locationStatus === 'outside' ? 'خارج الموقع' : 'الموقع قديم أو غير محدد';
+            const siteDetails = site
+                ? `<br>الموقع المعتمد: ${escapeHtml(site.name || 'غير مسمى')} · نطاق ${Math.round(Number(site.radiusMeters || 200))}م`
+                    + `<br><a href="admin_shifts.html">راجع موقع الشفت</a> · <a href="admin_locations.html">صحح إحداثيات الموقع</a>`
+                : '<br>لا يوجد موقع معتمد مرتبط بالشفت';
+            const accuracy = Number(last.accuracyMeters);
+            const accuracyDetails = Number.isFinite(accuracy) && accuracy > 0
+                ? `<br>دقة GPS: ±${Math.round(accuracy)}م` : '';
             const marker = L.marker([lat, lon]).addTo(trackedMarkers)
-                .bindPopup(`<b>${escapeHtml(tracked.name || 'موظف')}</b><br>${mode}<br>آخر تحديث: ${updatedAt}<br>${status} — ${distance}`);
+                .bindPopup(`<b>${escapeHtml(tracked.name || 'موظف')}</b><br>${mode}<br>آخر تحديث: ${updatedAt}${accuracyDetails}<br>${status} — ${distance}${siteDetails}`);
             marker.employeeId = String(tracked.employeeId);
             trackedLocations.set(String(tracked.employeeId), { lat, lon, marker });
             bounds.push([lat, lon]);
