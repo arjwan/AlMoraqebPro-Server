@@ -1,4 +1,4 @@
-name: Oracle domain routing check
+name: Oracle domain routing check after reboot
 
 on:
   push:
