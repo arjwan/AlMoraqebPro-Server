@@ -20,6 +20,12 @@ jobs:
           : "${ORACLE_HOST:?Missing ORACLE_HOST}"
           : "${ORACLE_USER:?Missing ORACLE_USER}"
           : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY}"
+          echo "=== RUNNER DNS AND CONTENT ==="
+          getent ahostsv4 almoraqebpro.duckdns.org | head -3 || true
+          for target in "https://almoraqebpro.duckdns.org/" "https://almoraqebpro.duckdns.org/admin.html?company=B-3214"; do
+            curl --noproxy "*" --silent --show-error --max-time 12 -L -o /tmp/runner-page.html -w "%{http_code} %{remote_ip} %{url_effective}\\n" "$target" || true
+            grep -oi "<title[^>]*>[^<]*" /tmp/runner-page.html | head -1 || true
+          done
           install -m 700 -d ~/.ssh
           printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
           chmod 600 ~/.ssh/oracle_key
