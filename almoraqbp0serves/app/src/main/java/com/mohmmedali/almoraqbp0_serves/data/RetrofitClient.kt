@@ -7,8 +7,8 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // ✅ رابط السيرفر الفعلي على Oracle Cloud
-    private const val BASE_URL = "https://almoraqebpro.duckdns.org/"
+    // عنوان السيرفر على Render
+    private const val BASE_URL = "https://almoraqebpro-server-aymo.onrender.com/"
 
     fun absoluteUrl(path: String): String =
         if (path.startsWith("http://") || path.startsWith("https://")) path
