@@ -135,6 +135,32 @@
             gap: 8px;
         }
         .area-item i { color: #38bdf8; }
+        #sitesList button.area-item {
+            appearance: none;
+            background: #0369a1;
+            color: #ffffff;
+            border: 1px solid #7dd3fc;
+            min-height: 56px;
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+            font: inherit;
+            font-weight: 700;
+            line-height: 1.6;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        #sitesList button.area-item:hover {
+            background: #075985;
+            border-color: #ffffff;
+        }
+        #sitesList button.area-item:focus-visible {
+            outline: 3px solid #fbbf24;
+            outline-offset: 3px;
+        }
+        #sitesList button.area-item:active {
+            background: #0c4a6e;
+        }
         .current-location { display:flex; flex-wrap:wrap; gap:8px; align-items:center; width:100%; }
         .current-location input { flex:1; min-width:230px; padding:10px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:#fff; direction:ltr; text-align:left; }
         .loader {
