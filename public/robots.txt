@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /about.html
+Disallow: /api/
+Disallow: /admin
+Disallow: /employee
+Disallow: /developer
+Disallow: /uploads/
+Sitemap: https://almoraqebpro-server-aymo.onrender.com/sitemap.xml
