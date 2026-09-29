@@ -103,6 +103,7 @@
                             API + '/api/admin/login',
                             {
                                 method:'POST',
+                                signal:AbortSignal.timeout(15000),
                                 credentials:'include',
                                 headers:{
                                     'Content-Type':

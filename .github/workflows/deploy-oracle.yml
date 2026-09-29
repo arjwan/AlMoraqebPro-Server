@@ -134,7 +134,6 @@ jobs:
             touch .interview-demo-b3214-daytime-pairs.seeded
           fi
 
-          sudo systemctl stop "$SERVICE_NAME" 2>/dev/null || true
           sudo install -o root -g root -m 600 .env "/etc/${SERVICE_NAME}.env"
           sudo restorecon -F "/etc/${SERVICE_NAME}.env" 2>/dev/null || true
 
