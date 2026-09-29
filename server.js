@@ -12573,7 +12573,8 @@ app.post(
                     ? candidate.attendanceEnd
                     : candidate.departureEnd;
                 return isWithinShiftWindow(attendanceTime, start, end) ||
-                    (type === 'attendance' && isWithinShiftWindow(attendanceTime, candidate.lateFrom, candidate.lateTo));
+                    (type === 'attendance' && isWithinShiftWindow(attendanceTime, candidate.lateFrom, candidate.lateTo)) ||
+                    (type !== 'attendance' && isWithinShiftWindow(attendanceTime, candidate.overtimeStart, candidate.overtimeEnd));
             }) || shiftCandidates[0] || null;
 
             /*
@@ -12664,7 +12665,8 @@ app.post(
                     } else {
                         return res.status(403).json({ success: false, message: 'أنت خارج وقت الشفت.' });
                     }
-                } else if (!isCheckIn && !isWithinShiftWindow(attendanceTime, shiftStart, shiftEnd)) {
+                } else if (!isCheckIn && !isWithinShiftWindow(attendanceTime, shiftStart, shiftEnd) &&
+                    !isWithinShiftWindow(attendanceTime, shift.overtimeStart, shift.overtimeEnd)) {
 
                     if (!isCheckIn && isBeforeShiftWindow(attendanceTime, shiftStart, shiftEnd)) {
                         earlyExitPending = true;
@@ -13561,5 +13563,3 @@ mongoose.connection.on('disconnected', () => {
 });
 
 mongoose.connection.on('reconnected', () => {
-    console.log('🔁 تمت إعادة الاتصال بـ MongoDB.');
-});
