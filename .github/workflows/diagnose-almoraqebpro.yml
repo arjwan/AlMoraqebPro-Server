@@ -1,0 +1,45 @@
+name: Diagnose AlMoraqebPro Oracle routing
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-almoraqebpro.yml']
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect service and domain from Oracle
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          : "${ORACLE_HOST:?Missing ORACLE_HOST}"
+          : "${ORACLE_USER:?Missing ORACLE_USER}"
+          : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -s' <<'REMOTE'
+          set -u
+          echo '=== SERVICES ==='
+          sudo systemctl --no-pager is-active nginx almoraqebpro.service || true
+          echo '=== LISTENERS ==='
+          sudo ss -lntp | grep -E ':(80|443|3100) ' || true
+          echo '=== NGINX ROUTES ==='
+          sudo nginx -T 2>&1 | grep -nE 'server_name |listen (80|443)|root |proxy_pass ' | grep -E -A2 -B2 'almoraqebpro|alarjwan|3100' || true
+          echo '=== RECENT SERVICE ERRORS ==='
+          sudo journalctl --no-pager -u almoraqebpro.service -n 35 -p warning | sed -E 's#mongodb(\+srv)?://[^ ]+#mongodb://[REDACTED]#g' || true
+          echo '=== LOCAL HTTP ==='
+          for path in /health /admin.html /admin_map.html /api/ping; do
+            curl --silent --show-error --max-time 8 -o /dev/null -w "$path %{http_code} %{time_total}\n" "http://127.0.0.1:3100$path" || true
+          done
+          echo '=== DOMAIN HTTPS ==='
+          for path in /health /admin.html /admin_map.html /api/ping; do
+            curl --silent --show-error --max-time 8 -o /dev/null -w "$path %{http_code} %{time_total}\n" "https://almoraqebpro.duckdns.org$path" || true
+          done
+          REMOTE
