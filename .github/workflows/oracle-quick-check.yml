@@ -45,6 +45,16 @@ jobs:
           echo '=== RESOURCES ==='
           uptime
           free -m
+          echo '=== PROCESSES ==='
+          ps -eo pid,comm,%cpu,%mem,rss,etime --sort=-%cpu | head -18
+          echo '=== SERVICE ==='
+          sudo systemctl --no-pager --full status almoraqebpro.service | head -50 || true
+          echo '=== UPSTREAM HEALTH ==='
+          curl --noproxy '*' -sS --connect-timeout 3 --max-time 6 -w '\nHTTP=%{http_code}\n' http://127.0.0.1:3100/health || true
+          echo '=== RECENT ERRORS ==='
+          sudo journalctl --no-pager -u almoraqebpro.service -n 60 | tail -60
+          echo '=== KERNEL OOM ==='
+          sudo journalctl -k --no-pager -b | grep -Ei 'out of memory|killed process|oom-killer' | tail -20 || true
           echo '=== NGINX WARNINGS ==='
           sudo nginx -t 2>&1
           echo '=== SERVER CONFIG ==='
