@@ -1,0 +1,33 @@
+name: Stop AlMoraqebPro on Oracle
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/stop-almoraqebpro-oracle.yml']
+  workflow_dispatch:
+jobs:
+  stop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stop only AlMoraqebPro services
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          : "${ORACLE_HOST:?Missing ORACLE_HOST}"
+          : "${ORACLE_USER:?Missing ORACLE_USER}"
+          : "${ORACLE_SSH_KEY:?Missing ORACLE_SSH_KEY}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          ssh-keyscan -T 7 -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
+          ssh -o BatchMode=yes -o ConnectTimeout=10 -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          sudo systemctl disable --now almoraqebpro.service
+          sudo systemctl disable --now almoraqebpro-demo-refresh.timer 2>/dev/null || true
+          sudo systemctl stop almoraqebpro-demo-refresh.service 2>/dev/null || true
+          echo "AlMoraqebPro: $(systemctl is-active almoraqebpro.service || true)"
+          echo "Shenoo Menoo: $(systemctl is-active shno-mano-tech.service || true)"
+          free -m
+          REMOTE
