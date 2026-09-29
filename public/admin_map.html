@@ -181,6 +181,9 @@
         <div id="map"></div>
     </div>
 
+    <h3 style="margin-bottom:10px"><i class="fas fa-map-marker-alt"></i> مواقع الشركة المسجلة</h3>
+    <div class="areas-list" id="sitesList">جارٍ تحميل المواقع...</div>
+
     <h3 style="margin-bottom:10px"><i class="fas fa-list-ul"></i> المناطق المتواجدون فيها</h3>
     <div class="areas-list" id="areasList"></div>
 </div>
@@ -192,6 +195,7 @@ let selectedEmployees = []; // قائمة معرفات الموظفين المخ
 let employees = []; // كل الموظفين
 let trackedMarkers = null;
 let siteMarkers = null;
+const visibleSites = [];
 const trackedLocations = new Map();
 const reverseGeoCache = new Map();
 
@@ -398,6 +402,7 @@ async function loadLocations() {
     trackedMarkers.clearLayers();
     siteMarkers.clearLayers();
     trackedLocations.clear();
+    visibleSites.length = 0;
 
     const areas = [];
     const bounds = [];
@@ -410,15 +415,24 @@ async function loadLocations() {
         if (sitesResponse.ok && sitesData.success) {
             for (const site of sitesData.locations || []) {
                 const lat = Number(site.latitude), lon = Number(site.longitude);
-                if (site.active === false || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+                if (site.active === false || !validMapPoint(site.latitude, site.longitude)) continue;
                 const color = site.demoData ? '#a855f7' : '#16a34a';
                 L.circle([lat, lon], { radius: Number(site.radiusMeters) || 200,
                     color, fillColor: color, fillOpacity: 0.12, weight: 2 })
                     .addTo(siteMarkers).bindPopup(`${site.demoData ? 'موقع تجريبي: ' : 'موقع الشركة: '}${escapeHtml(site.name)}<br>نطاق البصمة: ${Math.round(Number(site.radiusMeters) || 200)}م`);
+                const marker = L.circleMarker([lat, lon], {
+                    radius: 9, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1
+                }).addTo(siteMarkers).bindPopup(`<b>${escapeHtml(site.name || 'موقع الشركة')}</b><br>نطاق البصمة: ${Math.round(Number(site.radiusMeters) || 200)}م`);
+                marker.bindTooltip(String(site.name || 'موقع الشركة'), { direction: 'top' });
+                visibleSites.push({ site, lat, lon, marker });
                 bounds.push([lat, lon]);
             }
         }
-    } catch (error) { console.warn('تعذر تحميل مواقع الشركة', error); }
+        renderSites();
+    } catch (error) {
+        console.warn('تعذر تحميل مواقع الشركة', error);
+        document.getElementById('sitesList').textContent = 'تعذر تحميل مواقع الشركة. اضغط تحديث المواقع للمحاولة مجددًا.';
+    }
     if (selectedEmployees.length === 0) {
         if (bounds.length) map.fitBounds(bounds);
         renderAreas([]);
@@ -444,9 +458,17 @@ async function loadLocations() {
         for (const tracked of selected) {
             const last = tracked.lastLocation;
             if (!last) {
+                const site = tracked.workLocation;
+                if (site && validMapPoint(site.latitude, site.longitude)) {
+                    const point = [Number(site.latitude), Number(site.longitude)];
+                    const marker = L.circleMarker(point, { radius: 7, color: '#b45309', fillColor: '#fbbf24', fillOpacity: 1 })
+                        .addTo(trackedMarkers).bindPopup(`<b>${escapeHtml(tracked.name || 'موظف')}</b><br>موقع العمل المعتمد: ${escapeHtml(site.name || 'غير مسمى')}<br>لا يوجد موقع GPS مسجل للموظف`);
+                    marker.employeeId = String(tracked.employeeId);
+                    bounds.push(point);
+                }
                 areas.push({
                     name: tracked.name || 'موظف',
-                    area: tracked.unavailableReason || 'لم يتم تسجيل موقع للموظف بعد'
+                    area: `${site ? 'موقع العمل المعتمد: ' + (site.name || 'غير مسمى') + ' — ' : ''}${tracked.unavailableReason || 'لم يتم تسجيل موقع GPS للموظف بعد'}`
                 });
                 continue;
             }
@@ -511,7 +533,7 @@ async function loadLocations() {
                     }
                 } catch (error) { console.warn('تعذر تحميل مسار الموظف', error); }
             }
-            if (site && Number.isFinite(Number(site.latitude)) && Number.isFinite(Number(site.longitude))) {
+            if (site && validMapPoint(site.latitude, site.longitude)) {
                 const sitePoint = [Number(site.latitude), Number(site.longitude)];
                 const siteMarker = L.circleMarker(sitePoint, {
                     radius: 8, color: '#f59e0b', fillColor: '#fbbf24', fillOpacity: 0.9
@@ -562,6 +584,33 @@ function renderAreas(areas) {
     container.innerHTML = areas.map(a => `<div class="area-item"><i class="fas fa-location-dot"></i> ${escapeHtml(a.name)}: ${escapeHtml(a.area)}</div>`).join('');
 }
 
+function validMapPoint(latitude, longitude) {
+    if (latitude == null || longitude == null || latitude === '' || longitude === '') return false;
+    const lat = Number(latitude), lon = Number(longitude);
+    return Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && (lat !== 0 || lon !== 0);
+}
+
+function renderSites() {
+    const container = document.getElementById('sitesList');
+    container.replaceChildren();
+    if (!visibleSites.length) {
+        container.textContent = 'لا توجد مواقع نشطة بإحداثيات صالحة. أضف موقعًا من صفحة مواقع الشركة.';
+        return;
+    }
+    visibleSites.forEach(({ site, lat, lon, marker }) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'area-item';
+        button.style.cursor = 'pointer';
+        button.textContent = `${site.demoData ? 'تجريبي: ' : ''}${site.name || 'موقع الشركة'} — نطاق ${Math.round(Number(site.radiusMeters) || 200)}م`;
+        button.addEventListener('click', () => {
+            map.setView([lat, lon], 16, { animate: true });
+            marker.openPopup();
+        });
+        container.appendChild(button);
+    });
+}
+
 function escapeHtml(value) {
     return String(value || '')
         .replaceAll('&', '&amp;')
@@ -592,6 +641,7 @@ function addBaseMap(target) {
             map = L.map('map').setView([33.3128, 44.3615], 6);
             addBaseMap(map);
             trackedMarkers = L.layerGroup().addTo(map);
+            await loadLocations();
         }
     }
 })();
