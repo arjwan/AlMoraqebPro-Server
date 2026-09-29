@@ -53,6 +53,14 @@ jobs:
           for path in /health /admin.html /admin_map.html /api/ping; do
             curl --silent --show-error --max-time 8 -o /dev/null -w "$path %{http_code} %{time_total}\n" "http://127.0.0.1:3100$path" || true
           done
+          echo '=== DNS AND ROOT ==='
+          getent ahostsv4 almoraqebpro.duckdns.org | head -3 || true
+          for target in 'https://almoraqebpro.duckdns.org/' 'https://almoraqebpro.duckdns.org/admin.html?company=B-3214'; do
+            curl --noproxy '*' --silent --show-error --max-time 12 -L -o /tmp/almoraq-check.html -w '%{http_code} %{remote_ip} %{url_effective}\\n' "$target" || true
+            grep -oi '<title[^>]*>[^<]*' /tmp/almoraq-check.html | head -1 || true
+          done
+          echo '=== LOCAL TLS ROOT ==='
+          curl --noproxy '*' --silent --show-error --max-time 12 --resolve almoraqebpro.duckdns.org:443:127.0.0.1 https://almoraqebpro.duckdns.org/ | grep -oi '<title[^>]*>[^<]*' | head -1 || true
           echo '=== DOMAIN HTTPS ==='
           for path in /health /admin.html /admin_map.html /api/ping; do
             curl --silent --show-error --max-time 8 -o /dev/null -w "$path %{http_code} %{time_total}\n" "https://almoraqebpro.duckdns.org$path" || true
