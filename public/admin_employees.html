@@ -124,11 +124,12 @@
     function populateEmployeeReferences(locationValue='',shiftValue=''){
         const locationSelect=document.getElementById('empLocation');
         const shiftSelect=document.getElementById('empShift');
-        const locations=[...new Set(locationsCache.map(x=>x.name).concat(shiftsCache.map(x=>x.locationName||x.branch)).filter(Boolean))];
-        if(locationValue&&!locations.includes(locationValue)) locations.push(locationValue);
-        locationSelect.innerHTML='<option value="">اختر الموقع/الفرع</option>'+locations.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
-        locationSelect.value=locationValue;
-        const matching=shiftsCache.filter(x=>!locationValue||String(x.locationName||x.branch||'')===String(locationValue));
+        const locations=locationsCache.filter(x=>x.active!==false&&!x.demoData&&Number.isFinite(Number(x.latitude))&&Number.isFinite(Number(x.longitude)));
+        locationSelect.innerHTML='<option value="">اختر موقعاً معتمداً</option>'+locations.map(site=>`<option value="${escapeHtml(String(site.id||site._id))}">${escapeHtml(site.name||'موقع')} — نطاق ${Math.round(Number(site.radiusMeters||200))}م</option>`).join('');
+        const selected=locations.find(x=>String(x.id||x._id)===String(locationValue))||
+            locations.find(x=>String(x.name)===String(locationValue));
+        locationSelect.value=selected?String(selected.id||selected._id):'';
+        const matching=shiftsCache.filter(x=>!selected||String(x.locationId||'')===String(selected.id||selected._id));
         shiftSelect.innerHTML='<option value="">اختر الشفت</option>'+matching.map(x=>`<option value="${escapeHtml(String(x._id||x.id||x.name))}" data-name="${escapeHtml(x.name||'')}">${escapeHtml(x.name||'—')} — ${escapeHtml(x.locationName||x.branch||'بدون موقع')}</option>`).join('');
         const byId=matching.find(x=>String(x._id||x.id)===String(shiftValue));
         const byName=matching.find(x=>String(x.name)===String(shiftValue));
@@ -769,7 +770,7 @@
             e.specialty || '';
 
         const shift=assignedShift(id);
-        populateEmployeeReferences(e.workplace||e.location||e.branch||shift?.locationName||shift?.branch||'',shift?._id||e.shift||'');
+        populateEmployeeReferences(e.assignedLocationId||shift?.locationId||e.workplace||e.location||e.branch||'',shift?._id||e.shift||'');
 
         document.getElementById('empUsername').value =
             e.username || '';
@@ -897,11 +898,14 @@
             shift:
                 document.getElementById('empShift').selectedOptions[0]?.dataset.name || '',
 
+            assignedLocationId:
+                document.getElementById('empLocation').value,
+
             location:
-                document.getElementById('empLocation').value.trim(),
+                document.getElementById('empLocation').selectedOptions[0]?.textContent.split(' — ')[0] || '',
 
             workplace:
-                document.getElementById('empLocation').value.trim(),
+                document.getElementById('empLocation').selectedOptions[0]?.textContent.split(' — ')[0] || '',
 
             username:
                 document.getElementById('empUsername').value.trim(),

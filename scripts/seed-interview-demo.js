@@ -24,12 +24,12 @@ const Attendance=mongoose.model('InterviewDemoAttendance',schema('attendances'))
 
 // Default interview target: B-3214 (شركة الارجوان للبرمجيات). Override only when explicitly requested.
 const companyId=String(process.env.DEMO_COMPANY_ID||'B-3214').trim();
+if(companyId!=='B-3214')throw Error('Interview demo is restricted to Al Arjwan (B-3214)');
 const locations=[
- {id:'HQ',name:'المقر الرئيسي - بغداد',type:'headquarters',province:'بغداد',fullAddress:'بغداد - الكرادة',latitude:33.3024,longitude:44.4001,radiusMeters:220},
- {id:'B1',name:'فرع المنصور',type:'branch',province:'بغداد',fullAddress:'بغداد - المنصور',latitude:33.3158,longitude:44.3367,radiusMeters:200},
- {id:'B2',name:'فرع زيونة',type:'branch',province:'بغداد',fullAddress:'بغداد - زيونة',latitude:33.3246,longitude:44.4545,radiusMeters:200},
- {id:'W1',name:'موقع مشروع الجادرية',type:'project',province:'بغداد',fullAddress:'بغداد - الجادرية',latitude:33.2786,longitude:44.3838,radiusMeters:260},
- {id:'WH',name:'مخزن الدورة',type:'warehouse',province:'بغداد',fullAddress:'بغداد - الدورة',latitude:33.2490,longitude:44.3905,radiusMeters:240}
+ {id:'HQ',name:'تجريبي — موقع الكرادة',type:'worksite',province:'بغداد',fullAddress:'موقع افتراضي - الكرادة',latitude:33.3024,longitude:44.4001,radiusMeters:220},
+ {id:'B1',name:'تجريبي — فرع المنصور',type:'branch',province:'بغداد',fullAddress:'موقع افتراضي - المنصور',latitude:33.3158,longitude:44.3367,radiusMeters:200},
+ {id:'B2',name:'تجريبي — فرع زيونة',type:'branch',province:'بغداد',fullAddress:'موقع افتراضي - زيونة',latitude:33.3246,longitude:44.4545,radiusMeters:200},
+ {id:'W1',name:'تجريبي — مشروع الجادرية',type:'project',province:'بغداد',fullAddress:'موقع افتراضي - الجادرية',latitude:33.2786,longitude:44.3838,radiusMeters:260}
 ];
 const shifts=[
  {key:'M',name:'صباحي',attendanceStart:'07:30',attendanceEnd:'08:30',lateFrom:'08:01',lateTo:'08:30',departureStart:'15:30',departureEnd:'16:30',overtimeStart:'16:31',overtimeEnd:'20:00'},
@@ -49,14 +49,18 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
   const company=await Company.findOne({companyId}).lean();
   if(!company)throw Error('Target company not found: '+companyId);
   const companyName=String(company.name||'شركة الارجوان للبرمجيات');
-  const registeredLocations=(company.approvedLocations||[])
-   .filter(x=>x && x.active!==false && Number.isFinite(Number(x.latitude)) && Number.isFinite(Number(x.longitude)))
-   .map((x,index)=>({
-    id:String(x._id||x.id||('COMPANY-'+index)),name:String(x.name||('موقع '+(index+1))),
-    type:String(x.type||'worksite'),province:String(x.province||'بغداد'),fullAddress:String(x.fullAddress||''),
-    latitude:Number(x.latitude),longitude:Number(x.longitude),radiusMeters:Number(x.radiusMeters||250)
-   }));
-  const activeLocations=registeredLocations.length?registeredLocations:locations;
+  // Add only tagged demo sites; preserve the real headquarters and all real sites.
+  for(const site of locations){
+   const exists=(company.approvedLocations||[]).some(x=>x.demoData===true&&x.demoSiteKey===site.id);
+   if(!exists)await Company.updateOne({companyId},{$push:{approvedLocations:{...site,
+    _id:new mongoose.Types.ObjectId(),active:true,demoData:true,demoBatch:BATCH,demoSiteKey:site.id}}});
+  }
+  const refreshed=await Company.findOne({companyId}).lean();
+  const activeLocations=(refreshed.approvedLocations||[])
+   .filter(x=>x.demoData===true&&x.demoBatch===BATCH&&x.active!==false)
+   .map(x=>({id:String(x._id),name:x.name,type:x.type,province:x.province,
+    latitude:Number(x.latitude),longitude:Number(x.longitude),radiusMeters:Number(x.radiusMeters||200)}));
+  if(!activeLocations.length)throw Error('Demo sites could not be created');
 
   const employees=[];
   for(let i=0;i<EMPLOYEES;i++){
@@ -64,7 +68,7 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
    const name=`${first[i%first.length]} ${family[(i*3)%family.length]}`;
    const doc={companyId,companyName,name,email:`employee${i+1}@demo.invalid`,
     phoneNumber:'',salary:650000+(i%7)*75000,wageType:'monthly',shift:sh.name,socialSecurity:i%4===0?'غير مسجل':'مسجل',
-    employeeSerial:serial,clientOfflineId:`${BATCH}-${companyId}-${serial}`,workHours:8,specialty:(i<4?'سائق':jobs[i%jobs.length]),workplace:loc.name,
+    employeeSerial:serial,clientOfflineId:`${BATCH}-${companyId}-${serial}`,workHours:8,specialty:(i<4?'سائق':jobs[i%jobs.length]),workplace:loc.name,assignedLocationId:loc.id,
     username:`demo_${companyId.toLowerCase().replace(/[^a-z0-9]+/g,'_')}_${String(i+1).padStart(3,'0')}`,password:hash(BATCH+serial),credentialsStatus:'active',
     employmentStatus:'active',location:loc.name,province:loc.province,city:'بغداد',branch:loc.name,
     hireDate:new Date(Date.now()-(90+i*13)*86400000),demoData:true,demoBatch:BATCH,
@@ -123,6 +127,6 @@ const hash=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
      timeStatus:'within-shift',lateMinutes:0,managerApprovalStatus:'not-required',demoData:true,demoBatch:BATCH});
    }
   }
-  console.log(JSON.stringify({ok:true,batch:BATCH,company:companyId,companyName,companyRecordUntouched:true,locationsUsed:activeLocations.length,registeredCompanyLocationsUsed:registeredLocations.length>0,simulatedDrivers:Math.min(4,employees.length),shifts:shifts.length,employees:employees.length,attendanceToday:attendance},null,2));
+  console.log(JSON.stringify({ok:true,batch:BATCH,company:companyId,companyName,realHeadquartersUntouched:true,demoLocations:activeLocations.length,simulatedDrivers:Math.min(4,employees.length),shifts:shifts.length,employees:employees.length,attendanceToday:attendance},null,2));
  }finally{await mongoose.disconnect()}
 })().catch(e=>{console.error(e);process.exit(1)});

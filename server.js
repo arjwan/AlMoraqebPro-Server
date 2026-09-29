@@ -671,6 +671,8 @@ const employeeSchema = new mongoose.Schema({
 
     workplace: String,
 
+    assignedLocationId: { type: String, default: '' },
+
     username: {
         type: String,
         default: ''
@@ -5985,6 +5987,14 @@ app.post(
                 }
             }
 
+            const companyRecord = await Company.findOne({ companyId });
+            const selectedSiteId = String(req.body.assignedLocationId || '').trim();
+            const selectedSite = selectedSiteId
+                ? companyRecord && companyLocationById(companyRecord, selectedSiteId) : null;
+            if (selectedSiteId && !selectedSite) {
+                return res.status(400).json({ success: false, message: 'موقع الموظف غير معتمد في الشركة' });
+            }
+
             const employee = await new Employee({
                 companyId,
                 companyName: req.body.companyName || '',
@@ -5998,6 +6008,7 @@ app.post(
                     : undefined,
                 specialty: req.body.specialty || req.body.jobTitle || '',
                 workplace: req.body.workplace || req.body.workLocation || '',
+                assignedLocationId: selectedSite ? String(selectedSite._id) : '',
                 username,
                 password,
                 credentialsStatus: 'active',
@@ -6019,6 +6030,11 @@ app.post(
                         success: false,
                         message: 'الشفت المحدد غير تابع لهذه الشركة'
                     });
+                }
+                if (!employee.assignedLocationId && companyRecord &&
+                    companyLocationById(companyRecord, assignedShift.locationId)) {
+                    employee.assignedLocationId = String(assignedShift.locationId);
+                    await employee.save();
                 }
                 await Shift.updateMany(
                     { companyId },
@@ -6199,6 +6215,16 @@ app.put(
                     success: false,
                     message: 'اسم المستخدم مستخدم مسبقاً'
                 });
+            }
+
+            if (req.body.assignedLocationId !== undefined) {
+                const company = await Company.findOne({ companyId: employee.companyId });
+                const selectedId = String(req.body.assignedLocationId || '').trim();
+                const site = selectedId && companyLocationById(company, selectedId);
+                if (selectedId && !site) {
+                    return res.status(400).json({ success: false, message: 'موقع الموظف غير معتمد في الشركة' });
+                }
+                employee.assignedLocationId = site ? String(site._id) : '';
             }
 
             employee.name = String(req.body.name || employee.name).trim();
@@ -7322,7 +7348,7 @@ app.get(
                 req.session.companyId;
 
             const company = await Company.findOne({ companyId })
-                .select('name approvedLocations')
+                .select('name latitude longitude geofenceRadiusMeters approvedLocations')
                 .lean();
 
             const employees =
@@ -7334,7 +7360,7 @@ app.get(
                         }
                     })
                     .select(
-                        '_id name specialty workplace delegation lastKnownLocation location'
+                        '_id name specialty workplace assignedLocationId delegation lastKnownLocation location'
                     )
                     .lean();
 
@@ -7421,17 +7447,21 @@ app.get(
                     : gpsLocation || attendanceLocation;
                 // Map locations come exclusively from the company's approved sites.
                 // Legacy coordinates copied onto a shift are deliberately ignored.
-                const workplace = company && shift
-                    ? (company.approvedLocations || []).find(site =>
-                        site.active !== false &&
-                        String(site._id) === String(shift.locationId) &&
-                        validGeoPoint(site.latitude, site.longitude)
-                    ) : null;
+                const workplace = company
+                    ? emp.assignedLocationId
+                        ? companyLocationById(company, emp.assignedLocationId)
+                        : shift ? resolveShiftLocation(company, shift) : null
+                    : null;
                 const distanceMeters = workplace && latestLocation
                     ? Math.round(haversineMeters(
                         Number(latestLocation.latitude), Number(latestLocation.longitude),
                         workplace.latitude, workplace.longitude
                     )) : null;
+                const locationAgeMs = latestLocation?.timestamp
+                    ? now.getTime() - new Date(latestLocation.timestamp).getTime() : Infinity;
+                const locationFresh = locationAgeMs >= -60000 && locationAgeMs <= 10 * 60 * 1000;
+                const siteRadiusMeters = Number(workplace?.radiusMeters) > 0
+                    ? Number(workplace.radiusMeters) : 200;
 
                 let unavailableReason = '';
                 if (!lastAttendance) {
@@ -7476,11 +7506,12 @@ app.get(
                         id: String(workplace._id),
                         name: workplace.name,
                         latitude: workplace.latitude,
-                        longitude: workplace.longitude
+                        longitude: workplace.longitude,
+                        radiusMeters: siteRadiusMeters
                     } : null,
                     distanceMeters,
-                    locationStatus: distanceMeters === null ? 'unknown'
-                        : distanceMeters <= 250 ? 'inside' : 'outside',
+                    locationStatus: distanceMeters === null || !locationFresh ? 'unknown'
+                        : distanceMeters <= siteRadiusMeters ? 'inside' : 'outside',
 
                     unavailableReason,
 
@@ -7890,7 +7921,8 @@ app.get('/api/admin/locations', requireAdmin, async (req, res) => {
                         ? Number(company.geofenceRadiusMeters)
                         : 200,
                 active: true,
-                isPrimary: true
+                isPrimary: true,
+                demoData: false
             });
         }
 
@@ -7910,6 +7942,7 @@ app.get('/api/admin/locations', requireAdmin, async (req, res) => {
                         : 200,
                 active: location.active !== false,
                 isPrimary: false,
+                demoData: location.demoData === true,
                 createdAt: location.createdAt
             });
         }
@@ -12752,7 +12785,9 @@ app.post(
                 }
 
             } else {
-                const shiftLocation = resolveShiftLocation(company, shift);
+                const shiftLocation = employee.assignedLocationId
+                    ? companyLocationById(company, employee.assignedLocationId)
+                    : resolveShiftLocation(company, shift);
                 if (!shiftLocation) {
                     return res.status(403).json({
                         success: false,
