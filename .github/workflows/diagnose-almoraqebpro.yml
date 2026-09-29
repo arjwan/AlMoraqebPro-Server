@@ -36,6 +36,13 @@ jobs:
           set -u
           echo '=== SERVICES AFTER ORACLE RESTART ==='
           sudo systemctl --no-pager is-active nginx almoraqebpro.service || true
+          echo '=== SERVICE DETAIL ==='
+          sudo systemctl --no-pager -l status almoraqebpro.service | head -35 || true
+          sudo journalctl --no-pager -u almoraqebpro.service -n 40 | sed -E 's#mongodb(\\+srv)?://[^ ]+#mongodb://[REDACTED]#g' || true
+          echo '=== CERTIFICATE DOMAINS ==='
+          sudo certbot certificates 2>&1 | grep -E 'Certificate Name:|Domains:|Expiry Date:' || true
+          echo '=== NGINX FILES ==='
+          sudo find /etc/nginx -maxdepth 3 -type f -name '*.conf' -print | sort
           echo '=== LISTENERS ==='
           sudo ss -lntp | grep -E ':(80|443|3100) ' || true
           echo '=== NGINX ROUTES ==='
