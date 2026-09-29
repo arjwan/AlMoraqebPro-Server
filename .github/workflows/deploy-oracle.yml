@@ -79,7 +79,7 @@ jobs:
           else
             git -C "$APP_DIR" fetch origin main
             status="$(git -C "$APP_DIR" status --porcelain)"
-            unexpected="$(printf '%s\n' "$status" | grep -Ev '^( M package-lock\.json|\?\? \.interview-demo-b3214(-daytime-pairs)?\.seeded)$' || true)"
+            unexpected="$(printf '%s\n' "$status" | grep -Ev '^( M package-lock\.json|\?\? \.interview-demo-b3214(-daytime-pairs|-sites-v2)?\.seeded)$' || true)"
             if [ -n "$unexpected" ]; then
               echo 'Oracle checkout has unexpected local changes; stop deployment.' >&2
               printf '%s\n' "$unexpected" >&2
@@ -132,6 +132,15 @@ jobs:
             grep -q '"ok": true' /tmp/almoraqebpro-demo-daytime.json
             grep -q '"company": "B-3214"' /tmp/almoraqebpro-demo-daytime.json
             touch .interview-demo-b3214-daytime-pairs.seeded
+          fi
+
+          # One-time migration: isolate simulated employees at explicitly tagged demo sites.
+          # The company's real headquarters and its real location records are preserved.
+          if [ ! -f .interview-demo-b3214-sites-v2.seeded ]; then
+            DEMO_COMPANY_ID=B-3214 DEMO_EMPLOYEE_COUNT=30 node scripts/seed-interview-demo.js | tee /tmp/almoraqebpro-demo-sites.json
+            grep -q '"ok": true' /tmp/almoraqebpro-demo-sites.json
+            grep -q '"demoLocations": 4' /tmp/almoraqebpro-demo-sites.json
+            touch .interview-demo-b3214-sites-v2.seeded
           fi
 
           sudo install -o root -g root -m 600 .env "/etc/${SERVICE_NAME}.env"
@@ -207,6 +216,38 @@ jobs:
 
           sudo nginx -t
           sudo systemctl reload nginx
+
+          # Keep interview-only synthetic attendance and its accrued wages current.
+          # The script filters demoData/demoBatch and never writes real employees.
+          sudo tee /etc/systemd/system/almoraqebpro-demo-refresh.service >/dev/null <<UNIT
+          [Unit]
+          Description=Refresh AlMoraqebPro interview demo attendance and wages
+          After=network-online.target
+          [Service]
+          Type=oneshot
+          User=${APP_USER}
+          Group=${APP_GROUP}
+          WorkingDirectory=${APP_DIR}
+          EnvironmentFile=/etc/${SERVICE_NAME}.env
+          ExecStart=${NODE_BIN} scripts/refresh-interview-demo.js
+          NoNewPrivileges=true
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+
+          sudo tee /etc/systemd/system/almoraqebpro-demo-refresh.timer >/dev/null <<TIMER
+          [Unit]
+          Description=Refresh interview demo every 30 minutes
+          [Timer]
+          OnCalendar=*:0/30
+          Persistent=true
+          Unit=almoraqebpro-demo-refresh.service
+          [Install]
+          WantedBy=timers.target
+          TIMER
+          sudo systemctl daemon-reload
+          sudo systemctl enable --now almoraqebpro-demo-refresh.timer
+          sudo systemctl start almoraqebpro-demo-refresh.service
 
           if command -v certbot >/dev/null 2>&1; then
             sudo certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos \
