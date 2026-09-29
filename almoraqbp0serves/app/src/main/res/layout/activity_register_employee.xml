@@ -55,6 +55,26 @@
             android:textColorHint="#64748B"/>
 
         <EditText
+            android:id="@+id/etUsername"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:layout_marginBottom="10dp"
+            android:hint="@string/register_username"
+            android:inputType="textNoSuggestions"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp" />
+
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:layout_marginBottom="10dp"
+            android:hint="@string/register_password"
+            android:inputType="textPassword"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp" />
+
+        <EditText
             android:id="@+id/etPhoneNumber"
             android:layout_width="match_parent"
             android:layout_height="55dp"

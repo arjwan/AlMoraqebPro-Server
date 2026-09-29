@@ -1330,6 +1330,12 @@ tbody tr:hover{
     </section>
 
 
+    <section class="card" style="padding:20px;margin-bottom:20px">
+        <div class="card-header"><div class="card-title"><span>📥</span><h2>طلبات تسجيل الشركات</h2></div>
+        <button class="btn btn-light" onclick="loadCompanyRequests()">تحديث</button></div>
+        <div id="companyRequestsList" style="padding:12px">جارٍ التحميل...</div>
+    </section>
+
     <!-- COMPANIES -->
 
     <section class="card">
@@ -1847,6 +1853,7 @@ async function verifyDeveloperAuth(
     if (verified) {
 
         await loadCompaniesTable();
+        await loadCompanyRequests();
 
         if (showMessage) {
 
@@ -1893,6 +1900,8 @@ window.addEventListener(
 
 
         await loadCompaniesTable();
+
+        await loadCompanyRequests();
 
 
         playGeminiVoice(
@@ -3359,6 +3368,35 @@ function formatDate(value){
 /* =========================================================
    حماية HTML
 ========================================================= */
+
+async function loadCompanyRequests(){
+    const box=document.getElementById('companyRequestsList');
+    try{
+        const data=await developerRequest('/api/developer/company-requests');
+        const pending=(data.requests||[]).filter(r=>r.status==='pending');
+        box.replaceChildren();
+        if(!pending.length){box.textContent='لا توجد طلبات معلقة';return}
+        pending.forEach(r=>{
+            const row=document.createElement('div');
+            row.style.cssText='padding:14px;border-bottom:1px solid #e2e8f0;line-height:2';
+            const details=document.createElement('span');
+            details.textContent=`${r.name} — المدير: ${r.managerName} — الهاتف: ${r.phone} — اسم المستخدم: ${r.adminUsername} `;
+            const approve=document.createElement('button');approve.className='btn btn-success';approve.textContent='اعتماد';
+            approve.onclick=()=>decideCompanyRequest(r._id,'approve');
+            const reject=document.createElement('button');reject.className='btn btn-light';reject.textContent='رفض';
+            reject.onclick=()=>decideCompanyRequest(r._id,'reject');
+            row.append(details,approve,reject);box.append(row)
+        })
+    }catch(e){box.textContent=e.message||'تعذر تحميل الطلبات'}
+}
+async function decideCompanyRequest(id,decision){
+    if(!confirm(decision==='approve'?'اعتماد الشركة وتفعيل حساب المدير؟':'رفض الطلب؟'))return;
+    try{
+        const result=await developerRequest(`/api/developer/company-requests/${encodeURIComponent(id)}/${decision}`,{method:'POST'});
+        alert(decision==='approve'?`تم الاعتماد. رمز الشركة: ${result.companyId} — بلّغه للمدير عبر قناتك المعتمدة.`:'تم رفض الطلب');
+        await loadCompanyRequests();await loadCompaniesTable()
+    }catch(e){alert(e.message||'تعذر تنفيذ القرار')}
+}
 
 function escapeHtml(value){
 

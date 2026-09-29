@@ -369,4 +369,7 @@
     <string name="login_offline_not_verified">لا يمكن الدخول Offline: هذا الحساب لم يسبق التحقق منه Online على هذا الجهاز أو البيانات مختلفة</string>
     <string name="dash_movement_alerts">📍 تنبيهات حركة الموقع</string>
     <string name="movement_alerts_empty">لا توجد تنبيهات حركة حتى الآن.</string>
+    <string name="register_username">اسم المستخدم الذي تختاره</string>
+    <string name="register_password">كلمة المرور (8 أحرف على الأقل)</string>
+    <string name="register_credentials_invalid">اسم المستخدم 3-32 حرفاً إنكليزياً/رقماً وكلمة المرور 8 أحرف على الأقل</string>
 </resources>

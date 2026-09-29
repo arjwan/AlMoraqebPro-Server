@@ -558,7 +558,8 @@ const employeeRequestSchema = new mongoose.Schema({
 
     username: String,
 
-    password: String,
+    // Only a salted scrypt verifier is stored for new join requests.
+    password: { type: String, select: false },
 
     deviceId: {
         type: String,
@@ -583,6 +584,19 @@ const EmployeeRequest =
         'EmployeeRequest',
         employeeRequestSchema
     );
+
+const companyRequestSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    managerName: { type: String, required: true },
+    phone: { type: String, required: true },
+    email: { type: String, default: '' },
+    adminUsername: { type: String, required: true },
+    adminPasswordHash: { type: String, required: true, select: false },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+    companyId: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now }
+});
+const CompanyRequest = mongoose.model('CompanyRequest', companyRequestSchema);
 
 
 /*
@@ -2009,6 +2023,18 @@ function verifyPassword(
             'hex'
         )
     );
+}
+
+function verifyEmployeePassword(password, stored) {
+    if (!stored) return false;
+    if (stored.includes(':')) {
+        try { return verifyPassword(password, stored); } catch { return false; }
+    }
+    // Existing employee accounts were stored as plain text; keep them usable.
+    const supplied = Buffer.from(String(password));
+    const previous = Buffer.from(String(stored));
+    return supplied.length === previous.length &&
+        crypto.timingSafeEqual(supplied, previous);
 }
 
 
@@ -4328,8 +4354,65 @@ app.get(
 =========================================================
 */
 
+app.post('/api/company-requests', async (req, res) => {
+    try {
+        const name = String(req.body.name || '').trim();
+        const managerName = String(req.body.managerName || '').trim();
+        const phone = String(req.body.phone || '').trim();
+        const email = String(req.body.email || '').trim();
+        const adminUsername = String(req.body.adminUsername || '').trim();
+        const password = String(req.body.adminPassword || '');
+        if (!name || !managerName || !/^[0-9+ -]{8,20}$/.test(phone) ||
+            !/^[A-Za-z0-9_.-]{3,32}$/.test(adminUsername) || password.length < 8 || password.length > 128) {
+            return res.status(400).json({ success: false, message: 'أكمل اسم الشركة والمدير والهاتف واسم المستخدم وكلمة مرور من 8 أحرف' });
+        }
+        if (await CompanyRequest.exists({ phone, status: 'pending' })) {
+            return res.status(409).json({ success: false, message: 'يوجد طلب معلّق بهذا الهاتف' });
+        }
+        const request = await CompanyRequest.create({ name, managerName, phone, email,
+            adminUsername, adminPasswordHash: hashPassword(password) });
+        return res.status(201).json({ success: true, requestId: request._id,
+            message: 'أُرسل طلب الشركة إلى المطور. لا يمكن الدخول قبل الاعتماد واستلام رمز الشركة.' });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'تعذر إرسال الطلب' });
+    }
+});
+
+app.get('/api/developer/company-requests', requireDeveloper, async (req, res) => {
+    const requests = await CompanyRequest.find().sort({ createdAt: -1 }).lean();
+    res.json({ success: true, requests });
+});
+
+app.post('/api/developer/company-requests/:requestId/approve', requireDeveloper, async (req, res) => {
+    try {
+        const request = await CompanyRequest.findById(req.params.requestId).select('+adminPasswordHash');
+        if (!request) return res.status(404).json({ success: false, message: 'الطلب غير موجود' });
+        if (request.status !== 'pending') return res.status(409).json({ success: false, message: 'الطلب عولج مسبقاً' });
+        const companyId = 'C-' + crypto.randomBytes(5).toString('hex').toUpperCase();
+        const company = await Company.create({ companyId, name: request.name, phone: request.phone,
+            email: request.email, managerName: request.managerName, managerPhone: request.phone,
+            adminUsername: request.adminUsername, adminPasswordHash: request.adminPasswordHash,
+            systemState: 'active', subscription: 'trial', subscriptionStartDate: new Date(),
+            subscriptionEndDate: new Date(Date.now() + 30 * 86400000) });
+        await CompanyRequest.updateOne({ _id: request._id },
+            { $set: { status: 'approved', companyId }, $unset: { adminPasswordHash: '' } });
+        res.status(201).json({ success: true, companyId, company: publicCompany(company) });
+    } catch (err) {
+        res.status(400).json({ success: false, message: 'تعذر اعتماد الطلب' });
+    }
+});
+
+app.post('/api/developer/company-requests/:requestId/reject', requireDeveloper, async (req, res) => {
+    const request = await CompanyRequest.findOne({ _id: req.params.requestId, status: 'pending' });
+    if (!request) return res.status(404).json({ success: false, message: 'الطلب غير موجود أو عولج مسبقاً' });
+    await CompanyRequest.updateOne({ _id: request._id },
+        { $set: { status: 'rejected' }, $unset: { adminPasswordHash: '' } });
+    res.json({ success: true });
+});
+
 app.post(
     '/api/companies/register',
+    requireDeveloper,
     async (req, res) => {
 
         try {
@@ -4665,6 +4748,21 @@ app.post(
                     ''
                 ).trim();
 
+            const requestedUsername = String(req.body.username || '').trim();
+            const requestedPassword = String(req.body.password || '');
+            if (requestedUsername || requestedPassword) {
+                if (!/^[A-Za-z0-9_.-]{3,32}$/.test(requestedUsername) ||
+                    requestedPassword.length < 8 || requestedPassword.length > 128) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'اسم المستخدم 3-32 حرفاً إنكليزياً/رقماً، وكلمة المرور 8 أحرف على الأقل'
+                    });
+                }
+                const taken = await Employee.exists({ companyId, username: requestedUsername }) ||
+                    await EmployeeRequest.exists({ companyId, username: requestedUsername, status: 'pending' });
+                if (taken) return res.status(409).json({ success: false, message: 'اسم المستخدم مستخدم مسبقاً في الشركة' });
+            }
+
             /*
              * تحويل آمن للحقول الرقمية:
              * القيم النصية غير الرقمية تُرفض برسالة واضحة
@@ -4742,6 +4840,11 @@ app.post(
 
                 if (existingEmployee) {
 
+                    if (requestedUsername) {
+                        return res.status(409).json({ success: false,
+                            message: 'رقم الهاتف مرتبط بحساب موجود؛ استخدم تسجيل الدخول أو راجع المدير' });
+                    }
+
                     const update = {};
 
                     if (
@@ -4771,6 +4874,8 @@ app.post(
                         await new EmployeeRequest({
 
                             ...req.body,
+
+                            password: undefined,
 
                             companyId,
 
@@ -4840,6 +4945,10 @@ app.post(
                 await new EmployeeRequest({
 
                     ...req.body,
+
+                    username: requestedUsername,
+
+                    password: requestedPassword ? hashPassword(requestedPassword) : undefined,
 
                     phoneNumber,
 
@@ -5087,7 +5196,7 @@ app.post(
                 await EmployeeRequest
                     .findById(
                         requestId
-                    );
+                    ).select('+password');
 
             if (!request) {
 
@@ -5165,6 +5274,11 @@ app.post(
 
             if (existingEmployee) {
 
+                if (request.username) {
+                    return res.status(409).json({ success: false,
+                        message: 'يوجد حساب للموظف مسبقاً؛ راجع بياناته قبل الاعتماد' });
+                }
+
                 request.status = 'approved';
                 await request.save();
 
@@ -5194,6 +5308,13 @@ app.post(
             }
 
             const employee =
+                // Recheck at approval time in case a second request claimed the name.
+                await Employee.exists({ companyId: request.companyId, username: request.username });
+            if (request.username && employee) {
+                return res.status(409).json({ success: false, message: 'اسم المستخدم مستخدم مسبقاً' });
+            }
+
+            const approvedEmployee =
                 await new Employee({
 
                     companyId:
@@ -5248,13 +5369,13 @@ app.post(
                         String(req.body.workplace || request.workLocation || request.location || '').trim(),
 
                     username:
-                        '',
+                        request.username || '',
 
                     password:
-                        '',
+                        request.password || '',
 
                     credentialsStatus:
-                        'pending',
+                        request.username && request.password ? 'active' : 'pending',
 
                     deviceId:
                         request.deviceId ||
@@ -5315,13 +5436,15 @@ app.post(
                 if (matchingShift) {
                     await Shift.updateOne(
                         { _id: matchingShift._id },
-                        { $addToSet: { employeeIds: String(employee._id) } }
+                        { $addToSet: { employeeIds: String(approvedEmployee._id) } }
                     );
                 }
             }
 
             request.status =
                 'approved';
+
+            request.password = undefined;
 
             await request.save();
 
@@ -5338,11 +5461,13 @@ app.post(
                 success: true,
 
                 message:
-                    'تم اعتماد الموظف. بيانات الدخول تُحدد من لوحة المدير.',
+                    approvedEmployee.credentialsStatus === 'active'
+                        ? 'تم اعتماد الموظف وتفعيل بيانات الدخول التي اختارها.'
+                        : 'تم اعتماد الموظف. بيانات الدخول تُحدد من لوحة المدير.',
 
                 employee:
                     employeeWithSignedMedia(
-                        employee
+                        approvedEmployee
                     )
 
             });
@@ -6344,36 +6469,26 @@ app.post(
             const diagByCompany = await Employee.countDocuments({ companyId });
             const diagByUsername = await Employee.countDocuments({ companyId, username });
             const diagActive = await Employee.countDocuments({ companyId, username, credentialsStatus: 'active' });
-            const diagPassword = await Employee.countDocuments({ companyId, username, password });
+            const candidate = await Employee.findOne({ companyId, username });
+            const passwordMatches = candidate && verifyEmployeePassword(password, candidate.password);
             console.log('[login-diag]', JSON.stringify({
                 companyId,
                 username,
                 employeesInCompany: diagByCompany,
                 usernameMatch: diagByUsername > 0,
                 credentialsActive: diagActive > 0,
-                passwordMatch: diagPassword > 0,
+                passwordMatch: Boolean(passwordMatches),
                 deviceIdProvided: Boolean(deviceId)
             }));
 
-            const employee =
-                await Employee.findOne({
-
-                    companyId,
-
-                    username,
-
-                    password,
-
-                    credentialsStatus:
-                        'active'
-
-                });
+            const employee = passwordMatches && candidate.credentialsStatus === 'active'
+                ? candidate : null;
 
             if (!employee) {
 
                 let reason = 'بيانات الدخول غير صحيحة';
                 if (diagByUsername === 0) reason = 'لا يوجد موظف بهذا الاسم في هذه الشركة';
-                else if (diagPassword === 0) reason = 'كلمة المرور غير صحيحة';
+                else if (!passwordMatches) reason = 'كلمة المرور غير صحيحة';
                 else if (diagActive === 0) reason = 'الحساب غير مفعّل بعد. راجع مدير الشركة.';
 
                 return res.status(401).json({

@@ -181,6 +181,8 @@ data class EmployeeJoinRequest(
     val companyId: String,
     val companyName: String = "",
     val name: String,
+    val username: String,
+    val password: String,
     val phoneNumber: String = "",
     val jobTitle: String = "",
     val workLocation: String = "",

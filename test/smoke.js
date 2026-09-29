@@ -128,12 +128,36 @@ async function waitForServer(url, retries, delay) {
         if (dbUp) {
             const companyId = 'CMP' + Date.now();
             const reg = await (await fetch(BASE + '/api/companies/register', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyId, name: 'شركة الاختبار', adminPassword: 'admin123' })
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + login.token }, body: JSON.stringify({ companyId, name: 'شركة الاختبار', adminPassword: 'admin123' })
             })).json();
             check('company register => success', reg.success === true);
             check('duplicate company => 409', (await fetch(BASE + '/api/companies/register', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyId, name: 'x', adminPassword: 'a' })
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + login.token }, body: JSON.stringify({ companyId, name: 'x', adminPassword: 'a' })
             })).status === 409);
+            check('company creation requires developer', (await fetch(BASE + '/api/companies/register', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId: companyId + 'X', name: 'غير معتمد', adminPassword: 'password123' })
+            })).status === 401);
+            const companyApplication = await (await fetch(BASE + '/api/company-requests', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'شركة الطلب', managerName: 'مدير الطلب', phone: '07701234567',
+                    adminUsername: 'chosen_admin', adminPassword: 'chosenPassword123' })
+            })).json();
+            check('manager submits company request', companyApplication.success && !!companyApplication.requestId);
+            const companyRequests = await (await fetch(BASE + '/api/developer/company-requests', {
+                headers: { Authorization: 'Bearer ' + login.token }
+            })).json();
+            check('developer sees request without password', companyRequests.requests?.some(r =>
+                String(r._id) === String(companyApplication.requestId) && !r.adminPasswordHash));
+            const companyApproval = await (await fetch(BASE + '/api/developer/company-requests/' + companyApplication.requestId + '/approve', {
+                method: 'POST', headers: { Authorization: 'Bearer ' + login.token }
+            })).json();
+            check('developer approves manager-selected credentials', companyApproval.success && !!companyApproval.companyId);
+            const newAdminLogin = await (await fetch(BASE + '/api/admin/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId: companyApproval.companyId, username: 'chosen_admin', password: 'chosenPassword123' })
+            })).json();
+            check('approved manager can sign in', newAdminLogin.success === true);
             const list = await (await fetch(BASE + '/api/developer/companies', {
                 headers: { Authorization: 'Bearer ' + login.token }
             })).json();
@@ -189,6 +213,34 @@ async function waitForServer(url, retries, delay) {
             check('approve request creates employee', approve.success === true && !!approve.employee);
             check('approved employee inherits join-request coordinates', Number(approve.employee?.lastKnownLocation?.latitude) === 31 &&
                 Number(approve.employee?.lastKnownLocation?.longitude) === 45);
+
+            const chosenUsername = 'employee_' + Date.now();
+            const chosenPassword = 'chosenPass123';
+            const chosenRequest = await (await fetch(BASE + '/api/employee/request', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...requestBody, name: 'موظف ببيانات مختارة',
+                    deviceId: 'chosen-device-' + Date.now(), username: chosenUsername, password: chosenPassword })
+            })).json();
+            const pendingWithCredentials = await (await fetch(BASE + '/api/employee/requests/' + companyId + '/pending', {
+                headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('employee chooses credentials without exposing password', chosenRequest.success &&
+                pendingWithCredentials.requests.some(r => r._id === chosenRequest.requestId &&
+                    r.username === chosenUsername && !r.password));
+            const chosenApproval = await (await fetch(BASE + '/api/employee/request/' + chosenRequest.requestId + '/approve', {
+                method: 'POST', headers: { Authorization: 'Bearer ' + adminLogin.token }
+            })).json();
+            check('manager activates chosen employee credentials', chosenApproval.success &&
+                chosenApproval.employee?.credentialsStatus === 'active' && !chosenApproval.employee?.password);
+            const chosenLogin = await (await fetch(BASE + '/api/mobile/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId, username: chosenUsername, password: chosenPassword,
+                    deviceId: chosenApproval.employee?.deviceId })
+            })).json();
+            check('approved employee signs in with chosen password', chosenLogin.success === true);
+            await fetch(BASE + '/api/employees/' + chosenApproval.employee._id, {
+                method: 'DELETE', headers: { Authorization: 'Bearer ' + adminLogin.token }
+            });
 
             const employees = await (await fetch(BASE + '/api/employees?companyId=' + encodeURIComponent(companyId), {
                 headers: { Authorization: 'Bearer ' + adminLogin.token }
