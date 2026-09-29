@@ -50,6 +50,7 @@ class DashboardActivity : AppCompatActivity() {
     private val db by lazy { AppDatabase.getDatabase(this) }
     private var pendingType = "attendance"
     private var permissionRequestedForAttendance = false
+    private var lastBackPressedAt = 0L
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -132,7 +133,7 @@ class DashboardActivity : AppCompatActivity() {
         binding.navHome.setOnClickListener {
             Toast.makeText(this, getString(R.string.dash_home_hint), Toast.LENGTH_SHORT).show()
         }
-        binding.btnBackTop.setOnClickListener { finish() }
+        binding.btnBackTop.setOnClickListener { handleBackPress() }
 
 
 
@@ -155,6 +156,21 @@ class DashboardActivity : AppCompatActivity() {
         updateGpsTile()
         refreshSyncStatus()
         scheduleSync()
+    }
+
+    private fun handleBackPress() {
+        val now = System.currentTimeMillis()
+        if (now - lastBackPressedAt < 2000L) {
+            finishAffinity()
+            return
+        }
+        lastBackPressedAt = now
+        Toast.makeText(this, "اضغط مرة أخرى للخروج", Toast.LENGTH_SHORT).show()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        handleBackPress()
     }
 
     override fun onResume() {
