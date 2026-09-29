@@ -4,7 +4,9 @@
 
 ## الاستخدام والتنزيل
 
-- **نسخة الويب لجميع الأجهزة:** [فتح المراقب برو](https://almoraqebpro-server-aymo.onrender.com/)
+- **الموقع التعريفي للمراقب برو:** [زيارة الموقع](https://almoraqebpro-website.pages.dev/).
+- **تطبيق الويب ولوحة المدير:** [فتح المراقب برو](https://almoraqebpro.duckdns.org/admin_login.html).
+- **موقع الأرجوان للبرمجيات:** [زيارة الموقع](https://alarjwan.duckdns.org/).
 - **Android وLinux وWindows:** تتوفر ملفات التثبيت في [صفحة الإصدارات](https://github.com/arjwan/AlMoraqebPro-Server/releases/latest).
 - Linux متاح بصيغة AppImage لمعالجات Intel/AMD ذات 64 بت.
 
