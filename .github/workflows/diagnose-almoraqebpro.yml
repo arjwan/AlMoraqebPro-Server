@@ -25,7 +25,12 @@ jobs:
           chmod 600 ~/.ssh/oracle_key
           echo "=== SSH CONNECTIVITY ==="
           if ! getent ahostsv4 "$ORACLE_HOST" | head -1 | awk '{print "DNS resolved:", $2}'; then echo "DNS resolution failed"; fi
-          if timeout 7 bash -c 'cat < /dev/null > /dev/tcp/"$1"/22' _ "$ORACLE_HOST"; then echo "SSH port 22 reachable"; else echo "SSH port 22 unreachable"; exit 1; fi
+          for attempt in $(seq 1 12); do
+            if timeout 5 bash -c 'cat < /dev/null > /dev/tcp/"$1"/22' _ "$ORACLE_HOST" 2>/dev/null; then echo "SSH port 22 reachable"; break; fi
+            echo "SSH port 22 unavailable ($attempt/12)"
+            sleep 10
+          done
+          if ! timeout 5 bash -c 'cat < /dev/null > /dev/tcp/"$1"/22' _ "$ORACLE_HOST" 2>/dev/null; then exit 1; fi
           ssh-keyscan -T 7 -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" 'bash -s' <<'REMOTE'
           set -u
