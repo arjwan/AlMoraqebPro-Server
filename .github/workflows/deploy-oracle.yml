@@ -1,11 +1,6 @@
 name: Deploy AlMoraqebPro to Oracle
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/workflows/**'
   workflow_dispatch:
 
 concurrency:
