@@ -168,9 +168,9 @@
             </select>
         </div>
         <button class="btn" onclick="loadLocations()"><i class="fas fa-sync-alt"></i> تحديث المواقع</button>
-        <button class="btn btn-outline" id="getMapLocationBtn" onclick="getMapLocation()"><i class="fas fa-location-crosshairs"></i> جلب موقعي</button>
+        <button class="btn btn-outline" id="getMapLocationBtn" onclick="getMapLocation()"><i class="fas fa-location-crosshairs"></i> جلب موقع الموظف</button>
         <div class="current-location" id="currentLocationBox" hidden>
-            <input id="currentLocationText" readonly aria-label="إحداثيات موقعي الحالي">
+            <input id="currentLocationText" readonly aria-label="إحداثيات موقع الموظف">
             <button class="btn btn-outline" onclick="copyCurrentLocation()"><i class="fas fa-copy"></i> نسخ الموقع</button>
         </div>
     </div>
@@ -190,35 +190,36 @@ const API = location.origin;
 let map = null;
 let selectedEmployees = []; // قائمة معرفات الموظفين المختارين
 let employees = []; // كل الموظفين
-let currentUserMarker = null;
 let trackedMarkers = null;
 const trackedLocations = new Map();
 const reverseGeoCache = new Map();
 
 function getMapLocation(){
-    const button=document.getElementById('getMapLocationBtn');
-    if(!navigator.geolocation){
-        alert('تحديد الموقع غير مدعوم في هذا المتصفح');
+    const button = document.getElementById('getMapLocationBtn');
+    if (selectedEmployees.length === 0) {
+        alert('اختر موظفاً أولاً');
         return;
     }
-    button.disabled=true;
-    button.innerHTML='<span class="loader"></span> جارٍ جلب الموقع';
-    navigator.geolocation.getCurrentPosition(position=>{
-        const lat=Number(position.coords.latitude);
-        const lon=Number(position.coords.longitude);
-        const value=`${lat.toFixed(7)}, ${lon.toFixed(7)}`;
-        document.getElementById('currentLocationText').value=value;
-        document.getElementById('currentLocationBox').hidden=false;
-        if(currentUserMarker) currentUserMarker.remove();
-        currentUserMarker=L.marker([lat,lon]).addTo(map).bindPopup('موقعي الحالي').openPopup();
-        map.setView([lat,lon],16);
-        button.disabled=false;
-        button.innerHTML='<i class="fas fa-location-crosshairs"></i> تحديث موقعي';
-    },error=>{
-        button.disabled=false;
-        button.innerHTML='<i class="fas fa-location-crosshairs"></i> جلب موقعي';
-        alert(error.code===1?'تم رفض إذن الموقع':error.code===2?'تعذر تحديد الموقع الحالي':'انتهت مهلة تحديد الموقع');
-    },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+    const employeeId = String(selectedEmployees[0]);
+    button.disabled = true;
+    button.innerHTML = '<span class="loader"></span> جارٍ جلب موقع الموظف';
+    loadLocations().then(() => {
+        const point = trackedLocations.get(employeeId);
+        if (!point || !map) {
+            alert('لا يوجد موقع مسجل لهذا الموظف');
+            return;
+        }
+        document.getElementById('currentLocationText').value =
+            point.lat.toFixed(7) + ', ' + point.lon.toFixed(7);
+        document.getElementById('currentLocationBox').hidden = false;
+        map.setView([point.lat, point.lon], 17, { animate: true });
+        if (point.marker) point.marker.openPopup();
+    }).catch(error => {
+        alert(error?.message || 'تعذر جلب موقع الموظف');
+    }).finally(() => {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-location-crosshairs"></i> تحديث موقع الموظف';
+    });
 }
 
 async function copyCurrentLocation(){
