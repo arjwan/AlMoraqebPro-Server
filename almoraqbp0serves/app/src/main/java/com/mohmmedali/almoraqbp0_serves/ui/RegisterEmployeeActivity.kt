@@ -55,6 +55,8 @@ class RegisterEmployeeActivity : AppCompatActivity() {
         val companyId = findViewById<EditText>(R.id.etCompanyId)
         val companyName = findViewById<EditText>(R.id.etCompanyName)
         val name = findViewById<EditText>(R.id.etName)
+        val username = findViewById<EditText>(R.id.etUsername)
+        val password = findViewById<EditText>(R.id.etPassword)
         val phoneNumber = findViewById<EditText>(R.id.etPhoneNumber)
         val jobTitle = findViewById<EditText>(R.id.etJobTitle)
         val workLocation = findViewById<EditText>(R.id.etWorkLocation)
@@ -85,6 +87,10 @@ class RegisterEmployeeActivity : AppCompatActivity() {
 
             if (companyId.text.toString().trim().isEmpty() || name.text.toString().trim().isEmpty()) {
                 Toast.makeText(this, getString(R.string.register_company_name_required), Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            if (!username.text.toString().trim().matches(Regex("[A-Za-z0-9_.-]{3,32}")) || password.text.length < 8) {
+                Toast.makeText(this, getString(R.string.register_credentials_invalid), Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             if (salaryValue == null || salaryValue <= 0) {
@@ -121,6 +127,8 @@ class RegisterEmployeeActivity : AppCompatActivity() {
                             companyId = companyId.text.toString().trim(),
                             companyName = companyName.text.toString().trim(),
                             name = name.text.toString().trim(),
+                            username = username.text.toString().trim(),
+                            password = password.text.toString(),
                             phoneNumber = phoneNumber.text.toString().trim(),
                             jobTitle = jobTitle.text.toString().trim(),
                             workLocation = workLocation.text.toString().trim(),
