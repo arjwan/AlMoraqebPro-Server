@@ -12,8 +12,8 @@ android {
         applicationId = "com.mohmmedali.almoraqebpro"
         minSdk = 26
         targetSdk = 34
-        versionCode = 28
-        versionName = "4.0.3"
+        versionCode = 29
+        versionName = "4.0.4"
         multiDexEnabled = true
     }
 

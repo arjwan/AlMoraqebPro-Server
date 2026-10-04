@@ -3,102 +3,108 @@ name: Build AlMoraqebPro Signed Release APK
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths:
       - 'almoraqbp0serves/**'
       - '.github/workflows/android-release-apk.yml'
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   build-release-apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: almoraqbp0serves
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Make Gradle executable
-        run: chmod +x gradlew
-
-      - name: Generate release signing key
+      - name: Restore the existing signing key
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
           set -euo pipefail
-          STORE_PASS="$(openssl rand -hex 24)"
-          KEY_PASS="$STORE_PASS"
-          KEY_ALIAS="almoraqebpro-release"
-          keytool -genkeypair -v \
-            -keystore almoraqebpro-release.jks \
-            -alias "$KEY_ALIAS" \
-            -keyalg RSA -keysize 4096 -validity 10000 \
-            -storepass "$STORE_PASS" \
-            -keypass "$KEY_PASS" \
-            -dname "CN=AlMoraqebPro, OU=Android, O=AlMoraqebPro, L=Baghdad, ST=Baghdad, C=IQ"
-          {
-            echo "KEYSTORE_FILE=almoraqebpro-release.jks"
-            echo "KEY_ALIAS=$KEY_ALIAS"
-            echo "STORE_PASSWORD=$STORE_PASS"
-            echo "KEY_PASSWORD=$KEY_PASS"
-          } > signing-credentials.txt
-          chmod 600 almoraqebpro-release.jks signing-credentials.txt
-
-      - name: Build unsigned release APK
-        run: ./gradlew assembleRelease --stacktrace
-
-      - name: Sign release APK
+          python3 - <<'PY'
+          import io, os, json, zipfile, urllib.request, subprocess, hashlib
+          expected = 'efcd2bbb979e090a36d6aafd166d17e5179cffaaf3518e642976b65bb1f5d8df'
+          repo = os.environ['GH_REPO']
+          def request(path):
+              return urllib.request.urlopen(urllib.request.Request('https://api.github.com/repos/' + repo + path, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'}), timeout=60)
+          restored = False
+          for page in range(1, 11):
+              with request('/actions/artifacts?per_page=100&page=' + str(page)) as response:
+                  artifacts = json.load(response)['artifacts']
+              if not artifacts: break
+              for artifact in artifacts:
+                  if artifact['expired'] or artifact['name'] != 'AlMoraqebPro-4.0.3-release-signing-backup': continue
+                  with request('/actions/artifacts/' + str(artifact['id']) + '/zip') as response:
+                      outer = zipfile.ZipFile(io.BytesIO(response.read()))
+                  nested = next((n for n in outer.namelist() if n.endswith('release-signing-backup.zip')), None)
+                  if not nested: continue
+                  inner = zipfile.ZipFile(io.BytesIO(outer.read(nested)))
+                  key_name = next(n for n in inner.namelist() if n.endswith('/almoraqebpro-release.jks'))
+                  credentials_name = next(n for n in inner.namelist() if n.endswith('/signing-credentials.txt'))
+                  credentials = dict(line.split('=', 1) for line in inner.read(credentials_name).decode().splitlines() if '=' in line)
+                  password = credentials['STORE_PASSWORD']
+                  env = dict(os.environ, RESTORED_STORE_PASSWORD=password)
+                  with open('almoraqebpro-release.jks', 'wb') as output: output.write(inner.read(key_name))
+                  os.chmod('almoraqebpro-release.jks', 0o600)
+                  cert = subprocess.run(['keytool', '-exportcert', '-keystore', 'almoraqebpro-release.jks', '-alias', credentials['KEY_ALIAS'], '-storepass:env', 'RESTORED_STORE_PASSWORD'], env=env, check=True, capture_output=True).stdout
+                  if hashlib.sha256(cert).hexdigest() != expected:
+                      os.remove('almoraqebpro-release.jks')
+                      continue
+                  values = {'KEY_ALIAS': credentials['KEY_ALIAS'], 'STORE_PASSWORD': password, 'KEY_PASSWORD': credentials['KEY_PASSWORD']}
+                  with open(os.environ['GITHUB_ENV'], 'a') as output:
+                      for key, value in values.items():
+                          if '\n' in value or '\r' in value: raise ValueError('Invalid signing credential')
+                          print('::add-mask::' + value)
+                          output.write(key + '=' + value + '\n')
+                  print('Restored signing key matching the uploaded version 28 certificate.')
+                  restored = True
+                  break
+              if restored: break
+          if not restored:
+              raise SystemExit('Matching signing backup unavailable or expired. Restore the original private signing backup; a different key would prevent updates.')
+          PY
+      - name: Verify Render configuration and build
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('app/src/main/java/com/mohmmedali/almoraqbp0_serves/data/RetrofitClient.kt').read_text()
+          assert 'https://almoraqebpro-server-aymo.onrender.com/' in source
+          assert 'almoraqebpro.duckdns.org' not in source
+          PY
+          chmod +x gradlew
+          ./gradlew assembleRelease testReleaseUnitTest --no-daemon --stacktrace
+      - name: Sign and verify release APK
         shell: bash
         run: |
           set -euo pipefail
-          source signing-credentials.txt
           UNSIGNED="app/build/outputs/apk/release/app-release-unsigned.apk"
-          if [ ! -f "$UNSIGNED" ]; then
-            echo "Unsigned release APK not found"
-            find app/build/outputs/apk -maxdepth 3 -type f -print || true
-            exit 1
-          fi
+          test -s "$UNSIGNED"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n1)"
-          "$APKSIGNER" sign \
-            --ks almoraqebpro-release.jks \
-            --ks-key-alias "$KEY_ALIAS" \
-            --ks-pass "pass:$STORE_PASSWORD" \
-            --key-pass "pass:$KEY_PASSWORD" \
-            --out AlMoraqebPro-4.0.3-v28-release.apk \
-            "$UNSIGNED"
-          "$APKSIGNER" verify --verbose --print-certs AlMoraqebPro-4.0.3-v28-release.apk
-          sha256sum AlMoraqebPro-4.0.3-v28-release.apk > AlMoraqebPro-4.0.3-v28-release.apk.sha256
-
-      - name: Package signing backup
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p signing-backup
-          cp almoraqebpro-release.jks signing-credentials.txt signing-backup/
-          cat > signing-backup/IMPORTANT-KEEP-SAFE.txt <<'EOF'
-          This keystore signs AlMoraqebPro release APK 4.0.3 (versionCode 28).
-          Keep this backup private and permanent. Future updates installed over this APK must be signed with the same key.
-          Do not commit these files to GitHub.
-          EOF
-          zip -9 -r AlMoraqebPro-4.0.3-release-signing-backup.zip signing-backup
-
-      - name: Upload signed release APK
-        uses: actions/upload-artifact@v4
+          ZIPALIGN="$(dirname "$APKSIGNER")/zipalign"
+          "$ZIPALIGN" -p -f 4 "$UNSIGNED" aligned-release.apk
+          "$APKSIGNER" sign --ks almoraqebpro-release.jks --ks-key-alias "$KEY_ALIAS" --ks-pass env:STORE_PASSWORD --key-pass env:KEY_PASSWORD --out AlMoraqebPro-4.0.4-v29-render-release.apk aligned-release.apk
+          "$APKSIGNER" verify --verbose --print-certs AlMoraqebPro-4.0.4-v29-render-release.apk | tee signing-verification.txt
+          grep -qi 'efcd2bbb979e090a36d6aafd166d17e5179cffaaf3518e642976b65bb1f5d8df' signing-verification.txt
+          sha256sum AlMoraqebPro-4.0.4-v29-render-release.apk > AlMoraqebPro-4.0.4-v29-render-release.apk.sha256
+      - uses: actions/upload-artifact@v4
         with:
-          name: AlMoraqebPro-4.0.3-v28-signed-release-apk
+          name: AlMoraqebPro-4.0.4-v29-render-signed-release-apk
           path: |
-            almoraqbp0serves/AlMoraqebPro-4.0.3-v28-release.apk
-            almoraqbp0serves/AlMoraqebPro-4.0.3-v28-release.apk.sha256
+            almoraqbp0serves/AlMoraqebPro-4.0.4-v29-render-release.apk
+            almoraqbp0serves/AlMoraqebPro-4.0.4-v29-render-release.apk.sha256
           retention-days: 30
-
-      - name: Upload signing backup
-        uses: actions/upload-artifact@v4
-        with:
-          name: AlMoraqebPro-4.0.3-release-signing-backup
-          path: almoraqbp0serves/AlMoraqebPro-4.0.3-release-signing-backup.zip
-          retention-days: 30
+      - name: Remove signing material
+        if: always()
+        run: rm -f almoraqebpro-release.jks aligned-release.apk
