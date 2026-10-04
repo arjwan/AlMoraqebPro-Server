@@ -668,6 +668,15 @@ async function waitForServer(url, retries, delay) {
             })).json();
             check('salary employee data refresh keeps payroll settings', refreshedEmployees.success === true && refreshedEmployees.updatedCount === 1);
 
+            check('Friday approval rejects anonymous access', (await fetch(BASE + '/api/admin/payroll/friday-approval', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+            })).status === 401);
+            const fridayApproval = await (await fetch(BASE + '/api/admin/payroll/friday-approval', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
+                body: JSON.stringify({ date: '2026-08-28', employeeIds: [approvedEmployee._id], approved: true })
+            })).json();
+            check('manager approves a specific Friday for an employee', fridayApproval.success === true && fridayApproval.employeeCount === 1);
+
             const eventPayroll = await (await fetch(BASE + '/api/admin/payroll/calculate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminLogin.token },
@@ -813,3 +822,4 @@ async function waitForServer(url, retries, delay) {
     console.log('\n===== النتيجة: ' + pass + ' نجحت، ' + fail + ' فشلت، ' + skipped + ' مؤجّلة =====');
     process.exit(fail > 0 ? 1 : 0);
 })();
+

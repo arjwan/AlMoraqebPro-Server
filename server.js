@@ -762,6 +762,7 @@ const employeeSchema = new mongoose.Schema({
     },
 
     hireDate: Date,
+    fridayWorkDates: { type: [String], default: [] },
 
     employmentStatus: {
         type: String,
@@ -1363,6 +1364,7 @@ const salaryRecordSchema = new mongoose.Schema({
 
     attendanceDays: { type: Number, default: 0 },
     attendanceCount: { type: Number, default: 0 },
+    workDaysCalculated: { type: Boolean, default: false },
 
     calculatedAt: Date,
 
@@ -9446,6 +9448,11 @@ function payrollDayKey(value) {
     }).format(new Date(value));
 }
 
+function isApprovedWorkDay(employee, day) {
+    const friday = new Date(`${day}T12:00:00Z`).getUTCDay() === 5;
+    return !friday || (employee.fridayWorkDates || []).includes(day);
+}
+
 function baghdadPayrollBoundary(value, end = false) {
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return new Date(NaN);
@@ -9471,11 +9478,10 @@ function payrollDateKeys(from, to) {
 }
 
 function payrollMonthPeriod(reference = new Date()) {
-    const year = reference.getFullYear();
-    const month = reference.getMonth();
+    const [year, month] = payrollDayKey(reference).split('-').map(Number);
     return {
-        from: new Date(year, month, 1, 0, 0, 0, 0),
-        to: new Date(year, month, Math.min(30, new Date(year, month + 1, 0).getDate()), 23, 59, 59, 999)
+        from: baghdadPayrollBoundary(`${year}-${String(month).padStart(2, '0')}-01`),
+        to: baghdadPayrollBoundary(`${year}-${String(month).padStart(2, '0')}-${Math.min(30, new Date(Date.UTC(year, month, 0)).getUTCDate())}`, true)
     };
 }
 
@@ -9492,8 +9498,7 @@ function shiftWorkMinutes(shift, employee) {
 async function recalculateCompanyPayroll(companyId, reference = new Date()) {
     const period = payrollMonthPeriod(reference);
     const from = period.from;
-    const to = new Date(reference);
-    to.setHours(23, 59, 59, 999);
+    const to = baghdadPayrollBoundary(payrollDayKey(reference), true);
     const periodKeys = payrollDateKeys(from, to);
     const calculationKey = `${periodKeys[0]}:${periodKeys[periodKeys.length - 1]}`;
     const [employees, shifts, attendance, leaves, salaries] = await Promise.all([
@@ -9515,11 +9520,12 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         let lateMinutes = 0;
         attendance.filter(row => String(row.employeeId) === id).forEach(row => {
             const key = payrollDayKey(row.timestamp);
+            if (!isApprovedWorkDay(employee, key) || row.managerApprovalStatus === 'rejected') return;
             if (!days.has(key)) days.set(key, new Set());
             if (row.type === 'attendance') {
                 days.get(key).add(row.timeStatus === 'absent-late' ? 'absent' : 'in');
                 if (row.timeStatus === 'late') lateMinutes += Math.max(0, Number(row.lateMinutes || 0));
-            } else if (row.timeStatus !== 'early-exit-pending' && row.managerApprovalStatus !== 'rejected') {
+            } else if (['departure', 'exit'].includes(row.type) && row.timeStatus !== 'early-exit-pending') {
                 days.get(key).add('out');
             }
         });
@@ -9530,7 +9536,12 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         });
         // Accrual mode: payroll grows only from completed workdays.
         // Never pre-charge the employee for earlier calendar days just because no punch exists.
-        const eligible = periodKeys.filter(k => !employee.hireDate || k >= payrollDayKey(employee.hireDate));
+        const eligible = periodKeys.filter(k => (!employee.hireDate || k >= payrollDayKey(employee.hireDate)) && isApprovedWorkDay(employee, k));
+        for (const day of unpaid) { if (!eligible.includes(day)) unpaid.delete(day); }
+        const eligibleSet = new Set(eligible);
+        for (const day of validDays) {
+            if (!eligibleSet.has(day) || unpaid.has(day)) validDays.delete(day);
+        }
         const explicitAbsentDays = new Set(
             [...days].filter(([,v]) => v.has('absent')).map(([k]) => k)
         );
@@ -9545,7 +9556,7 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         const earnings = Math.max(0, grossSalary + Number(salary.allowances || 0) + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
         salary.set({ employeeName: employee.name || '', employeeSerial: employee.employeeSerial || '', specialty: employee.specialty || '',
             workplace: employee.workplace || employee.branch || '', shiftName: shift.name || '', wageType, basicSalary, dailyRate,
-            payrollFrom: from, payrollTo: to, attendanceDays: validDays.size, attendanceCount: validDays.size,
+            payrollFrom: from, payrollTo: to, attendanceDays: validDays.size, attendanceCount: validDays.size, workDaysCalculated: true,
             unpaidLeaveDays: unpaid.size, absenceDays, absenceDeduction, lateMinutes, lateDeduction, totalDeductions,
             grossSalary, currentPeriodEarnings: earnings, netSalary: earnings, calculatedAt: new Date(), calculationKey,
             lastAttendanceAt: attendance.filter(row => String(row.employeeId) === id).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0]?.timestamp || salary.lastAttendanceAt,
@@ -9553,6 +9564,33 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         await salary.save();
     }
 }
+
+app.post('/api/admin/payroll/friday-approval', requireAdmin, async (req, res) => {
+    try {
+        const day = String(req.body.date || '');
+        const date = baghdadPayrollBoundary(day);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(date.getTime()) ||
+            new Date(`${day}T12:00:00Z`).getUTCDay() !== 5) {
+            return res.status(400).json({ success: false, message: 'اختر تاريخ يوم جمعة صحيح' });
+        }
+        const ids = req.body.employeeIds;
+        if (!Array.isArray(ids) || !ids.length || ids.some(id => !mongoose.isValidObjectId(id)) ||
+            typeof req.body.approved !== 'boolean') {
+            return res.status(400).json({ success: false, message: 'حدد الموظفين والقرار' });
+        }
+        const employees = await Employee.find({ companyId: req.session.companyId, _id: { $in: ids } }).select('_id').lean();
+        if (employees.length !== new Set(ids.map(String)).size) {
+            return res.status(403).json({ success: false, message: 'الموظفون غير متاحين في شركتك' });
+        }
+        await Employee.updateMany({ companyId: req.session.companyId, _id: { $in: ids } },
+            req.body.approved ? { $addToSet: { fridayWorkDates: day } } : { $pull: { fridayWorkDates: day } });
+        await SalaryRecord.updateMany({ companyId: req.session.companyId, employeeId: { $in: ids.map(String) } },
+            { $set: { workDaysCalculated: false } });
+        return res.json({ success: true, date: day, approved: req.body.approved, employeeCount: employees.length });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'تعذر حفظ موافقة الجمعة' });
+    }
+});
 
 app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
     try {
@@ -9578,11 +9616,14 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             SalaryRecord.find({ companyId })
         ]);
         const salaryByEmployee = new Map(salaries.map(item => [String(item.employeeId), item]));
+        const employeeById = new Map(employees.map(item => [String(item._id), item]));
         const attendanceByEmployee = new Map();
         const lateMinutesByEmployee = new Map();
         attendance.forEach(item => {
             const id = String(item.employeeId);
             const day = payrollDayKey(item.timestamp);
+            const employee = employeeById.get(id);
+            if (!employee || !isApprovedWorkDay(employee, day) || item.managerApprovalStatus === 'rejected') return;
             if (!attendanceByEmployee.has(id)) attendanceByEmployee.set(id, new Map());
             if (!attendanceByEmployee.get(id).has(day)) attendanceByEmployee.get(id).set(day, new Set());
             if (item.type === 'attendance') {
@@ -9590,7 +9631,7 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                 if (item.timeStatus === 'late') {
                     lateMinutesByEmployee.set(id, Number(lateMinutesByEmployee.get(id) || 0) + Math.max(0, Number(item.lateMinutes || 0)));
                 }
-            } else if (item.timeStatus !== 'early-exit-pending' && item.managerApprovalStatus !== 'rejected') {
+            } else if (['departure', 'exit'].includes(item.type) && item.timeStatus !== 'early-exit-pending') {
                 attendanceByEmployee.get(id).get(day).add('out');
             }
         });
@@ -9662,11 +9703,12 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                 ).forEach(day => delegationDays.add(day));
             }
             const hireDateKey = employee.hireDate ? payrollDayKey(employee.hireDate) : '';
-            const eligiblePeriodKeys = periodKeys.filter(day => !hireDateKey || day >= hireDateKey);
+            const eligiblePeriodKeys = periodKeys.filter(day => (!hireDateKey || day >= hireDateKey) && isApprovedWorkDay(employee, day));
             const eligibleDays = new Set(eligiblePeriodKeys);
             const eligibleUnpaidLeaveDays = new Set([...unpaidLeaveDays].filter(day => eligibleDays.has(day)));
             const payableDays = new Set([...attendanceDays, ...paidLeaveDays, ...delegationDays, ...replacementDays].filter(day => eligibleDays.has(day)));
             eligibleUnpaidLeaveDays.forEach(day => payableDays.delete(day));
+            const actualWorkDays = new Set([...attendanceDays].filter(day => eligibleDays.has(day) && !eligibleUnpaidLeaveDays.has(day)));
             const wageType = ['daily', 'weekly', 'monthly'].includes(employee.wageType) ? employee.wageType : 'monthly';
             const divisor = wageType === 'daily' ? 1 : wageType === 'weekly' ? 7 : 30;
             const dailyRate = wageType === 'daily' ? basicSalary : basicSalary / divisor;
@@ -9701,7 +9743,7 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             salary.set({
                 employeeName: employee.name || '', employeeSerial: employee.employeeSerial || '', specialty: employee.specialty || '', workplace,
                 shiftName: shift.name || '', lateFrom: shift.lateFrom || '', lateTo: shift.lateTo || '', wageType, basicSalary, dailyRate, weeklyRate: wageType === 'weekly' ? basicSalary : 0,
-                payrollFrom: from, payrollTo: to, attendanceDays: payableDays.size, attendanceCount: attendanceDays.size,
+                payrollFrom: from, payrollTo: to, attendanceDays: payableDays.size, attendanceCount: actualWorkDays.size, workDaysCalculated: true,
                 paidLeaveDays: paidLeaveDays.size, unpaidLeaveDays: eligibleUnpaidLeaveDays.size,
                 absenceDays, absenceDeduction, lateMinutes, lateDeduction, replacementDays: replacementDays.size,
                 replacementActive: Boolean(employee.replacement && employee.replacement.active),
@@ -9715,7 +9757,7 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                 payoutStatus: salary.pendingPayoutBatchId ? salary.payoutStatus : 'unpaid'
             });
             await salary.save();
-            calculated.push({ employeeId: id, employeeName: employee.name, eligibleDays: eligiblePeriodKeys.length, payableDays: payableDays.size, lateMinutes, lateDeduction, netSalary: salary.netSalary, carriedBalance });
+            calculated.push({ employeeId: id, employeeName: employee.name, workDays: actualWorkDays.size, eligibleDays: eligiblePeriodKeys.length, payableDays: payableDays.size, lateMinutes, lateDeduction, netSalary: salary.netSalary, carriedBalance });
         }
         return res.json({ success: true, calculationKey, calculatedCount: calculated.length, invalidCount: invalid.length, calculated, invalid });
     } catch (err) {
@@ -12956,68 +12998,6 @@ app.post(
             await company.save();
 
             await recalculateCompanyPayroll(employee.companyId, attendanceTime);
-
-            // A completed, approved workday earns its daily wage immediately.
-            // This updates accrued payroll only; it does not mark anything as paid.
-            if (
-                type !== 'attendance' &&
-                attendance.timeStatus !== 'early-exit-pending' &&
-                attendance.managerApprovalStatus !== 'rejected'
-            ) {
-                const dayKey = payrollDayKey(attendance.timestamp);
-                const dayRecords = await Attendance.find({
-                    companyId: employee.companyId,
-                    employeeId: String(employee._id)
-                }).lean();
-                const hasValidCheckIn = dayRecords.some(item =>
-                    payrollDayKey(item.timestamp) === dayKey &&
-                    item.type === 'attendance' &&
-                    item.timeStatus !== 'absent-late' &&
-                    item.managerApprovalStatus !== 'rejected'
-                );
-                if (hasValidCheckIn) {
-                    const salary = await SalaryRecord.findOne({
-                        companyId: employee.companyId,
-                        employeeId: String(employee._id)
-                    });
-                    const basicSalary = Number(employee.salary || salary?.basicSalary || 0);
-                    const wageType = ['daily', 'weekly', 'monthly'].includes(employee.wageType)
-                        ? employee.wageType
-                        : (salary?.wageType || 'monthly');
-                    const dailyRate = wageType === 'daily'
-                        ? basicSalary
-                        : basicSalary / (wageType === 'weekly' ? 7 : 30);
-                    if (dailyRate > 0) {
-                        const alreadyCounted = String(salary?.lastAttendanceAt || '') &&
-                            payrollDayKey(salary.lastAttendanceAt) === dayKey;
-                        if (!alreadyCounted) {
-                            await SalaryRecord.findOneAndUpdate(
-                                { companyId: employee.companyId, employeeId: String(employee._id) },
-                                {
-                                    $set: {
-                                        employeeName: employee.name || '',
-                                        employeeSerial: employee.employeeSerial || '',
-                                        specialty: employee.specialty || '',
-                                        workplace: employee.workplace || employee.branch || '',
-                                        wageType,
-                                        basicSalary,
-                                        dailyRate,
-                                        lastAttendanceAt: attendance.timestamp,
-                                        payoutStatus: 'unpaid'
-                                    },
-                                    $inc: {
-                                        attendanceDays: 1,
-                                        attendanceCount: 1,
-                                        currentPeriodEarnings: dailyRate,
-                                        netSalary: dailyRate
-                                    }
-                                },
-                                { upsert: true, new: true }
-                            );
-                        }
-                    }
-                }
-            }
 
             res.status(201).json({
 

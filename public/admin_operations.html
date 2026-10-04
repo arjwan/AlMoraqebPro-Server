@@ -434,6 +434,9 @@
             <div class="salary-toolbar">
                 <div><h3>بطاقات رواتب الموظفين</h3><label class="salary-select-all"><input type="checkbox" id="selectAllSalaries" onchange="toggleAllSalaries(this.checked)"> تحديد كل البطاقات</label></div>
                 <div class="salary-toolbar-actions">
+                    <label for="fridayWorkDate">تاريخ الجمعة</label><input type="date" id="fridayWorkDate">
+                    <button class="btn btn-green" onclick="setFridayApproval(true)">اعتماد الجمعة للمحددين</button>
+                    <button class="btn btn-outline" onclick="setFridayApproval(false)">إلغاء اعتماد الجمعة</button>
                     <button class="btn btn-outline" onclick="printSalarySummary()">🖨 كشف رواتب مختصر</button>
                     <button class="btn" onclick="printSelectedSalaryCards()">🖨 طباعة البطاقات المحددة</button>
                 </div>
@@ -670,17 +673,18 @@ async function loadSalaries() {
 
         // Attendance changes the earned amount; keep salary cards current automatically.
         // This calculates entitlement only. It never creates or confirms a payout.
-        const todayKey = new Date().toISOString().slice(0, 10);
+        const todayKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Baghdad', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+        const requestedFrom = document.getElementById('payrollFrom')?.value || todayKey.slice(0, 7) + '-01';
+        const requestedTo = document.getElementById('payrollTo')?.value || todayKey;
         const needsTodayCalculation = allSalaries.some(salary => {
             const calculatedKey = String(salary.calculationKey || '');
-            return !calculatedKey || !calculatedKey.endsWith(':' + todayKey);
+            return !salary.workDaysCalculated || calculatedKey !== requestedFrom + ':' + requestedTo;
         });
         if (navigator.onLine && needsTodayCalculation && !window.__autoPayrollCalculating) {
             window.__autoPayrollCalculating = true;
             try {
-                const from = document.getElementById('payrollFrom')?.value ||
-                    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
-                const to = document.getElementById('payrollTo')?.value || todayKey;
+                const from = requestedFrom;
+                const to = requestedTo;
                 await api('/api/admin/payroll/calculate', {
                     method: 'POST',
                     body: JSON.stringify({ from, to })
@@ -905,6 +909,7 @@ function renderSalaries() {
                 <div class="salary-field"><label>خصم الغياب</label><input id="absenceDed-${id}" value="${Number(salary.absenceDeduction) || 0}" readonly></div>
             </div>
             <div class="salary-summary">
+                <div class="salary-total"><small>أيام العمل الفعلية المعتمدة</small><strong>${Math.max(0, Number(salary.attendanceCount) || 0)} يوم</strong><small>${escapeHtml(dateInputValue(salary.payrollFrom) || '—')} إلى ${escapeHtml(dateInputValue(salary.payrollTo) || '—')}</small></div>
                 <div class="salary-total"><small>مجموع الاستقطاعات</small><strong id="totalDed-${id}">${formatMoney(salary.totalDeductions)} د.ع</strong></div>
                 <div class="salary-total net"><small>صافي الراتب</small><strong id="net-${id}">${formatMoney(salary.netSalary)} د.ع</strong></div>
             </div>
@@ -925,6 +930,22 @@ function renderSalaries() {
         container.appendChild(card);
         togglePayoutFields(id);
     });
+}
+
+async function setFridayApproval(approved) {
+    const date = document.getElementById('fridayWorkDate').value;
+    if (!date || new Date(date + 'T12:00:00Z').getUTCDay() !== 5) return toast('اختر تاريخ يوم جمعة', 'error');
+    const selected = new Set(Array.from(document.querySelectorAll('.salary-card-select:checked')).map(box => box.value));
+    const employeeIds = allSalaries.filter(salary => selected.has(String(salary._id || salary.id || salary._offlineKey))).map(salary => salary.employeeId);
+    if (!employeeIds.length) return toast('حدد بطاقة موظف أو عدة بطاقات؛ لتطبيق القرار على الجميع اختر تحديد كل البطاقات', 'error');
+    try {
+        await api('/api/admin/payroll/friday-approval', { method: 'POST', body: JSON.stringify({ date, employeeIds, approved }) });
+        const from = document.getElementById('payrollFrom').value || date.slice(0, 7) + '-01';
+        const to = document.getElementById('payrollTo').value || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Baghdad', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+        await api('/api/admin/payroll/calculate', { method: 'POST', body: JSON.stringify({ from, to }) });
+        await loadSalaries();
+        toast(approved ? 'تم اعتماد الجمعة؛ يُحتسب فقط من أكمل حضورًا وانصرافًا صحيحين' : 'تم إلغاء اعتماد الجمعة');
+    } catch (err) { toast('تعذر تحديث اعتماد الجمعة: ' + err.message, 'error'); }
 }
 
 function salaryNumberField(label, prefix, id, value) {
@@ -1497,8 +1518,8 @@ function printSalarySummary() {
         return item && (!branch || String(item.workplace || '') === branch) && (!from || !day || day >= from) && (!to || !day || day <= to);
     });
     if (!items.length) return toast('⚠ لا توجد رواتب مطابقة لطباعة الكشف', 'error');
-    const rows = items.map(item => `<tr><td>${escapeHtml(item.employeeName)}</td><td>${formatMoney(item.basicSalary)} د.ع</td><td>${formatMoney(item.additions)} د.ع</td><td>${formatMoney(item.totalDeductions)} د.ع</td><td><strong>${formatMoney(item.netSalary)} د.ع</strong></td><td>${escapeHtml(payoutStatusLabels[item.payoutStatus] || payoutStatusLabels.unpaid)}</td><td>${printDate(item.createdAt)}</td></tr>`).join('');
-    openSalaryPrint('كشف الرواتب المختصر', `<h1>كشف الرواتب المختصر</h1><p class="print-meta">الفترة: ${escapeHtml(from || '—')} إلى ${escapeHtml(to || '—')} · الفرع: ${escapeHtml(branch || 'الكل')}</p><table><thead><tr><th>الموظف</th><th>الأساسي</th><th>الإضافات</th><th>الخصومات</th><th>الصافي</th><th>حالة الدفع</th><th>تاريخ السجل</th></tr></thead><tbody>${rows}</tbody></table>`);
+    const rows = items.map(item => `<tr><td>${escapeHtml(item.employeeName)}</td><td>${Math.max(0, Number(item.attendanceCount)||0)} يوم</td><td>${formatMoney(item.basicSalary)} د.ع</td><td>${formatMoney(item.additions)} د.ع</td><td>${formatMoney(item.totalDeductions)} د.ع</td><td><strong>${formatMoney(item.netSalary)} د.ع</strong></td><td>${escapeHtml(payoutStatusLabels[item.payoutStatus] || payoutStatusLabels.unpaid)}</td><td>${printDate(item.createdAt)}</td></tr>`).join('');
+    openSalaryPrint('كشف الرواتب المختصر', `<h1>كشف الرواتب المختصر</h1><p class="print-meta">الفترة: ${escapeHtml(from || '—')} إلى ${escapeHtml(to || '—')} · الفرع: ${escapeHtml(branch || 'الكل')}</p><table><thead><tr><th>الموظف</th><th>أيام العمل</th><th>الأساسي</th><th>الإضافات</th><th>الخصومات</th><th>الصافي</th><th>حالة الدفع</th><th>تاريخ السجل</th></tr></thead><tbody>${rows}</tbody></table>`);
 }
 
 function printSingleSalaryCard(id) {
@@ -1517,7 +1538,7 @@ function printSelectedSalaryCards() {
 
 function salaryPrintCard(item) {
     const method = { cash:'نقدي', card:'بطاقة', bank:'مصرفي' }[item.payoutMethod] || '—';
-    const details = [['الاختصاص',item.specialty||'—'],['موقع العمل',item.workplace||'—'],['الشفت',item.shiftName||'—'],['التأخير من–إلى',`${item.lateFrom||'—'} – ${item.lateTo||'—'}`],['فترة الراتب',`${dateInputValue(item.payrollFrom)||'—'} إلى ${dateInputValue(item.payrollTo)||'—'}`],['الضمان',item.socialSecurity||'—'],['الراتب الأساسي',formatMoney(item.basicSalary)+' د.ع'],['المخصصات',formatMoney(item.allowances)+' د.ع'],['السلف',formatMoney(item.loans)+' د.ع'],['المكافآت',formatMoney(item.bonuses)+' د.ع'],['دقائق التأخير',String(Number(item.lateMinutes)||0)],['خصم التأخير',formatMoney(item.lateDeduction)+' د.ع'],['خصم الغياب',formatMoney(item.absenceDeduction)+' د.ع'],['استقطاع السلفة',formatMoney(item.loanDeduction)+' د.ع'],['استقطاع الضمان',formatMoney(item.securityDeduction)+' د.ع'],['الخصومات الأخرى',formatMoney(item.otherDeductions)+' د.ع'],['مجموع الاستقطاعات',formatMoney(item.totalDeductions)+' د.ع'],['صافي الراتب',formatMoney(item.netSalary)+' د.ع'],['حالة الدفع',payoutStatusLabels[item.payoutStatus]||payoutStatusLabels.unpaid],['طريقة الصرف',method],['اسم المصرف',item.payoutBankName||'—'],['صاحب الحساب',item.payoutAccountName||'—'],['مرجع البطاقة/الحساب',item.payoutReference||'—'],['آخر 4 أرقام',item.payoutLast4||'—'],['تاريخ السجل',printDate(item.createdAt)]];
+    const details = [['الاختصاص',item.specialty||'—'],['موقع العمل',item.workplace||'—'],['الشفت',item.shiftName||'—'],['التأخير من–إلى',`${item.lateFrom||'—'} – ${item.lateTo||'—'}`],['فترة الراتب',`${dateInputValue(item.payrollFrom)||'—'} إلى ${dateInputValue(item.payrollTo)||'—'}`],['الضمان',item.socialSecurity||'—'],['أيام العمل الفعلية المعتمدة',String(Math.max(0, Number(item.attendanceCount)||0))+' يوم'],['الراتب الأساسي',formatMoney(item.basicSalary)+' د.ع'],['المخصصات',formatMoney(item.allowances)+' د.ع'],['السلف',formatMoney(item.loans)+' د.ع'],['المكافآت',formatMoney(item.bonuses)+' د.ع'],['دقائق التأخير',String(Number(item.lateMinutes)||0)],['خصم التأخير',formatMoney(item.lateDeduction)+' د.ع'],['خصم الغياب',formatMoney(item.absenceDeduction)+' د.ع'],['استقطاع السلفة',formatMoney(item.loanDeduction)+' د.ع'],['استقطاع الضمان',formatMoney(item.securityDeduction)+' د.ع'],['الخصومات الأخرى',formatMoney(item.otherDeductions)+' د.ع'],['مجموع الاستقطاعات',formatMoney(item.totalDeductions)+' د.ع'],['صافي الراتب',formatMoney(item.netSalary)+' د.ع'],['حالة الدفع',payoutStatusLabels[item.payoutStatus]||payoutStatusLabels.unpaid],['طريقة الصرف',method],['اسم المصرف',item.payoutBankName||'—'],['صاحب الحساب',item.payoutAccountName||'—'],['مرجع البطاقة/الحساب',item.payoutReference||'—'],['آخر 4 أرقام',item.payoutLast4||'—'],['تاريخ السجل',printDate(item.createdAt)]];
     return `<article class="print-card"><header><div><small>بطاقة راتب</small><h2>${escapeHtml(item.employeeName||'موظف')}</h2></div><strong>${formatMoney(item.netSalary)} د.ع</strong></header><div class="print-details">${details.map(([label,value])=>`<div><span>${label}</span><b>${escapeHtml(value)}</b></div>`).join('')}</div></article>`;
 }
 
