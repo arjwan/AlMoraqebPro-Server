@@ -5,11 +5,12 @@ const vm = require('node:vm');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../server.js'), 'utf8');
 const helpers = source.slice(source.indexOf('function payrollDayKey('), source.indexOf("app.post('/api/admin/payroll/friday-approval'"));
 const routes = source.slice(source.indexOf("app.post('/api/admin/payroll/friday-approval'"), source.lastIndexOf('/*', source.indexOf('  LOAN RECORDS API (جديد)')));
-let employees, attendance, leaves, salaries;
+let employees, attendance, leaves, salaries, fridayIsWorkday = false;
 const query = values => ({ lean: async () => values });
 class Salary {
     constructor(data) { Object.assign(this, data); }
     set(data) { Object.assign(this, data); }
+    toObject() { return { ...this }; }
     async save() { if (!salaries.includes(this)) salaries.push(this); }
     static find() { return salaries; }
 }
@@ -17,7 +18,7 @@ const handlers = {};
 const context = vm.createContext({
     Intl, Date, Map, Set, Number, String, Math, Boolean,
     Employee: { find: () => query(employees) },
-    Shift: { find: () => query([{ employeeIds: ['one', 'two'], name: 'Day', attendanceEnd: '08:00', departureStart: '16:00' }]) },
+    Shift: { find: () => query([{ employeeIds: ['one', 'two'], fridayIsWorkday, name: 'Day', attendanceEnd: '08:00', departureStart: '16:00' }]) },
     Attendance: { find: () => query(attendance) },
     ServiceRequest: { find: () => query(leaves) },
     DailyWorkerRecord: { find: () => query([]) }, LoanRecord: { find: () => query([]) },
@@ -31,6 +32,7 @@ vm.runInContext(helpers + routes + '\nthis.recalculate = recalculateCompanyPayro
 function reset() {
     employees = ['one','two'].map(_id => ({ _id, companyId: 'company', name: _id, salary: 260, wageType: 'monthly', workplace: 'Branch' }));
     attendance = []; leaves = []; salaries = [];
+    fridayIsWorkday = false;
 }
 function punch(id, day, type, extra = {}) {
     attendance.push({ employeeId: id, timestamp: day+'T09:00:00+03:00', type, ...extra });
@@ -86,6 +88,29 @@ async function calculate(from = '2026-10-01', to = '2026-10-05') {
     assert.ok(Math.abs(salaries[0].netSalary - 1025000 / 26 * 3) < 0.001);
     await calculate('2026-10-01','2026-10-30'); assert.ok(Math.abs(salaries[0].netSalary - 118269.23076923077) < 0.001);
     console.log('PASS: screenshot regression: 1,025,000 monthly / 26 working days x 3 = 118,269.23');
+    const deductions = { allowances: 15, loanDeduction: 20, securityDeduction: 5, otherDeductions: 2, lateDeduction: 3 };
+    const beforeSettlement = context.payrollDeductionTotals(deductions,'2026-10-05',new Date('2026-10-05T12:00:00+03:00'));
+    assert.equal(beforeSettlement.appliedAllowances,0); assert.equal(beforeSettlement.totalDeductions,5); assert.equal(beforeSettlement.appliedLoanDeduction,0); assert.equal(beforeSettlement.appliedSecurityDeduction,0);
+    const settled = context.payrollDeductionTotals(deductions,'2026-10-05',new Date('2026-10-31T12:00:00+03:00'));
+    assert.equal(settled.appliedAllowances,15); assert.equal(settled.totalDeductions,30); assert.equal(settled.appliedLoanDeduction,20); assert.equal(settled.appliedSecurityDeduction,5);
+    const repeated = context.payrollDeductionTotals(deductions,'2026-10-05',new Date('2026-11-01T12:00:00+03:00'));
+    assert.equal(repeated.totalDeductions,30);
+    const alreadyPaid = context.payrollDeductionTotals({ ...deductions, monthlyAdjustmentsPaidPeriod: '2026-10' }, '2026-10-05', new Date('2026-10-31T12:00:00+03:00'));
+    assert.equal(alreadyPaid.appliedAllowances,0); assert.equal(alreadyPaid.appliedLoanDeduction,0); assert.equal(alreadyPaid.appliedSecurityDeduction,0);
+    const nextMonth = context.payrollDeductionTotals({ ...deductions, monthlyAdjustmentsPaidPeriod: '2026-10' }, '2026-11-05', new Date('2026-11-30T12:00:00+03:00'));
+    assert.equal(nextMonth.appliedAllowances,15); assert.equal(nextMonth.appliedLoanDeduction,20);
+    assert.equal(context.payrollDeductionTotals(deductions,'2026-10-05',new Date('2026-10-30T21:00:00Z')).monthEndDeductionsApplied,true);
+    reset(); complete('one','2026-10-02'); await calculate(); assert.equal(salaries[0].attendanceCount,0);
+    fridayIsWorkday=true; await calculate(); assert.equal(salaries[0].attendanceCount,1);
+    await context.recalculate('company',new Date('2026-10-05T12:00:00+03:00')); assert.equal(salaries[0].attendanceCount,1);
+    fridayIsWorkday=false; await calculate(); assert.equal(salaries[0].attendanceCount,0);
+    // Payment snapshots contain deductions actually applied, rather than deferred settings.
+    vm.runInContext(source.slice(source.indexOf('function payrollBatchItemFromSalary('), source.indexOf('async function archiveAttendanceAfterPayroll(')),context);
+    const earlyPayment = context.payrollBatchItemFromSalary({ _id:'salary', employeeId:'one', loanDeduction:20, securityDeduction:5, ...beforeSettlement });
+    assert.equal(earlyPayment.allowances,0); assert.equal(earlyPayment.loanDeduction,0); assert.equal(earlyPayment.securityDeduction,0);
+    const monthEndPayment = context.payrollBatchItemFromSalary({ _id:'salary', employeeId:'one', loanDeduction:20, securityDeduction:5, ...settled });
+    assert.equal(monthEndPayment.allowances,15); assert.equal(monthEndPayment.loanDeduction,20); assert.equal(monthEndPayment.securityDeduction,5);
+    console.log('PASS: deferred monthly deductions, month-end settlement, Baghdad rollover, payment snapshot deductions, shift Friday approval/revocation');
     console.log('PASS: expanding/overlapping periods do not duplicate earnings; real previous unpaid balances survive manual/live recalculation');
     console.log('PASS: manual/live payroll, Friday default/approval/revocation, employee isolation, duplicate punches, incomplete/pending/rejected days, leave separation, hire date, Baghdad date');
 })().catch(error => { console.error(error); process.exitCode=1; });

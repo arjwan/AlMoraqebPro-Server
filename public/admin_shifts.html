@@ -157,6 +157,11 @@ td{padding:11px;border-bottom:1px solid #e2e8f0;text-align:center;font-size:13px
 </div>
 
 <div class="group full">
+<label><input id="fridayIsWorkday" type="checkbox"> اعتماد الجمعة يوم عمل لهذا الشفت</label>
+<small>الجمعة عطلة افتراضيًا. عند التأشير تُحتسب لمن أكمل حضورًا وانصرافًا صحيحين. يمكن اعتماد جمعة محددة لموظف أو مجموعة من بطاقات الرواتب.</small>
+</div>
+
+<div class="group full">
 <label>الموظفون في الشفت</label>
 <div id="employeeList" class="employee-list"></div>
 </div>
@@ -748,7 +753,7 @@ function render(){
         ? rows.map((s,i)=>`
             <tr>
                 <td>${i+1}</td>
-                <td><b>${escapeHtml(s.name || '')}</b></td>
+                <td><b>${escapeHtml(s.name || '')}</b><br><small>${s.fridayIsWorkday === true ? 'الجمعة يوم عمل معتمد' : 'الجمعة عطلة'}</small></td>
                 <td>${escapeHtml(s.locationName || s.branch || '—')}<br><small>${Number(s.radiusMeters || 200)} م</small></td>
                 <td>${(s.employeeIds || []).length}</td>
                 <td>${escapeHtml(s.attendanceStart || '—')}</td>
@@ -807,6 +812,7 @@ function editShift(id){
 
     document.getElementById('shiftName').value =
         s.name || 'صباحي';
+    document.getElementById('fridayIsWorkday').checked = s.fridayIsWorkday === true;
 
     document.getElementById('shiftLocation').value =
         s.locationId || '';
@@ -905,6 +911,7 @@ document
                 locationId,
 
                 employeeIds,
+                fridayIsWorkday: document.getElementById('fridayIsWorkday').checked,
 
                 attendanceStart:
                     document.getElementById('attendanceStart').value,

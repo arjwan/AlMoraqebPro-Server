@@ -1225,6 +1225,7 @@ const shiftSchema = new mongoose.Schema({
     radiusMeters: { type: Number, default: null },
 
     employeeIds: { type: [String], default: [] },
+    fridayIsWorkday: { type: Boolean, default: false },
     attendanceStart: { type: String, default: '' },
     attendanceEnd: { type: String, default: '' },
     lateFrom: { type: String, default: '' },
@@ -1361,6 +1362,12 @@ const salaryRecordSchema = new mongoose.Schema({
     netSalary: { type: Number, default: 0 },
     carriedBalance: { type: Number, default: 0 },
     currentPeriodEarnings: { type: Number, default: 0 },
+    appliedLoanDeduction: { type: Number, default: 0 },
+    appliedAllowances: { type: Number, default: 0 },
+    appliedSecurityDeduction: { type: Number, default: 0 },
+    monthEndDeductionsApplied: { type: Boolean, default: false },
+    monthlyAdjustmentsPaidPeriod: { type: String, default: '' },
+    payrollRulesVersion: { type: Number, default: 0 },
 
     attendanceDays: { type: Number, default: 0 },
     attendanceCount: { type: Number, default: 0 },
@@ -1551,6 +1558,8 @@ const payrollBatchSchema = new mongoose.Schema({
             type: String,
             default: ''
         },
+
+        monthlyAdjustmentsPeriod: { type: String, default: '' },
 
         basicSalary: {
             type: Number,
@@ -8000,6 +8009,7 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
             locationId,
             employeeIds,
             trackingMode,
+            fridayIsWorkday,
             attendanceStart,
             attendanceEnd,
             lateFrom,
@@ -8015,6 +8025,10 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
                 success: false,
                 message: 'اسم الشفت مطلوب'
             });
+        }
+
+        if (fridayIsWorkday !== undefined && typeof fridayIsWorkday !== 'boolean') {
+            return res.status(400).json({ success: false, message: 'اعتماد الجمعة يجب أن يكون اختيارًا صحيحًا' });
         }
 
         if (trackingMode !== undefined && !['fixed', 'mobile'].includes(trackingMode)) {
@@ -8127,6 +8141,7 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
         const existingShift = await Shift.findOne({
             companyId,
             name,
+            fridayIsWorkday: fridayIsWorkday === true ? true : { $ne: true },
             locationId: String(location._id),
             ...normalizedTimes,
             employeeIds: {
@@ -8168,6 +8183,7 @@ app.post('/api/admin/shifts', requireAdmin, async (req, res) => {
                 requestedEmployeeIds,
 
             trackingMode: trackingMode || 'fixed',
+            fridayIsWorkday: fridayIsWorkday === true,
 
             ...normalizedTimes
         }).save();
@@ -8208,6 +8224,7 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
             locationId,
             employeeIds,
             trackingMode,
+            fridayIsWorkday,
             attendanceStart,
             attendanceEnd,
             lateFrom,
@@ -8218,10 +8235,15 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
             overtimeEnd
         } = req.body;
 
+        if (fridayIsWorkday !== undefined && typeof fridayIsWorkday !== 'boolean') {
+            return res.status(400).json({ success: false, message: 'اعتماد الجمعة يجب أن يكون اختيارًا صحيحًا' });
+        }
+
         if (trackingMode !== undefined && !['fixed', 'mobile'].includes(trackingMode)) {
             return res.status(400).json({ success: false, message: 'نوع تتبع الشفت غير صحيح' });
         }
         if (trackingMode !== undefined) shift.trackingMode = trackingMode;
+        if (fridayIsWorkday !== undefined) shift.fridayIsWorkday = fridayIsWorkday;
 
         /*
          * عند تغيير الموقع نتحقق أنه:
@@ -8379,6 +8401,11 @@ app.put('/api/admin/shifts/:id', requireAdmin, async (req, res) => {
                 String(overtimeEnd || '');
 
         await shift.save();
+
+        if (fridayIsWorkday !== undefined) {
+            await SalaryRecord.updateMany({ companyId: req.session.companyId, employeeId: { $in: shift.employeeIds || [] } },
+                { $set: { workDaysCalculated: false } });
+        }
 
         return res.json({
             success: true,
@@ -9426,9 +9453,8 @@ app.put('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
                 { $set: { 'replacement.active': true, 'replacement.name': cleanReplacementName, 'replacement.from': replacementFromDate, 'replacement.to': replacementToDate, 'replacement.note': cleanReplacementNote } }
             );
         }
-        salary.totalDeductions = salary.loanDeduction + salary.securityDeduction + salary.otherDeductions +
-            Number(salary.absenceDeduction || 0) + Number(salary.lateDeduction || 0);
-        salary.currentPeriodEarnings = Math.max(0, Number(salary.grossSalary || 0) + Number(salary.allowances || 0) +
+        salary.set(payrollDeductionTotals(salary.toObject(), salary.payrollFrom || new Date()));
+        salary.currentPeriodEarnings = Math.max(0, Number(salary.grossSalary || 0) + Number(salary.appliedAllowances || 0) +
             Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - salary.totalDeductions);
         salary.netSalary = Number(salary.carriedBalance || 0) + salary.currentPeriodEarnings;
         await salary.save();
@@ -9451,9 +9477,9 @@ function payrollDayKey(value) {
     }).format(new Date(value));
 }
 
-function isApprovedWorkDay(employee, day) {
+function isApprovedWorkDay(employee, day, shift) {
     const friday = new Date(`${day}T12:00:00Z`).getUTCDay() === 5;
-    return !friday || (employee.fridayWorkDates || []).includes(day);
+    return !friday || shift?.fridayIsWorkday === true || (employee.fridayWorkDates || []).includes(day);
 }
 
 function baghdadPayrollBoundary(value, end = false) {
@@ -9519,6 +9545,18 @@ function payrollRateDivisor(wageType, reference) {
     return workDays;
 }
 
+function payrollDeductionTotals(salary, reference, now = new Date()) {
+    const [year, month] = payrollDayKey(reference || now).split('-').map(Number);
+    const monthEnd = `${year}-${String(month).padStart(2, '0')}-${new Date(Date.UTC(year, month, 0)).getUTCDate()}`;
+    const monthEndDeductionsApplied = payrollDayKey(now) >= monthEnd && salary.monthlyAdjustmentsPaidPeriod !== monthEnd.slice(0, 7);
+    const appliedLoanDeduction = monthEndDeductionsApplied ? Math.max(0, Number(salary.loanDeduction || 0)) : 0;
+    const appliedSecurityDeduction = monthEndDeductionsApplied ? Math.max(0, Number(salary.securityDeduction || 0)) : 0;
+    const appliedAllowances = monthEndDeductionsApplied ? Math.max(0, Number(salary.allowances || 0)) : 0;
+    return { monthEndDeductionsApplied, appliedLoanDeduction, appliedSecurityDeduction, appliedAllowances,
+        totalDeductions: appliedLoanDeduction + appliedSecurityDeduction + Number(salary.otherDeductions || 0) +
+            Number(salary.replacementDeduction || 0) + Number(salary.absenceDeduction || 0) + Number(salary.lateDeduction || 0) };
+}
+
 async function recalculateCompanyPayroll(companyId, reference = new Date()) {
     const period = payrollMonthPeriod(reference);
     const from = period.from;
@@ -9544,7 +9582,7 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         let lateMinutes = 0;
         attendance.filter(row => String(row.employeeId) === id).forEach(row => {
             const key = payrollDayKey(row.timestamp);
-            if (!isApprovedWorkDay(employee, key) || row.managerApprovalStatus === 'rejected') return;
+            if (!isApprovedWorkDay(employee, key, shift) || row.managerApprovalStatus === 'rejected') return;
             if (!days.has(key)) days.set(key, new Set());
             if (row.type === 'attendance') {
                 days.get(key).add(row.timeStatus === 'absent-late' ? 'absent' : 'in');
@@ -9560,7 +9598,7 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         });
         // Accrual mode: payroll grows only from completed workdays.
         // Never pre-charge the employee for earlier calendar days just because no punch exists.
-        const eligible = periodKeys.filter(k => (!employee.hireDate || k >= payrollDayKey(employee.hireDate)) && isApprovedWorkDay(employee, k));
+        const eligible = periodKeys.filter(k => (!employee.hireDate || k >= payrollDayKey(employee.hireDate)) && isApprovedWorkDay(employee, k, shift));
         for (const day of unpaid) { if (!eligible.includes(day)) unpaid.delete(day); }
         const eligibleSet = new Set(eligible);
         for (const day of validDays) {
@@ -9577,12 +9615,13 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         const grossSalary = dailyRate * validDays.size;
         let salary = salaryByEmployee.get(id) || new SalaryRecord({ companyId, employeeId: id });
         const carriedBalance = payrollCarriedBalance(salary, from, to);
-        const totalDeductions = Number(salary.loanDeduction || 0) + Number(salary.securityDeduction || 0) + Number(salary.otherDeductions || 0) + absenceDeduction + lateDeduction;
-        const earnings = Math.max(0, grossSalary + Number(salary.allowances || 0) + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
+        const deductionTotals = payrollDeductionTotals({ ...salary.toObject(), absenceDeduction, lateDeduction }, from);
+        const { totalDeductions } = deductionTotals;
+        const earnings = Math.max(0, grossSalary + deductionTotals.appliedAllowances + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
         salary.set({ employeeName: employee.name || '', employeeSerial: employee.employeeSerial || '', specialty: employee.specialty || '',
             workplace: employee.workplace || employee.branch || '', shiftName: shift.name || '', wageType, basicSalary, dailyRate,
-            payrollFrom: from, payrollTo: to, attendanceDays: validDays.size, attendanceCount: validDays.size, workDaysCalculated: true,
-            unpaidLeaveDays: unpaid.size, absenceDays, absenceDeduction, lateMinutes, lateDeduction, totalDeductions,
+            payrollFrom: from, payrollTo: to, attendanceDays: validDays.size, attendanceCount: validDays.size, workDaysCalculated: true, payrollRulesVersion: 3,
+            unpaidLeaveDays: unpaid.size, absenceDays, absenceDeduction, lateMinutes, lateDeduction, ...deductionTotals,
             grossSalary, carriedBalance, currentPeriodEarnings: earnings, netSalary: carriedBalance + earnings, calculatedAt: new Date(), calculationKey,
             lastAttendanceAt: attendance.filter(row => String(row.employeeId) === id).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0]?.timestamp || salary.lastAttendanceAt,
             payoutStatus: salary.pendingPayoutBatchId ? salary.payoutStatus : 'unpaid' });
@@ -9648,7 +9687,8 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const id = String(item.employeeId);
             const day = payrollDayKey(item.timestamp);
             const employee = employeeById.get(id);
-            if (!employee || !isApprovedWorkDay(employee, day) || item.managerApprovalStatus === 'rejected') return;
+            const shift = shifts.find(row => (row.employeeIds || []).map(String).includes(id));
+            if (!employee || !isApprovedWorkDay(employee, day, shift) || item.managerApprovalStatus === 'rejected') return;
             if (!attendanceByEmployee.has(id)) attendanceByEmployee.set(id, new Map());
             if (!attendanceByEmployee.get(id).has(day)) attendanceByEmployee.get(id).set(day, new Set());
             if (item.type === 'attendance') {
@@ -9728,7 +9768,7 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                 ).forEach(day => delegationDays.add(day));
             }
             const hireDateKey = employee.hireDate ? payrollDayKey(employee.hireDate) : '';
-            const eligiblePeriodKeys = periodKeys.filter(day => (!hireDateKey || day >= hireDateKey) && isApprovedWorkDay(employee, day));
+            const eligiblePeriodKeys = periodKeys.filter(day => (!hireDateKey || day >= hireDateKey) && isApprovedWorkDay(employee, day, shift));
             const eligibleDays = new Set(eligiblePeriodKeys);
             const eligibleUnpaidLeaveDays = new Set([...unpaidLeaveDays].filter(day => eligibleDays.has(day)));
             const payableDays = new Set([...attendanceDays, ...paidLeaveDays, ...delegationDays, ...replacementDays].filter(day => eligibleDays.has(day)));
@@ -9761,12 +9801,13 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const legacyInstallment = (employee.loans || []).reduce((sum, loan) => sum + Math.min(Number(loan.monthlyInstallment || 0), Number(loan.remainingAmount || 0)), 0);
             const automaticInstallment = Math.min(outstandingLoans, recordInstallment || legacyInstallment);
             const loanDeduction = automaticInstallment || Math.min(outstandingLoans, Number(salary.loanDeduction || 0));
-            const totalDeductions = loanDeduction + replacementDeduction + absenceDeduction + lateDeduction + Number(salary.securityDeduction || 0) + Number(salary.otherDeductions || 0);
-            const currentPeriodEarnings = Math.max(0, grossSalary + replacementAddition + Number(salary.allowances || 0) + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
+            const deductionTotals = payrollDeductionTotals({ ...salary.toObject(), loanDeduction, replacementDeduction, absenceDeduction, lateDeduction }, from);
+            const { totalDeductions } = deductionTotals;
+            const currentPeriodEarnings = Math.max(0, grossSalary + replacementAddition + deductionTotals.appliedAllowances + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
             salary.set({
                 employeeName: employee.name || '', employeeSerial: employee.employeeSerial || '', specialty: employee.specialty || '', workplace,
                 shiftName: shift.name || '', lateFrom: shift.lateFrom || '', lateTo: shift.lateTo || '', wageType, basicSalary, dailyRate, weeklyRate: wageType === 'weekly' ? basicSalary : 0,
-                payrollFrom: from, payrollTo: to, attendanceDays: payableDays.size, attendanceCount: actualWorkDays.size, workDaysCalculated: true,
+                payrollFrom: from, payrollTo: to, attendanceDays: payableDays.size, attendanceCount: actualWorkDays.size, workDaysCalculated: true, payrollRulesVersion: 3,
                 paidLeaveDays: paidLeaveDays.size, unpaidLeaveDays: eligibleUnpaidLeaveDays.size,
                 absenceDays, absenceDeduction, lateMinutes, lateDeduction, replacementDays: replacementDays.size,
                 replacementActive: Boolean(employee.replacement && employee.replacement.active),
@@ -9774,7 +9815,7 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                 replacementFrom: employee.replacement && employee.replacement.from || null,
                 replacementTo: employee.replacement && employee.replacement.to || null,
                 replacementNote: employee.replacement && employee.replacement.note || '',
-                loans: outstandingLoans, loanDeduction, replacementDeduction, totalDeductions,
+                loans: outstandingLoans, loanDeduction, replacementDeduction, ...deductionTotals,
                 grossSalary: grossSalary + replacementAddition, carriedBalance, currentPeriodEarnings,
                 netSalary: carriedBalance + currentPeriodEarnings, calculatedAt: new Date(), calculationKey,
                 payoutStatus: salary.pendingPayoutBatchId ? salary.payoutStatus : 'unpaid'
@@ -9903,6 +9944,7 @@ app.put(
 function payrollBatchItemFromSalary(salary) {
 
     return {
+        monthlyAdjustmentsPeriod: salary.monthEndDeductionsApplied && salary.payrollFrom ? payrollDayKey(salary.payrollFrom).slice(0, 7) : '',
         salaryRecordId:
             String(salary._id),
 
@@ -9943,7 +9985,7 @@ function payrollBatchItemFromSalary(salary) {
 
         allowances:
             Number(
-                salary.allowances || 0
+                salary.appliedAllowances ?? salary.allowances ?? 0
             ),
 
         loans:
@@ -9953,7 +9995,7 @@ function payrollBatchItemFromSalary(salary) {
 
         loanDeduction:
             Number(
-                salary.loanDeduction || 0
+                salary.appliedLoanDeduction ?? salary.loanDeduction ?? 0
             ),
 
         absenceDeduction: Number(salary.absenceDeduction || 0),
@@ -9962,7 +10004,7 @@ function payrollBatchItemFromSalary(salary) {
 
         securityDeduction:
             Number(
-                salary.securityDeduction || 0
+                salary.appliedSecurityDeduction ?? salary.securityDeduction ?? 0
             ),
 
         otherDeductions:
@@ -10537,6 +10579,7 @@ app.post(
                         update: {
                             $set: {
                                 payoutStatus: paidStatus,
+                                ...(item.monthlyAdjustmentsPeriod ? { monthlyAdjustmentsPaidPeriod: item.monthlyAdjustmentsPeriod } : {}),
                                 lastPayoutAt: paidAt,
                                 lastPaidAmount: Number(item.netSalary || 0),
                                 lastPaidPeriod: paymentPeriod,
@@ -10562,6 +10605,10 @@ app.post(
                                 netSalary: 0,
                                 carriedBalance: 0,
                                 currentPeriodEarnings: 0,
+                                appliedLoanDeduction: 0,
+                                appliedAllowances: 0,
+                                appliedSecurityDeduction: 0,
+                                monthEndDeductionsApplied: false,
                                 attendanceDays: 0,
                                 attendanceCount: 0,
                                 calculatedAt: null,
@@ -11903,6 +11950,10 @@ function minutesAfterClock(timestamp, clock) {
 }
 
 async function attendanceRequirementForEmployee(employee, at = new Date()) {
+    const assignedShifts = await Shift.find({ companyId: employee.companyId, employeeIds: String(employee._id) }).lean();
+    if (!isApprovedWorkDay(employee, payrollDayKey(at), assignedShifts.find(shift => shift.fridayIsWorkday === true))) {
+        return { requiresAttendance: false, code: 'FRIDAY_HOLIDAY', message: 'الجمعة عطلة؛ يلزم اعتماد المدير ليوم العمل' };
+    }
     const dayStart = new Date(at);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(at);
@@ -11992,6 +12043,7 @@ async function activeTrackingContext(employee, now = new Date()) {
     const shift = shifts.find(item => isWithinShiftWindow(now, item.attendanceStart, item.departureEnd));
     if (!shift) return null;
     const shiftStartedAt = trackingShiftStart(now, shift);
+    if (!isApprovedWorkDay(employee, payrollDayKey(shiftStartedAt), shift)) return null;
     const lastAttendance = await Attendance.findOne({ companyId: employee.companyId,
         employeeId: String(employee._id), timestamp: { $gte: shiftStartedAt, $lte: now } })
         .sort({ timestamp: -1 }).lean();
