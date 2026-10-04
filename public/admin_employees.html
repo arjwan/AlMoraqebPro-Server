@@ -72,7 +72,7 @@
             <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="empEmail" required></div>
             <div class="form-group"><label>الراتب الأساسي</label><input type="number" id="empSalary" required></div>
             <div class="form-group"><label>الاختصاص</label><input type="text" id="empSpecialty" required></div>
-            <div class="form-group"><label>البصمة واحتساب أيام العمل — بقرار المدير</label><select id="empAttendancePolicy"><option value="biometric">البصمة مطلوبة حسب الشفت</option><option value="exempt-all-days">معفي من البصمة — جميع الأيام عمل</option><option value="exempt-except-friday">معفي من البصمة — أيام العمل عدا الجمعة</option></select><small>يمكن إلغاء الإعفاء بإعادة اختيار البصمة مطلوبة. الأيام المعفاة تُحتسب تلقائيًا حتى اليوم.</small></div>
+            <div class="form-group"><label>البصمة واحتساب أيام العمل — بقرار المدير</label><select id="empAttendancePolicy" onchange="updateAttendanceFields()"><option value="biometric">البصمة مطلوبة حسب الشفت</option><option value="exempt-all-days">معفي من البصمة — جميع الأيام عمل</option><option value="exempt-except-friday">معفي من البصمة — أيام العمل عدا الجمعة</option></select><small>يمكن إلغاء الإعفاء بإعادة اختيار البصمة مطلوبة. الأيام المعفاة تُحتسب تلقائيًا حتى اليوم.</small></div>
             <div class="form-group"><label>الموقع/الفرع</label><select id="empLocation" required onchange="populateEmployeeReferences(this.value,'')"><option value="">اختر الموقع</option></select></div>
             <div class="form-group"><label>الشفت</label><select id="empShift" required><option value="">اختر الشفت</option></select></div>
             <div class="form-group"><label>اسم المستخدم</label><input type="text" id="empUsername" required></div>
@@ -118,6 +118,14 @@
     const API = location.origin;
     let token = '', companyId = '', employeesCache = [], shiftsCache = [], locationsCache = [], pendingEmployeeRequests = [];
 
+    function updateAttendanceFields() {
+        const policy = document.getElementById('empAttendancePolicy').value;
+        const exempt = policy === 'exempt-all-days' || policy === 'exempt-except-friday';
+        const shiftSelect = document.getElementById('empShift');
+        shiftSelect.required = !exempt;
+        if (shiftSelect.options[0]) shiftSelect.options[0].textContent = exempt ? 'بدون شفت — الموظف معفى من البصمة' : 'اختر الشفت';
+    }
+
     function assignedShift(employeeId){
         return shiftsCache.find(shift=>(shift.employeeIds||[]).map(String).includes(String(employeeId)));
     }
@@ -132,6 +140,7 @@
         locationSelect.value=selected?String(selected.id||selected._id):'';
         const matching=shiftsCache.filter(x=>!selected||String(x.locationId||'')===String(selected.id||selected._id));
         shiftSelect.innerHTML='<option value="">اختر الشفت</option>'+matching.map(x=>`<option value="${escapeHtml(String(x._id||x.id||x.name))}" data-name="${escapeHtml(x.name||'')}">${escapeHtml(x.name||'—')} — ${escapeHtml(x.locationName||x.branch||'بدون موقع')}</option>`).join('');
+        updateAttendanceFields();
         const byId=matching.find(x=>String(x._id||x.id)===String(shiftValue));
         const byName=matching.find(x=>String(x.name)===String(shiftValue));
         shiftSelect.value=String(byId?._id||byId?.id||byName?._id||byName?.id||'');
@@ -698,6 +707,7 @@
         document.getElementById('modalTitle').textContent = '➕ إضافة موظف جديد';
         document.getElementById('editId').value = '';
         document.getElementById('employeeForm').reset();
+        updateAttendanceFields();
         document.getElementById('empCompanyId').value = companyId;
         document.getElementById('empPassword').placeholder = 'أدخل كلمة المرور';
         document.getElementById('empStatus').value = 'active';
@@ -770,6 +780,7 @@
         document.getElementById('empSpecialty').value =
             e.specialty || '';
         document.getElementById('empAttendancePolicy').value = e.attendancePolicy || 'biometric';
+        updateAttendanceFields();
 
         const shift=assignedShift(id);
         populateEmployeeReferences(e.assignedLocationId||shift?.locationId||e.workplace||e.location||e.branch||'',shift?._id||e.shift||'');
