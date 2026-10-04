@@ -910,8 +910,12 @@ function renderSalaries() {
             </div>
             <div class="salary-summary">
                 <div class="salary-total"><small>أيام العمل الفعلية المعتمدة</small><strong>${Math.max(0, Number(salary.attendanceCount) || 0)} يوم</strong><small>${escapeHtml(dateInputValue(salary.payrollFrom) || '—')} إلى ${escapeHtml(dateInputValue(salary.payrollTo) || '—')}</small></div>
+                <div class="salary-total"><small>أجر اليوم</small><strong>${formatMoney(salary.dailyRate)} د.ع</strong><small>الأيام المستحقة مع الإجازة المدفوعة: ${Math.max(0, Number(salary.attendanceDays) || 0)}</small></div>
+                <div class="salary-total"><small>استحقاق الفترة قبل الخصومات</small><strong>${formatMoney(salary.grossSalary)} د.ع</strong></div>
+                <div class="salary-total"><small>صافي استحقاق الفترة</small><strong>${formatMoney(salary.currentPeriodEarnings)} د.ع</strong></div>
+                ${Number(salary.carriedBalance) > 0 ? `<div class="salary-total"><small>رصيد سابق غير مصروف</small><strong>${formatMoney(salary.carriedBalance)} د.ع</strong></div>` : ''}
                 <div class="salary-total"><small>مجموع الاستقطاعات</small><strong id="totalDed-${id}">${formatMoney(salary.totalDeductions)} د.ع</strong></div>
-                <div class="salary-total net"><small>صافي الراتب</small><strong id="net-${id}">${formatMoney(salary.netSalary)} د.ع</strong></div>
+                <div class="salary-total net"><small>${Number(salary.carriedBalance) > 0 ? 'إجمالي المستحق مع الرصيد السابق' : 'صافي الراتب'}</small><strong id="net-${id}">${formatMoney(salary.netSalary)} د.ع</strong></div>
             </div>
             ${salary.replacementActive ? `<div class="salary-payout"><strong>بيانات البديل</strong><div class="salary-fields"><div class="salary-field"><label>اسم البديل</label><input id="rname-${id}" value="${escapeHtml(salary.replacementName || '')}"></div><div class="salary-field"><label>من تاريخ</label><input type="date" id="rfrom-${id}" value="${dateInputValue(salary.replacementFrom)}"></div><div class="salary-field"><label>إلى تاريخ</label><input type="date" id="rto-${id}" value="${dateInputValue(salary.replacementTo)}"></div><div class="salary-field"><label>ملاحظات البديل</label><textarea id="rnote-${id}" rows="2">${escapeHtml(salary.replacementNote || '')}</textarea></div></div></div>` : ''}
             ${salary.lastPaidAt ? `<div class="salary-payout"><strong>✅ تم دفع راتب شهر ${escapeHtml(salary.lastPaidPeriod || '—')} بتاريخ ${escapeHtml(printDate(salary.lastPaidAt))}</strong><br><small>المبلغ المدفوع: ${formatMoney(salary.lastPaidAmount)} د.ع</small></div>` : ''}
@@ -1212,12 +1216,9 @@ async function saveSalary(id) {
         Number(salary.absenceDeduction || 0) +
         Number(salary.lateDeduction || 0);
 
-    const netSalary =
-        basicSalary +
-        allowances +
-        loans +
-        bonuses -
-        totalDeductions;
+    const netSalary = Number(salary.carriedBalance || 0) + Math.max(0,
+        Number(salary.grossSalary || 0) + allowances + bonuses +
+        Number(salary.overtimeAmount || 0) - totalDeductions);
 
     const payload = {
         socialSecurity,
@@ -2156,11 +2157,9 @@ async function deleteLoan(id) {
 // تهيئة
 (async function init() {
     try {
-        const now = new Date();
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const monthEnd = new Date(now.getFullYear(), now.getMonth(), Math.min(30, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()));
-        document.getElementById('payrollFrom').value = monthStart.toISOString().slice(0, 10);
-        document.getElementById('payrollTo').value = monthEnd.toISOString().slice(0, 10);
+        const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Baghdad', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+        document.getElementById('payrollFrom').value = today.slice(0, 7) + '-01';
+        document.getElementById('payrollTo').value = today;
         await loadPayrollLocations();
         await loadSalaries();
         await loadLoans();

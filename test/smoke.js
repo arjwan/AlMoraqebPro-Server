@@ -701,7 +701,7 @@ async function waitForServer(url, retries, delay) {
             check('replacement has no salary deduction', Number(eventSalary.replacementDeduction) === 0 && Number(eventSalary.netSalary) > 0);
             check('actual late minutes and proportional deduction appear in payroll', Number(eventSalary.lateMinutes) === 30 && Number(eventSalary.lateDeduction) > 0);
             check('loan balance and installment remain separate from earnings', Number(eventSalary.loans) === 100 &&
-                Number(eventSalary.loanDeduction) === 20 && Number(eventSalary.grossSalary) === Number(eventSalary.basicSalary) / 30 * Number(eventSalary.attendanceDays));
+                Number(eventSalary.loanDeduction) === 20 && Number(eventSalary.grossSalary) === Number(eventSalary.basicSalary) / 27 * Number(eventSalary.attendanceDays));
 
             const eventBatch = await (await fetch(BASE + '/api/admin/payroll-batches', {
                 method: 'POST',

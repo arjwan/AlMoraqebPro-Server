@@ -9428,6 +9428,9 @@ app.put('/api/admin/salaries/:id', requireAdmin, async (req, res) => {
         }
         salary.totalDeductions = salary.loanDeduction + salary.securityDeduction + salary.otherDeductions +
             Number(salary.absenceDeduction || 0) + Number(salary.lateDeduction || 0);
+        salary.currentPeriodEarnings = Math.max(0, Number(salary.grossSalary || 0) + Number(salary.allowances || 0) +
+            Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - salary.totalDeductions);
+        salary.netSalary = Number(salary.carriedBalance || 0) + salary.currentPeriodEarnings;
         await salary.save();
         res.json({ success: true, salary });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -9495,6 +9498,27 @@ function shiftWorkMinutes(shift, employee) {
     return Math.max(1, Number(employee && employee.workHours || 8) * 60);
 }
 
+function payrollCarriedBalance(salary, from, to) {
+    if (!salary || !salary.calculationKey) return 0;
+    const [previousFrom, previousTo] = String(salary.calculationKey).split(':');
+    const nextFrom = payrollDayKey(from), nextTo = payrollDayKey(to);
+    // A changing end date is an update to the current accrual, not a new debt.
+    const overlaps = previousFrom <= nextTo && previousTo >= nextFrom;
+    return Math.max(0, Number(overlaps ? salary.carriedBalance : salary.netSalary) || 0);
+}
+
+function payrollRateDivisor(wageType, reference) {
+    if (wageType === 'daily') return 1;
+    if (wageType === 'weekly') return 6;
+    const [year, month] = payrollDayKey(reference).split('-').map(Number);
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    let workDays = 0;
+    for (let day = 1; day <= lastDay; day++) {
+        if (new Date(Date.UTC(year, month - 1, day)).getUTCDay() !== 5) workDays++;
+    }
+    return workDays;
+}
+
 async function recalculateCompanyPayroll(companyId, reference = new Date()) {
     const period = payrollMonthPeriod(reference);
     const from = period.from;
@@ -9515,7 +9539,7 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         const basicSalary = Number(employee.salary || 0);
         if (!shift || !(basicSalary > 0)) continue;
         const wageType = ['daily','weekly','monthly'].includes(employee.wageType) ? employee.wageType : 'monthly';
-        const dailyRate = wageType === 'daily' ? basicSalary : basicSalary / (wageType === 'weekly' ? 7 : 30);
+        const dailyRate = basicSalary / payrollRateDivisor(wageType, from);
         const days = new Map();
         let lateMinutes = 0;
         attendance.filter(row => String(row.employeeId) === id).forEach(row => {
@@ -9552,13 +9576,14 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         // Monthly/weekly describe the rate source, not permission to credit unworked future days.
         const grossSalary = dailyRate * validDays.size;
         let salary = salaryByEmployee.get(id) || new SalaryRecord({ companyId, employeeId: id });
+        const carriedBalance = payrollCarriedBalance(salary, from, to);
         const totalDeductions = Number(salary.loanDeduction || 0) + Number(salary.securityDeduction || 0) + Number(salary.otherDeductions || 0) + absenceDeduction + lateDeduction;
         const earnings = Math.max(0, grossSalary + Number(salary.allowances || 0) + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
         salary.set({ employeeName: employee.name || '', employeeSerial: employee.employeeSerial || '', specialty: employee.specialty || '',
             workplace: employee.workplace || employee.branch || '', shiftName: shift.name || '', wageType, basicSalary, dailyRate,
             payrollFrom: from, payrollTo: to, attendanceDays: validDays.size, attendanceCount: validDays.size, workDaysCalculated: true,
             unpaidLeaveDays: unpaid.size, absenceDays, absenceDeduction, lateMinutes, lateDeduction, totalDeductions,
-            grossSalary, currentPeriodEarnings: earnings, netSalary: earnings, calculatedAt: new Date(), calculationKey,
+            grossSalary, carriedBalance, currentPeriodEarnings: earnings, netSalary: carriedBalance + earnings, calculatedAt: new Date(), calculationKey,
             lastAttendanceAt: attendance.filter(row => String(row.employeeId) === id).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0]?.timestamp || salary.lastAttendanceAt,
             payoutStatus: salary.pendingPayoutBatchId ? salary.payoutStatus : 'unpaid' });
         await salary.save();
@@ -9710,8 +9735,8 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             eligibleUnpaidLeaveDays.forEach(day => payableDays.delete(day));
             const actualWorkDays = new Set([...attendanceDays].filter(day => eligibleDays.has(day) && !eligibleUnpaidLeaveDays.has(day)));
             const wageType = ['daily', 'weekly', 'monthly'].includes(employee.wageType) ? employee.wageType : 'monthly';
-            const divisor = wageType === 'daily' ? 1 : wageType === 'weekly' ? 7 : 30;
-            const dailyRate = wageType === 'daily' ? basicSalary : basicSalary / divisor;
+            const divisor = payrollRateDivisor(wageType, from);
+            const dailyRate = basicSalary / divisor;
             const explicitAbsentDays = new Set(
                 [...(attendanceByEmployee.get(id) || new Map()).entries()]
                     .filter(([day, types]) => types.has('absent-late') &&
@@ -9728,9 +9753,7 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             if (!salary) salary = new SalaryRecord({ companyId, employeeId: id });
             // Recalculating the same live period replaces its provisional accrual.
             // A genuinely different prior payroll period remains unpaid balance and carries forward.
-            const carriedBalance = salary.calculationKey === calculationKey
-                ? Number(salary.carriedBalance || 0)
-                : (salary.calculationKey ? Number(salary.netSalary || 0) : 0);
+            const carriedBalance = payrollCarriedBalance(salary, from, to);
             const replacementAddition = 0;
             const replacementDeduction = 0;
             const outstandingLoans = Number(loansByEmployee.get(id) || 0);
