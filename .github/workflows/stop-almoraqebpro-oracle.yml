@@ -4,9 +4,13 @@ on:
     branches: [main]
     paths: ['.github/workflows/stop-almoraqebpro-oracle.yml']
   workflow_dispatch:
+concurrency:
+  group: oracle-production
+  cancel-in-progress: false
 jobs:
   stop:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Stop only AlMoraqebPro services
         env:
@@ -31,6 +35,14 @@ jobs:
           echo "Shenoo Menoo: $(systemctl is-active shno-mano-tech.service || true)"
           if systemctl is-active --quiet almoraqebpro.service; then
             echo "AlMoraqebPro is still running" >&2
+            exit 1
+          fi
+          if systemctl is-enabled --quiet almoraqebpro.service; then
+            echo "AlMoraqebPro is still enabled at boot" >&2
+            exit 1
+          fi
+          if systemctl is-active --quiet almoraqebpro-demo-refresh.timer; then
+            echo "AlMoraqebPro demo timer is still running" >&2
             exit 1
           fi
           free -m
