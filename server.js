@@ -632,6 +632,7 @@ const employeeSchema = new mongoose.Schema({
     },
 
     salary: Number,
+    attendancePolicy: { type: String, enum: ['biometric', 'exempt-all-days', 'exempt-except-friday'], default: 'biometric' },
 
     wageType: {
         type: String,
@@ -1367,7 +1368,9 @@ const salaryRecordSchema = new mongoose.Schema({
     appliedSecurityDeduction: { type: Number, default: 0 },
     monthEndDeductionsApplied: { type: Boolean, default: false },
     monthlyAdjustmentsPaidPeriod: { type: String, default: '' },
+    paidThroughDay: { type: String, default: '' },
     payrollRulesVersion: { type: Number, default: 0 },
+    attendancePolicy: { type: String, default: 'biometric' },
 
     attendanceDays: { type: Number, default: 0 },
     attendanceCount: { type: Number, default: 0 },
@@ -5902,12 +5905,20 @@ app.post(
 
         try {
 
+            if (req.body.attendancePolicy !== undefined && !['biometric', 'exempt-all-days', 'exempt-except-friday'].includes(req.body.attendancePolicy)) {
+                return res.status(400).json({ success: false, message: 'خيار البصمة غير صحيح' });
+            }
+
             const companyId =
                 String(
                     req.body.companyId ||
                     req.session.companyId ||
                     ''
                 ).trim();
+
+            if (companyId !== String(req.session.companyId || '').trim()) {
+                return res.status(403).json({ success: false, message: 'غير مسموح بإدارة موظفي شركة أخرى' });
+            }
 
             const name =
                 String(req.body.name || '').trim();
@@ -6018,6 +6029,7 @@ app.post(
                     ? Number(req.body.salary)
                     : undefined,
                 specialty: req.body.specialty || req.body.jobTitle || '',
+                attendancePolicy: req.body.attendancePolicy || 'biometric',
                 workplace: req.body.workplace || req.body.workLocation || '',
                 assignedLocationId: selectedSite ? String(selectedSite._id) : '',
                 username,
@@ -6244,6 +6256,12 @@ app.put(
                 ? Number(req.body.salary)
                 : employee.salary;
             employee.specialty = req.body.specialty ?? employee.specialty;
+            if (req.body.attendancePolicy !== undefined) {
+                if (!['biometric', 'exempt-all-days', 'exempt-except-friday'].includes(req.body.attendancePolicy)) {
+                    return res.status(400).json({ success: false, message: 'خيار البصمة غير صحيح' });
+                }
+                employee.attendancePolicy = req.body.attendancePolicy;
+            }
             employee.workplace = req.body.workplace ?? req.body.workLocation ?? employee.workplace;
             employee.location = req.body.location ?? employee.location;
             employee.phoneNumber = phoneNumber;
@@ -6293,7 +6311,7 @@ app.put(
             // تحديث سجل الراتب إذا وُجد
             await SalaryRecord.updateOne(
                 { companyId: employee.companyId, employeeId: String(employee._id) },
-                { $set: { employeeName: employee.name, specialty: employee.specialty || '', workplace: employee.workplace || '', shiftName: assignedShift?.name || req.body.shift || '', lateFrom: assignedShift?.lateFrom || '', lateTo: assignedShift?.lateTo || '', basicSalary: employee.salary || 0 } }
+                { $set: { employeeName: employee.name, specialty: employee.specialty || '', workplace: employee.workplace || '', shiftName: assignedShift?.name || req.body.shift || '', lateFrom: assignedShift?.lateFrom || '', lateTo: assignedShift?.lateTo || '', basicSalary: employee.salary || 0, workDaysCalculated: false } }
             );
 
             return res.json({
@@ -9479,6 +9497,8 @@ function payrollDayKey(value) {
 
 function isApprovedWorkDay(employee, day, shift) {
     const friday = new Date(`${day}T12:00:00Z`).getUTCDay() === 5;
+    if (employee.attendancePolicy === 'exempt-all-days') return true;
+    if (employee.attendancePolicy === 'exempt-except-friday') return !friday;
     return !friday || shift?.fridayIsWorkday === true || (employee.fridayWorkDates || []).includes(day);
 }
 
@@ -9533,16 +9553,29 @@ function payrollCarriedBalance(salary, from, to) {
     return Math.max(0, Number(overlaps ? salary.carriedBalance : salary.netSalary) || 0);
 }
 
-function payrollRateDivisor(wageType, reference) {
+function payrollRateDivisor(wageType, reference, employee = {}) {
     if (wageType === 'daily') return 1;
-    if (wageType === 'weekly') return 6;
+    if (wageType === 'weekly') return employee.attendancePolicy === 'exempt-all-days' ? 7 : 6;
     const [year, month] = payrollDayKey(reference).split('-').map(Number);
     const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    if (employee.attendancePolicy === 'exempt-all-days') return lastDay;
     let workDays = 0;
     for (let day = 1; day <= lastDay; day++) {
         if (new Date(Date.UTC(year, month - 1, day)).getUTCDay() !== 5) workDays++;
     }
     return workDays;
+}
+
+function isAttendanceExempt(employee) {
+    return ['exempt-all-days', 'exempt-except-friday'].includes(employee.attendancePolicy);
+}
+
+function exemptPayrollDays(employee, keys, shift, salary, now = new Date()) {
+    if (!isAttendanceExempt(employee)) return [];
+    const today = payrollDayKey(now);
+    const hireDay = employee.hireDate ? payrollDayKey(employee.hireDate) : '';
+    return keys.filter(day => day <= today && (!hireDay || day >= hireDay) &&
+        (!salary?.paidThroughDay || day > salary.paidThroughDay) && isApprovedWorkDay(employee, day, shift));
 }
 
 function payrollDeductionTotals(salary, reference, now = new Date()) {
@@ -9575,9 +9608,9 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         const id = String(employee._id);
         const shift = shifts.find(row => (row.employeeIds || []).map(String).includes(id));
         const basicSalary = Number(employee.salary || 0);
-        if (!shift || !(basicSalary > 0)) continue;
+        if ((!shift && !isAttendanceExempt(employee)) || !(basicSalary > 0)) continue;
         const wageType = ['daily','weekly','monthly'].includes(employee.wageType) ? employee.wageType : 'monthly';
-        const dailyRate = basicSalary / payrollRateDivisor(wageType, from);
+        const dailyRate = basicSalary / payrollRateDivisor(wageType, from, employee);
         const days = new Map();
         let lateMinutes = 0;
         attendance.filter(row => String(row.employeeId) === id).forEach(row => {
@@ -9592,13 +9625,19 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
             }
         });
         const validDays = new Set([...days].filter(([,v]) => v.has('in') && v.has('out') && !v.has('absent')).map(([k]) => k));
+        if (isAttendanceExempt(employee)) {
+            validDays.clear();
+            exemptPayrollDays(employee, periodKeys, shift, salaryByEmployee.get(id)).forEach(day => validDays.add(day));
+            lateMinutes = 0;
+        }
         const unpaid = new Set();
         leaves.filter(row => String(row.employeeId) === id && row.leavePaymentType === 'unpaid').forEach(row => {
             payrollDateKeys(new Date(Math.max(from, new Date(row.fromDate || row.requestedDate))), new Date(Math.min(to, new Date(row.toDate || row.fromDate || row.requestedDate)))).forEach(k => unpaid.add(k));
         });
         // Accrual mode: payroll grows only from completed workdays.
         // Never pre-charge the employee for earlier calendar days just because no punch exists.
-        const eligible = periodKeys.filter(k => (!employee.hireDate || k >= payrollDayKey(employee.hireDate)) && isApprovedWorkDay(employee, k, shift));
+        const eligible = isAttendanceExempt(employee) ? exemptPayrollDays(employee, periodKeys, shift, salaryByEmployee.get(id)) :
+            periodKeys.filter(k => (!employee.hireDate || k >= payrollDayKey(employee.hireDate)) && isApprovedWorkDay(employee, k, shift));
         for (const day of unpaid) { if (!eligible.includes(day)) unpaid.delete(day); }
         const eligibleSet = new Set(eligible);
         for (const day of validDays) {
@@ -9607,7 +9646,7 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         const explicitAbsentDays = new Set(
             [...days].filter(([,v]) => v.has('absent')).map(([k]) => k)
         );
-        const absenceDays = explicitAbsentDays.size;
+        const absenceDays = isAttendanceExempt(employee) ? 0 : explicitAbsentDays.size;
         const absenceDeduction = wageType === 'daily' ? 0 : dailyRate * (absenceDays + unpaid.size);
         const lateDeduction = wageType === 'daily' ? 0 : (dailyRate / shiftWorkMinutes(shift, employee)) * lateMinutes;
         // For the live/current period, earned payroll is attendance-based for every wage type.
@@ -9619,8 +9658,8 @@ async function recalculateCompanyPayroll(companyId, reference = new Date()) {
         const { totalDeductions } = deductionTotals;
         const earnings = Math.max(0, grossSalary + deductionTotals.appliedAllowances + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
         salary.set({ employeeName: employee.name || '', employeeSerial: employee.employeeSerial || '', specialty: employee.specialty || '',
-            workplace: employee.workplace || employee.branch || '', shiftName: shift.name || '', wageType, basicSalary, dailyRate,
-            payrollFrom: from, payrollTo: to, attendanceDays: validDays.size, attendanceCount: validDays.size, workDaysCalculated: true, payrollRulesVersion: 3,
+            workplace: employee.workplace || employee.branch || '', shiftName: shift?.name || '', wageType, basicSalary, dailyRate,
+            payrollFrom: from, payrollTo: to, attendanceDays: validDays.size, attendanceCount: validDays.size, workDaysCalculated: true, payrollRulesVersion: 4, attendancePolicy: employee.attendancePolicy || 'biometric',
             unpaidLeaveDays: unpaid.size, absenceDays, absenceDeduction, lateMinutes, lateDeduction, ...deductionTotals,
             grossSalary, carriedBalance, currentPeriodEarnings: earnings, netSalary: carriedBalance + earnings, calculatedAt: new Date(), calculationKey,
             lastAttendanceAt: attendance.filter(row => String(row.employeeId) === id).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0]?.timestamp || salary.lastAttendanceAt,
@@ -9749,13 +9788,17 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const shift = shifts.find(item => (item.employeeIds || []).map(String).includes(id));
             const reasons = [];
             if (!(basicSalary > 0)) reasons.push('الراتب أو الأجر صفر');
-            if (!workplace) reasons.push('موقع العمل غير محدد');
-            if (!shift) reasons.push('الشفت غير محدد');
+            if (!workplace && !isAttendanceExempt(employee)) reasons.push('موقع العمل غير محدد');
+            if (!shift && !isAttendanceExempt(employee)) reasons.push('الشفت غير محدد');
             if (reasons.length) {
                 invalid.push({ employeeId: id, employeeName: employee.name, reasons });
                 continue;
             }
             const attendanceDays = validAttendanceDays(id);
+            if (isAttendanceExempt(employee)) {
+                attendanceDays.clear();
+                exemptPayrollDays(employee, periodKeys, shift, salaryByEmployee.get(id)).forEach(day => attendanceDays.add(day));
+            }
             const paidLeaveDays = leaveDays(id, 'paid');
             const unpaidLeaveDays = leaveDays(id, 'unpaid');
             const replacementDays = replacementDaysByEmployee.get(id) || new Set();
@@ -9768,14 +9811,15 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                 ).forEach(day => delegationDays.add(day));
             }
             const hireDateKey = employee.hireDate ? payrollDayKey(employee.hireDate) : '';
-            const eligiblePeriodKeys = periodKeys.filter(day => (!hireDateKey || day >= hireDateKey) && isApprovedWorkDay(employee, day, shift));
+            const eligiblePeriodKeys = isAttendanceExempt(employee) ? exemptPayrollDays(employee, periodKeys, shift, salaryByEmployee.get(id)) :
+                periodKeys.filter(day => (!hireDateKey || day >= hireDateKey) && isApprovedWorkDay(employee, day, shift));
             const eligibleDays = new Set(eligiblePeriodKeys);
             const eligibleUnpaidLeaveDays = new Set([...unpaidLeaveDays].filter(day => eligibleDays.has(day)));
             const payableDays = new Set([...attendanceDays, ...paidLeaveDays, ...delegationDays, ...replacementDays].filter(day => eligibleDays.has(day)));
             eligibleUnpaidLeaveDays.forEach(day => payableDays.delete(day));
             const actualWorkDays = new Set([...attendanceDays].filter(day => eligibleDays.has(day) && !eligibleUnpaidLeaveDays.has(day)));
             const wageType = ['daily', 'weekly', 'monthly'].includes(employee.wageType) ? employee.wageType : 'monthly';
-            const divisor = payrollRateDivisor(wageType, from);
+            const divisor = payrollRateDivisor(wageType, from, employee);
             const dailyRate = basicSalary / divisor;
             const explicitAbsentDays = new Set(
                 [...(attendanceByEmployee.get(id) || new Map()).entries()]
@@ -9784,9 +9828,9 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
                         !delegationDays.has(day))
                     .map(([day]) => day)
             );
-            const absenceDays = explicitAbsentDays.size;
+            const absenceDays = isAttendanceExempt(employee) ? 0 : explicitAbsentDays.size;
             const absenceDeduction = wageType === 'daily' ? 0 : dailyRate * (absenceDays + eligibleUnpaidLeaveDays.size);
-            const lateMinutes = Number(lateMinutesByEmployee.get(id) || 0);
+            const lateMinutes = isAttendanceExempt(employee) ? 0 : Number(lateMinutesByEmployee.get(id) || 0);
             const lateDeduction = wageType === 'daily' ? 0 : (dailyRate / shiftWorkMinutes(shift, employee)) * lateMinutes;
             const grossSalary = dailyRate * payableDays.size;
             let salary = salaryByEmployee.get(id);
@@ -9806,8 +9850,8 @@ app.post('/api/admin/payroll/calculate', requireAdmin, async (req, res) => {
             const currentPeriodEarnings = Math.max(0, grossSalary + replacementAddition + deductionTotals.appliedAllowances + Number(salary.bonuses || 0) + Number(salary.overtimeAmount || 0) - totalDeductions);
             salary.set({
                 employeeName: employee.name || '', employeeSerial: employee.employeeSerial || '', specialty: employee.specialty || '', workplace,
-                shiftName: shift.name || '', lateFrom: shift.lateFrom || '', lateTo: shift.lateTo || '', wageType, basicSalary, dailyRate, weeklyRate: wageType === 'weekly' ? basicSalary : 0,
-                payrollFrom: from, payrollTo: to, attendanceDays: payableDays.size, attendanceCount: actualWorkDays.size, workDaysCalculated: true, payrollRulesVersion: 3,
+                shiftName: shift?.name || '', lateFrom: shift?.lateFrom || '', lateTo: shift?.lateTo || '', wageType, basicSalary, dailyRate, weeklyRate: wageType === 'weekly' ? basicSalary : 0,
+                payrollFrom: from, payrollTo: to, attendanceDays: payableDays.size, attendanceCount: actualWorkDays.size, workDaysCalculated: true, payrollRulesVersion: 4, attendancePolicy: employee.attendancePolicy || 'biometric',
                 paidLeaveDays: paidLeaveDays.size, unpaidLeaveDays: eligibleUnpaidLeaveDays.size,
                 absenceDays, absenceDeduction, lateMinutes, lateDeduction, replacementDays: replacementDays.size,
                 replacementActive: Boolean(employee.replacement && employee.replacement.active),
@@ -10579,6 +10623,7 @@ app.post(
                         update: {
                             $set: {
                                 payoutStatus: paidStatus,
+                                ...(batch.payrollTo ? { paidThroughDay: [payrollDayKey(batch.payrollTo), payrollDayKey(paidAt)].sort()[0] } : {}),
                                 ...(item.monthlyAdjustmentsPeriod ? { monthlyAdjustmentsPaidPeriod: item.monthlyAdjustmentsPeriod } : {}),
                                 lastPayoutAt: paidAt,
                                 lastPaidAmount: Number(item.netSalary || 0),
@@ -11950,6 +11995,10 @@ function minutesAfterClock(timestamp, clock) {
 }
 
 async function attendanceRequirementForEmployee(employee, at = new Date()) {
+    if (isAttendanceExempt(employee)) {
+        return { requiresAttendance: false, code: 'ATTENDANCE_EXEMPT', attendancePolicy: employee.attendancePolicy,
+            message: employee.attendancePolicy === 'exempt-all-days' ? 'معفي من البصمة؛ جميع الأيام أيام عمل' : 'معفي من البصمة؛ أيام العمل عدا الجمعة' };
+    }
     const assignedShifts = await Shift.find({ companyId: employee.companyId, employeeIds: String(employee._id) }).lean();
     if (!isApprovedWorkDay(employee, payrollDayKey(at), assignedShifts.find(shift => shift.fridayIsWorkday === true))) {
         return { requiresAttendance: false, code: 'FRIDAY_HOLIDAY', message: 'الجمعة عطلة؛ يلزم اعتماد المدير ليوم العمل' };
@@ -12039,6 +12088,7 @@ function trackingShiftStart(now, shift) {
 }
 
 async function activeTrackingContext(employee, now = new Date()) {
+    if (isAttendanceExempt(employee)) return null;
     const shifts = await Shift.find({ companyId: employee.companyId, employeeIds: String(employee._id) }).lean();
     const shift = shifts.find(item => isWithinShiftWindow(now, item.attendanceStart, item.departureEnd));
     if (!shift) return null;

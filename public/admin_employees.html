@@ -72,6 +72,7 @@
             <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="empEmail" required></div>
             <div class="form-group"><label>الراتب الأساسي</label><input type="number" id="empSalary" required></div>
             <div class="form-group"><label>الاختصاص</label><input type="text" id="empSpecialty" required></div>
+            <div class="form-group"><label>البصمة واحتساب أيام العمل — بقرار المدير</label><select id="empAttendancePolicy"><option value="biometric">البصمة مطلوبة حسب الشفت</option><option value="exempt-all-days">معفي من البصمة — جميع الأيام عمل</option><option value="exempt-except-friday">معفي من البصمة — أيام العمل عدا الجمعة</option></select><small>يمكن إلغاء الإعفاء بإعادة اختيار البصمة مطلوبة. الأيام المعفاة تُحتسب تلقائيًا حتى اليوم.</small></div>
             <div class="form-group"><label>الموقع/الفرع</label><select id="empLocation" required onchange="populateEmployeeReferences(this.value,'')"><option value="">اختر الموقع</option></select></div>
             <div class="form-group"><label>الشفت</label><select id="empShift" required><option value="">اختر الشفت</option></select></div>
             <div class="form-group"><label>اسم المستخدم</label><input type="text" id="empUsername" required></div>
@@ -415,7 +416,7 @@
                     <tr data-status="${e.status || 'active'}">
                         <td>${i+1}</td>
                         <td class="employee-card-cell"><button class="employee-name-button" onclick="openEmployeeOperation('${e._id || e.id || e._offlineKey}')">${escapeHtml(e.name || '—')}</button><small>رمز الشركة: ${escapeHtml(e.companyId||companyId||'—')}</small><small>${escapeHtml(e.email||'بدون بريد')}</small></td>
-                        <td class="employee-data">${escapeHtml(e.specialty || '—')}</td>
+                        <td class="employee-data">${escapeHtml(e.specialty || '—')}<br><small>${e.attendancePolicy === 'exempt-all-days' ? 'معفي من البصمة — جميع الأيام' : e.attendancePolicy === 'exempt-except-friday' ? 'معفي من البصمة — عدا الجمعة' : 'البصمة مطلوبة'}</small></td>
                         <td class="employee-data">${escapeHtml(e.workplace||e.location||e.branch||assignedShift(e._id||e.id)?.locationName||assignedShift(e._id||e.id)?.branch||'—')}</td>
                         <td class="employee-data">${escapeHtml(assignedShift(e._id||e.id)?.name||e.shift||'—')}</td>
                         <td class="employee-data">${escapeHtml(e.phoneNumber || '—')}</td>
@@ -768,6 +769,7 @@
 
         document.getElementById('empSpecialty').value =
             e.specialty || '';
+        document.getElementById('empAttendancePolicy').value = e.attendancePolicy || 'biometric';
 
         const shift=assignedShift(id);
         populateEmployeeReferences(e.assignedLocationId||shift?.locationId||e.workplace||e.location||e.branch||'',shift?._id||e.shift||'');
@@ -891,6 +893,7 @@
 
             specialty:
                 document.getElementById('empSpecialty').value.trim(),
+            attendancePolicy: document.getElementById('empAttendancePolicy').value,
 
             shiftId:
                 document.getElementById('empShift').value,

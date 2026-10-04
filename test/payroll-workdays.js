@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../server.js'), 'utf8');
 const helpers = source.slice(source.indexOf('function payrollDayKey('), source.indexOf("app.post('/api/admin/payroll/friday-approval'"));
 const routes = source.slice(source.indexOf("app.post('/api/admin/payroll/friday-approval'"), source.lastIndexOf('/*', source.indexOf('  LOAN RECORDS API (جديد)')));
-let employees, attendance, leaves, salaries, fridayIsWorkday = false;
+let employees, attendance, leaves, salaries, fridayIsWorkday = false, noShift = false;
 const query = values => ({ lean: async () => values });
 class Salary {
     constructor(data) { Object.assign(this, data); }
@@ -18,12 +18,12 @@ const handlers = {};
 const context = vm.createContext({
     Intl, Date, Map, Set, Number, String, Math, Boolean,
     Employee: { find: () => query(employees) },
-    Shift: { find: () => query([{ employeeIds: ['one', 'two'], fridayIsWorkday, name: 'Day', attendanceEnd: '08:00', departureStart: '16:00' }]) },
+    Shift: { find: () => query(noShift ? [] : [{ employeeIds: ['one', 'two'], fridayIsWorkday, name: 'Day', attendanceEnd: '08:00', departureStart: '16:00' }]) },
     Attendance: { find: () => query(attendance) },
     ServiceRequest: { find: () => query(leaves) },
     DailyWorkerRecord: { find: () => query([]) }, LoanRecord: { find: () => query([]) },
     SalaryRecord: Salary,
-    shiftTimeInMinutes: time => { const [h,m] = time.split(':').map(Number); return h*60+m; },
+    shiftTimeInMinutes: time => { if (!time) return null; const [h,m] = time.split(':').map(Number); return h*60+m; },
     loanRemainingAmount: () => 0,
     requireAdmin: () => {},
     app: { post: (path, middleware, handler) => { handlers[path] = handler; } }
@@ -33,6 +33,7 @@ function reset() {
     employees = ['one','two'].map(_id => ({ _id, companyId: 'company', name: _id, salary: 260, wageType: 'monthly', workplace: 'Branch' }));
     attendance = []; leaves = []; salaries = [];
     fridayIsWorkday = false;
+    noShift = false;
 }
 function punch(id, day, type, extra = {}) {
     attendance.push({ employeeId: id, timestamp: day+'T09:00:00+03:00', type, ...extra });
@@ -111,6 +112,27 @@ async function calculate(from = '2026-10-01', to = '2026-10-05') {
     const monthEndPayment = context.payrollBatchItemFromSalary({ _id:'salary', employeeId:'one', loanDeduction:20, securityDeduction:5, ...settled });
     assert.equal(monthEndPayment.allowances,15); assert.equal(monthEndPayment.loanDeduction,20); assert.equal(monthEndPayment.securityDeduction,5);
     console.log('PASS: deferred monthly deductions, month-end settlement, Baghdad rollover, payment snapshot deductions, shift Friday approval/revocation');
+    reset(); employees[0].attendancePolicy='exempt-all-days'; employees[0].salary=310;
+    employees[1].attendancePolicy='exempt-except-friday'; noShift=true;
+    await calculate('2026-10-01','2026-10-03');
+    assert.equal(salaries[0].attendanceCount,3); assert.equal(salaries[0].grossSalary,30);
+    assert.equal(salaries[1].attendanceCount,2); assert.equal(salaries[1].grossSalary,20);
+    await calculate('2026-10-01','2026-10-03'); assert.equal(salaries[0].grossSalary,30);
+    await context.recalculate('company',new Date('2026-10-03T12:00:00+03:00'));
+    assert.equal(salaries[0].attendanceCount,3); assert.equal(salaries[1].attendanceCount,2);
+    const octoberKeys = Array.from({length:31},(_,i)=>'2026-10-'+String(i+1).padStart(2,'0'));
+    const asOf = new Date('2026-10-05T12:00:00+03:00');
+    assert.equal(context.exemptPayrollDays(employees[0],octoberKeys,null,null,asOf).length,5);
+    assert.equal(context.exemptPayrollDays(employees[1],octoberKeys,{fridayIsWorkday:true},null,asOf).length,4);
+    assert.equal(context.exemptPayrollDays(employees[0],octoberKeys,null,{paidThroughDay:'2026-10-03'},asOf).length,2);
+    assert.equal(context.exemptPayrollDays({...employees[0],hireDate:'2026-10-04'},octoberKeys,null,null,asOf).length,2);
+    assert.equal(context.exemptPayrollDays({attendancePolicy:'biometric'},octoberKeys,null,null,asOf).length,0);
+    employees[0].attendancePolicy='biometric'; noShift=false;
+    await calculate('2026-10-01','2026-10-03'); assert.equal(salaries[0].attendanceCount,0);
+    vm.runInContext(source.slice(source.indexOf('async function attendanceRequirementForEmployee('),source.indexOf("app.get('/api/employee/attendance-requirement'")),context);
+    const requirement = await context.attendanceRequirementForEmployee({attendancePolicy:'exempt-all-days'});
+    assert.equal(requirement.requiresAttendance,false); assert.equal(requirement.code,'ATTENDANCE_EXEMPT');
+    console.log('PASS: optional manager-controlled exemptions, calendar payroll without punches/shifts, Friday exclusions, hire date, future-day cap, paid-day exclusion, revocation, biometric requirement');
     console.log('PASS: expanding/overlapping periods do not duplicate earnings; real previous unpaid balances survive manual/live recalculation');
     console.log('PASS: manual/live payroll, Friday default/approval/revocation, employee isolation, duplicate punches, incomplete/pending/rejected days, leave separation, hire date, Baghdad date');
 })().catch(error => { console.error(error); process.exitCode=1; });
