@@ -238,6 +238,15 @@
         .salary-select-all input,.salary-card-select { width:18px; height:18px; accent-color:#0284c7; }
         .salary-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:14px; }
         .salary-card { background:rgba(15,23,42,.72); border:1px solid rgba(56,189,248,.25); border-radius:16px; padding:15px; box-shadow:0 8px 24px rgba(0,0,0,.16); }
+        .salary-card { min-width:0; }
+        .salary-card.is-collapsed .salary-card-details { display:none; }
+        .salary-card.is-collapsed .salary-card-head { border-bottom:0; padding-bottom:0; }
+        .salary-card-toggle { cursor:pointer; flex:1; min-width:0; border:0; background:none; color:inherit; text-align:right; font:inherit; padding:0; }
+        .salary-card-toggle:focus-visible { outline:2px solid #38bdf8; border-radius:6px; }
+        .salary-card-chevron { display:inline-block; margin-inline-start:8px; transition:transform .15s; }
+        .salary-card:not(.is-collapsed) .salary-card-chevron { transform:rotate(180deg); }
+        .salary-fold-tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:8px 0 14px; }
+        .salary-fold-tools select { padding:9px; border-radius:9px; background:#0f172a; color:white; border:1px solid #64748b; max-width:230px; }
         .salary-card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding-bottom:11px; border-bottom:1px solid rgba(255,255,255,.1); }
         .salary-card-head h4 { font-size:1.05rem; color:#f8fafc; margin-bottom:4px; }
         .salary-card-head p { color:#94a3b8; font-size:.82rem; line-height:1.5; }
@@ -440,6 +449,15 @@
                     <button class="btn btn-outline" onclick="printSalarySummary()">🖨 كشف رواتب مختصر</button>
                     <button class="btn" onclick="printSelectedSalaryCards()">🖨 طباعة البطاقات المحددة</button>
                 </div>
+            </div>
+            <div class="salary-fold-tools">
+                <button type="button" class="btn btn-outline" onclick="setSalaryCardsOpen(false)">طي الكل</button>
+                <button type="button" class="btn btn-outline" onclick="setSalaryCardsOpen(true)">فتح الكل</button>
+                <button type="button" class="btn btn-outline" onclick="setSelectedSalaryCardsOpen(true)">فتح المحدد</button>
+                <button type="button" class="btn btn-outline" onclick="setSelectedSalaryCardsOpen(false)">طي المحدد</button>
+                <select id="salaryFoldBranch" aria-label="اختيار الفرع"><option value="">اختر الفرع / الموقع</option></select>
+                <button type="button" class="btn btn-outline" onclick="setBranchSalaryCardsOpen(true)">فتح الفرع</button>
+                <button type="button" class="btn btn-outline" onclick="setBranchSalaryCardsOpen(false)">طي الفرع</button>
             </div>
             <div id="salaryCards" class="salary-cards"></div>
         </div>
@@ -878,6 +896,30 @@ function updatePayrollBranches() {
 }
 
 
+const salaryOpenCards = new Set();
+function setSalaryCardOpen(card, open) {
+    card.classList.toggle('is-collapsed', !open);
+    const button = card.querySelector('.salary-card-toggle');
+    if (button) button.setAttribute('aria-expanded', String(open));
+    const id = card.dataset.salaryId;
+    if (open) salaryOpenCards.add(id); else salaryOpenCards.delete(id);
+}
+function setSalaryCardsOpen(open) {
+    document.querySelectorAll('#salaryCards .salary-card').forEach(card => setSalaryCardOpen(card, open));
+}
+function setSelectedSalaryCardsOpen(open) {
+    document.querySelectorAll('#salaryCards .salary-card').forEach(card => {
+        if (card.querySelector('.salary-card-select:checked')) setSalaryCardOpen(card, open);
+    });
+}
+function setBranchSalaryCardsOpen(open) {
+    const branch = document.getElementById('salaryFoldBranch').value;
+    if (!branch) return toast('اختر الفرع أو الموقع أولاً', 'error');
+    document.querySelectorAll('#salaryCards .salary-card').forEach(card => {
+        if (card.dataset.salaryBranch === branch) setSalaryCardOpen(card, open);
+    });
+}
+
 function renderSalaries() {
     const container = document.getElementById('salaryCards');
     container.innerHTML = '';
@@ -886,6 +928,12 @@ function renderSalaries() {
         container.innerHTML = '<div class="salary-empty">لا توجد سجلات رواتب لعرضها</div>';
         return;
     }
+
+    const branchSelect = document.getElementById('salaryFoldBranch');
+    const oldBranch = branchSelect.value;
+    const branches = [...new Set(allSalaries.map(s => String(s.workplace || s.branch || 'بدون موقع')))].sort();
+    branchSelect.innerHTML = '<option value="">اختر الفرع / الموقع</option>' + branches.map(b => '<option value="' + escapeHtml(b) + '">' + escapeHtml(b) + '</option>').join('');
+    if (branches.includes(oldBranch)) branchSelect.value = oldBranch;
 
     allSalaries.forEach(salary => {
         const id = salary._id || salary.id || salary._offlineKey;
@@ -934,6 +982,22 @@ function renderSalaries() {
                 </div>
             </div>
             <div class="salary-card-actions"><button class="btn-sm btn-green" onclick="saveSalary('${id}')">حفظ الراتب</button><button class="btn-sm btn-sm-blue" onclick="savePayoutSettings('${id}')">حفظ الصرف</button>${canConfirmSalaryPayment(salary) ? `<button class="btn-sm btn-green" onclick="confirmSalaryPayment('${id}')">تأكيد الدفع</button>` : ''}<button class="btn-sm btn-sm-blue" onclick="printSingleSalaryCard('${id}')">طباعة البطاقة</button></div>`;
+        card.dataset.salaryId = String(id);
+        card.dataset.salaryBranch = String(salary.workplace || salary.branch || 'بدون موقع');
+        const header = card.querySelector('.salary-card-head');
+        const heading = header.querySelector('div');
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'salary-card-toggle';
+        toggle.setAttribute('aria-label', 'فتح أو طي تفاصيل راتب ' + (salary.employeeName || 'موظف'));
+        toggle.innerHTML = heading.innerHTML + '<span class="salary-card-chevron" aria-hidden="true">⌄</span>';
+        heading.replaceWith(toggle);
+        const details = document.createElement('div');
+        details.className = 'salary-card-details';
+        while (header.nextSibling) details.appendChild(header.nextSibling);
+        card.appendChild(details);
+        toggle.addEventListener('click', () => setSalaryCardOpen(card, card.classList.contains('is-collapsed')));
+        setSalaryCardOpen(card, salaryOpenCards.has(String(id)));
         container.appendChild(card);
         togglePayoutFields(id);
     });
