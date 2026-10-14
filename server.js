@@ -673,6 +673,8 @@ const employeeSchema = new mongoose.Schema({
     workplace: String,
 
     assignedLocationId: { type: String, default: '' },
+    allowedSiteIds: { type: [String], default: [] },
+    temporarySiteGrants: [{ siteId: String, from: Date, until: Date }],
 
     username: {
         type: String,
