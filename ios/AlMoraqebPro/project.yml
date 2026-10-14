@@ -1,0 +1,19 @@
+name: AlMoraqebPro
+options:
+  bundleIdPrefix: com.arjwan
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  AlMoraqebPro:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.arjwan.AlMoraqebPro
+        SWIFT_VERSION: 5.9
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "يستخدم موقعك للتحقق من موقع البصمة المعتمد"
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "تأكيد حضورك أو انصرافك باستخدام Face ID"
+        GENERATE_INFOPLIST_FILE: YES
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
