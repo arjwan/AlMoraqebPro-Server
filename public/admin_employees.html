@@ -74,6 +74,7 @@
             <div class="form-group"><label>الاختصاص</label><input type="text" id="empSpecialty" required></div>
             <div class="form-group"><label>البصمة واحتساب أيام العمل — بقرار المدير</label><select id="empAttendancePolicy" onchange="updateAttendanceFields()"><option value="biometric">البصمة مطلوبة حسب الشفت</option><option value="exempt-all-days">معفي من البصمة — جميع الأيام عمل</option><option value="exempt-except-friday">معفي من البصمة — أيام العمل عدا الجمعة</option></select><small>يمكن إلغاء الإعفاء بإعادة اختيار البصمة مطلوبة. الأيام المعفاة تُحتسب تلقائيًا حتى اليوم.</small></div>
             <div class="form-group"><label>الموقع/الفرع</label><select id="empLocation" required onchange="populateEmployeeReferences(this.value,'')"><option value="">اختر الموقع</option></select></div>
+            <div class="form-group full"><label>مواقع بصمة إضافية — للموظفين المتنقلين فقط</label><div id="empAllowedSites" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;padding:12px;border:1px solid #cbd5e1;border-radius:8px"></div><small>الموقع الأساسي أعلاه مسموح دائماً. لا تمنح مواقع إضافية إلا بقرار المدير.</small></div>
             <div class="form-group"><label>الشفت</label><select id="empShift" required><option value="">اختر الشفت</option></select></div>
             <div class="form-group"><label>اسم المستخدم</label><input type="text" id="empUsername" required></div>
             <div class="form-group"><label>كلمة المرور</label><input type="password" id="empPassword" placeholder="اتركه فارغاً للتعديل"></div>
@@ -144,6 +145,18 @@
         const byId=matching.find(x=>String(x._id||x.id)===String(shiftValue));
         const byName=matching.find(x=>String(x.name)===String(shiftValue));
         shiftSelect.value=String(byId?._id||byId?.id||byName?._id||byName?.id||'');
+        renderAllowedSites(Array.from(document.querySelectorAll(".allowed-site:checked")).map(x => x.value));
+    }
+
+    function renderAllowedSites(selectedIds=[]) {
+        const primary = document.getElementById('empLocation').value;
+        const selected = new Set((selectedIds || []).map(String));
+        const eligible = locationsCache.filter(x => x.active !== false && !x.demoData && Number.isFinite(Number(x.latitude)) && Number.isFinite(Number(x.longitude)));
+        document.getElementById('empAllowedSites').innerHTML = eligible.map(site => {
+            const id = String(site.id || site._id);
+            const disabled = id === primary;
+            return '<label style="display:flex;gap:7px;align-items:center"><input type="checkbox" class="allowed-site" value="' + escapeHtml(id) + '" ' + (selected.has(id) && !disabled ? 'checked ' : '') + (disabled ? 'disabled ' : '') + '> ' + escapeHtml(site.name || 'موقع') + (disabled ? ' (أساسي)' : '') + '</label>';
+        }).join('') || '<small>لا توجد مواقع معتمدة أخرى</small>';
     }
 
     async function loadEmployeeReferences(){
@@ -712,6 +725,7 @@
         document.getElementById('empPassword').placeholder = 'أدخل كلمة المرور';
         document.getElementById('empStatus').value = 'active';
         populateEmployeeReferences();
+        renderAllowedSites([]);
         document.getElementById('employeeModal').classList.add('show');
     }
 
@@ -784,6 +798,7 @@
 
         const shift=assignedShift(id);
         populateEmployeeReferences(e.assignedLocationId||shift?.locationId||e.workplace||e.location||e.branch||'',shift?._id||e.shift||'');
+        renderAllowedSites(e.allowedSiteIds || []);
 
         document.getElementById('empUsername').value =
             e.username || '';
@@ -914,6 +929,8 @@
 
             assignedLocationId:
                 document.getElementById('empLocation').value,
+
+            allowedSiteIds: Array.from(document.querySelectorAll('#empAllowedSites .allowed-site:checked')).map(input => input.value),
 
             location:
                 document.getElementById('empLocation').selectedOptions[0]?.textContent.split(' — ')[0] || '',
