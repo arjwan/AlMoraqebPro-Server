@@ -673,6 +673,8 @@ const employeeSchema = new mongoose.Schema({
     workplace: String,
 
     assignedLocationId: { type: String, default: '' },
+    allowedSiteIds: { type: [String], default: [] },
+    temporarySiteGrants: [{ siteId: String, from: Date, until: Date }],
 
     username: {
         type: String,
@@ -6017,6 +6019,11 @@ app.post(
                 return res.status(400).json({ success: false, message: 'موقع الموظف غير معتمد في الشركة' });
             }
 
+            const extraSites = Array.isArray(req.body.allowedSiteIds) ? [...new Set(req.body.allowedSiteIds.map(String))] : [];
+            if (extraSites.some(id => !companyLocationById(companyRecord, id))) {
+                return res.status(400).json({ success: false, message: 'موقع إضافي غير معتمد في الشركة' });
+            }
+
             const employee = await new Employee({
                 companyId,
                 companyName: req.body.companyName || '',
@@ -6032,6 +6039,7 @@ app.post(
                 attendancePolicy: req.body.attendancePolicy || 'biometric',
                 workplace: req.body.workplace || req.body.workLocation || '',
                 assignedLocationId: selectedSite ? String(selectedSite._id) : '',
+                allowedSiteIds: extraSites,
                 username,
                 password,
                 credentialsStatus: 'active',
@@ -6248,6 +6256,18 @@ app.put(
                     return res.status(400).json({ success: false, message: 'موقع الموظف غير معتمد في الشركة' });
                 }
                 employee.assignedLocationId = site ? String(site._id) : '';
+            }
+
+            if (req.body.allowedSiteIds !== undefined) {
+                if (!Array.isArray(req.body.allowedSiteIds)) {
+                    return res.status(400).json({ success: false, message: 'صيغة المواقع الإضافية غير صحيحة' });
+                }
+                const companyForSites = await Company.findOne({ companyId: employee.companyId });
+                const siteIds = [...new Set(req.body.allowedSiteIds.map(String))];
+                if (siteIds.some(id => !companyLocationById(companyForSites, id))) {
+                    return res.status(400).json({ success: false, message: 'موقع إضافي غير معتمد في الشركة' });
+                }
+                employee.allowedSiteIds = siteIds;
             }
 
             employee.name = String(req.body.name || employee.name).trim();
@@ -12970,14 +12990,24 @@ app.post(
                 );
 
                 if (nearestDistance > shiftLocation.radiusMeters) {
-                    return res.status(403).json({
-                        success: false,
-                        distanceMeters: Math.round(nearestDistance),
-                        message: `فشل تسجيل البصمة: أنت خارج نطاق موقع الشفت (${Math.round(nearestDistance)}م)`
-                    });
+                    // Additional company sites must be explicitly granted by the manager.
+                    const approvedSites = (employee.allowedSiteIds || [])
+                        .map(id => companyLocationById(company, id))
+                        .filter(site => site && site.active !== false);
+                    const alternate = approvedSites.find(site =>
+                        haversineMeters(latitude, longitude, site.latitude, site.longitude) <= site.radiusMeters
+                    );
+                    if (!alternate) {
+                        return res.status(403).json({
+                            success: false,
+                            distanceMeters: Math.round(nearestDistance),
+                            message: `فشل تسجيل البصمة: أنت خارج المواقع المسموحة (${Math.round(nearestDistance)}م من الموقع الأساسي)`
+                        });
+                    }
+                    matchedLocation = alternate;
+                } else {
+                    matchedLocation = shiftLocation;
                 }
-
-                matchedLocation = shiftLocation;
             }
 
             /*
