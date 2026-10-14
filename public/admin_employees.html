@@ -74,7 +74,7 @@
             <div class="form-group"><label>الاختصاص</label><input type="text" id="empSpecialty" required></div>
             <div class="form-group"><label>البصمة واحتساب أيام العمل — بقرار المدير</label><select id="empAttendancePolicy" onchange="updateAttendanceFields()"><option value="biometric">البصمة مطلوبة حسب الشفت</option><option value="exempt-all-days">معفي من البصمة — جميع الأيام عمل</option><option value="exempt-except-friday">معفي من البصمة — أيام العمل عدا الجمعة</option></select><small>يمكن إلغاء الإعفاء بإعادة اختيار البصمة مطلوبة. الأيام المعفاة تُحتسب تلقائيًا حتى اليوم.</small></div>
             <div class="form-group"><label>الموقع/الفرع</label><select id="empLocation" required onchange="populateEmployeeReferences(this.value,'')"><option value="">اختر الموقع</option></select></div>
-            <div class="form-group full"><label>مواقع بصمة إضافية — للموظفين المتنقلين فقط</label><div id="empAllowedSites" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;padding:12px;border:1px solid #cbd5e1;border-radius:8px"></div><small>الموقع الأساسي أعلاه مسموح دائماً. لا تمنح مواقع إضافية إلا بقرار المدير.</small></div>
+            <div class="form-group full"><label>مواقع بصمة إضافية — للموظفين المتنقلين فقط</label><div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap"><button type="button" class="btn btn-blue" onclick="toggleAllAllowedSites(true)">تحديد جميع المواقع</button><button type="button" class="btn btn-red" onclick="toggleAllAllowedSites(false)">إلغاء تحديد الكل</button></div><div id="empAllowedSites" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;padding:12px;border:1px solid #cbd5e1;border-radius:8px"></div><small>الموقع الأساسي أعلاه مسموح دائماً. لا تمنح مواقع إضافية إلا بقرار المدير.</small></div>
             <div class="form-group"><label>الشفت</label><select id="empShift" required><option value="">اختر الشفت</option></select></div>
             <div class="form-group"><label>اسم المستخدم</label><input type="text" id="empUsername" required></div>
             <div class="form-group"><label>كلمة المرور</label><input type="password" id="empPassword" placeholder="اتركه فارغاً للتعديل"></div>
@@ -139,13 +139,17 @@
         const selected=locations.find(x=>String(x.id||x._id)===String(locationValue))||
             locations.find(x=>String(x.name)===String(locationValue));
         locationSelect.value=selected?String(selected.id||selected._id):'';
-        const matching=shiftsCache.filter(x=>!selected||String(x.locationId||'')===String(selected.id||selected._id));
+        const matching=shiftsCache.filter(x=>x.active!==false); // Show every available shift, even when its location differs from the primary site.
         shiftSelect.innerHTML='<option value="">اختر الشفت</option>'+matching.map(x=>`<option value="${escapeHtml(String(x._id||x.id||x.name))}" data-name="${escapeHtml(x.name||'')}">${escapeHtml(x.name||'—')} — ${escapeHtml(x.locationName||x.branch||'بدون موقع')}</option>`).join('');
         updateAttendanceFields();
         const byId=matching.find(x=>String(x._id||x.id)===String(shiftValue));
         const byName=matching.find(x=>String(x.name)===String(shiftValue));
         shiftSelect.value=String(byId?._id||byId?.id||byName?._id||byName?.id||'');
         renderAllowedSites(Array.from(document.querySelectorAll(".allowed-site:checked")).map(x => x.value));
+    }
+
+    function toggleAllAllowedSites(checked) {
+        document.querySelectorAll('#empAllowedSites .allowed-site:not(:disabled)').forEach(input => { input.checked = checked; });
     }
 
     function renderAllowedSites(selectedIds=[]) {
